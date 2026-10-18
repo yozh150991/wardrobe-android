@@ -25,6 +25,14 @@ class WardrobeViewModel internal constructor(application: Application, private v
     val photos = session.photos
     val network = (application as WardrobeApplication).network
     internal val cloud = CloudSyncController(application as WardrobeApplication, session, viewModelScope)
+    override fun onCleared() {
+        familyReader.invalidateSession()
+        familyAccess.invalidateSession()
+        super.onCleared()
+    }
+    internal val familyReader = FamilyReaderController(application as WardrobeApplication, session, viewModelScope)
+    internal val familyAccess = FamilyAccessController(application as WardrobeApplication, session, familyReader, viewModelScope)
+    fun readFamily(remoteId: String, refresh: Boolean = false) = perform(OperationKind.CLOUD, cancellable = true) { familyReader.open(remoteId, refresh) }
     internal val family = FamilyTransferController(application as WardrobeApplication, session, viewModelScope)
     fun transferFamily(id: String, restart: Boolean = false) = perform(OperationKind.CLOUD, cancellable = true) { family.transfer(id, restart) }
     fun sendFamilyVerification() = perform(OperationKind.CLOUD) { family.sendVerification() }

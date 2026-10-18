@@ -37,28 +37,34 @@ import kotlin.math.roundToInt
 @Composable
 fun ZoomableItemPhoto(photoId: String, vm: WardrobeViewModel, modifier: Modifier,
     title: String, enabled: Boolean = true, garmentColour: String? = null) {
-    var opened by remember(photoId, vm.photos) { mutableStateOf(false) }
+    ZoomableItemPhoto(photoId, vm.photos, modifier, title, enabled, garmentColour)
+}
+
+@Composable
+internal fun ZoomableItemPhoto(photoId: String, photos: PhotoStore, modifier: Modifier,
+    title: String, enabled: Boolean = true, garmentColour: String? = null) {
+    var opened by remember(photoId, photos) { mutableStateOf(false) }
     val canOpen = enabled && photoId.isNotBlank()
     val openLabel = stringResource(R.string.photo_view_open, title)
     Box(modifier.then(if (canOpen) Modifier.clickable(role = Role.Button, onClickLabel = openLabel) { opened = true } else Modifier)) {
-        key(vm.photos, photoId) {
-            ItemPhoto(photoId, vm, Modifier.fillMaxSize(), description = title, fit = true, garmentColour = garmentColour)
+        key(photos, photoId) {
+            ItemPhoto(photoId, photos, Modifier.fillMaxSize(), description = title, fit = true, garmentColour = garmentColour)
         }
         if (canOpen) Surface(Modifier.align(Alignment.BottomEnd).padding(8.dp),
             shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surface.copy(alpha = .92f)) {
             Icon(Icons.Outlined.ZoomIn, contentDescription = null, modifier = Modifier.padding(6.dp).size(24.dp))
         }
     }
-    if (opened && canOpen) PhotoViewer(photoId, title, vm, onDismiss = { opened = false }, garmentColour = garmentColour)
+    if (opened && canOpen) PhotoViewer(photoId, title, photos, onDismiss = { opened = false }, garmentColour = garmentColour)
 }
 
 @Composable
-private fun PhotoViewer(photoId: String, title: String, vm: WardrobeViewModel, onDismiss: () -> Unit, garmentColour: String?) {
-    var retry by remember(photoId, vm.photos) { mutableIntStateOf(0) }
-    var loading by remember(photoId, vm.photos) { mutableStateOf(true) }
-    val bitmap by produceState<Bitmap?>(null, photoId, vm.photos, retry) {
+private fun PhotoViewer(photoId: String, title: String, photos: PhotoStore, onDismiss: () -> Unit, garmentColour: String?) {
+    var retry by remember(photoId, photos) { mutableIntStateOf(0) }
+    var loading by remember(photoId, photos) { mutableStateOf(true) }
+    val bitmap by produceState<Bitmap?>(null, photoId, photos, retry) {
         loading = true
-        value = vm.photos.bitmap(photoId, detailed = true)
+        value = photos.bitmap(photoId, detailed = true)
         loading = false
     }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false,
@@ -79,7 +85,7 @@ private fun PhotoViewer(photoId: String, title: String, vm: WardrobeViewModel, o
                         Text(stringResource(R.string.photo_missing))
                         TextButton(onClick = { retry++ }) { Text(stringResource(R.string.retry)) }
                     }
-                } else key(photoId, vm.photos, ready) {
+                } else key(photoId, photos, ready) {
                     ZoomedPhoto(ready, title, Modifier.weight(1f).fillMaxWidth(), garmentColour)
                 }
             }

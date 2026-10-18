@@ -80,6 +80,7 @@ internal class AccountSession(val identity: AuthIdentity, application: WardrobeA
     val repository = Repository(database, AccountWriteLocks.forDatabase(location.databaseName))
     val photos = PhotoStore(context)
     val analyzer = PhotoAnalyzer(context, photos)
+    internal val familyReadCache = FamilyReadCache(context, id)
     override val viewModelStore = ViewModelStore()
     private val app = application
     internal var privateJob: kotlinx.coroutines.Job? = null
@@ -95,6 +96,7 @@ internal class AccountSession(val identity: AuthIdentity, application: WardrobeA
             runCatching { analyzer.close() }
             photos.clearMemoryCache()
             runCatching { database.close() }
+            runCatching { familyReadCache.close() }
             // Only transient per-account data. Final photos, DB and appearance are retained.
             context.cacheDir.deleteRecursively()
             File(app.cacheDir, "camera/${identity.key}").deleteRecursively()

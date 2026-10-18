@@ -10,6 +10,7 @@ import time
 from .archive import MAX_ARCHIVE, validate_archive
 from .errors import require
 from .schema import HASH, integer, valid_id
+from .membership import MembershipService
 
 UPLOAD_TTL_MS = 30 * 60 * 1000
 MAX_ROOTS = 50
@@ -20,6 +21,7 @@ MAX_UPLOADS_PER_DAY = 120
 class Actor:
     uid: str
     email_verified: bool
+    email: str = ""
 
 
 def authenticate(actor):
@@ -55,7 +57,7 @@ def public_head(root, role):
     return {k: root[k] for k in ('remoteId','wardrobeId','ownerUid','revision','head')} | {'role':role}
 
 
-class FamilyService:
+class FamilyService(MembershipService):
     def __init__(self, store, archives, clock=None):
         self.store, self.archives = store, archives
         self.clock = clock or (lambda: int(time.time() * 1000))

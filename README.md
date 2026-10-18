@@ -1,7 +1,7 @@
 # Wardrobe Android
 
-Поточна база: **0.14.4-photo-hotfix3**, code **34**, Room/backup **10**.
-Очищення DEV-02 змінює структуру документації й інструменти перевірки та прибирає невикористаний екран. Нового APK у пакеті немає.
+Поточна база: **0.14.6-family-access**, code **36**, Room/backup **10**.
+FAM-02: сімейні запрошення в застосунку, список гардеробів і керування доступом. Нового APK у пакеті немає.
 
 ## Почати тут
 
@@ -21,7 +21,9 @@ GitHub workflow підготовлено; віддалений запуск і A
 Делікатне очищення фото: [PHOTO-CLEANUP-HOTFIX3.md](PHOTO-CLEANUP-HOTFIX3.md).
 Сімейний перенос: [FAMILY-ANDROID-0.14.2.md](FAMILY-ANDROID-0.14.2.md),
 [callable hotfix1](FAMILY-CALLABLE-HOTFIX1.md), [progress hotfix2](FAMILY-PROGRESS-HOTFIX2.md).
-Shared cache, запрошення й постійна сімейна синхронізація ще потрібні.
+Ізольований перегляд серверної копії реалізований: [FAMILY-READER-0.14.5.md](FAMILY-READER-0.14.5.md).
+Запрошення, discovery, roles/revoke/leave реалізовані: [FAMILY-ACCESS-0.14.6.md](FAMILY-ACCESS-0.14.6.md).
+Далі — shared editing/CAS і постійна сімейна синхронізація. Листи та історія завершених запрошень ще потрібні. Багфікси відкладені користувачем.
 Фото на телефоні й повна Android-збірка потребують перевірки.
 Живі Storage rules користувач змінював окремо; не розгортати стару копію поверх них.
 

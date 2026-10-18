@@ -25,7 +25,7 @@ def dispatch(request, method):
         decoded = auth.verify_id_token(token[7:], check_revoked=True)
     except (ValueError, auth.InvalidIdTokenError, auth.RevokedIdTokenError, auth.UserDisabledError):
         raise https_fn.HttpsError(https_fn.FunctionsErrorCode.UNAUTHENTICATED, 'Verified sign-in required')
-    actor = Actor(decoded['uid'], decoded.get('email_verified') is True)
+    actor = Actor(decoded['uid'], decoded.get('email_verified') is True, decoded.get('email', ''))
     data = request.data
     # New clients bind SDK token retrieval to the account that started the request.
     if type(data) is dict and 'expectedActorUid' in data:
@@ -63,3 +63,43 @@ def family_begin_upload(request: https_fn.CallableRequest):
 @https_fn.on_call()
 def family_commit(request: https_fn.CallableRequest):
     return dispatch(request, 'commit')
+
+
+@https_fn.on_call()
+def family_directory(request: https_fn.CallableRequest):
+    return dispatch(request, 'directory')
+
+
+@https_fn.on_call()
+def family_invitations(request: https_fn.CallableRequest):
+    return dispatch(request, 'invitations')
+
+
+@https_fn.on_call()
+def family_members(request: https_fn.CallableRequest):
+    return dispatch(request, 'members')
+
+
+@https_fn.on_call()
+def family_invite(request: https_fn.CallableRequest):
+    return dispatch(request, 'invite')
+
+
+@https_fn.on_call()
+def family_respond_invite(request: https_fn.CallableRequest):
+    return dispatch(request, 'respond_invite')
+
+
+@https_fn.on_call()
+def family_cancel_invite(request: https_fn.CallableRequest):
+    return dispatch(request, 'cancel_invite')
+
+
+@https_fn.on_call()
+def family_change_member(request: https_fn.CallableRequest):
+    return dispatch(request, 'change_member')
+
+
+@https_fn.on_call()
+def family_leave(request: https_fn.CallableRequest):
+    return dispatch(request, 'leave')

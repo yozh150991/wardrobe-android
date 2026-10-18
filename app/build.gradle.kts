@@ -15,8 +15,8 @@ android {
         applicationId = "com.familywardrobe.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 34
-        versionName = "0.14.4-photo-hotfix3"
+        versionCode = 36
+        versionName = "0.14.6-family-access"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {

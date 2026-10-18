@@ -1,0 +1,4 @@
+Command: bash build-apk.sh testDebugUnitTest lintDebug assembleDebug
+Exit: 1
+Install a full JDK 17 or 21 and set JAVA_HOME.
+No Android compilation or APK completed.

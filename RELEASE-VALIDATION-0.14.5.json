@@ -1,0 +1,45 @@
+{
+  "release": "0.14.5-family-reader",
+  "versionCode": 35,
+  "room_backup_version": 10,
+  "checked_at": "2026-10-18T17:36:53.651939+00:00",
+  "source_base": "wardrobe-github-ready.zip / DEV-03 / photo-hotfix3",
+  "status": "FAM-01/03 partial; read-only reader verify",
+  "executed": {
+    "host_report": "release-evidence/host-runs/0.14.5-family-reader-20261018T122358182692Z.json",
+    "host_suites_passed": 22,
+    "host_suites_failed": 0,
+    "client_config": "skipped explicitly; personal google-services.json not supplied",
+    "family_zip_lease_assertions": 49
+  },
+  "prepared_not_run": {
+    "FamilyReadEngineTest": 12,
+    "FamilyReadCacheTest": 3
+  },
+  "android_build": {
+    "status": "blocked_before_compilation",
+    "command": "bash build-apk.sh testDebugUnitTest lintDebug assembleDebug",
+    "reason": "javac executable missing; Java runtime compiler modules alone are not the supported full build JDK"
+  },
+  "not_run": [
+    "Kotlin/Compose/Firebase adapter compilation",
+    "Gradle JVM tests",
+    "Android instrumented tests",
+    "lint",
+    "APK",
+    "live Firebase",
+    "Windows/macOS updater"
+  ],
+  "unchanged": [
+    "private Room and backup schema",
+    "applicationId",
+    "signing configuration",
+    "client Firebase config",
+    "production Storage/Firestore rules"
+  ],
+  "remaining": [
+    "member discovery/invite/accept/decline/role/revoke",
+    "shared editing and continuous CAS synchronization",
+    "FAM-04 native multi-account acceptance"
+  ]
+}

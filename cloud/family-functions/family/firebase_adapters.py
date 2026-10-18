@@ -1,6 +1,7 @@
 """Firebase Admin adapters. Admin bypasses Rules: authorization lives in service.py."""
 import hashlib
 from google.cloud import firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 from google.api_core.exceptions import NotFound, PreconditionFailed
 from .errors import FamilyError, require
 from .archive import MAX_ARCHIVE
@@ -18,6 +19,9 @@ class FirestoreStore:
             def get(self, path):
                 snapshot = client.document(path).get(transaction=self.transaction)
                 return snapshot.to_dict() if snapshot.exists else None
+            def owned_roots(self, uid, limit):
+                query = client.collection("familyWardrobes").where(filter=FieldFilter("ownerUid", "==", uid)).limit(limit)
+                return [snapshot.to_dict() for snapshot in query.stream(transaction=self.transaction)]
             def set(self, path, data):
                 self.transaction.set(client.document(path), data)
         @firestore.transactional

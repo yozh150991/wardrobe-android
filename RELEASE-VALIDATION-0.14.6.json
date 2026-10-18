@@ -1,0 +1,60 @@
+{
+  "release": "0.14.6-family-access",
+  "versionCode": 36,
+  "room_backup_version": 10,
+  "checked_at": "2026-10-18T18:00:29.625053+00:00",
+  "source_base": "0.14.5-family-reader/code35",
+  "status": "FAM-02 partial; implemented in-app invitations/discovery/role/revoke UI verify",
+  "executed": {
+    "full_host_report": "release-evidence/host-runs/0.14.6-family-access-20261018T175547461327Z.json",
+    "host_suites_passed": 22,
+    "host_suites_failed": 0,
+    "client_config": "explicit skipped_not_configured",
+    "full_host_backend_tests": 59,
+    "latest_targeted_backend_tests": 60,
+    "latest_backend_new_tests": 25,
+    "project_checks": 4626,
+    "localized_strings_per_locale": 1096,
+    "source_xml_files": 11,
+    "dao_queries": 72,
+    "python_compileall": "pass"
+  },
+  "prepared_not_run": {
+    "FamilyAccessWireTest": 7,
+    "emulator_membership.py": 2
+  },
+  "android_build": {
+    "command": "bash build-apk.sh testDebugUnitTest lintDebug assembleDebug",
+    "status": "blocked_before_compilation",
+    "reason": "Install a full JDK 17 or 21 and set JAVA_HOME; no javac executable"
+  },
+  "not_run": [
+    "Android/Kotlin/Compose/Firebase adapter compilation",
+    "Gradle JVM tests",
+    "lint",
+    "APK",
+    "new Firebase emulator integration",
+    "live Firebase",
+    "Windows/macOS updater",
+    "two-device acceptance"
+  ],
+  "unchanged": [
+    "Room/backup10",
+    "applicationId",
+    "signing config",
+    "client Firebase config",
+    "private data",
+    "live Firestore/Storage rules"
+  ],
+  "remaining": [
+    "email provider/delivery",
+    "terminal invitation history UI",
+    "shared editing/outbox/CAS sync",
+    "FAM-04 multi-account acceptance",
+    "rollout GC/AppCheck/costs"
+  ],
+  "current_backend_sources_sha256": {
+    "cloud/family-functions/family/membership.py": "d2a2f34070846551e6c24cc3b67b1deb35a7f0300c3ad0f7297f744b2b62bd7d",
+    "cloud/family-functions/tests/test_membership.py": "28d0b1737711578092bc0bf13bcf12b87bb80244fd2373a11227b25b98895e6e"
+  }
+}

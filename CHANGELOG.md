@@ -1,3 +1,17 @@
+# 0.14.5-family-reader — 18 October 2026
+
+## 0.14.6-family-access — 18 October 2026 (code 36)
+
+FAM-02: callable-only in-app invitations by verified email; owner/member discovery,
+accept/decline/cancel; owner-only role CAS/revoke and member leave. Android UI in
+UA/EN/PL, account/session guards, lease invalidation, bounded inbox/directory.
+60 backend tests and 22 host suites pass; native Kotlin/Compose build, emulator 2
+and wire 7 tests not run. No APK or live deployment. Email delivery and terminal
+invitation history remain open. Next: shared editing/CAS; bugfixes deferred.
+See FAMILY-ACCESS-0.14.6.md and RELEASE-VALIDATION-0.14.6.json.
+
+FAM-01/03 partial, reader verify. Added isolated read-only server-copy browsing, authenticated download/head recheck, bounded ZIP validation and runtime lease. Preserves private data and all DEV-03/photo hotfix changes. Native build/tests remain unverified. See FAMILY-READER-0.14.5.md and RELEASE-VALIDATION-0.14.5.json.
+
 # Wardrobe — історія змін
 
 Це історичні записи; актуальні статуси й наступні кроки — у [роадмапі](WARDROBE-ROADMAP.md). Результати тестів належать указаним релізам.

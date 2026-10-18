@@ -628,6 +628,10 @@ from refinement_strings import STRINGS as REFINEMENT_STRINGS
 STRINGS.update(REFINEMENT_STRINGS)
 from scenario_strings import STRINGS as SCENARIO_STRINGS
 STRINGS.update(SCENARIO_STRINGS)
+from family_reader_strings import STRINGS as FAMILY_READER_STRINGS
+STRINGS.update(FAMILY_READER_STRINGS)
+from family_access_strings import STRINGS as FAMILY_ACCESS_STRINGS
+STRINGS.update(FAMILY_ACCESS_STRINGS)
 for folder, column in [('values',0),('values-uk',0),('values-en',1),('values-pl',2)]:
     dest=ROOT/folder/'strings.xml';dest.parent.mkdir(parents=True,exist_ok=True)
     lines=['<?xml version="1.0" encoding="utf-8"?>','<resources>']

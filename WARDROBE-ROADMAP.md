@@ -1,15 +1,17 @@
 # Wardrobe — роадмап і передача роботи
 
-Оновлено: **2026-10-17, Europe/Warsaw**. Редакція документа: **21**.
-База вихідного коду: **0.14.4-photo-hotfix3**, `versionCode=34`, Room/backup **10**.
-Статус: FAM-01/03 — partial. У 0.14.2 підключено Android-перенос: scoped ZIP, callable/Storage transport, durable retry/expiry, перевірка server head та UI UA/EN/PL. Shared cache, запрошення й постійна сімейна синхронізація ще потрібні. Спільне native-приймання й live deployment залишаються відкритими.
+Оновлено: **2026-10-18, Europe/Warsaw**. Редакція документа: **23**.
+База вихідного коду: **0.14.6-family-access**, `versionCode=36`, Room/backup **10**.
+Статус: FAM-01/03 — partial; FAM-02 — partial, реалізований обсяг verify. У 0.14.6 додано discovery після входу на іншому пристрої, запрошення в застосунку за підтвердженою email-адресою, accept/decline/cancel, owner-only roles/revoke і вихід учасника. Листи не надсилаються; окрема історія завершених запрошень ще потрібна. Спільне редагування та постійна синхронізація — наступний блок. За вказівкою користувача 18.10 «Багфікси будуть потім». Native-приймання й live deployment залишаються відкритими.
 
 Це головний документ для пріоритетів, незавершеної роботи й передачі завдань іншому агенту. Погоджено користувачем 7 жовтня 2026: спочатку спрощення каталогу та імпорт із магазину, потім розширення помічника перед покупкою; сімейний доступ — окремий пріоритетний блок. Решту ідей потрібно зберегти в беклозі. Нова пряма вказівка користувача має перевагу над цим планом.
+
+**Актуальна контрольна точка:** 0.14.6-family-access/code36. FAM-02 API та Android UI реалізовані; 60 backend-тестів pass, 22 host-набори pass. Android-компіляція/APK та нові emulator-сценарії не виконані. Наступне FAM-03: shared editing/CAS із ізольованими чернетками та явним розв’язанням конфліктів; потім FAM-04. Див. FAMILY-ACCESS-0.14.6.md. Попередні контрольні точки нижче — історія.
 
 ## 1. Швидкий старт для наступного агента
 
 1. Прочитати `AGENTS.md`, цей документ і `README.md`. Визначити фактичну версію в `app/build.gradle.kts` та локальні зміни. Не брати старі розділи README за стан останнього релізу.
-2. **Спільне приймання відкладено користувачем 10.10.2026** («Продовж. Тестувати будемо все разом»). Це не блокує погоджене продовження реалізації; автоматичні перевірки виконуємо. Коли починаємо тестування: REL-01 — актуальна Android-збірка, FAMILY-FOUNDATION-0.14.0.md → COLORS-0.13.10.md → CATEGORIES-0.13.9.md → PHOTO-PRECISION-0.13.8.md → PHOTO-QUALITY-0.13.7.md → PHOTO-INSPECTION-0.13.6.md → PHOTO-TOOLS-0.13.5.md → попередні PHOTO-01–04/R1/R2 і QA-01–02 на тому самому білді. До native-доказів статус verify. PHOTO-12–14 реалізовані (verify); PHOTO-11 та PHOTO-15–17 лишаються deferred; FAM-01 має реалізовану основу даних у 0.14.0, FAM-02–04 — наступний сімейний блок.
+2. **Спільне приймання відкладено користувачем 10.10.2026** («Продовж. Тестувати будемо все разом»). Це не блокує погоджене продовження реалізації; автоматичні перевірки виконуємо. Коли починаємо тестування: REL-01 — актуальна Android-збірка, FAMILY-FOUNDATION-0.14.0.md → COLORS-0.13.10.md → CATEGORIES-0.13.9.md → PHOTO-PRECISION-0.13.8.md → PHOTO-QUALITY-0.13.7.md → PHOTO-INSPECTION-0.13.6.md → PHOTO-TOOLS-0.13.5.md → попередні PHOTO-01–04/R1/R2 і QA-01–02 на тому самому білді. До native-доказів статус verify. PHOTO-12–14 реалізовані (verify); PHOTO-11 та PHOTO-15–17 лишаються deferred; FAM-01 має реалізовану основу даних у 0.14.0, FAM-02 має реалізований обсяг у 0.14.6; FAM-03 shared editing/CAS і FAM-04 — наступний сімейний блок.
 3. Використовувати наявні редактори, чернетки, фотообробку й операції збереження. Не створювати вдруге календар, статистику, капсули чи базовий екран сумісності покупки.
 4. Перед зміною моделі даних перевірити міграції Room, backup, cloud snapshot, історію покупок і зв’язки образів. У базі зараз Room **10**, формат backup **10**. CustomCategory/CustomColor → Garment → purchase receipt/backup/cloud мають узгоджені посилання.
 5. Для вибраного ID записати `in_progress`, виконавця та дату. Після роботи додати змінені файли, фактично виконані перевірки, обмеження та наступну конкретну дію в розділ 12.
@@ -38,7 +40,7 @@ Wardrobe допомагає пам’ятати про наявний одяг �
 
 ## 3. Перевірена база та межі впевненості
 
-Джерело початкового аудиту: `wardrobe-release-update-0.11.2.zip`, отриманий 7 жовтня 2026; поточна база — `wardrobe-photo-cleanup-hotfix3.zip` із подальшим пакетом `wardrobe-project-cleanup.zip`. Нижче «є в коді» не означає, що весь сценарій прийнятий на фізичному телефоні.
+Джерело початкового аудиту: `wardrobe-release-update-0.11.2.zip`, отриманий 7 жовтня 2026; поточна база — `wardrobe-family-access-0.14.6.zip` після reader 0.14.5, DEV-02/DEV-03 і photo hotfix3. Нижче «є в коді» не означає, що весь сценарій прийнятий на фізичному телефоні.
 
 | Напрям | Фактичний стан | Подальша робота |
 | --- | --- | --- |
@@ -47,7 +49,7 @@ Wardrobe допомагає пам’ятати про наявний одяг �
 | Дублікати | Є fingerprint фото | Це не пошук тієї самої речі, сфотографованої інакше: `SHOP-01`. |
 | Покупка й сумісність | R2: до 20 прикладів із закріпленим товаром; причини схожості, доступні/недоступні власні заміни, збереження без покупки, ціна/бюджет | `SHOP-01–03` у статусі verify. Приклади без знайденої заміни рахуються окремо від факту збереження; збіг ознак не називається тотожністю фото. |
 | Особисті вподобання | Є відхилення конкретних комбінацій; «надто тепло» змінює ручний погодний контекст | Узагальнення причин відмови й керовані вподобання: `PERS-01–02`. |
-| Синхронізація | Приватний snapshot у `/users/{uid}/snapshots/…` лишається лише для одного UID; 0.14.0 додає ізоляцію одного гардероба, family envelope і локальні checkpoints | FAM-01 — partial. Серверний API/guards/rules є у 0.14.1; Android initial transfer/UI є у 0.14.2; invite API/UI та shared cache ще потрібні: `FAM-02–04`. |
+| Синхронізація | Приватний snapshot у `/users/{uid}/snapshots/…` лишається лише для одного UID; 0.14.0 додає ізоляцію одного гардероба, family envelope і локальні checkpoints | FAM-01 — partial. Серверний API/guards/rules є у 0.14.1; Android initial transfer/UI є у 0.14.2; read-only cache є у 0.14.5; invite/role UI є у 0.14.6. Shared editing/CAS і приймання ще потрібні: `FAM-03–04`. |
 | Образи | Є колаж, кілька закріплень, заміна частини, ручний режим, власний/змішаний/натхнення | Регресія й перевірка на телефоні: `QA-02`; віджет: `WID-01`. |
 | Щоденні інструменти | Є погода за містом, календар, носіння, статистика, ціна носіння, капсули/пакування | Розвивати: `ROT-01–02`, `TRIP-01–03`. |
 | Архів, прання, відновлення | Є стани доступності, undo, backup/restore з перенесенням зв’язків | Перевірити попередні скарги та пояснення додаткового відновлення: `QA-02`, `DATA-01`. |
@@ -61,6 +63,8 @@ Wardrobe допомагає пам’ятати про наявний одяг �
 
 | Артефакт | Призначення |
 | --- | --- |
+| `wardrobe-family-access-0.14.6.zip` | Поточні джерела 0.14.6/code36, FAM-02 і updater після 0.14.5; без APK. |
+| `wardrobe-family-reader-0.14.5.zip` | Попередня база 0.14.5/code35; без APK. |
 | `wardrobe-project-cleanup.zip` | Очищені джерела 0.14.4 і updater DEV-02; без APK. |
 | `wardrobe-photo-cleanup-hotfix3.zip` | База джерел 0.14.4-photo-hotfix3, накопичувальний updater для 0.14.2/hotfix1/hotfix2, фото-тести й інструкція; без APK. |
 | `/Wardrobe/wardrobe-release-update-0.14.2.zip` | Історична база Android initial transfer + backend; накопичувальний updater Windows/Mac/Linux, докази; без нового APK. |
@@ -93,7 +97,7 @@ P0 — дані, доступ, збірка та блокери випуску. 
 
 R0 — перевірки, які супроводжують розробку, а не привід відкладати всі локальні зміни до отримання доступу до чужого телефона. Проєктування FAM-01 почати рано: воно вплине на збереження нових полів, але UI сімейного доступу не вважати готовим до серверного захисту.
 
-## Поточна робота — 17 жовтня 2026
+## Попередня контрольна точка — 17 жовтня 2026
 
 PHOTO-03 / P1 / verify — Codex: делікатний default та захист від float32 overshoot у 0.14.4-photo-hotfix3. Перевірки й обмеження вище; спільне native-приймання залишається відкритим.
 
@@ -236,13 +240,15 @@ PHOTO-01–10 і PHOTO-12–14 реалізовані у джерелах; ст�
 
 ### FAM-02 — запрошення та права в інтерфейсі
 
-**P1 · planned · R3 · залежить від FAM-01.** Email-запрошення, перегляд pending/accepted/expired/revoked, ролі «Перегляд»/«Редагування», прийняття, відмова, відкликання, вихід учасника. У кожного власний логін. Конкретну семантику перенесення ownership вирішити окремо; не додавати її мовчки.
+**P1 · partial; реалізований обсяг verify · R3 · Codex, 18.10.2026.** 0.14.6: вхідні запрошення за перевіреним email, discovery власних/прийнятих гардеробів, pending, accept/decline/cancel, ролі viewer/editor, CAS зміни ролі, revoke і leave. Прийняті доступи видно як учасників; terminal status зберігається сервером, але окремої історії accepted/expired/revoked в UI ще немає. Доставка наразі всередині застосунку; поштовий провайдер не налаштований. Ownership не переноситься.
 
-**Приймання:** існуючий/новий акаунт, помилка адреси, запрошення себе, повтор, прострочення, чужий акаунт і втрата мережі мають визначений результат. Власник бачить, кому й що відкрив. Сам UI не є захистом доступу.
+**Докази:** 25 нових domain-тестів, разом backend 60 pass; 22 host-набори pass. 7 Kotlin wire-тестів і 2 emulator інтеграційні сценарії підготовлені, не запускались. Нові серверні callable-функції необхідно окремо розгорнути; live rules не перезаписувати. Native-приймання відкладене разом з іншими сімейними сценаріями.
+
+**Залишок:** історія завершених запрошень/повторне запрошення з неї, рішення щодо листів, два акаунти на новому/існуючому пристрої та реальна втрата мережі. Наступний погоджений обсяг — FAM-03 shared editing/CAS; багфікси пізніше.
 
 ### FAM-03 — захист і синхронізація спільного гардероба
 
-**P0 для випуску R3 · partial · залежить від FAM-01–02.** У 0.14.1 реалізовані й перевірені серверні role/expiry/CAS guards та Storage rules. Клієнтський обмін, ізоляція shared cache, lease і відкликання на Android ще потрібні.
+**P0 для випуску R3 · partial · залежить від FAM-01–02.** У 0.14.1 реалізовані й перевірені серверні role/expiry/CAS guards та Storage rules. Android initial transfer є у 0.14.2, isolated read-only cache/lease у 0.14.5, roles/revoke у 0.14.6. Потрібні mutable shared store, спільне редагування, pending writes, continuous CAS sync та конфлікти.
 
 **Приймання:** viewer не записує дані навіть прямим SDK-запитом; editor змінює лише дозволений гардероб; сторонній UID не читає дані/фото; editor не видає права. Перевірити дві конкурентні правки, retry, видалення/архів, зміну ролі й відкликання під час upload. Прострочені офлайн-записи після відкликання відхиляються. При виявленні відкликання очистити/закрити кеш за обраною політикою. Не обіцяти миттєве стирання вже отриманих даних на відключеному пристрої.
 
@@ -371,3 +377,22 @@ DEV-01 (Git Safety) збережений; історична контрольн�
 - Новий GITHUB-WORKFLOW-UK.md описує гілки/теги/версії, локальні білди та підключення remote. Check version підтримує порівняння з --base-ref.
 - Перевірки: GITHUB-READINESS-VALIDATION.json. GitHub connection/remote та віддалений CI не підтверджені; APK не зібрано.
 - Наступне: застосувати DEV-03 після DEV-02, перевірити локальний audit, підключити приватний GitHub repository й виконати перший CI-run; фото/native та FAM беклог лишаються відкритими.
+
+### 2026-10-18 — FAM-01/03, isolated family reader — Codex, partial; reader verify
+
+- 0.14.5-family-reader/code35, Room/backup10; source wardrobe-family-reader-0.14.5.zip, based on DEV-03 and all hotfixes.
+- Added FamilyReadEngine, FamilyBackend download/readback, FamilyCacheZip, FamilyReadLease, FamilyReadCache, FamilyReaderController/Dialog; connected existing transfer records and session cleanup. Reused photo/zoom controls with explicit PhotoStore; 15 UA/EN/PL/fallback strings.
+- All scoped collections decode into an isolated immutable Snapshot/photo cache under noBackupFilesDir. No private Room/backup writes. Hash/size/file/relationship checks, final role/head recheck, cancellation and runtime-only 15-minute lease.
+- UI: server-copy item search/photos/zoom and role/counts; read-only. No cross-device discovery/invites/shared editing. Mutable shared DB and continuous CAS sync remain open.
+- Production Java ZIP/lease suite: 49 assertions passed. Full host report and RELEASE-VALIDATION-0.14.5.json record actual results. 12 Kotlin coordinator and 3 Android integration tests prepared, not executed. Build stopped at missing javac executable; Android/Compose/lint/APK/live Firebase and native updater acceptance unverified.
+- Next: FAM-02 discovery/invite/accept/decline/role/revoke API + UI, then shared editing/CAS and FAM-04. Read FAMILY-READER-0.14.5.md. No live rules/deployment or user-data changes. Native testing remains the agreed joint stage.
+
+### 2026-10-18 — FAM-02, invitations/discovery/access — Codex, partial; реалізований обсяг verify
+
+- Вказівка користувача: продовжувати функціональність, багфікси пізніше. Версія 0.14.6-family-access/code36, Room/backup10.
+- Нові callable API: directory/invitations/members/invite/respond_invite/cancel_invite/change_member/leave. Перевірений email береться з токена, доступ прив’язується до UID при прийнятті. Індекси лише для discovery; кожний доступ повторно перевіряється.
+- До 50 членів/запрошень/прийнятих гардеробів, 30 нових запрошень на день, TTL7днів; pending slot, UUID retries, CAS version, terminal invites не можуть відновити відкликаний доступ. Транзакції читають усе до першого запису.
+- Android: окремий список/прийняття/відмова/учасники/ролі/revoke/leave; UA/EN/PL, email і назва, явні підтвердження. Оновлення списку скидає read lease, leave прибирає кеш до запиту; серверне revoke негайне, раніше завантажений кеш на іншому пристрої має максимум15хв lease.
+- Змінено family backend/service/adapters/wire/main, Android FamilyAccess*/FamilyBackend/FamilyReaderController/ViewModel/Ui, ресурси, тести, version/docs. Повний список — package manifest. Приватні DB, backup, signing і live rules не змінені.
+- Backend60 pass (25 нових); host22 pass +1 explicit missing-client-config skip. Kotlin7 і emulator2 підготовлені, не виконані. Build зупинився до компіляції: Install a full JDK17 or21 and set JAVA_HOME. APK немає. Деталі RELEASE-VALIDATION-0.14.6.json.
+- Доставка листів/історія terminal invitations та приймання залишаються відкритими. Наступне FAM-03: isolated mutable shared model/editor, outbox, CAS conflict/retry; далі FAM-04. Production rollout/GC/AppCheck/costs окремо. Джерела та updater: wardrobe-family-access-0.14.6.zip.

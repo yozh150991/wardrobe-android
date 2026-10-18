@@ -901,6 +901,7 @@ fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEm
         SingleWardrobeBackupControl(vm)
         HorizontalDivider()
         FamilyTransferControl(vm)
+        FamilyAccessControl(vm)
         HorizontalDivider()
         OutlinedButton(onClick = { restore.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.import_backup))
@@ -920,9 +921,14 @@ fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEm
 
 @Composable
 fun ItemPhoto(id: String, vm: WardrobeViewModel, modifier: Modifier = Modifier, description: String? = null, fit: Boolean = true, backgroundColor: androidx.compose.ui.graphics.Color? = null, garmentColour: String? = null) {
-    val bitmap by produceState<android.graphics.Bitmap?>(null, id, vm.photos) {
+    ItemPhoto(id, vm.photos, modifier, description, fit, backgroundColor, garmentColour)
+}
+
+@Composable
+internal fun ItemPhoto(id: String, photos: PhotoStore, modifier: Modifier = Modifier, description: String? = null, fit: Boolean = true, backgroundColor: androidx.compose.ui.graphics.Color? = null, garmentColour: String? = null) {
+    val bitmap by produceState<android.graphics.Bitmap?>(null, id, photos) {
         value = null
-        if (id.isNotEmpty()) value = vm.photos.bitmap(id)
+        if (id.isNotEmpty()) value = photos.bitmap(id)
     }
     val backdrop = rememberPhotoBackdrop(bitmap, garmentColour)
     Box(modifier.background(backgroundColor ?: if (bitmap != null) backdrop else MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {

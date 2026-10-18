@@ -15,9 +15,11 @@ with tempfile.TemporaryDirectory(prefix='wardrobe-transfer-') as output:
  cp=os.pathsep.join([output,*map(str,jars)])
  subprocess.run(['java','-m','jdk.compiler/com.sun.tools.javac.Main','--release','17','-d',output,str(src/'FamilyRules.java')],check=True,env=env)
  subprocess.run(['java','-cp',cp,'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler','-no-stdlib','-no-reflect','-jvm-target','17','-classpath',cp,'-d',output,
-                 str(src/'FamilyTransferModels.kt'),str(src/'FamilyTransfer.kt'),str(src/'FamilyTransferProgress.kt'),
+                 str(src/'FamilyAccess.kt'),str(src/'FamilyReadEngine.kt'),str(src/'FamilyTransferModels.kt'),str(src/'FamilyTransfer.kt'),str(src/'FamilyTransferProgress.kt'),
+                 str(root/'app/src/test/java/com/familywardrobe/app/FamilyAccessWireTest.kt'),
+                 str(root/'app/src/test/java/com/familywardrobe/app/FamilyReadEngineTest.kt'),
                  str(root/'app/src/test/java/com/familywardrobe/app/FamilyTransferTest.kt'),
                  str(root/'app/src/test/java/com/familywardrobe/app/FamilyTransferProgressTest.kt')],check=True,env=env)
  subprocess.run(['java','-cp',cp,'org.junit.runner.JUnitCore','com.familywardrobe.app.FamilyTransferTest',
-                 'com.familywardrobe.app.FamilyTransferProgressTest'],check=True,env=env)
+                 'com.familywardrobe.app.FamilyTransferProgressTest','com.familywardrobe.app.FamilyReadEngineTest','com.familywardrobe.app.FamilyAccessWireTest'],check=True,env=env)
 print('Native UI/Room/AtomicFile/Firebase SDK compilation not covered by this runner.')

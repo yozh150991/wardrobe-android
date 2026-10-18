@@ -21,6 +21,8 @@ class MemoryStore:
             data = copy.deepcopy(self.data)
             class Tx:
                 def get(self, path): return copy.deepcopy(data.get(path))
+                def owned_roots(self, uid, limit):
+                    return [copy.deepcopy(v) for k,v in sorted(data.items()) if k.startswith('familyWardrobes/') and k.count('/') == 1 and v['ownerUid'] == uid][:limit]
                 def set(self, path, value): data[path] = copy.deepcopy(value)
             result = callback(Tx()); self.data = data
             return result

@@ -18,6 +18,7 @@ internal fun FamilyTransferControl(vm: WardrobeViewModel) {
     val state by vm.family.state.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
     val cloud by vm.cloud.state.collectAsStateWithLifecycle()
+    var reading by rememberSaveable { mutableStateOf("") }
     var choosing by rememberSaveable { mutableStateOf(false) }
     var selected by rememberSaveable { mutableStateOf("") }
     var restart by rememberSaveable { mutableStateOf(false) }
@@ -70,12 +71,15 @@ internal fun FamilyTransferControl(vm: WardrobeViewModel) {
                 if (record.phase != FamilyMigrationPhase.PREPARED && cloud.localRevision != record.sourceRevision)
                     Text(stringResource(R.string.family_local_changes),style = MaterialTheme.typography.bodySmall)
                 OutlinedButton(onClick = { vm.transferFamily(record.wardrobeId) },enabled = enabled,modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_resume)) }
+                OutlinedButton(onClick = { reading = record.remoteId; vm.readFamily(record.remoteId) }, enabled = enabled,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.family_read_open)) }
                 if (record.phase != FamilyMigrationPhase.VERIFIED && wardrobe != null) TextButton(onClick = { selected = record.wardrobeId; restart = true },enabled = enabled) {
                     Text(stringResource(R.string.family_restart))
                 }
             } }
         }
     }
+    if (reading.isNotEmpty()) FamilyReaderDialog(vm, reading) { reading = "" }
     if (choosing) VisualPickerDialog(R.string.backup_choose_wardrobe,content.wardrobes.map { w ->
         VisualOption(w.id,w.displayName(),stringResource(R.string.backup_scope_counts,content.garments.count { it.wardrobeId == w.id },content.outfits.count { it.wardrobeId == w.id }))
     },vm,dismiss = { choosing = false },enabled = enabled) { id,_ -> choosing = false; selected = id; restart = false }
