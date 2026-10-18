@@ -47,6 +47,8 @@ jobs:
           if [[ -n "$VERSION_BASE_SHA" && ! "$VERSION_BASE_SHA" =~ ^0+$ ]]; then
             python tools/check_version.py --base-ref "$VERSION_BASE_SHA"
           fi
+      - name: Install backend test dependencies
+        run: python -m pip install "Pillow==11.3.0"
       - name: Run source, Java and backend domain checks
         run: python tools/run_host_checks.py --allow-missing-client-config
       - name: Upload host reports
