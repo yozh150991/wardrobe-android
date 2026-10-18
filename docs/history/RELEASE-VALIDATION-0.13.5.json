@@ -1,0 +1,46 @@
+{
+  "release": "0.13.5-release",
+  "version_code": 24,
+  "checked_at": "2026-10-10T11:37:21.239865+00:00",
+  "task": "PHOTO-05",
+  "status": "verify",
+  "base": "0.13.4-release",
+  "room": 8,
+  "backup": 8,
+  "host_suites_passed": 17,
+  "photo_session_assertions": 22649,
+  "retained_photo_editor_assertions": 1774,
+  "source_checks": 3824,
+  "xml_files": 11,
+  "localized_strings": 911,
+  "dao_queries": 67,
+  "host_report": "HOST-VALIDATION-0.13.5.json",
+  "host_checked_at": "2026-10-10T11:36:46.861473+00:00",
+  "junit_session_test_methods_prepared": 4,
+  "android_session_tests_prepared": 5,
+  "history_scope": "One open editor session: mask, crop, rotation, source reset. Tool switches preserve undo/redo. Only Apply creates a final candidate.",
+  "android_build": {
+    "status": "blocked_before_compilation",
+    "command": "java -classpath gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain testDebugUnitTest lintDebug assembleDebug --no-daemon",
+    "exit_code": 1,
+    "reason": "java.net.UnknownHostException: services.gradle.org",
+    "evidence": "release-evidence/0.13.5/gradle-bootstrap.log",
+    "apk_produced": false
+  },
+  "not_run": [
+    "Kotlin/Compose/KSP compilation",
+    "Gradle JUnit tests",
+    "Android lint",
+    "Android instrumented tests",
+    "Native gestures/configuration restoration/TalkBack/device acceptance",
+    "ML quality on real photos",
+    "Firebase emulator and two-device sync for this source",
+    "APK assembly/signature verification",
+    "Windows/PowerShell updater execution"
+  ],
+  "git_safety": "Existing DEV-01 1.0.0 payload retained cumulatively; no installer activation or remote push by this update.",
+  "sources": [
+    "https://developer.android.com/develop/ui/compose/graphics/draw/overview"
+  ],
+  "git_safety_integration_tests_passed": 31
+}

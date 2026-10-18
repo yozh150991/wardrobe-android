@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.familywardrobe.app.PhotoRulesTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-03T13:11:10" hostname="6984b196a816" time="0.006">
+  <properties/>
+  <testcase name="mixedColorsStayMixed" classname="com.familywardrobe.app.PhotoRulesTest" time="0.002"/>
+  <testcase name="weakAndUnknownLabels" classname="com.familywardrobe.app.PhotoRulesTest" time="0.0"/>
+  <testcase name="transparentPixelsDoNotInfluenceColor" classname="com.familywardrobe.app.PhotoRulesTest" time="0.0"/>
+  <testcase name="tinyOrNearlyFullMasksRejected" classname="com.familywardrobe.app.PhotoRulesTest" time="0.0"/>
+  <testcase name="ambiguousCategories" classname="com.familywardrobe.app.PhotoRulesTest" time="0.0"/>
+  <testcase name="knownLabels" classname="com.familywardrobe.app.PhotoRulesTest" time="0.001"/>
+  <testcase name="paletteColors" classname="com.familywardrobe.app.PhotoRulesTest" time="0.001"/>
+  <testcase name="onePieceGarmentsStayManual" classname="com.familywardrobe.app.PhotoRulesTest" time="0.0"/>
+  <testcase name="substantialMaskAccepted" classname="com.familywardrobe.app.PhotoRulesTest" time="0.0"/>
+  <testcase name="sameCategoryLabelsCombine" classname="com.familywardrobe.app.PhotoRulesTest" time="0.0"/>
+  <testcase name="insufficientForegroundHasNoColor" classname="com.familywardrobe.app.PhotoRulesTest" time="0.0"/>
+  <testcase name="emptyOrOpaqueMasksRejected" classname="com.familywardrobe.app.PhotoRulesTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

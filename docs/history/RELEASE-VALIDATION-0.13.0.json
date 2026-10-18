@@ -1,0 +1,63 @@
+{
+  "release": "0.13.0-release",
+  "version_code": 19,
+  "date": "2026-10-08",
+  "recorded_at": "2026-10-08T10:36:10.098503+00:00",
+  "application_id": "com.familywardrobe.app",
+  "room_version": 8,
+  "backup_version": 8,
+  "source_manifest": "release-evidence/0.13.0/source-SHA256SUMS.txt",
+  "source_manifest_sha256": "e9affdf2c71e2ae99796428909271923f11c9be59a1d1861b897a31a5c8fffa2",
+  "host": {
+    "status": "pass",
+    "suites": 15,
+    "report": "HOST-VALIDATION-0.13.0.json",
+    "source_sql_checks": 3620,
+    "xml_files": 11,
+    "localized_strings": 866,
+    "dao_queries": 67,
+    "shop_java_assertions": 34,
+    "purchase_advice_assertions": 76
+  },
+  "prepared_not_executed": {
+    "new_jvm_junit_methods": 7,
+    "new_android_methods": 1,
+    "details": [
+      "PurchaseAdviceRulesTest: Java wrapper, fixtures executed directly on host",
+      "PurchaseCompatibilityTest: 6 Kotlin adapter methods, not run",
+      "PurchaseAdviceFlowTest: 1 Android repository flow, not run"
+    ]
+  },
+  "android_build": {
+    "status": "blocked_before_compilation",
+    "command": "timeout 30 bash gradlew --version",
+    "gradle": "8.11.1",
+    "reason": "java.net.SocketException: Network is unreachable",
+    "evidence": "release-evidence/0.13.0/gradle-bootstrap.log",
+    "apk_produced": false
+  },
+  "not_run": [
+    "Kotlin/Compose/KSP compilation",
+    "Gradle JUnit test suite",
+    "Android lint",
+    "Android instrumented tests",
+    "Firebase emulator tests for this source",
+    "APK assembly/signature verification",
+    "Native UI/device acceptance",
+    "Windows/PowerShell execution"
+  ],
+  "compatibility": {
+    "room_backup_cloud_schema_unchanged": true,
+    "repository_purchase_and_account_storage_unchanged": true,
+    "android_permissions_unchanged": true
+  },
+  "limits": [
+    "Trait similarity only; no visual product identity or embeddings",
+    "Up to 20 examples, not exhaustive wardrobe coverage",
+    "Optional candidate traits are review state, not permanent Wish fields",
+    "Replacements preserve category and seasonal compatibility; colour/style/fit may differ",
+    "Deferring leaves the saved product in the list, without reminder or new status",
+    "R1 and R2 native acceptance remain pending"
+  ],
+  "next": "REL-01/QA-01–02 and R1/R2 native acceptance; then complete FAM-01 decisions and family access"
+}

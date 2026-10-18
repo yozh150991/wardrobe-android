@@ -1,0 +1,38 @@
+i  emulators: Starting emulators: auth, firestore, storage
+i  emulators: Detected demo project ID "demo-wardrobe", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail.
+i  firestore: downloading cloud-firestore-emulator-v1.19.8.jar...
+
+i  firestore: Firestore Emulator logging to firestore-debug.log
+✔  firestore: Firestore Emulator UI websocket is running on 9150.
+i  storage: downloading cloud-storage-rules-runtime-v1.1.3.jar...
+
+i  Running script: node --test family.rules.test.mjs
+✔ reservation permits only exact authenticated immutable staging upload (1589.530643ms)
+✔ viewer, revoked, expired and wrong revision cannot upload (650.463399ms)
+✔ only current head readable; revocation and downgrade take effect (681.667121ms)
+[2026-10-14T06:56:00.802Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x2e1bd416 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L26, false for 'update' @ L26
+[2026-10-14T06:56:00.875Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x2e1bd418 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L26, false for 'update' @ L26
+[2026-10-14T06:56:00.925Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x2e1bd41a error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L26, false for 'update' @ L26
+[2026-10-14T06:56:00.969Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x2e1bd41c error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L26, false for 'update' @ L26
+✔ root, membership, quota and final object writes are server-only (369.771831ms)
+✔ family membership never opens the private account archive (93.784421ms)
+✔ expired reservation, stale revision and wrong byte count are denied (190.260118ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3766.330642
+✔  Script exited successfully (code 0)
+i  emulators: Shutting down emulators.
+i  firestore: Stopping Firestore Emulator
+i  auth: Stopping Authentication Emulator
+i  storage: Stopping Storage Emulator
+i  hub: Stopping emulator hub
+i  logging: Stopping Logging Emulator

@@ -1,0 +1,56 @@
+{
+  "release": "0.14.1-release",
+  "version_code": 31,
+  "task": [
+    "FAM-01",
+    "FAM-03"
+  ],
+  "status": "partial",
+  "room_schema": 10,
+  "backup_format": 10,
+  "checked_at": "2026-10-14T06:59:02.348259+00:00",
+  "backend_domain_tests": 29,
+  "firebase_integration_tests": 20,
+  "firebase_rules_tests": 6,
+  "host_suites": 22,
+  "host_suites_passed": 21,
+  "host_not_configured": [
+    "check_auth_config.py: app/google-services.json absent from distributable source"
+  ],
+  "implemented": [
+    "authenticated create/resume/begin-upload/commit",
+    "strict scoped ZIP/schema/photo validator",
+    "transactional membership/expiry/CAS/idempotency",
+    "private staging and immutable final archives",
+    "separate emulator profile and family Storage rules",
+    "Mac/Linux source updater"
+  ],
+  "not_implemented": [
+    "Android family transport / FamilyMigrationStore wiring",
+    "invitation/member-management API and UI",
+    "shared cache isolation/lease enforcement",
+    "orphan/staging/old-head GC",
+    "App Check enrollment/enforcement"
+  ],
+  "not_run": [
+    "Android Kotlin/Compose/KSP/Room compilation",
+    "Gradle unit/lint/assemble",
+    "Android device UI",
+    "live Firebase deployment",
+    "production GCS generation-precondition smoke test",
+    "Windows PowerShell updater",
+    "native macOS updater"
+  ],
+  "known_limitations": [
+    "Storage emulator ignores GCS create generation precondition; production conditional-create behavior not proved",
+    "Reserved download token metadata is not governed like ordinary custom metadata; staging metadata is never copied to final objects"
+  ],
+  "apk": "No APK included",
+  "private_cloud": "Existing firebase.json, firestore.rules, storage.rules and client configuration unchanged",
+  "evidence": [
+    "HOST-VALIDATION-0.14.1.json",
+    "release-evidence/family-backend-0.14.1.log",
+    "release-evidence/family-rules-0.14.1.log",
+    "../package-validation-0.14.1.json"
+  ]
+}

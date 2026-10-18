@@ -1,0 +1,43 @@
+test_archive_and_database_integer_validation_not_relaxed (test_callable_wire.CallableWireTests.test_archive_and_database_integer_validation_not_relaxed) ... ok
+test_decoder_is_scoped_non_mutating_and_idempotent (test_callable_wire.CallableWireTests.test_decoder_is_scoped_non_mutating_and_idempotent) ... ok
+test_domain_limits_unknown_fields_and_permissions_remain_enforced (test_callable_wire.CallableWireTests.test_domain_limits_unknown_fields_and_permissions_remain_enforced) ... ok
+test_malformed_values_are_rejected (test_callable_wire.CallableWireTests.test_malformed_values_are_rejected) ... ok
+test_one_item_mobile_request_reproduces_old_failure_then_commits (test_callable_wire.CallableWireTests.test_one_item_mobile_request_reproduces_old_failure_then_commits) ... ok
+test_plain_and_wrapped_integer_boundaries (test_callable_wire.CallableWireTests.test_plain_and_wrapped_integer_boundaries) ... ok
+test_all_collections_and_500_items (test_family.ArchiveTests.test_all_collections_and_500_items) ... ok
+test_cross_wardrobe_and_dangling_references (test_family.ArchiveTests.test_cross_wardrobe_and_dangling_references) ... ok
+test_duplicate_json_zip_nan (test_family.ArchiveTests.test_duplicate_json_zip_nan) ... /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/zipfile/__init__.py:1625: UserWarning: Duplicate name: 'manifest.json'
+  return self._open_to_write(zinfo, force_zip64=force_zip64)
+ok
+test_duplicate_records_and_unknown_keys (test_family.ArchiveTests.test_duplicate_records_and_unknown_keys) ... ok
+test_empty_wardrobe_and_no_photos (test_family.ArchiveTests.test_empty_wardrobe_and_no_photos) ... ok
+test_identity_formats_and_privilege_fields (test_family.ArchiveTests.test_identity_formats_and_privilege_fields) ... ok
+test_inspiration_and_missing_wish (test_family.ArchiveTests.test_inspiration_and_missing_wish) ... ok
+test_old_receipt_nullable_fields (test_family.ArchiveTests.test_old_receipt_nullable_fields) ... ok
+test_photo_exact_set_format_and_crc (test_family.ArchiveTests.test_photo_exact_set_format_and_crc) ... ok
+test_plan_capsule_signature_and_layout_consistency (test_family.ArchiveTests.test_plan_capsule_signature_and_layout_consistency) ... ok
+test_receipt_scope_and_photo_refs (test_family.ArchiveTests.test_receipt_scope_and_photo_refs) ... ok
+test_archive_then_resume_denied (test_family.ServiceTests.test_archive_then_resume_denied) ... ok
+test_create_replay_and_collision (test_family.ServiceTests.test_create_replay_and_collision) ... ok
+test_editor_cannot_change_owner (test_family.ServiceTests.test_editor_cannot_change_owner) ... ok
+test_expiry_after_validation (test_family.ServiceTests.test_expiry_after_validation) ... ok
+test_final_collision_not_overwritten (test_family.ServiceTests.test_final_collision_not_overwritten) ... ok
+test_first_commit_replay_resume_and_new_revision (test_family.ServiceTests.test_first_commit_replay_resume_and_new_revision) ... ok
+test_membership_roles_expiry_and_revocation (test_family.ServiceTests.test_membership_roles_expiry_and_revocation) ... ok
+test_missing_corrupt_and_path_spoof (test_family.ServiceTests.test_missing_corrupt_and_path_spoof) ... ok
+test_quotas_and_replay (test_family.ServiceTests.test_quotas_and_replay) ... ok
+test_replay_cannot_bypass_revocation (test_family.ServiceTests.test_replay_cannot_bypass_revocation) ... ok
+test_restart_with_same_storage (test_family.ServiceTests.test_restart_with_same_storage) ... ok
+test_revoked_after_validation_before_publish (test_family.ServiceTests.test_revoked_after_validation_before_publish) ... ok
+test_revoked_during_upload (test_family.ServiceTests.test_revoked_during_upload) ... ok
+test_same_commit_concurrent (test_family.ServiceTests.test_same_commit_concurrent) ... ok
+test_strict_numbers (test_family.ServiceTests.test_strict_numbers) ... ok
+test_two_writers_single_winner (test_family.ServiceTests.test_two_writers_single_winner) ... ok
+test_unverified_and_forged_identity (test_family.ServiceTests.test_unverified_and_forged_identity) ... ok
+test_upload_replay_requires_identical_binding (test_family.ServiceTests.test_upload_replay_requires_identical_binding) ... ok
+
+----------------------------------------------------------------------
+Ran 35 tests in 0.117s
+
+OK
+Firebase adapters/callable/rules: see release-specific emulator evidence; not run by this script.

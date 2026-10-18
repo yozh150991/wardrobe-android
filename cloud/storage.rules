@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{uid}/snapshots/{archive} {
+      function owner() { return request.auth != null && request.auth.uid == uid && archive.matches('[a-f0-9-]{36}[.]zip'); }
+      allow read: if owner();
+      allow create: if owner() && resource == null && request.resource.size > 0 && request.resource.size <= 512 * 1024 * 1024
+        && request.resource.contentType == 'application/zip';
+      allow update: if false;
+      // Delete only superseded/uncommitted snapshots, never the current head.
+      allow delete: if owner() && (!firestore.exists(/databases/(default)/documents/users/$(uid)/state/head)
+        || firestore.get(/databases/(default)/documents/users/$(uid)/state/head).data.archive != 'users/' + uid + '/snapshots/' + archive);
+    }
+    match /{path=**} { allow read, write: if false; }
+  }
+}

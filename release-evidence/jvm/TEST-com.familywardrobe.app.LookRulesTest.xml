@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.familywardrobe.app.LookRulesTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-03T13:11:10" hostname="6984b196a816" time="0.048">
+  <properties/>
+  <testcase name="partialAndPlannedStatusesRemainDistinct" classname="com.familywardrobe.app.LookRulesTest" time="0.027"/>
+  <testcase name="candidatesRespectAccountCollectionAvailabilityWeatherAndOwnership" classname="com.familywardrobe.app.LookRulesTest" time="0.011"/>
+  <testcase name="refreshKeepsLockedIdsAndReplacesOnlyUnlockedCategories" classname="com.familywardrobe.app.LookRulesTest" time="0.008"/>
+  <testcase name="inspirationNeverPretendsToBeOwned" classname="com.familywardrobe.app.LookRulesTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

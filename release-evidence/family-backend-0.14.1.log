@@ -1,0 +1,113 @@
+i  emulators: Starting emulators: auth, functions, firestore, storage
+i  emulators: Detected demo project ID "demo-wardrobe", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail.
+i  firestore: Firestore Emulator logging to firestore-debug.log
+✔  firestore: Firestore Emulator UI websocket is running on 9150.
+i  functions: Watching "/workspace/scratch/12f2414c00c7/source/wardrobe-android/cloud/family-functions" for Cloud Functions...
+(node:5) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ * Serving Flask app 'serving'
+ * Debug mode: off
+
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:8081
+
+[33mPress CTRL+C to quit[0m
+
+127.0.0.1 - - [13/Oct/2026 20:36:31] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+127.0.0.1 - - [13/Oct/2026 20:36:31] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+Terminated
+
+✔  functions: Loaded functions definitions from source: family_begin_upload, family_commit, family_create, family_resume.
+✔  functions[europe-west1-family_begin_upload]: http function initialized (http://127.0.0.1:5001/demo-wardrobe/europe-west1/family_begin_upload).
+✔  functions[europe-west1-family_commit]: http function initialized (http://127.0.0.1:5001/demo-wardrobe/europe-west1/family_commit).
+✔  functions[europe-west1-family_create]: http function initialized (http://127.0.0.1:5001/demo-wardrobe/europe-west1/family_create).
+✔  functions[europe-west1-family_resume]: http function initialized (http://127.0.0.1:5001/demo-wardrobe/europe-west1/family_resume).
+i  Running script: family-functions/venv/bin/python family-functions/tests/emulator_family.py && node --test family.rules.test.mjs
+test_callable_auth_owner_spoof_and_full_flow (__main__.CallableTests.test_callable_auth_owner_spoof_and_full_flow) ... >  [2026-10-13 20:36:34 +0000] [117] [ERROR] Control server error: [Errno 1] Operation not permitted
+>  WARNING:root:Request has invalid method. GET
+>  ERROR:root:Invalid request, unable to process.
+i  functions: Beginning execution of "europe-west1-family_create"
+i  functions: Finished "europe-west1-family_create" in 5.228053ms
+i  functions: Beginning execution of "europe-west1-family_create"
+i  functions: Finished "europe-west1-family_create" in 11.417255ms
+i  functions: Beginning execution of "europe-west1-family_create"
+i  functions: Finished "europe-west1-family_create" in 5.64556ms
+i  functions: Beginning execution of "europe-west1-family_create"
+i  functions: Finished "europe-west1-family_create" in 186.765616ms
+>  [2026-10-13 20:36:35 +0000] [138] [ERROR] Control server error: [Errno 1] Operation not permitted
+>  WARNING:root:Request has invalid method. GET
+>  ERROR:root:Invalid request, unable to process.
+i  functions: Beginning execution of "europe-west1-family_begin_upload"
+i  functions: Finished "europe-west1-family_begin_upload" in 62.61101ms
+>  WARNING:root:Request has invalid method. GET
+>  ERROR:root:Invalid request, unable to process.
+i  functions: Beginning execution of "europe-west1-family_commit"
+>  [2026-10-13 20:36:35 +0000] [159] [ERROR] Control server error: [Errno 1] Operation not permitted
+i  functions: Finished "europe-west1-family_commit" in 108.58654ms
+>  [2026-10-13 20:36:36 +0000] [183] [ERROR] Control server error: [Errno 1] Operation not permitted
+>  WARNING:root:Request has invalid method. GET
+>  ERROR:root:Invalid request, unable to process.
+i  functions: Beginning execution of "europe-west1-family_resume"
+i  functions: Finished "europe-west1-family_resume" in 49.753411ms
+i  functions: Beginning execution of "europe-west1-family_resume"
+i  functions: Finished "europe-west1-family_resume" in 23.358381ms
+i  functions: Beginning execution of "europe-west1-family_resume"
+i  functions: Finished "europe-west1-family_resume" in 3.804029ms
+ok
+test_archive_then_resume_denied (__main__.FirestoreTests.test_archive_then_resume_denied) ... ok
+test_create_replay_and_collision (__main__.FirestoreTests.test_create_replay_and_collision) ... ok
+test_editor_cannot_change_owner (__main__.FirestoreTests.test_editor_cannot_change_owner) ... ok
+test_expiry_after_validation (__main__.FirestoreTests.test_expiry_after_validation) ... ok
+test_final_collision_not_overwritten (__main__.FirestoreTests.test_final_collision_not_overwritten) ... ok
+test_first_commit_replay_resume_and_new_revision (__main__.FirestoreTests.test_first_commit_replay_resume_and_new_revision) ... ok
+test_membership_roles_expiry_and_revocation (__main__.FirestoreTests.test_membership_roles_expiry_and_revocation) ... ok
+test_missing_corrupt_and_path_spoof (__main__.FirestoreTests.test_missing_corrupt_and_path_spoof) ... ok
+test_quotas_and_replay (__main__.FirestoreTests.test_quotas_and_replay) ... ok
+test_replay_cannot_bypass_revocation (__main__.FirestoreTests.test_replay_cannot_bypass_revocation) ... ok
+test_restart_with_same_storage (__main__.FirestoreTests.test_restart_with_same_storage) ... ok
+test_revoked_after_validation_before_publish (__main__.FirestoreTests.test_revoked_after_validation_before_publish) ... ok
+test_revoked_during_upload (__main__.FirestoreTests.test_revoked_during_upload) ... ok
+test_same_commit_concurrent (__main__.FirestoreTests.test_same_commit_concurrent) ... ok
+test_strict_numbers (__main__.FirestoreTests.test_strict_numbers) ... ok
+test_two_writers_single_winner (__main__.FirestoreTests.test_two_writers_single_winner) ... ok
+test_unverified_and_forged_identity (__main__.FirestoreTests.test_unverified_and_forged_identity) ... ok
+test_upload_replay_requires_identical_binding (__main__.FirestoreTests.test_upload_replay_requires_identical_binding) ... ok
+test_generation_immutability_and_commit (__main__.StorageTests.test_generation_immutability_and_commit) ... ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 10.239s
+
+OK
+✔ reservation permits only exact authenticated immutable staging upload (856.834253ms)
+✔ viewer, revoked, expired and wrong revision cannot upload (640.034634ms)
+✔ only current head readable; revocation and downgrade take effect (678.243803ms)
+[2026-10-13T20:36:45.353Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x2ccd45d1 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L26, false for 'update' @ L26
+[2026-10-13T20:36:45.430Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x2ccd45d3 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L26, false for 'update' @ L26
+[2026-10-13T20:36:45.486Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x2ccd45d5 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L26, false for 'update' @ L26
+[2026-10-13T20:36:45.528Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x2ccd45d7 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L26, false for 'update' @ L26
+✔ root, membership, quota and final object writes are server-only (444.432785ms)
+✔ family membership never opens the private account archive (119.79034ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2998.619539
+✔  Script exited successfully (code 0)
+i  emulators: Shutting down emulators.
+i  functions: Stopping Functions Emulator
+i  firestore: Stopping Firestore Emulator
+i  auth: Stopping Authentication Emulator
+i  storage: Stopping Storage Emulator
+i  eventarc: Stopping Eventarc Emulator
+i  tasks: Stopping Cloud Tasks Emulator
+i  hub: Stopping emulator hub
+i  logging: Stopping Logging Emulator

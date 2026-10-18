@@ -1,0 +1,5 @@
+# Portable executable hooks and scripts (including Git for Windows).
+.githooks/* text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+gradlew text eol=lf

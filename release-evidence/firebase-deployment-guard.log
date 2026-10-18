@@ -1,0 +1,12 @@
+Project from existing client configuration: wardrobe-75fea
+Storage bucket: wardrobe-75fea.firebasestorage.app
+Plan: run local emulator tests, then deploy Firestore and Storage rules to this project.
+Enable email/password Auth, Firestore and Storage in Firebase Console before deployment.
+(node:45) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Exception: /workspace/scratch/c98d8c16a200/wardrobe-release/wardrobe-android/cloud/deploy-rules.ps1:17
+Line |
+  17 |  … unt -eq 0) {throw 'No Firebase CLI account is signed in. Run npx fire …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | No Firebase CLI account is signed in. Run npx firebase login, then rerun
+     | this helper.

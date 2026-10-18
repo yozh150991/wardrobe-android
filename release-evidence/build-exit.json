@@ -1,0 +1,17 @@
+{
+  "exit_code": 0,
+  "tasks": [
+    "clean",
+    "testDebugUnitTest",
+    "lintDebug",
+    "assembleDebug",
+    "assembleRelease",
+    "lintRelease",
+    "assembleDebugAndroidTest"
+  ],
+  "gradle_result": "BUILD SUCCESSFUL in 8m 6s",
+  "actionable_tasks": 137,
+  "executed_tasks": 137,
+  "checked_at": "2026-10-03T13:19:54.045702+00:00",
+  "evidence": "Execution tool exit 0 plus same-build Gradle daemon final output; redirected task log was partial."
+}

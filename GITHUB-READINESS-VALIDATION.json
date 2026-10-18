@@ -1,0 +1,58 @@
+{
+  "task": "DEV-03",
+  "baseline": "DEV-02 cleanup / 0.14.4-photo-hotfix3",
+  "versionCode": 34,
+  "local_build_default_preserved": true,
+  "executed": {
+    "git_safety_tests": 31,
+    "version_tests": 6,
+    "source_scan_tests": 1,
+    "host_suites_pass": 21,
+    "host_config_status": "skipped_not_configured by explicit CI flag",
+    "runner_policy_cases": 3,
+    "updater": {
+      "passed": 8,
+      "cases": [
+        "read-only preview",
+        "payload parity",
+        "protected config and Git metadata preserved",
+        "repeat apply",
+        "restore preview and apply",
+        "conflict writes nothing",
+        "BOM/CRLF",
+        "rollback on write failure"
+      ]
+    },
+    "workflow_yaml_structure": "pass",
+    "initial_commit_with_hook": "pass",
+    "full_history_audit": "pass",
+    "push_to_local_bare_remote_with_hook": "pass"
+  },
+  "initial_source_commit": "0146fa7eb499956f712c7f9e0c279ec6ffcac566",
+  "android_build": "blocked before compilation: full javac launcher unavailable",
+  "not_run": [
+    "GitHub-hosted workflow",
+    "Android compile/lint/Gradle JUnit/APK",
+    "Firebase emulator integration after random credential change",
+    "native Windows/macOS updater"
+  ],
+  "remote": {
+    "github_connected": false,
+    "repository_created": false,
+    "github_push_performed": false
+  },
+  "ci_preview": {
+    "applicationId": "com.familywardrobe.app.ci",
+    "versionNameSuffix": "-ci",
+    "firebase_config": "absent",
+    "signing": "runner temporary debug key",
+    "production_deploy": false
+  },
+  "sources": [
+    "https://github.com/actions/checkout/releases",
+    "https://github.com/actions/setup-python",
+    "https://github.com/actions/setup-java",
+    "https://github.com/actions/upload-artifact",
+    "https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md"
+  ]
+}

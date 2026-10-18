@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-16",
+  "project": "demo-wardrobe",
+  "region": "europe-west1",
+  "exit_code": 0,
+  "integration_tests": 20,
+  "integration_duration_s": 12.105,
+  "rules_passed": 6,
+  "rules_failed": 0,
+  "command": "FAMILY_STORAGE_BUCKET=demo-wardrobe.appspot.com firebase emulators:exec --project demo-wardrobe --config firebase.family.example.json --only auth,firestore,storage,functions \"family-functions/venv/bin/python family-functions/tests/emulator_family.py && node --test family.rules.test.mjs\"",
+  "evidence": "Completed tool output from this session; full raw output not retained as a file."
+}

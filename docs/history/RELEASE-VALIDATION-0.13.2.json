@@ -1,0 +1,73 @@
+{
+  "release": "0.13.2-release",
+  "version_code": 21,
+  "date": "2026-10-08",
+  "recorded_at": "2026-10-08T19:39:43.874356+00:00",
+  "application_id": "com.familywardrobe.app",
+  "room_version": 8,
+  "backup_version": 8,
+  "source_manifest": "release-evidence/0.13.2/source-SHA256SUMS.txt",
+  "source_manifest_sha256": "5994b1ab1808cbd93afb2868f5a4e3ba0c0aeccf9a7638281d5c981ca3b98400",
+  "host": {
+    "status": "pass",
+    "suites": 16,
+    "report": "HOST-VALIDATION-0.13.2.json",
+    "source_sql_checks": 3706,
+    "xml_files": 11,
+    "localized_strings": 886,
+    "dao_queries": 67,
+    "shop_java_assertions": 34,
+    "purchase_advice_assertions": 76,
+    "photo_zoom_assertions": 225
+  },
+  "prepared_not_executed": {
+    "new_jvm_junit_methods": 1,
+    "file": "PhotoZoomRulesTest.java",
+    "fixtures_executed_directly_on_host": true,
+    "carried_r2_jvm_methods": 7,
+    "carried_r2_android_methods": 1,
+    "carried_photo_recovery_android_methods": 5,
+    "details": [
+      "225 production geometry assertions executed directly on host",
+      "Gradle JUnit wrapper not executed",
+      "New Kotlin viewer and Android gesture handling not compiled or executed"
+    ]
+  },
+  "android_build": {
+    "status": "blocked_before_compilation",
+    "command": "timeout 30 bash gradlew --version",
+    "gradle": "8.11.1",
+    "reason": "java.net.SocketException: Network is unreachable",
+    "evidence": "release-evidence/0.13.2/gradle-bootstrap.log",
+    "apk_produced": false
+  },
+  "not_run": [
+    "Kotlin/Compose/KSP compilation",
+    "Gradle JUnit test suite",
+    "Android lint",
+    "Android instrumented tests",
+    "Firebase emulator tests for this source",
+    "APK assembly/signature verification",
+    "Native UI/device acceptance",
+    "Windows/PowerShell execution"
+  ],
+  "compatibility": {
+    "room_backup_cloud_schema_unchanged": true,
+    "repository_purchase_and_account_storage_unchanged": true,
+    "android_permissions_unchanged": true
+  },
+  "limits": [
+    "Trait similarity only; no visual product identity or embeddings",
+    "Up to 20 examples, not exhaustive wardrobe coverage",
+    "Optional candidate traits are review state, not permanent Wish fields",
+    "Replacements preserve category and seasonal compatibility; colour/style/fit may differ",
+    "Deferring leaves the saved product in the list, without reminder or new status",
+    "R1, R2 and PHOTO-01–02 native acceptance remain pending",
+    "Saved bitmap only; zoom does not recover discarded resolution",
+    "New viewport size and reopening reset to fit; no rotation/editing in viewer",
+    "Exact cause and installed version of user screenshot not reproduced",
+    "Batch reports persist; manual editor reanalysis reports remain session state",
+    "No inferred light/blur/network diagnosis"
+  ],
+  "next": "REL-01 build then PHOTO-02/PHOTO-01 matrices, QA-01–02 and R1/R2 acceptance; then FAM-01 decisions"
+}

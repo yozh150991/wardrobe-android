@@ -1,0 +1,15 @@
+{
+  "release": "0.11.1-release",
+  "package": "com.familywardrobe.app",
+  "version_code": 16,
+  "file": "wardrobe-0.11.1-unsigned.apk",
+  "size_bytes": 63543057,
+  "sha256": "31644f82bcba33e7fd27ccc463715e6d80b818c0a6f67a110b63481a869d0a44",
+  "zipalign_16k": "pass",
+  "signature_with_existing_local_debug_key": "pass",
+  "unchanged_apk_payload": "pass",
+  "same_certificate_as_local_debug_build": "pass",
+  "tampered_input_does_not_overwrite_output": "pass",
+  "release_not_debuggable": "pass",
+  "user_windows_signing_key": "not available; use original key locally"
+}

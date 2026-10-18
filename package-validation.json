@@ -1,0 +1,18 @@
+{
+  "changedFiles": 33,
+  "patchChecks": [
+    "clean 0.3.0 equals packaged 0.4.0",
+    "repeat is idempotent",
+    "CRLF accepted",
+    "unrelated change and client config preserved",
+    "conflict leaves original untouched",
+    "existing new file protected"
+  ],
+  "notRun": [
+    "PowerShell runtime",
+    "Kotlin/Compose compilation",
+    "Gradle/JUnit",
+    "Android instrumentation",
+    "APK"
+  ]
+}

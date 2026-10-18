@@ -1,0 +1,12 @@
+{
+  "release": "0.14.3-family-hotfix2",
+  "versionCode": 33,
+  "jvm_tests": 19,
+  "jvm_result": "PASS",
+  "new_progress_tests": 4,
+  "android_build": "NOT RUN: Android SDK/Gradle environment unavailable",
+  "compose_ui_tests": "NOT RUN",
+  "powershell_updater": "NOT RUN: pwsh unavailable",
+  "firebase_live": "NOT RUN; current 403 resolution unconfirmed",
+  "rules_changes": "None in this patch; console drift documented"
+}

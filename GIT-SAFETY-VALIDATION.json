@@ -1,0 +1,38 @@
+{
+  "tool_version": "1.0.0",
+  "checked_at": "2026-10-09T19:27:12.361351+00:00",
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+  "python": "3.12.14",
+  "git": "git version 2.51.1",
+  "integration_tests": {
+    "count": 31,
+    "exit_code": 0,
+    "output": "test_all_branches_in_one_push_are_inspected (__main__.GitSafetyTests.test_all_branches_in_one_push_are_inspected) ... ok\ntest_allowlist_cannot_suppress_real_token_signature (__main__.GitSafetyTests.test_allowlist_cannot_suppress_real_token_signature) ... ok\ntest_allowlist_matches_exact_file_hash_only (__main__.GitSafetyTests.test_allowlist_matches_exact_file_hash_only) ... ok\ntest_annotated_tag_is_inspected (__main__.GitSafetyTests.test_annotated_tag_is_inspected) ... ok\ntest_clean_first_push_and_normal_update (__main__.GitSafetyTests.test_clean_first_push_and_normal_update) ... ok\ntest_commit_merge_parent_history_is_scanned (__main__.GitSafetyTests.test_commit_merge_parent_history_is_scanned) ... ok\ntest_default_existing_hooks_are_not_disabled (__main__.GitSafetyTests.test_default_existing_hooks_are_not_disabled) ... ok\ntest_deleted_secret_is_detected_in_earlier_commit (__main__.GitSafetyTests.test_deleted_secret_is_detected_in_earlier_commit) ... ok\ntest_existing_hook_configuration_is_preserved (__main__.GitSafetyTests.test_existing_hook_configuration_is_preserved) ... ok\ntest_existing_ignore_does_not_allow_tracked_key_push (__main__.GitSafetyTests.test_existing_ignore_does_not_allow_tracked_key_push) ... ok\ntest_explicit_unignore_does_not_bypass_guard (__main__.GitSafetyTests.test_explicit_unignore_does_not_bypass_guard) ... ok\ntest_force_push_is_inspected (__main__.GitSafetyTests.test_force_push_is_inspected) ... ok\ntest_key_force_added_blocks_commit_without_touching_index (__main__.GitSafetyTests.test_key_force_added_blocks_commit_without_touching_index) ... ok\ntest_malformed_hook_input_fails_closed (__main__.GitSafetyTests.test_malformed_hook_input_fails_closed) ... ok\ntest_new_clone_requires_install_and_then_blocks (__main__.GitSafetyTests.test_new_clone_requires_install_and_then_blocks) ... ok\ntest_noncommit_tag_fails_closed (__main__.GitSafetyTests.test_noncommit_tag_fails_closed) ... ok\ntest_other_remote_tracking_ref_does_not_hide_outgoing_secret (__main__.GitSafetyTests.test_other_remote_tracking_ref_does_not_hide_outgoing_secret) ... ok\ntest_oversized_blob_blocks_instead_of_skipping (__main__.GitSafetyTests.test_oversized_blob_blocks_instead_of_skipping) ... ok\ntest_push_discovers_new_local_credential_and_retry_succeeds (__main__.GitSafetyTests.test_push_discovers_new_local_credential_and_retry_succeeds) ... ok\ntest_realistic_secret_in_template_still_blocks (__main__.GitSafetyTests.test_realistic_secret_in_template_still_blocks) ... ok\ntest_ref_deletion_does_not_scan_local_secrets (__main__.GitSafetyTests.test_ref_deletion_does_not_scan_local_secrets) ... ok\ntest_safe_new_source_is_not_ignored (__main__.GitSafetyTests.test_safe_new_source_is_not_ignored) ... ok\ntest_shallow_history_fails_closed (__main__.GitSafetyTests.test_shallow_history_fails_closed) ... ok\ntest_staged_blob_not_clean_working_copy_is_inspected (__main__.GitSafetyTests.test_staged_blob_not_clean_working_copy_is_inspected) ... ok\ntest_subdirectory_project_installs_relative_hooks (__main__.GitSafetyTests.test_subdirectory_project_installs_relative_hooks) ... ok\ntest_symlink_ignore_never_overwrites_target (__main__.GitSafetyTests.test_symlink_ignore_never_overwrites_target) ... ok\ntest_unknown_remote_base_scans_full_history (__main__.GitSafetyTests.test_unknown_remote_base_scans_full_history) ... ok\ntest_untracked_arbitrary_credentials_auto_ignore_idempotently (__main__.GitSafetyTests.test_untracked_arbitrary_credentials_auto_ignore_idempotently) ... ok\ntest_user_ignore_rules_crlf_and_unicode_are_preserved (__main__.GitSafetyTests.test_user_ignore_rules_crlf_and_unicode_are_preserved) ... ok\ntest_utf16_credentials_detected (__main__.GitSafetyTests.test_utf16_credentials_detected) ... ok\ntest_wrapper_and_safe_templates_allowed (__main__.GitSafetyTests.test_wrapper_and_safe_templates_allowed) ... ok\n\n----------------------------------------------------------------------\nRan 31 tests in 7.699s\n\nOK\n"
+  },
+  "native_macos": "not run",
+  "native_windows_powershell": "not run",
+  "android_apk": "not run; application code unchanged",
+  "scope": "Git hygiene/secret-pattern guard; no exhaustive secret-detection guarantee",
+  "current_project_audit": [
+    {
+      "command": "-q",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": "install",
+      "exit_code": 0,
+      "output": "[Wardrobe Git Safety] Installed pre-commit and pre-push hooks for this clone. Repeat installation on each computer.\n[Wardrobe Git Safety] Review/stage .gitignore and the guard files. Run: python3 tools/git_safety.py check\n"
+    },
+    {
+      "command": ".",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": "check",
+      "exit_code": 0,
+      "output": "[Wardrobe Git Safety] PASS: 305 file versions checked; 0 commit snapshots.\n"
+    }
+  ]
+}

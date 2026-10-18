@@ -1,0 +1,37 @@
+{
+  "release": "0.11.1-release",
+  "device": "Nexus 5 / Android 9 API 28 / x86_64 software emulator",
+  "apk": "Release signed with existing local debug key",
+  "status": "blocked",
+  "passed": 0,
+  "checks": [
+    {
+      "scenario": "cold startup opens login with email and password",
+      "status": "blocked"
+    },
+    {
+      "scenario": "login actions reachable by scrolling",
+      "status": "not_run"
+    },
+    {
+      "scenario": "signup reachable and hardware Back returns to login",
+      "status": "not_run"
+    },
+    {
+      "scenario": "reset reachable and hardware Back returns to login",
+      "status": "not_run"
+    },
+    {
+      "scenario": "200 percent font remains scrollable with reachable login actions",
+      "status": "not_run"
+    }
+  ],
+  "reason": "Repeated Android System UI ANRs and UIAutomator timeouts prevented stable login/navigation captures. No UI acceptance pass is claimed.",
+  "evidence": [
+    "release-ui-validation.log",
+    "release-ui-logcat.log",
+    "ui-failure.png",
+    "ui-failure.xml"
+  ],
+  "scope": "Five planned Release login/signup/reset/large-text checks remain for physical-phone acceptance. Credentials not submitted; production Firebase and full wardrobe/camera/ML/TalkBack/background acceptance remain separate."
+}

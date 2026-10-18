@@ -1,0 +1,42 @@
+{
+  "release": "0.13.7-release",
+  "version_code": 26,
+  "base": "0.13.6-release",
+  "tasks": [
+    "PHOTO-09",
+    "PHOTO-10"
+  ],
+  "status": "verify",
+  "checked_at": "2026-10-11T05:26:37.479316+00:00",
+  "room": 8,
+  "backup": 8,
+  "host_suites_passed": 18,
+  "source_checks": 4024,
+  "xml_files": 11,
+  "localized_strings": 958,
+  "dao_queries": 68,
+  "photo_resolution_assertions": 108013,
+  "actual_replacement_sql_checks": 14,
+  "new_android_test_methods_prepared": 12,
+  "host_report": "HOST-VALIDATION-0.13.7.json",
+  "host_checked_at": "2026-10-11T05:26:17.310391+00:00",
+  "android_build": {
+    "status": "not_run_deferred_to_combined_acceptance",
+    "apk_produced": false,
+    "reason": "User explicitly requested continuing implementation and testing everything together on 2026-10-10; continued on 2026-10-11.",
+    "previous_attempt": "0.13.5 failed before compilation: UnknownHostException: services.gradle.org; historical evidence only."
+  },
+  "not_run": [
+    "Kotlin/Compose/KSP compilation",
+    "Gradle JUnit/lint",
+    "Android instrumentation and APK assembly",
+    "Native memory/time/backup/storage profiling",
+    "Real ML quality and native queue lifecycle acceptance",
+    "Narrow/200%/TalkBack device review",
+    "Native Windows/PowerShell updater"
+  ],
+  "git_safety": "DEV-01 1.0.0 preserved unchanged; previous validation reports remain historical.",
+  "sources": [
+    "https://developer.android.com/reference/android/graphics/BitmapFactory.Options"
+  ]
+}

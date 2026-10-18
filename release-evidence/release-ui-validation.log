@@ -1,0 +1,17 @@
+Waiting for Release UI emulator boot
+Waiting for Release UI emulator boot
+Waiting for Release UI emulator boot
+Waiting for Release UI emulator boot
+Waiting for Release UI emulator boot
+Release UI emulator ready; installing signed Release APK
+Existing installed APK matches signed Release SHA256
+Release APK installed; checking screens
+Dismissed emulator System UI ANR; Wardrobe ANRs are not dismissed
+Release UI failure: AssertionError('Expected UI label not visible: auth_login_title')
+Traceback (most recent call last):
+  File "/workspace/scratch/c98d8c16a200/run_release_ui.py", line 105, in <module>
+    adb('shell','settings','put','system','font_scale','1.0',capture_output=True);start();_,t=wait_key('auth_login_title')
+                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/c98d8c16a200/run_release_ui.py", line 43, in wait_key
+    raise AssertionError('Expected UI label not visible: '+key)
+AssertionError: Expected UI label not visible: auth_login_title

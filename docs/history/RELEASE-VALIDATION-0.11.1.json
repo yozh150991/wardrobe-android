@@ -1,0 +1,127 @@
+{
+  "release": "0.11.1-release",
+  "version_code": 16,
+  "checked_at": "2026-10-03T15:08:04.759844+00:00",
+  "build": {
+    "exit_code": 0,
+    "tasks": [
+      "clean",
+      "testDebugUnitTest",
+      "lintDebug",
+      "assembleDebug",
+      "assembleRelease",
+      "lintRelease",
+      "assembleDebugAndroidTest"
+    ],
+    "gradle_result": "BUILD SUCCESSFUL in 8m 6s",
+    "actionable_tasks": 137,
+    "executed_tasks": 137,
+    "checked_at": "2026-10-03T13:19:54.045702+00:00",
+    "evidence": "Execution tool exit 0 plus same-build Gradle daemon final output; redirected task log was partial."
+  },
+  "jvm": {
+    "tests": 43,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "junit_reports": 12,
+    "classes": 12
+  },
+  "connected_android": {
+    "tests": 71,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "junit_reports": 1,
+    "classes": 11
+  },
+  "firebase_emulators": {
+    "tests": 6,
+    "failures": 0,
+    "skipped": 0,
+    "project": "demo-wardrobe",
+    "services": [
+      "Auth",
+      "Firestore",
+      "Storage"
+    ]
+  },
+  "host_suites": {
+    "tests": 13,
+    "failures": 0
+  },
+  "lint": {
+    "debug": {
+      "Error": 0,
+      "Fatal": 0,
+      "Warning": 103,
+      "Information": 5
+    },
+    "release": {
+      "Error": 0,
+      "Fatal": 0,
+      "Warning": 103,
+      "Information": 5
+    }
+  },
+  "ui": {
+    "release": "0.11.1-release",
+    "device": "Nexus 5 / Android 9 API 28 / x86_64 software emulator",
+    "apk": "Release signed with existing local debug key",
+    "status": "blocked",
+    "passed": 0,
+    "checks": [
+      {
+        "scenario": "cold startup opens login with email and password",
+        "status": "blocked"
+      },
+      {
+        "scenario": "login actions reachable by scrolling",
+        "status": "not_run"
+      },
+      {
+        "scenario": "signup reachable and hardware Back returns to login",
+        "status": "not_run"
+      },
+      {
+        "scenario": "reset reachable and hardware Back returns to login",
+        "status": "not_run"
+      },
+      {
+        "scenario": "200 percent font remains scrollable with reachable login actions",
+        "status": "not_run"
+      }
+    ],
+    "reason": "Repeated Android System UI ANRs and UIAutomator timeouts prevented stable login/navigation captures. No UI acceptance pass is claimed.",
+    "evidence": [
+      "release-ui-validation.log",
+      "release-ui-logcat.log",
+      "ui-failure.png",
+      "ui-failure.xml"
+    ],
+    "scope": "Five planned Release login/signup/reset/large-text checks remain for physical-phone acceptance. Credentials not submitted; production Firebase and full wardrobe/camera/ML/TalkBack/background acceptance remain separate."
+  },
+  "apk": {
+    "release": "0.11.1-release",
+    "package": "com.familywardrobe.app",
+    "version_code": 16,
+    "file": "wardrobe-0.11.1-unsigned.apk",
+    "size_bytes": 63543057,
+    "sha256": "31644f82bcba33e7fd27ccc463715e6d80b818c0a6f67a110b63481a869d0a44",
+    "zipalign_16k": "pass",
+    "signature_with_existing_local_debug_key": "pass",
+    "unchanged_apk_payload": "pass",
+    "same_certificate_as_local_debug_build": "pass",
+    "tampered_input_does_not_overwrite_output": "pass",
+    "release_not_debuggable": "pass",
+    "user_windows_signing_key": "not available; use original key locally"
+  },
+  "room_schema": {
+    "version": 8,
+    "sha256": "d5b33abfe659a361b3d387cb5572b812e1ad9efce7fe294a995e9dbe1f30495d"
+  },
+  "firebase_client_config": "byte-identical to original 0.10.0 supplied configuration",
+  "live_backend": "NOT DEPLOYED: CLI owner account absent. Provider/database/bucket/billing setup and live email/two-device validation remain owner steps.",
+  "physical_phone_acceptance": "NOT EXECUTED: full wardrobe UI flows, camera/provider permissions, real ML, TalkBack, OEM background jobs, revocation and live cross-device network behavior.",
+  "updater": "See archive package-validation.json; executed PowerShell 7.6.2 on Linux. Windows filesystem and PowerShell 5.1 require local acceptance."
+}

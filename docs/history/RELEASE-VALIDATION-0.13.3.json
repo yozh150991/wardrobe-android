@@ -1,0 +1,40 @@
+{
+  "release": "0.13.3-release",
+  "version_code": 22,
+  "checked_at": "2026-10-09T09:23:50.746769+00:00",
+  "task": "PHOTO-03",
+  "status": "verify",
+  "base": "0.13.2-release",
+  "room": 8,
+  "backup": 8,
+  "host_suites_passed": 16,
+  "photo_cutout_assertions": 40,
+  "fixture_type": "synthetic masks; ML accuracy on real user photographs not measured",
+  "source_checks": 3731,
+  "xml_files": 11,
+  "localized_strings": 891,
+  "dao_queries": 67,
+  "host_report": "HOST-VALIDATION-0.13.3.json",
+  "android_build": {
+    "status": "blocked_before_compilation",
+    "command": "java -classpath gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain testDebugUnitTest lintDebug assembleDebug --no-daemon",
+    "exit_code": 1,
+    "reason": "java.net.UnknownHostException: services.gradle.org",
+    "evidence": "release-evidence/0.13.3/gradle-bootstrap.log",
+    "apk_produced": false
+  },
+  "not_run": [
+    "Kotlin/Compose/KSP compilation",
+    "Gradle JUnit tests",
+    "Android lint",
+    "Android instrumented tests",
+    "ML quality on real photos",
+    "Native UI/TalkBack/device acceptance",
+    "Firebase emulator and two-device sync for this source",
+    "APK assembly/signature verification",
+    "Windows/PowerShell updater execution"
+  ],
+  "sources": [
+    "https://developers.google.com/ml-kit/vision/subject-segmentation/android"
+  ]
+}

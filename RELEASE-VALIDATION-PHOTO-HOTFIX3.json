@@ -1,0 +1,67 @@
+{
+  "release": "0.14.4-photo-hotfix3",
+  "versionCode": 34,
+  "task": "PHOTO-03",
+  "status": "verify",
+  "executed": {
+    "check_photo_rules.py": {
+      "photo_scenarios": 12,
+      "geometry_scenarios": 7,
+      "mask_backdrop_assertions": 61
+    },
+    "check_photo_editor.py": {
+      "editor": 1774,
+      "session": 22649,
+      "region": 52357,
+      "precision": 588864
+    },
+    "check_photo_reprocessing.py": {
+      "resolution_assertions": 108013,
+      "sqlite_guards": 14
+    },
+    "check_project.py": {
+      "checks": 4390,
+      "xml": 11,
+      "localized_strings": 1040,
+      "dao": 72
+    }
+  },
+  "regression": {
+    "old_production": "FAIL: Rounded opaque mask must not punch grid holes in fabric",
+    "fixed_production": "PASS",
+    "fixture": "float32 bilinear interpolation of a constant mask; NOT captured device ML output"
+  },
+  "android_build": {
+    "status": "blocked_before_compilation",
+    "reason": "Gradle wrapper download: java.net.SocketException: Network is unreachable",
+    "log": "release-evidence/0.14.4-photo-hotfix3/gradle.log"
+  },
+  "not_run": [
+    "Android/Compose/KSP compilation",
+    "Gradle JUnit",
+    "lint",
+    "APK build",
+    "device ML/photo acceptance",
+    "PowerShell updater"
+  ],
+  "actual_user_photo_cause": "unconfirmed until reimport/reprocess on device; no raw ML mask available",
+  "schema": {
+    "Room": 10,
+    "backup": 10
+  },
+  "firebase_deploy_performed": false,
+  "changed_files": [
+    "app/build.gradle.kts",
+    "app/src/main/java/com/familywardrobe/app/PhotoCutoutRules.java",
+    "app/src/test/java/com/familywardrobe/app/PhotoCutoutCases.java",
+    "app/src/test/java/com/familywardrobe/app/PhotoCutoutTest.kt",
+    "app/src/main/res/values/strings.xml",
+    "app/src/main/res/values-uk/strings.xml",
+    "app/src/main/res/values-en/strings.xml",
+    "app/src/main/res/values-pl/strings.xml",
+    "AGENTS.md",
+    "README.md",
+    "WARDROBE-ROADMAP.md",
+    "PHOTO-CLEANUP-HOTFIX3.md"
+  ]
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.familywardrobe.app.MatchingTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-03T13:11:10" hostname="6984b196a816" time="0.004">
+  <properties/>
+  <testcase name="archivedBaseCannotStartSuggestion" classname="com.familywardrobe.app.MatchingTest" time="0.001"/>
+  <testcase name="keepsSelectedItemAndNeverMixesWardrobes" classname="com.familywardrobe.app.MatchingTest" time="0.0"/>
+  <testcase name="allSeasonBaseCannotCombineWinterTopWithSummerShoes" classname="com.familywardrobe.app.MatchingTest" time="0.0"/>
+  <testcase name="unavailableAndArchivedItemsAreExcluded" classname="com.familywardrobe.app.MatchingTest" time="0.001"/>
+  <testcase name="incompleteWardrobeDoesNotInventItems" classname="com.familywardrobe.app.MatchingTest" time="0.0"/>
+  <testcase name="findsCompleteSetEvenWhenTopRankedTopCannotMatchShoes" classname="com.familywardrobe.app.MatchingTest" time="0.0"/>
+  <testcase name="replacementChecksOtherSelectedPieces" classname="com.familywardrobe.app.MatchingTest" time="0.002"/>
+  <testcase name="sameStyleRanksAboveMismatchedStyleWithSameColor" classname="com.familywardrobe.app.MatchingTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

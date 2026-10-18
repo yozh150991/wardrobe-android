@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="com.familywardrobe.app.AccountStorageTest" tests="71" failures="0" errors="0" skipped="0" time="133.423" timestamp="2026-10-03T13:28:09" hostname="localhost">
+  <properties>
+    <property name="device" value="wardrobe-acceptance-5a12562468(AVD) - 9" />
+    <property name="flavor" value="" />
+    <property name="project" value=":app" />
+  </properties>
+  <testcase name="legacyRequiresExplicitClaimAndRemainsAtOriginalLocation" classname="com.familywardrobe.app.AccountStorageTest" time="0.189" />
+  <testcase name="databasesIsolateAccountsAndReopenSavedItems" classname="com.familywardrobe.app.AccountStorageTest" time="1.849" />
+  <testcase name="corruptRegistryFailsClosedWithoutReassigningLegacy" classname="com.familywardrobe.app.AccountStorageTest" time="0.103" />
+  <testcase name="anotherAccountCannotTakeAnExistingClaim" classname="com.familywardrobe.app.AccountStorageTest" time="0.229" />
+  <testcase name="photoAndPreferencePathsAreAccountScoped" classname="com.familywardrobe.app.AccountStorageTest" time="0.311" />
+  <testcase name="startingEmptyDoesNotClaimOrDeleteOldData" classname="com.familywardrobe.app.AccountStorageTest" time="0.203" />
+  <testcase name="savedSelectionSurvivesClosingAndReopeningTheStore" classname="com.familywardrobe.app.AppearancePersistenceTest" time="1.059" />
+  <testcase name="unknownStoredValuesUseDefaultsWithoutTouchingWardrobeData" classname="com.familywardrobe.app.AppearancePersistenceTest" time="0.1" />
+  <testcase name="editsDuringUploadRemainQueuedAndReachSecondRevision" classname="com.familywardrobe.app.CloudEmulatorTest" time="21.007" />
+  <testcase name="lostCommitReplyIsAcknowledgedOnceAfterReopen" classname="com.familywardrobe.app.CloudEmulatorTest" time="8.7" />
+  <testcase name="twoIndependentSdkTransactionsCannotPublishFromSameBaseAndRetryIsIdempotent" classname="com.familywardrobe.app.CloudEmulatorTest" time="7.915" />
+  <testcase name="allConflictChoicesPreserveChosenDataAndCloudChoiceMakesRescue" classname="com.familywardrobe.app.CloudEmulatorTest" time="24.13" />
+  <testcase name="offlineQueueSurvivesDatabaseReopenAndTransfersPhotosToAnotherClient" classname="com.familywardrobe.app.CloudEmulatorTest" time="8.012" />
+  <testcase name="everyEditorDraftKindSurvivesReopening" classname="com.familywardrobe.app.EditorDraftStoreTest" time="0.128" />
+  <testcase name="corruptDraftDoesNotBlockAccountOpening" classname="com.familywardrobe.app.EditorDraftStoreTest" time="0.078" />
+  <testcase name="reopeningRestoresDraftOnlyForSameUidAndDiscardRemovesIt" classname="com.familywardrobe.app.EditorDraftStoreTest" time="0.08" />
+  <testcase name="changedVerifiedArchiveIsRejectedBeforeAnyRestoreWrite" classname="com.familywardrobe.app.ExperiencePersistenceTest" time="1.692" />
+  <testcase name="capsuleGenerationUsesSharedItemsAndRechecksPackedScopeWhenSaving" classname="com.familywardrobe.app.ExperiencePersistenceTest" time="1.506" />
+  <testcase name="zoomedMaskCoordinatesTargetTheOriginalPixels" classname="com.familywardrobe.app.ExperiencePersistenceTest" time="0.404" />
+  <testcase name="fiveReviewedImportsAdvancePastFailureAndRemoveCommittedOriginals" classname="com.familywardrobe.app.ExperiencePersistenceTest" time="2.262" />
+  <testcase name="verifiedBackupPreservesRulesSubcategoriesExclusionsAndRemappedCanvas" classname="com.familywardrobe.app.ExperiencePersistenceTest" time="1.385" />
+  <testcase name="cameraQueueAndSelectedTemplateKeepDurablePhotosAndUnselectedFields" classname="com.familywardrobe.app.ExperiencePersistenceTest" time="0.905" />
+  <testcase name="manualMaskCreatesCandidateAndNeverOverwritesSavedSource" classname="com.familywardrobe.app.ExperiencePersistenceTest" time="0.578" />
+  <testcase name="recommendationRulesUseActualWearAndKeepManualItemsAvailable" classname="com.familywardrobe.app.ExperiencePersistenceTest" time="0.73" />
+  <testcase name="queueAndBulkActionsCannotCrossWardrobeBoundaries" classname="com.familywardrobe.app.ImportFlowTest" time="0.405" />
+  <testcase name="reviewingCommitsOneItemAndReleasesOnlyItsQueueEntry" classname="com.familywardrobe.app.ImportFlowTest" time="0.381" />
+  <testcase name="bulkUndoKeepsIndependentEditsAndRejectsChangedAvailability" classname="com.familywardrobe.app.ImportFlowTest" time="0.408" />
+  <testcase name="queuePersistsSourceAndRecoversInterruptedWorkWithoutSavingGarments" classname="com.familywardrobe.app.ImportFlowTest" time="0.277" />
+  <testcase name="repeatedRestoreNamesAreDistinctAndPreserveArchivedState" classname="com.familywardrobe.app.PersistenceTest" time="0.832" />
+  <testcase name="plannedOutfitCannotRecordWear" classname="com.familywardrobe.app.PersistenceTest" time="0.481" />
+  <testcase name="foundCandidateKeepsNeedIdentityHistoryBudgetAndOutfitReference" classname="com.familywardrobe.app.PersistenceTest" time="0.529" />
+  <testcase name="partialOutfitCanBeCompletedWithoutChangingItsId" classname="com.familywardrobe.app.PersistenceTest" time="0.63" />
+  <testcase name="databaseAndPrivatePhotoSurviveReopening" classname="com.familywardrobe.app.PersistenceTest" time="0.604" />
+  <testcase name="failedWardrobeDeletionRollsBackAndKeepsPhotos" classname="com.familywardrobe.app.PersistenceTest" time="0.654" />
+  <testcase name="renamedDefaultWardrobeKeepsCustomNameAfterReopen" classname="com.familywardrobe.app.PersistenceTest" time="0.556" />
+  <testcase name="undoOutfitPreservesIndependentAndOverlappingWearRecords" classname="com.familywardrobe.app.PersistenceTest" time="0.807" />
+  <testcase name="lastWardrobeCannotBeDeletedAndPhotosRemain" classname="com.familywardrobe.app.PersistenceTest" time="0.532" />
+  <testcase name="backupRoundTripKeepsWishlistPhotoHistoryAndMixedOutfit" classname="com.familywardrobe.app.PersistenceTest" time="0.834" />
+  <testcase name="invalidBackupDoesNotModifyExistingData" classname="com.familywardrobe.app.PersistenceTest" time="0.58" />
+  <testcase name="backupRestoresPhotosIntoNewWardrobeWithoutOverwritingOriginal" classname="com.familywardrobe.app.PersistenceTest" time="0.756" />
+  <testcase name="deletingWardrobeRemovesItsDependentsAndPrivatePhotosOnly" classname="com.familywardrobe.app.PersistenceTest" time="0.881" />
+  <testcase name="repeatedOutfitSaveReturnsSameIdentity" classname="com.familywardrobe.app.PersistenceTest" time="0.63" />
+  <testcase name="migrationFromVersionOnePreservesRowsAndMarksOnlyDefaultName" classname="com.familywardrobe.app.PersistenceTest" time="1.608" />
+  <testcase name="rotationAndCropPreserveTransparencyAndExpectedPixels" classname="com.familywardrobe.app.PhotoPersistenceTest" time="3.908" />
+  <testcase name="sharedPhotoRemainsWhileAnotherItemUsesIt" classname="com.familywardrobe.app.PhotoPersistenceTest" time="1.258" />
+  <testcase name="cancelCandidateLeavesSavedPhotoUnchanged" classname="com.familywardrobe.app.PhotoPersistenceTest" time="0.957" />
+  <testcase name="oldOriginalAndHiddenJpegRemovedAfterValidatingCurrentPng" classname="com.familywardrobe.app.PhotoPersistenceTest" time="0.531" />
+  <testcase name="failedDatabaseSaveKeepsPreviousPhoto" classname="com.familywardrobe.app.PhotoPersistenceTest" time="1.053" />
+  <testcase name="versionEightBackupHasOnlyCurrentPhotoAndRestoresIt" classname="com.familywardrobe.app.PhotoPersistenceTest" time="1.234" />
+  <testcase name="legacyBackupsRestoreOnlyTheirDisplayedPhoto" classname="com.familywardrobe.app.PhotoPersistenceTest" time="1.007" />
+  <testcase name="importKeepsOnePhotoAndDoesNotModifyGallerySource" classname="com.familywardrobe.app.PhotoPersistenceTest" time="0.503" />
+  <testcase name="savingCutoutRemovesOldPhotoAndStoresOnlyPng" classname="com.familywardrobe.app.PhotoPersistenceTest" time="1.186" />
+  <testcase name="croppedPhotoSurvivesDatabaseReopen" classname="com.familywardrobe.app.PhotoPersistenceTest" time="0.633" />
+  <testcase name="invalidCropDoesNotCreateFilesOrChangeSavedItem" classname="com.familywardrobe.app.PhotoPersistenceTest" time="0.551" />
+  <testcase name="missingPhotoRejectsBackupWithoutChangingDatabaseOrFiles" classname="com.familywardrobe.app.PhotoPersistenceTest" time="0.556" />
+  <testcase name="recordedWearCannotBeLostByUndo" classname="com.familywardrobe.app.PurchaseFlowTest" time="0.353" />
+  <testcase name="editedItemCannotBeRemovedByStaleUndo" classname="com.familywardrobe.app.PurchaseFlowTest" time="0.328" />
+  <testcase name="undoKeepsAnOutfitCreatedAfterPurchase" classname="com.familywardrobe.app.PurchaseFlowTest" time="0.626" />
+  <testcase name="conflictingCategoryRollsBackTheWholePurchase" classname="com.familywardrobe.app.PurchaseFlowTest" time="0.378" />
+  <testcase name="backupRestoresPurchaseHistoryAndOwnershipReferences" classname="com.familywardrobe.app.PurchaseFlowTest" time="0.656" />
+  <testcase name="purchaseUpdatesOutfitAndRepeatedConfirmationDoesNotDuplicate" classname="com.familywardrobe.app.PurchaseFlowTest" time="0.904" />
+  <testcase name="calendarWearUndoKeepsIndependentItemWearAndCountsUniqueDays" classname="com.familywardrobe.app.RoadmapPersistenceTest" time="0.554" />
+  <testcase name="packingUnionManualItemsAndOutfitEditsPreserveOtherChecks" classname="com.familywardrobe.app.RoadmapPersistenceTest" time="0.904" />
+  <testcase name="currentBackupRemapsPlansFeedbackCapsulesAndPrices" classname="com.familywardrobe.app.RoadmapPersistenceTest" time="0.956" />
+  <testcase name="capsuleRejectsCrossWardrobeItemsAndLaundryPacking" classname="com.familywardrobe.app.RoadmapPersistenceTest" time="0.503" />
+  <testcase name="laundryBlocksCalendarConfirmationAndItemDayUndoReconcilesLedger" classname="com.familywardrobe.app.RoadmapPersistenceTest" time="0.705" />
+  <testcase name="planningAndMovingNeverCreateWear" classname="com.familywardrobe.app.RoadmapPersistenceTest" time="0.605" />
+  <testcase name="purchaseUndoAndOutfitReferencesSurviveDatabaseReopen" classname="com.familywardrobe.app.ScenarioPersistenceTest" time="0.956" />
+  <testcase name="candidateUndoKeepsOriginalNeedAndEveryCandidatePhotoInPortableBackup" classname="com.familywardrobe.app.ScenarioPersistenceTest" time="0.853" />
+  <testcase name="cloudApplyKeepsStableIdsAndRejectsDraftsAndStaleLocalVersion" classname="com.familywardrobe.app.ScenarioPersistenceTest" time="1.383" />
+  <testcase name="staleUndoNeverDeletesLaterEditsOrRecordedWear" classname="com.familywardrobe.app.ScenarioPersistenceTest" time="0.782" />
+</testsuite>

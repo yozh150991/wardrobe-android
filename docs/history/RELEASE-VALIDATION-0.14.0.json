@@ -1,0 +1,34 @@
+{
+  "release": "0.14.0-release",
+  "version_code": 30,
+  "task": "FAM-01",
+  "status": "partial",
+  "room_schema": 10,
+  "backup_format": 10,
+  "family_manifest_format": 1,
+  "host_report": "HOST-VALIDATION-0.14.0.json",
+  "host_suites_passed": 21,
+  "new_production_java_assertions": 70,
+  "source_sql_checks": 4264,
+  "xml_files": 11,
+  "localized_strings": 1011,
+  "dao_queries": 72,
+  "android_tests_prepared": 8,
+  "implemented": "single-wardrobe portable export/UI; ownership graph + Kotlin adapter; family manifest boundary; client role/CAS/lease helpers; private AtomicFile migration checkpoints",
+  "not_implemented": [
+    "trusted migration transport and server membership",
+    "invitation email delivery and role UI",
+    "active shared-cache lease enforcement",
+    "server family rules and emulator coverage"
+  ],
+  "not_run": [
+    "Kotlin/Compose/KSP/Room compilation",
+    "Gradle testDebugUnitTest/lintDebug/assembleDebug",
+    "connectedDebugAndroidTest and device UI",
+    "Firebase emulators and live deployment",
+    "Windows/PowerShell updater"
+  ],
+  "apk": "No new APK; no historical APK included",
+  "room_migration": "No new persistent Room fields; Room/backup remain 10; existing migration suites passed",
+  "private_cloud": "Existing UID-only rules and formats 8/9/10 unchanged; family paths remain denied"
+}

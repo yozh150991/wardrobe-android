@@ -1,0 +1,70 @@
+{
+  "release": "0.14.2-release",
+  "versionCode": 32,
+  "date": "2026-10-16",
+  "executor": "Codex",
+  "room_and_backup": 10,
+  "implemented": [
+    "Android initial scoped family transfer",
+    "durable archive and account-bound journal",
+    "server head verification and expiry/retry",
+    "UA/EN/PL transfer UI",
+    "PhotoEditor implicit receiver build fix",
+    "literal percent string formatting fix"
+  ],
+  "executed": {
+    "host": {
+      "suites": 22,
+      "passed": 21,
+      "not_configured": [
+        "check_auth_config.py: private app/google-services.json absent"
+      ]
+    },
+    "family_coordinator_jvm": {
+      "passed": 15,
+      "compiler": "Kotlin 2.0.20 standalone",
+      "jvm_target": 17,
+      "coroutines": "1.6.4 (standalone runner); Android project dependency remains 1.9.0",
+      "native_adapter_or_compose_compilation": false
+    },
+    "backend_domain": {
+      "passed": 29
+    },
+    "firebase_integration": {
+      "passed": 20,
+      "includes": [
+        "callable authenticated create/begin/commit/resume",
+        "expectedActorUid mismatch rejection",
+        "structured ARCHIVE_MISSING recovery reason",
+        "Firestore transactions and Storage validation"
+      ]
+    },
+    "firebase_rules": {
+      "passed": 6
+    }
+  },
+  "not_confirmed": {
+    "android_full_build": "Gradle dependency/cache setup was blocked in this runtime; no successful complete Android compile result",
+    "native_tests": "3 new storage tests and existing 8 foundation tests prepared, not executed",
+    "windows_powershell": "not executed",
+    "mac_native": "not executed; actual Bash/Python updater tests on Linux",
+    "signed_apk": "not produced",
+    "live_deployment": "not performed"
+  },
+  "remaining": [
+    "shared cache/DB/photo ownership and backup isolation",
+    "invites/roles/revocation API and UI",
+    "continuous shared sync/conflict handling",
+    "joint native acceptance and production gates"
+  ],
+  "source_sha256": {
+    "FamilyTransfer.kt": "9bde0f17605f808b6b24cabeaf9b88d59e864f1bb7f2233e630e815a5746f95e",
+    "FamilyTransferModels.kt": "f7349079102ae1926892ec7b0acead5f750440b3d459de7af0a591dba5110621",
+    "FamilyBackend.kt": "e6b37d35cbc07c50f94b0b8c0cbcb71374904c2af29ad36b945d746a2ea471de",
+    "FamilyArchive.kt": "5eb14e64b7f5ae8e84588c503db54c19a2959f65251a654b66c0a7db785b26f6",
+    "FamilyMigrationStore.kt": "141a1cb33d850cd1b8f767ca9513d49dc939efd11a4f2da5aafccfee047fccbb",
+    "FamilyTransferController.kt": "279839daca897c29fd8ba00985307fc77a3ef4d6667e08212d0b2aa885ee4a26",
+    "FamilyTransferControl.kt": "42bdee814bddc45a03495463e7b3114244e4e0a4d876c651ffb4b50f368f0d24",
+    "PhotoEditor.kt": "8d4755c7c612c2af022b806e0b8b0fa35d7574dd297bae22f1024d5da4e4f8f2"
+  }
+}

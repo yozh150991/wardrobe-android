@@ -1,0 +1,16 @@
+{
+  "allow": [
+    {
+      "path": "app/src/androidTest/java/com/familywardrobe/app/CloudEmulatorTest.kt",
+      "sha256": "c2b0f77a406d57c466cfaf9651c87b78a1655256b03659419d1697c9b8493762",
+      "reason": "possible hardcoded password/token; review the literal",
+      "justification": "Reviewed fake credentials for demo-wardrobe; SDK test requires an explicit loopback/Android-emulator host. Any file change invalidates this exemption."
+    },
+    {
+      "path": "cloud/auth.test.mjs",
+      "sha256": "f6ab7d02451e0a9f8308dfce3ea54dc57a9b37795e8a29a81264c5a081056273",
+      "reason": "possible hardcoded password/token; review the literal",
+      "justification": "Reviewed fake credentials for demo-wardrobe; host assertion restricts Firebase Auth to localhost/loopback. Any file change invalidates this exemption."
+    }
+  ]
+}

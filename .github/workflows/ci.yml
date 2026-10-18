@@ -1,0 +1,96 @@
+name: Wardrobe CI
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wardrobe-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source:
+    name: Source and Git safety
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Audit tracked files and history
+        run: python tools/git_safety.py audit
+      - name: Test hooks and version rules
+        run: |
+          python tools/test_git_safety.py
+          python tools/test_source_paths.py
+          python tools/test_version.py
+          python tools/check_version.py
+      - name: Compare version with the branch base
+        if: github.ref_type != 'tag'
+        env:
+          VERSION_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [[ -n "$VERSION_BASE_SHA" && ! "$VERSION_BASE_SHA" =~ ^0+$ ]]; then
+            python tools/check_version.py --base-ref "$VERSION_BASE_SHA"
+          fi
+      - name: Run source, Java and backend domain checks
+        run: python tools/run_host_checks.py --allow-missing-client-config
+      - name: Upload host reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: host-reports-${{ github.sha }}
+          path: release-evidence/host-runs/*.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  android:
+    name: Android debug preview
+    needs: source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android SDK components
+        run: |
+          test -n "$ANDROID_HOME"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
+      - name: Unit tests, lint and preview APK
+        run: bash build-apk.sh -PciPreview=true testDebugUnitTest lintDebug assembleDebug
+      - name: Upload Android reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-reports-${{ github.sha }}
+          path: |
+            app/build/reports/
+            app/build/test-results/
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Upload preview APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: wardrobe-ci-preview-${{ github.sha }}
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

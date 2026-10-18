@@ -1,0 +1,81 @@
+# Історичні звіти
+
+Ці звіти не підтверджують поточну збірку. Поточний [README](../../README.md), [роадмап](../../WARDROBE-ROADMAP.md), [журнал](../../CHANGELOG.md).
+
+JSON і бінарні докази збережені без зміни вмісту. Шляхи всередині JSON описують старе розташування; відповідність нижче. Команди в історичних звітах виконувалися з тодішнього кореня проєкту.
+
+| Колишній шлях | Поточний файл |
+| --- | --- |
+| `ACCEPTANCE.md` | [ACCEPTANCE.md](ACCEPTANCE.md) |
+| `BASE-VALIDATION-0.4.1.md` | [BASE-VALIDATION-0.4.1.md](BASE-VALIDATION-0.4.1.md) |
+| `BASE-VALIDATION-0.5.0.md` | [BASE-VALIDATION-0.5.0.md](BASE-VALIDATION-0.5.0.md) |
+| `CATEGORY-LAYOUT-0.11.2.md` | [CATEGORY-LAYOUT-0.11.2.md](CATEGORY-LAYOUT-0.11.2.md) |
+| `COLOUR-UPDATE-0.6.1.md` | [COLOUR-UPDATE-0.6.1.md](COLOUR-UPDATE-0.6.1.md) |
+| `DESIGN-NOTES.md` | [DESIGN-NOTES.md](DESIGN-NOTES.md) |
+| `DESIGN-UPDATE-0.5.0.md` | [DESIGN-UPDATE-0.5.0.md](DESIGN-UPDATE-0.5.0.md) |
+| `DESIGN-UPDATE-0.6.0.md` | [DESIGN-UPDATE-0.6.0.md](DESIGN-UPDATE-0.6.0.md) |
+| `EXPERIENCE-UPDATE-0.9.0.md` | [EXPERIENCE-UPDATE-0.9.0.md](EXPERIENCE-UPDATE-0.9.0.md) |
+| `HOST-VALIDATION-0.10.0.json` | [HOST-VALIDATION-0.10.0.json](HOST-VALIDATION-0.10.0.json) |
+| `HOST-VALIDATION-0.11.0.json` | [HOST-VALIDATION-0.11.0.json](HOST-VALIDATION-0.11.0.json) |
+| `HOST-VALIDATION-0.11.1.json` | [HOST-VALIDATION-0.11.1.json](HOST-VALIDATION-0.11.1.json) |
+| `HOST-VALIDATION-0.12.0.json` | [HOST-VALIDATION-0.12.0.json](HOST-VALIDATION-0.12.0.json) |
+| `HOST-VALIDATION-0.13.0.json` | [HOST-VALIDATION-0.13.0.json](HOST-VALIDATION-0.13.0.json) |
+| `HOST-VALIDATION-0.13.1.json` | [HOST-VALIDATION-0.13.1.json](HOST-VALIDATION-0.13.1.json) |
+| `HOST-VALIDATION-0.13.10.json` | [HOST-VALIDATION-0.13.10.json](HOST-VALIDATION-0.13.10.json) |
+| `HOST-VALIDATION-0.13.2.json` | [HOST-VALIDATION-0.13.2.json](HOST-VALIDATION-0.13.2.json) |
+| `HOST-VALIDATION-0.13.3.json` | [HOST-VALIDATION-0.13.3.json](HOST-VALIDATION-0.13.3.json) |
+| `HOST-VALIDATION-0.13.4.json` | [HOST-VALIDATION-0.13.4.json](HOST-VALIDATION-0.13.4.json) |
+| `HOST-VALIDATION-0.13.5.json` | [HOST-VALIDATION-0.13.5.json](HOST-VALIDATION-0.13.5.json) |
+| `HOST-VALIDATION-0.13.6.json` | [HOST-VALIDATION-0.13.6.json](HOST-VALIDATION-0.13.6.json) |
+| `HOST-VALIDATION-0.13.7.json` | [HOST-VALIDATION-0.13.7.json](HOST-VALIDATION-0.13.7.json) |
+| `HOST-VALIDATION-0.13.8.json` | [HOST-VALIDATION-0.13.8.json](HOST-VALIDATION-0.13.8.json) |
+| `HOST-VALIDATION-0.13.9.json` | [HOST-VALIDATION-0.13.9.json](HOST-VALIDATION-0.13.9.json) |
+| `HOST-VALIDATION-0.14.0.json` | [HOST-VALIDATION-0.14.0.json](HOST-VALIDATION-0.14.0.json) |
+| `HOST-VALIDATION-0.14.1.json` | [HOST-VALIDATION-0.14.1.json](HOST-VALIDATION-0.14.1.json) |
+| `HOST-VALIDATION-0.8.0.json` | [HOST-VALIDATION-0.8.0.json](HOST-VALIDATION-0.8.0.json) |
+| `HOST-VALIDATION-0.9.0.json` | [HOST-VALIDATION-0.9.0.json](HOST-VALIDATION-0.9.0.json) |
+| `RELEASE-VALIDATION-0.11.1.json` | [RELEASE-VALIDATION-0.11.1.json](RELEASE-VALIDATION-0.11.1.json) |
+| `RELEASE-VALIDATION-0.11.1.md` | [RELEASE-VALIDATION-0.11.1.md](RELEASE-VALIDATION-0.11.1.md) |
+| `RELEASE-VALIDATION-0.12.0.json` | [RELEASE-VALIDATION-0.12.0.json](RELEASE-VALIDATION-0.12.0.json) |
+| `RELEASE-VALIDATION-0.12.0.md` | [RELEASE-VALIDATION-0.12.0.md](RELEASE-VALIDATION-0.12.0.md) |
+| `RELEASE-VALIDATION-0.13.0.json` | [RELEASE-VALIDATION-0.13.0.json](RELEASE-VALIDATION-0.13.0.json) |
+| `RELEASE-VALIDATION-0.13.0.md` | [RELEASE-VALIDATION-0.13.0.md](RELEASE-VALIDATION-0.13.0.md) |
+| `RELEASE-VALIDATION-0.13.1.json` | [RELEASE-VALIDATION-0.13.1.json](RELEASE-VALIDATION-0.13.1.json) |
+| `RELEASE-VALIDATION-0.13.1.md` | [RELEASE-VALIDATION-0.13.1.md](RELEASE-VALIDATION-0.13.1.md) |
+| `RELEASE-VALIDATION-0.13.10.json` | [RELEASE-VALIDATION-0.13.10.json](RELEASE-VALIDATION-0.13.10.json) |
+| `RELEASE-VALIDATION-0.13.2.json` | [RELEASE-VALIDATION-0.13.2.json](RELEASE-VALIDATION-0.13.2.json) |
+| `RELEASE-VALIDATION-0.13.2.md` | [RELEASE-VALIDATION-0.13.2.md](RELEASE-VALIDATION-0.13.2.md) |
+| `RELEASE-VALIDATION-0.13.3.json` | [RELEASE-VALIDATION-0.13.3.json](RELEASE-VALIDATION-0.13.3.json) |
+| `RELEASE-VALIDATION-0.13.3.md` | [RELEASE-VALIDATION-0.13.3.md](RELEASE-VALIDATION-0.13.3.md) |
+| `RELEASE-VALIDATION-0.13.4.json` | [RELEASE-VALIDATION-0.13.4.json](RELEASE-VALIDATION-0.13.4.json) |
+| `RELEASE-VALIDATION-0.13.4.md` | [RELEASE-VALIDATION-0.13.4.md](RELEASE-VALIDATION-0.13.4.md) |
+| `RELEASE-VALIDATION-0.13.5.json` | [RELEASE-VALIDATION-0.13.5.json](RELEASE-VALIDATION-0.13.5.json) |
+| `RELEASE-VALIDATION-0.13.5.md` | [RELEASE-VALIDATION-0.13.5.md](RELEASE-VALIDATION-0.13.5.md) |
+| `RELEASE-VALIDATION-0.13.6.json` | [RELEASE-VALIDATION-0.13.6.json](RELEASE-VALIDATION-0.13.6.json) |
+| `RELEASE-VALIDATION-0.13.6.md` | [RELEASE-VALIDATION-0.13.6.md](RELEASE-VALIDATION-0.13.6.md) |
+| `RELEASE-VALIDATION-0.13.7.json` | [RELEASE-VALIDATION-0.13.7.json](RELEASE-VALIDATION-0.13.7.json) |
+| `RELEASE-VALIDATION-0.13.7.md` | [RELEASE-VALIDATION-0.13.7.md](RELEASE-VALIDATION-0.13.7.md) |
+| `RELEASE-VALIDATION-0.13.8.json` | [RELEASE-VALIDATION-0.13.8.json](RELEASE-VALIDATION-0.13.8.json) |
+| `RELEASE-VALIDATION-0.13.8.md` | [RELEASE-VALIDATION-0.13.8.md](RELEASE-VALIDATION-0.13.8.md) |
+| `RELEASE-VALIDATION-0.13.9.json` | [RELEASE-VALIDATION-0.13.9.json](RELEASE-VALIDATION-0.13.9.json) |
+| `RELEASE-VALIDATION-0.14.0.json` | [RELEASE-VALIDATION-0.14.0.json](RELEASE-VALIDATION-0.14.0.json) |
+| `RELEASE-VALIDATION-0.14.1.json` | [RELEASE-VALIDATION-0.14.1.json](RELEASE-VALIDATION-0.14.1.json) |
+| `ROADMAP-UPDATE-0.8.0.md` | [ROADMAP-UPDATE-0.8.0.md](ROADMAP-UPDATE-0.8.0.md) |
+| `SCENARIO-COVERAGE-0.11.0.md` | [SCENARIO-COVERAGE-0.11.0.md](SCENARIO-COVERAGE-0.11.0.md) |
+| `UX-REFINEMENT-0.10.0.md` | [UX-REFINEMENT-0.10.0.md](UX-REFINEMENT-0.10.0.md) |
+| `UX-UPDATE-0.7.0.md` | [UX-UPDATE-0.7.0.md](UX-UPDATE-0.7.0.md) |
+| `VALIDATION.md` | [VALIDATION.md](VALIDATION.md) |
+| `release-evidence/0.12.0/gradle-bootstrap.log` | [gradle-bootstrap.log](release-evidence/0.12.0/gradle-bootstrap.log) |
+| `release-evidence/0.12.0/source-SHA256SUMS.txt` | [source-SHA256SUMS.txt](release-evidence/0.12.0/source-SHA256SUMS.txt) |
+| `release-evidence/0.13.0/gradle-bootstrap.log` | [gradle-bootstrap.log](release-evidence/0.13.0/gradle-bootstrap.log) |
+| `release-evidence/0.13.0/source-SHA256SUMS.txt` | [source-SHA256SUMS.txt](release-evidence/0.13.0/source-SHA256SUMS.txt) |
+| `release-evidence/0.13.1/gradle-bootstrap.log` | [gradle-bootstrap.log](release-evidence/0.13.1/gradle-bootstrap.log) |
+| `release-evidence/0.13.1/source-SHA256SUMS.txt` | [source-SHA256SUMS.txt](release-evidence/0.13.1/source-SHA256SUMS.txt) |
+| `release-evidence/0.13.2/gradle-bootstrap.log` | [gradle-bootstrap.log](release-evidence/0.13.2/gradle-bootstrap.log) |
+| `release-evidence/0.13.2/source-SHA256SUMS.txt` | [source-SHA256SUMS.txt](release-evidence/0.13.2/source-SHA256SUMS.txt) |
+| `release-evidence/0.13.3/gradle-bootstrap.log` | [gradle-bootstrap.log](release-evidence/0.13.3/gradle-bootstrap.log) |
+| `release-evidence/0.13.3/source-SHA256SUMS.txt` | [source-SHA256SUMS.txt](release-evidence/0.13.3/source-SHA256SUMS.txt) |
+| `release-evidence/0.13.4/gradle-bootstrap.log` | [gradle-bootstrap.log](release-evidence/0.13.4/gradle-bootstrap.log) |
+| `release-evidence/0.13.5/gradle-bootstrap.log` | [gradle-bootstrap.log](release-evidence/0.13.5/gradle-bootstrap.log) |
+| `release-evidence/ui-failure.png` | [ui-failure.png](release-evidence/ui-failure.png) |
+| `release-evidence/ui-failure.xml` | [ui-failure.xml](release-evidence/ui-failure.xml) |

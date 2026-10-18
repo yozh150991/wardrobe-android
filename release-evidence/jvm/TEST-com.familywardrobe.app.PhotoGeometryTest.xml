@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.familywardrobe.app.PhotoGeometryTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-03T13:11:10" hostname="6984b196a816" time="0.002">
+  <properties/>
+  <testcase name="smallSelectionAtEdge" classname="com.familywardrobe.app.PhotoGeometryTest" time="0.0"/>
+  <testcase name="fullImage" classname="com.familywardrobe.app.PhotoGeometryTest" time="0.0"/>
+  <testcase name="everyValidCropFitsImage" classname="com.familywardrobe.app.PhotoGeometryTest" time="0.0"/>
+  <testcase name="invalidBoundsRejected" classname="com.familywardrobe.app.PhotoGeometryTest" time="0.001"/>
+  <testcase name="portraitAfterRotation" classname="com.familywardrobe.app.PhotoGeometryTest" time="0.0"/>
+  <testcase name="centralCrop" classname="com.familywardrobe.app.PhotoGeometryTest" time="0.0"/>
+  <testcase name="rotationWraps" classname="com.familywardrobe.app.PhotoGeometryTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

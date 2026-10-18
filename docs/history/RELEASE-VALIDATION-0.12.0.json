@@ -1,0 +1,53 @@
+{
+  "release": "0.12.0-release",
+  "version_code": 18,
+  "date": "2026-10-08",
+  "recorded_at": "2026-10-08T09:50:28.946494+00:00",
+  "application_id": "com.familywardrobe.app",
+  "room_version": 8,
+  "backup_version": 8,
+  "source_manifest": "release-evidence/0.12.0/source-SHA256SUMS.txt",
+  "source_manifest_sha256": "e9418748043ae13ac961d59ad54bb94546b2aba5ee95dd56ccfe1effe3038d7a",
+  "host": {
+    "status": "pass",
+    "suites": 14,
+    "report": "HOST-VALIDATION-0.12.0.json",
+    "source_sql_checks": 3434,
+    "xml_files": 11,
+    "localized_strings": 821,
+    "dao_queries": 67,
+    "shop_java_assertions": 34
+  },
+  "prepared_not_executed": {
+    "new_android_tests": 8,
+    "modified_existing_android_tests": [
+      "EditorDraftStoreTest.everyEditorDraftKindSurvivesReopening"
+    ],
+    "junit": "ShopMetadataTest wraps the same fixtures as host; Gradle JUnit not run"
+  },
+  "android_build": {
+    "status": "blocked_before_compilation",
+    "command": "bash gradlew --version",
+    "gradle": "8.11.1",
+    "reason": "java.net.SocketException: Network is unreachable",
+    "evidence": "release-evidence/0.12.0/gradle-bootstrap.log",
+    "apk_produced": false
+  },
+  "not_run": [
+    "Kotlin/Compose/KSP compilation",
+    "Gradle JUnit test suite",
+    "Android lint",
+    "Android instrumented tests",
+    "Firebase emulator tests for this source",
+    "APK assembly/signature verification",
+    "Native UI/device acceptance",
+    "Windows/PowerShell execution"
+  ],
+  "limits": [
+    "ACTION_SEND text/plain only; direct image Share is pending",
+    "Real-shop network/redirect/cancel acceptance pending",
+    "Owned imports retain source through existing purchase history; Room/backup/cloud schema unchanged",
+    "Family sharing architecture only; rules/backend/invites not implemented"
+  ],
+  "next": "REL-01 and QA-01; execute R1-UPDATE-0.12.0.md native matrix, then SHOP-01–03"
+}

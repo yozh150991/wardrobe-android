@@ -1,0 +1,26 @@
+{
+  "release": "0.13.10-release",
+  "version_code": 29,
+  "task": "COL-01",
+  "status": "verify",
+  "room_schema": 10,
+  "backup_format": 10,
+  "host_report": "HOST-VALIDATION-0.13.10.json",
+  "host_suites_passed": 20,
+  "new_production_java_assertions": 22,
+  "sqlite_migration": "9→10 executed over exported schema 2 + production migrations; existing categories/items/outfits/wears preserved; 9 invalid writes rejected; uniqueness, wardrobe isolation, FK, reopen, rollback, dirty/echo passed",
+  "android_tests_prepared": 6,
+  "firebase_emulator_tests_updated": 1,
+  "not_run": [
+    "Kotlin/Compose/KSP compilation",
+    "Room generated schema validation",
+    "Gradle unit/lint/assemble",
+    "Android instrumentation/UI tests",
+    "Firebase emulator/rules tests",
+    "Live Firebase rules deployment",
+    "Windows/PowerShell updater"
+  ],
+  "apk": null,
+  "new_gradle_attempt": false,
+  "cloud_requirements": "Deploy bundled Firestore rules (8/9/10) and update both clients; no downgrade, owner isolation unchanged."
+}

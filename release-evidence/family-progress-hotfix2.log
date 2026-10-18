@@ -1,0 +1,10 @@
+Picked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData
+Picked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData
+Picked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData
+JUnit version 4.13.2
+...................
+Time: 0.182
+
+OK (19 tests)
+
+Native UI/Room/AtomicFile/Firebase SDK compilation not covered by this runner.

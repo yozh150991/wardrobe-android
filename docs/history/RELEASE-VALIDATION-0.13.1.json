@@ -1,0 +1,69 @@
+{
+  "release": "0.13.1-release",
+  "version_code": 20,
+  "date": "2026-10-08",
+  "recorded_at": "2026-10-08T19:02:08.593001+00:00",
+  "application_id": "com.familywardrobe.app",
+  "room_version": 8,
+  "backup_version": 8,
+  "source_manifest": "release-evidence/0.13.1/source-SHA256SUMS.txt",
+  "source_manifest_sha256": "197863c30f03a6ea8d272468018882fef81574a76d1ea4ed34fcb2fed9e3a6a3",
+  "host": {
+    "status": "pass",
+    "suites": 15,
+    "report": "HOST-VALIDATION-0.13.1.json",
+    "source_sql_checks": 3678,
+    "xml_files": 11,
+    "localized_strings": 880,
+    "dao_queries": 67,
+    "shop_java_assertions": 34,
+    "purchase_advice_assertions": 76
+  },
+  "prepared_not_executed": {
+    "new_android_methods": 5,
+    "file": "PhotoRecoveryTest.kt",
+    "carried_r2_jvm_methods": 7,
+    "carried_r2_android_methods": 1,
+    "details": [
+      "Account-private diagnostics survive restart, omit paths, reject malformed data",
+      "Cutout success is separate from unknown category",
+      "Failed import accepts valid replacement without duplicate; invalid replacement retains queue",
+      "New Kotlin photo code and native UI have not been executed"
+    ]
+  },
+  "android_build": {
+    "status": "blocked_before_compilation",
+    "command": "timeout 30 bash gradlew --version",
+    "gradle": "8.11.1",
+    "reason": "java.net.SocketException: Network is unreachable",
+    "evidence": "release-evidence/0.13.1/gradle-bootstrap.log",
+    "apk_produced": false
+  },
+  "not_run": [
+    "Kotlin/Compose/KSP compilation",
+    "Gradle JUnit test suite",
+    "Android lint",
+    "Android instrumented tests",
+    "Firebase emulator tests for this source",
+    "APK assembly/signature verification",
+    "Native UI/device acceptance",
+    "Windows/PowerShell execution"
+  ],
+  "compatibility": {
+    "room_backup_cloud_schema_unchanged": true,
+    "repository_purchase_and_account_storage_unchanged": true,
+    "android_permissions_unchanged": true
+  },
+  "limits": [
+    "Trait similarity only; no visual product identity or embeddings",
+    "Up to 20 examples, not exhaustive wardrobe coverage",
+    "Optional candidate traits are review state, not permanent Wish fields",
+    "Replacements preserve category and seasonal compatibility; colour/style/fit may differ",
+    "Deferring leaves the saved product in the list, without reminder or new status",
+    "R1, R2 and PHOTO-01 native acceptance remain pending",
+    "Exact cause and installed version of user screenshot not reproduced",
+    "Batch reports persist; manual editor reanalysis reports remain session state",
+    "No inferred light/blur/network diagnosis"
+  ],
+  "next": "REL-01 build then PHOTO-01 matrix, QA-01–02 and R1/R2 acceptance; then FAM-01 decisions"
+}

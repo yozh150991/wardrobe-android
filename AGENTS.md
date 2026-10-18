@@ -1,0 +1,87 @@
+# Wardrobe — інструкція для продовження роботи
+
+Цей файл стосується проєкту `wardrobe-android`. Прямі вказівки користувача та правила середовища мають перевагу.
+
+## Почати тут
+
+1. Прочитай [WARDROBE-ROADMAP.md](WARDROBE-ROADMAP.md), особливо швидкий старт, поточні статуси й останню контрольну точку. Це головний беклог; старі `ROADMAP-UPDATE-*` — історія релізів.
+2. Звір `app/build.gradle.kts`, `README.md`, локальні зміни та останній release-звіт. Поточна база — 0.14.4-photo-hotfix3, code 34, Room/backup 10; фото-зміни описані нижче. FAM-01/03 partial: Android initial transfer/UI підключено до family backend; див. FAMILY-ANDROID-0.14.2.md та RELEASE-VALIDATION-0.14.2.json. Це початкова серверна копія зі збереженням приватного локального гардероба. Наступне — shared-cache isolation/DB/photo ownership і виключення з private backup; FAM-02 invite/accept/role/revoke; далі continuous shared sync. Оновлений Android потребує backend 0.14.2 (actor binding і structured recovery errors). Не запускати live deploy автоматично; firebase.family.example.json окремий від приватної конфігурації. Native-приймання спільне; production GCS, GC, App Check і витрати ще потребують перевірки.
+3. За прямою вказівкою користувача 10.10.2026 («Тестувати будемо все разом») PHOTO-12–14 реалізовані у 0.13.8, PHOTO-01–10 збережені; native-приймання перенесене на спільний етап. Воно не блокує подальше погоджене впровадження; автоматичні перевірки виконувати. Спільне native-приймання має включати FAM-01 foundation (FAMILY-FOUNDATION-0.14.0.md: 8 Android-тестів, вибір/retry/акаунти/backup health), COL-01/CAT-01 (COLORS-0.13.10.md/CATEGORIES-0.13.9.md) та PHOTO-12–14 (PHOTO-PRECISION-0.13.8.md: краї/ласо/захист, перезапуск/Undo/Redo/Apply/Discard, пошкодження/акаунти/cleanup), PHOTO-09–10 (PHOTO-QUALITY-0.13.7.md: роздільність, пам’ять/час/backup, вибрана черга, перезапуск/скасування/конфлікти/акаунти), PHOTO-06–08 (PHOTO-INSPECTION-0.13.6.md), PHOTO-05 (лупа/спільна історія/м’якість і сила, PHOTO-TOOLS-0.13.5.md), PHOTO-04 (історія/пензель, PHOTO-EDITOR-0.13.4.md), PHOTO-03 (очищення/фон, PHOTO-CLEANUP-0.13.3.md), PHOTO-02 (зум фото, PHOTO-ZOOM-0.13.2.md) та PHOTO-01: причини збоїв фото, ручне завершення й видиму валідацію; див. PHOTO-RECOVERY-0.13.1.md. Погоджений порядок: компактний каталог → імпорт із магазину через Android Share → розширений помічник покупки → окремі сімейні акаунти → персоналізація → віджет/забуті речі → подорожі. Поточний наступний ID і статус завжди бери з роадмапу.
+
+## Поточний Android photo hotfix3 (17.10.2026)
+
+PHOTO-03 / verify: 0.14.4-photo-hotfix3/code34, Room/backup10. Прочитай
+PHOTO-CLEANUP-HOTFIX3.md. Автоматичний default — gentle (0.15–0.70),
+colour flood лише за explicit stronger. Clamp дрібного float32 overshoot
+і fail-whole-mask для NaN/Inf/значного порушення діапазону. Стара production
+функція падає на новій synthetic rounding regression; після виправлення
+61 mask/backdrop assertion pass. Це не доказ точного походження сітки на
+телефоні: ML-маска користувача недоступна, потрібен новий імпорт оригіналу.
+Gradle wrapper blocked: Network is unreachable; Android/Compose/APK та
+PowerShell не виконані. Старі family hotfix1/2 збережені; живі правила не
+змінювати. Наступне: native PHOTO-03 acceptance, потім чинний сімейний беклог.
+
+## Попередній Android hotfix2 (17.10.2026)
+
+Фактична версія: 0.14.3-family-hotfix2/code33; Room/backup 10. Прочитай
+FAMILY-PROGRESS-HOTFIX2.md. Виправлено deferred progress callback NaN після
+переходу UPLOADING → COMMITTING; 19 Kotlin/JVM-тестів pass. Android/Compose
+build і телефонне приймання ще не виконані. Live Storage 403 не вважати
+остаточно усуненим. Console rules користувач змінював окремо, їхні guards
+ще не перенесені в cloud source rules; не перезаписувати їх старим deploy.
+
+## Попередній серверний hotfix1 (16.10.2026)
+
+FAM-01/03: Android залишається 0.14.2/code32. Прочитай FAMILY-CALLABLE-HOTFIX1.md.
+Виправлено callable Long size; 35 host tests pass. Деплой і приймання на телефоні
+не виконані агентом; до підтвердження не вважати випадок користувача закритим.
+
+## Під час роботи
+
+- Використовуй наявні редактори, чернетки й операції збереження. Календар, статистика, капсули та базова сумісність покупки вже є; потрібні розширення, а не дублікати.
+- Фіксуй task-ID, виконавця, змінені файли й контрольну точку. Погоджена задача не потребує повторного узгодження звичайних оборотних кроків.
+- Зберігай `com.familywardrobe.app`, дані користувача, ключ підпису, client Firebase config, локальні SDK/Gradle/порти. У користувача Jenkins на 8080; Firestore запропоновано перенести на 8088.
+- Нові постійні поля перевіряй у Room migration, backup, cloud, історії покупок і посиланнях образів. Не використовуй destructive migration або тиху заміну даних.
+- Ізоляція акаунтів перевіряється і при асинхронній роботі. Сімейний доступ не можна реалізувати відкриттям всього ZIP акаунта іншому UID.
+- Зберігай UA/EN/PL, теми, доступність, великий шрифт і відсутність горизонтального обрізання. Розрізняй власні речі, бажані товари та натхнення.
+- Оригінальні фото не зберігай постійно. Незавершені чернетки й потрібні кінцеві референси історії обробляй без втрати даних.
+- Запускай релевантні перевірки за роадмапом. Успіх старого релізу не переноситься на новий. Source checks не замінюють компіляцію чи перевірку екрана на Android.
+
+## Перед передачею
+
+- Онови статуси й журнал у `WARDROBE-ROADMAP.md`: що зроблено, які докази є, що не перевірено, який блокер і точний наступний крок.
+- Не пиши «готово» для сценарію лише тому, що код або тест існує. Відділяй реалізацію, виконані автоматичні перевірки й приймання на пристрої.
+- Включи актуальні `AGENTS.md` і `WARDROBE-ROADMAP.md` у наступний пакет/репозиторій та механізм оновлення. Окремий примірник роадмапу має відповідати вмісту пакета.
+- Не видавай старий APK за новий. У короткому звіті користувачу вкажи результат, межі перевірки й посилання на збережені файли.
+
+<!-- WARDROBE-GIT-SAFETY -->
+## Git Safety — DEV-01
+
+- Перед commit/push прочитай `GIT-SAFETY.md`; установи hooks у кожному clone.
+- Зберігай `.gitignore`, `.gitattributes`, `.githooks`, інсталятори та `tools/git_safety*`.
+- Не додавай локальні ключі/Firebase config/дані до Git. Не обходь блокер
+  секрету через автоматичний untrack, переписування історії або `--no-verify`.
+- Тести guard: `python3 tools/test_git_safety.py`; справжні credentials не використовувати.
+- Два винятки для локальних Firebase emulator-тестів прив’язані до SHA-256
+  точного файла та одного literal-warning. Зміна потребує перегляду;
+  не розширюй винятки на каталоги, токени чи приватні ключі.
+- Після оновлення guard повтори installer: активна копія зберігається локально
+  в Git-каталозі й працює навіть на гілках без версійованого guard.
+<!-- END WARDROBE-GIT-SAFETY -->
+
+## DEV-02 — очищення, 18.10.2026
+
+Поточна структура: README → WARDROBE-ROADMAP → CHANGELOG/docs/history.
+Прочитай PROJECT-CLEANUP.md та CLEANUP-VALIDATION.json. Старі JSON докази незмінні.
+Не відновлюй OfflineScreen або його два видалені рядки зі старого payload.
+Для нових змін використовуй очищене дерево; старі updater-пакети можуть конфліктувати.
+Версія Android лишається 0.14.4/code34; Android build/lint ще потребують запуску.
+
+## DEV-03 — GitHub preparation, 18.10.2026
+
+Прочитай GITHUB-WORKFLOW-UK.md і GITHUB-READINESS-VALIDATION.json.
+CI використовує read-only permissions, без live deploy/signing/Firebase secrets.
+CI preview: -PciPreview=true → com.familywardrobe.app.ci, локальний default незмінний.
+Release tag має збігатися з v + versionName; code збільшується для нового релізу.
+Перед GitHub push повтори audit локального index/history; hooks установлюються на кожному clone.
+Не оголошувати remote/CI підключеними без підтвердження.

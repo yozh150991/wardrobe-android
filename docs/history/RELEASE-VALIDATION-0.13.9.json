@@ -1,0 +1,26 @@
+{
+  "release": "0.13.9-release",
+  "version_code": 28,
+  "task": "CAT-01",
+  "status": "verify",
+  "room_schema": 9,
+  "backup_format": 9,
+  "host_report": "HOST-VALIDATION-0.13.9.json",
+  "host_suites_passed": 19,
+  "new_production_java_assertions": 31,
+  "sqlite_migration": "8→9 executed over exported schema 2 + real migrations; existing item/outfit/wear preservation, 7 invalid writes, uniqueness, wardrobe isolation, FK, reopen, rollback, sync dirty/echo checks passed",
+  "android_tests_prepared": 6,
+  "firebase_emulator_tests_added": 1,
+  "not_run": [
+    "Kotlin/Compose/KSP compilation",
+    "Room generated schema validation",
+    "Gradle unit/lint/assemble",
+    "Android instrumentation/UI tests",
+    "Firebase emulator/rules test",
+    "Live Firebase rules deployment",
+    "Windows/PowerShell updater"
+  ],
+  "apk": null,
+  "new_gradle_attempt": false,
+  "cloud_requirements": "Deploy bundled Firestore rules and update both clients before sync acceptance. No owner access expanded. No format 9→8 downgrade."
+}

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.familywardrobe.app.UXRulesTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-03T13:11:10" hostname="6984b196a816" time="0.001">
+  <properties/>
+  <testcase name="lateResultsAndTransparentImagePresentation" classname="com.familywardrobe.app.UXRulesTest" time="0.001"/>
+  <system-out><![CDATA[PASS: 76 production photo-result ownership and image-presentation checks.
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

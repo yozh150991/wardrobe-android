@@ -1,0 +1,35 @@
+{
+  "release": "0.13.8-release",
+  "version_code": 27,
+  "room_version": 8,
+  "backup_version": 8,
+  "checked_at": "2026-10-11T17:38:24.377234+00:00",
+  "implemented": [
+    "PHOTO-12",
+    "PHOTO-13",
+    "PHOTO-14"
+  ],
+  "host_suites": 18,
+  "source_sql_checks": 4147,
+  "xml_files": 11,
+  "localized_strings": 987,
+  "dao_queries": 68,
+  "new_precision_assertions": 588864,
+  "prepared_android_tests": 8,
+  "prepared_junit_wrappers": 1,
+  "android_build": {
+    "attempted": false,
+    "status": "not_run",
+    "reason": "User deferred combined native acceptance; no new Kotlin/Compose/KSP/Gradle/JUnit/lint/APK/device run in 0.13.8. Last recorded Gradle bootstrap failure belongs to 0.13.5, not this release."
+  },
+  "new_apk_included": false,
+  "all_previous_roadmap_ids_preserved": true,
+  "roadmap_id_count": 58,
+  "limits": [
+    "Source/session alpha bounds; no reconstruction of removed source pixels.",
+    "Unconfirmed previews and gestures are not durable steps.",
+    "Session sources are temporary; final Apply/Discard ends its history.",
+    "Mask protection does not prevent crop or source reset.",
+    "Host timings are not Android performance evidence."
+  ]
+}

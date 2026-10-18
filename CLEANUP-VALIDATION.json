@@ -1,0 +1,59 @@
+{
+  "task": "DEV-02",
+  "baseline": "0.14.4-photo-hotfix3",
+  "versionCode": 34,
+  "schema": {
+    "room": 10,
+    "backup": 10
+  },
+  "status": "source-cleanup-verified; Android acceptance pending",
+  "executed": {
+    "host_suites_passed": 21,
+    "host_suites_total": 22,
+    "not_configured": [
+      "check_auth_config.py: client app/google-services.json not included"
+    ],
+    "source_sql_checks": 4381,
+    "xml_files": 11,
+    "localized_strings_per_locale": 1038,
+    "dao_queries": 72,
+    "updater_integration_tests": 10,
+    "source_scan_regression_tests": 1,
+    "local_markdown_links_resolved": 125,
+    "archived_evidence_files_byte_identical": 43,
+    "all_previous_active_roadmap_task_ids_preserved": true,
+    "only_two_xml_string_keys_removed": true
+  },
+  "host_report": "release-evidence/host-runs/0.14.4-photo-hotfix3-20261017T220534591545Z.json",
+  "evidence": "release-evidence/project-cleanup/",
+  "android_build": {
+    "status": "blocked_before_compilation",
+    "reason": "build-apk.sh: missing javac/full JDK launcher; JDK compiler module used only for host Java tests"
+  },
+  "not_run": [
+    "Android compile/KSP/Compose",
+    "Gradle unit tests",
+    "Android lint",
+    "APK build",
+    "Android device acceptance",
+    "native PowerShell on Windows",
+    "native macOS execution",
+    "live Firebase/emulators"
+  ],
+  "changes": {
+    "historical_files_moved": 73,
+    "readme_lines_before": 282,
+    "readme_lines_after": 42,
+    "roadmap_bytes_before": 155018,
+    "roadmap_bytes_after": 75482
+  },
+  "local_cleanup": {
+    "user_computer_accessed": false,
+    "actual_user_cache_backup_sizes_verified": false,
+    "default": "preview only",
+    "archive": "outside project; two newest timestamped backups retained",
+    "cache_purge": "explicit --purge-caches only",
+    "archive_reclaims_disk_space": false,
+    "guides_and_connect_firebase": "preserved pending local review"
+  }
+}

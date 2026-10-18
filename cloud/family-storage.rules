@@ -1,0 +1,51 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{uid}/snapshots/{archive} {
+      function owner() { return request.auth != null && request.auth.uid == uid && archive.matches('[a-f0-9-]{36}[.]zip'); }
+      allow read: if owner();
+      allow create: if owner() && resource == null && request.resource.size > 0 && request.resource.size <= 512 * 1024 * 1024
+        && request.resource.contentType == 'application/zip';
+      allow update: if false;
+      // Delete only superseded/uncommitted snapshots, never the current head.
+      allow delete: if owner() && (!firestore.exists(/databases/(default)/documents/users/$(uid)/state/head)
+        || firestore.get(/databases/(default)/documents/users/$(uid)/state/head).data.archive != 'users/' + uid + '/snapshots/' + archive);
+    }
+    match /familyWardrobes/{remote}/staging/{uid}/{archive} {
+      function root() { return firestore.get(/databases/(default)/documents/familyWardrobes/$(remote)).data; }
+      function upload() { return firestore.get(/databases/(default)/documents/familyWardrobes/$(remote)/uploads/$(archive.replace('[.]zip$', ''))).data; }
+      function editor() {
+        let r = root();
+        let m = /databases/(default)/documents/familyWardrobes/$(remote)/members/$(uid);
+        return !r.archived && (r.ownerUid == uid || (firestore.exists(m)
+          && firestore.get(m).data.active == true && firestore.get(m).data.role == 'editor'
+          && firestore.get(m).data.expiresAt > request.time.toMillis()));
+      }
+      function validUpload() {
+        let u = upload();
+        return u.authorUid == uid && u.status == 'pending' && u.expiresAt > request.time.toMillis()
+          && u.baseRevision == root().revision
+          && u.stagingPath == 'familyWardrobes/' + remote + '/staging/' + uid + '/' + archive
+          && request.resource.size == u.size;
+      }
+      allow create: if request.auth != null && request.auth.uid == uid && request.auth.token.email_verified == true
+        && remote.matches('[a-f0-9-]{36}') && archive.matches('[a-f0-9-]{36}[.]zip') && resource == null
+        && request.resource.size > 0 && request.resource.size <= 128 * 1024 * 1024
+        && request.resource.contentType == 'application/zip' && request.resource.contentEncoding == null
+        && request.resource.metadata.keys().hasOnly([]) && editor() && validUpload();
+      allow read, update, delete: if false;
+    }
+    match /familyWardrobes/{remote}/snapshots/{archive} {
+      function reader() {
+        let r = firestore.get(/databases/(default)/documents/familyWardrobes/$(remote)).data;
+        let m = /databases/(default)/documents/familyWardrobes/$(remote)/members/$(request.auth.uid);
+        return !r.archived && r.revision > 0 && r.head.archive == 'familyWardrobes/' + remote + '/snapshots/' + archive
+          && (r.ownerUid == request.auth.uid || (firestore.exists(m) && firestore.get(m).data.active == true
+            && firestore.get(m).data.role in ['viewer', 'editor'] && firestore.get(m).data.expiresAt > request.time.toMillis()));
+      }
+      allow get: if request.auth != null && request.auth.token.email_verified == true && reader();
+      allow list, write: if false;
+    }
+    match /{path=**} { allow read, write: if false; }
+  }
+}

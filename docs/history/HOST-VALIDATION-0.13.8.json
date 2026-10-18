@@ -1,0 +1,99 @@
+{
+  "release": "0.13.8-release",
+  "checked_at": "2026-10-11T17:38:24.377234+00:00",
+  "source_only": true,
+  "checks": [
+    {
+      "script": "check_project.py",
+      "exit_code": 0,
+      "output": "PASS: 4147 source/SQL checks; 11 XML files; 987 localized strings; 68 DAO queries.\nNOT RUN: Kotlin compilation, Gradle lint, JVM tests, Android tests, APK build, device and emulator checks.\n"
+    },
+    {
+      "script": "check_refinement.py",
+      "exit_code": 0,
+      "output": "PASS: 6817 production empty-reason, zoom/crop, mask cancellation, verified-archive, outfit-name and sequential-review assertions.\nPASS: source integration guards for contextual navigation/errors, cancellable export, fingerprint before restore writes, saved daily state, explicit collage mode, single photo dialog and full-row selection; UA/EN/PL keys match.\nNOT RUN: Kotlin compilation, native navigation/state restoration, touch, WorkManager/SAF, TalkBack, APK or device UX.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n"
+    },
+    {
+      "script": "check_experience.py",
+      "exit_code": 0,
+      "output": "PASS: 132 production flexible-outfit, recency, photo-mask and canvas assertions.\nPASS: actual schema 2→7 migrations preserve all seeded clothing, wear, looks, pending import and packed capsule rows; new defaults and per-wardrobe DAO updates verified.\nNOT RUN: Kotlin, Room code generation, WorkManager/provider, native masks, Compose gestures, APK and device checks.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n"
+    },
+    {
+      "script": "check_roadmap.py",
+      "exit_code": 0,
+      "output": "PASS: 46 production daily outfit, date, packing and cost-per-wear assertions.\nPASS: production Room migrations 4→5→6 retain garments, wear and looks, carry purchase prices, and enforce calendar/packing keys and cascades.\nNOT RUN: Kotlin, generated Room validation, native photo queue, live weather, Compose/device UI or APK.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n"
+    },
+    {
+      "script": "check_ux.py",
+      "exit_code": 0,
+      "output": "PASS: 76 production photo-result ownership and image-presentation checks.\nPASS: real Room migration 3->4 executed on migrated exported schema 2; every existing wish field retained.\nPASS: Kotlin source delimiters. This does not establish type correctness or compilation.\nNOT RUN: Kotlin/Compose, Room-generated schema validation, Firebase, native ML, device UI or APK.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n"
+    },
+    {
+      "script": "check_wardrobe.py",
+      "exit_code": 0,
+      "output": "PASS: 2147 production wardrobe assertions.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n"
+    },
+    {
+      "script": "check_wishes.py",
+      "exit_code": 0,
+      "output": "PASS: 2035 production money and optional-link assertions.\nPASS: 23 production collage-selection assertions (locks, refresh, seasons, partial and labelled references).\nPASS: 19 real migration statements on exported v2 schema; stable IDs, original budget, rollback, planned-reference SET NULL and CASCADE checks.\nNOT RUN: Kotlin, Room-generated schema validation, Compose, Firebase and Android runtime tests.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n"
+    },
+    {
+      "script": "check_auth.py",
+      "exit_code": 0,
+      "output": "PASS: 38 production auth validation, identity and cancellation assertions.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n"
+    },
+    {
+      "script": "check_management.py",
+      "exit_code": 0,
+      "output": "PASS: real DAO deletion SQL isolates wardrobes and removes dependents; failure rolls back; migration preserves data; rename disables automatic naming.\nNOT RUN: Room schema validation on Android, Kotlin compilation, Android tests and UI.\n"
+    },
+    {
+      "script": "check_photo_rules.py",
+      "exit_code": 0,
+      "output": "PASS: 12 photo-rule scenarios against production PhotoRules.java. No ML model or Android runtime exercised.\nPASS: 7 crop/rotation geometry scenarios; production PhotoGeometry.java.\nPASS: 40 production mask/backdrop assertions; synthetic fixtures, not ML accuracy.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n"
+    },
+    {
+      "script": "check_theme.py",
+      "exit_code": 0,
+      "output": "PASS: 440 production text colour pairings in 11 palettes × 2 modes; minimum 4.52:1; 22 outline checks ≥3:1.\nNOT RUN: Kotlin/Compose compilation, Android rendering, TalkBack and on-device persistence.\n"
+    },
+    {
+      "script": "check_auth_config.py",
+      "exit_code": 0,
+      "output": "PASS: client config shape and package name. Firebase provider, password policy and email delivery still need live verification.\n"
+    },
+    {
+      "script": "check_scenarios.py",
+      "exit_code": 0,
+      "output": "PASS: 294 production Java assertions for sync decisions, lost acknowledgements, account paths, varied inspiration and lock/replace behavior.\nPASS: production schema 2→8 retains seeded wardrobe, items, purchase, wear and outfit references; 42 durable triggers, restart queue, transaction rollback, remote echo suppression, edit-during-upload and receipt/history cascades.\nNOT RUN: Kotlin/Room generation, Compose, Android bitmap/URI, Firebase transactions/rules/emulators, WorkManager, APK or two real devices.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n"
+    },
+    {
+      "script": "check_shop_import.py",
+      "exit_code": 0,
+      "output": "PASS: 34 shop metadata and input assertions\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n"
+    },
+    {
+      "script": "check_purchase_advice.py",
+      "exit_code": 0,
+      "output": "PASS: 76 purchase advice assertions against production rules\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n"
+    },
+    {
+      "script": "check_photo_zoom.py",
+      "exit_code": 0,
+      "output": "PASS: 225 photo zoom assertions against production geometry\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n"
+    },
+    {
+      "script": "check_photo_editor.py",
+      "exit_code": 0,
+      "output": "PASS: 1774 photo editor assertions (history, redo branches, pixel brushes, alpha and cancellation)\nPASS: 22649 photo session assertions (soft brush, event-rate independence, cross-tool history, restoration and loupe)\nPASS: 52357 photo region/inspection assertions (connectivity, tolerance, transparency, history, cancellation, camera and divider)\nSynthetic 2048-square edge pass under 256 MiB: 125 ms (host, not Android)\nPASS: 588864 precision assertions (edge oracle, polygon coverage, protection, geometry, cancellation)\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n"
+    },
+    {
+      "script": "check_photo_reprocessing.py",
+      "exit_code": 0,
+      "output": "PASS: 108013 photo resolution assertions; 2048x2048 production refinement 202 ms on this host, -Xmx256m. Not Android/ML profiling.\nPASS: 14 actual SQLite replacement checks (stale, cross-wardrobe/account, metadata, repeat, deletion).\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n"
+    }
+  ],
+  "android": "Not executed by this runner. Consult the release-specific validation report; historical results do not validate the current source.",
+  "updater": "See archive package-validation.json for actual PowerShell updater validation; Windows filesystem is not exercised by Linux checks."
+}

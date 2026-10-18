@@ -1,0 +1,101 @@
+(node:95) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+> test
+> firebase emulators:exec --project demo-wardrobe --only auth,firestore,storage "node --test rules.test.mjs auth.test.mjs"
+
+(node:108) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+i  emulators: Starting emulators: auth, firestore, storage
+i  emulators: Detected demo project ID "demo-wardrobe", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail.
+i  firestore: downloading cloud-firestore-emulator-v1.19.8.jar...
+
+i  firestore: Firestore Emulator logging to firestore-debug.log
+✔  firestore: Firestore Emulator UI websocket is running on 9150.
+i  storage: downloading cloud-storage-rules-runtime-v1.1.3.jar...
+
+⚠  Unexpected rules runtime error: Picked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=44525 -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=44525 -Dhttp.nonProxyHosts=localhost|127.*|10.*
+
+i  Running script: node --test rules.test.mjs auth.test.mjs
+(node:190) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+TAP version 13
+# (node:197) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: email/password registration, duplicate refusal, wrong password and independent clients
+ok 1 - email/password registration, duplicate refusal, wrong password and independent clients
+  ---
+  duration_ms: 63.75307
+  type: 'test'
+  ...
+i  To reset the password for wardrobe-175be4af-9ae0-400d-8f47-c9e0384c07e5@example.test, follow this link: http://127.0.0.1:9099/emulator/action?mode=resetPassword&lang=en&oobCode=PlrkKoxzd2zUlQlMY7pkY3cNWUotiBrOhii_t62Gcsi1oyKiYV35d4&apiKey=fake-api-key&newPassword=NEW_PASSWORD_HERE
+# Subtest: reset email link accepts a password once and invalidates the old password
+ok 2 - reset email link accepts a password once and invalidates the old password
+  ---
+  duration_ms: 27.807334
+  type: 'test'
+  ...
+# (node:198) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# [2026-10-03T12:44:06.489Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x5f2011c2 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+# false for 'create' @ L20, false for 'create' @ L25, false for 'update' @ L21, false for 'update' @ L25
+# [2026-10-03T12:44:06.543Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x5f2011c4 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+# false for 'create' @ L20, false for 'create' @ L25, false for 'update' @ L21, false for 'update' @ L25
+# Subtest: owner can create/read head; unauthenticated and another UID cannot
+ok 3 - owner can create/read head; unauthenticated and another UID cannot
+  ---
+  duration_ms: 1219.006427
+  type: 'test'
+  ...
+# [2026-10-03T12:44:06.619Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x5f2011c5 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+# evaluation error at L20:24 for 'create' @ L20, false for 'create' @ L25, evaluation error at L21:24 for 'update' @ L21, false for 'update' @ L25, false for 'create' @ L20, false for 'create' @ L25
+# [2026-10-03T12:44:06.639Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x5f2011c6 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+# evaluation error at L20:24 for 'create' @ L20, false for 'create' @ L25, evaluation error at L21:24 for 'update' @ L21, false for 'update' @ L25, false for 'create' @ L20, false for 'create' @ L25
+# [2026-10-03T12:44:06.664Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x5f2011c7 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+# evaluation error at L20:24 for 'create' @ L20, false for 'create' @ L25, evaluation error at L21:24 for 'update' @ L21, false for 'update' @ L25, false for 'create' @ L20, false for 'create' @ L25
+# [2026-10-03T12:44:06.685Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x5f2011c8 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+# evaluation error at L20:24 for 'create' @ L20, false for 'create' @ L25, evaluation error at L21:24 for 'update' @ L21, false for 'update' @ L25, false for 'create' @ L20, false for 'create' @ L25
+# [2026-10-03T12:44:06.704Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x5f2011c9 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+# evaluation error at L20:24 for 'create' @ L20, false for 'create' @ L25, evaluation error at L21:24 for 'update' @ L21, false for 'update' @ L25, false for 'create' @ L20, false for 'create' @ L25
+# [2026-10-03T12:44:06.720Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x5f2011ca error. Code: 7 Message: 7 PERMISSION_DENIED: 
+# evaluation error at L20:24 for 'create' @ L20, false for 'create' @ L25, evaluation error at L21:24 for 'update' @ L21, false for 'update' @ L25, false for 'create' @ L20, false for 'create' @ L25
+# [2026-10-03T12:44:06.752Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x5f2011cb error. Code: 7 Message: 7 PERMISSION_DENIED: 
+# evaluation error at L20:24 for 'create' @ L20, false for 'create' @ L25, evaluation error at L21:24 for 'update' @ L21, false for 'update' @ L25, false for 'update' @ L21, false for 'update' @ L25
+# [2026-10-03T12:44:06.767Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x5f2011cc error. Code: 7 Message: 7 PERMISSION_DENIED: 
+# evaluation error at L20:24 for 'create' @ L20, false for 'create' @ L25, evaluation error at L21:24 for 'update' @ L21, false for 'update' @ L25, false for 'update' @ L21, false for 'update' @ L25
+# [2026-10-03T12:44:06.776Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Write' stream 0x5f2011cd error. Code: 7 Message: 7 PERMISSION_DENIED: 
+# false for 'delete' @ L23, false for 'delete' @ L25
+# Subtest: revision cannot skip, rewind, reuse or delete; malformed archive metadata is denied
+ok 4 - revision cannot skip, rewind, reuse or delete; malformed archive metadata is denied
+  ---
+  duration_ms: 250.184167
+  type: 'test'
+  ...
+# Subtest: two devices with the same base cannot both commit
+ok 5 - two devices with the same base cannot both commit
+  ---
+  duration_ms: 96.572356
+  type: 'test'
+  ...
+# Subtest: snapshots are private and immutable; active head is protected from deletion
+ok 6 - snapshots are private and immutable; active head is protected from deletion
+  ---
+  duration_ms: 415.775933
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2185.94727
+✔  Script exited successfully (code 0)
+i  emulators: Shutting down emulators.
+i  firestore: Stopping Firestore Emulator
+i  auth: Stopping Authentication Emulator
+i  storage: Stopping Storage Emulator
+i  hub: Stopping emulator hub
+i  logging: Stopping Logging Emulator

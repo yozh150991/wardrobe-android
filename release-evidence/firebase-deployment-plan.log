@@ -1,0 +1,5 @@
+Project from existing client configuration: wardrobe-75fea
+Storage bucket: wardrobe-75fea.firebasestorage.app
+Plan: run local emulator tests, then deploy Firestore and Storage rules to this project.
+Enable email/password Auth, Firestore and Storage in Firebase Console before deployment.
+Read-only plan. Add -Deploy after signing into Firebase CLI.
