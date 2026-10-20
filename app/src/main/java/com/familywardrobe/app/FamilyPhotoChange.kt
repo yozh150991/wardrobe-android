@@ -44,7 +44,7 @@ internal class FamilyPhotoArchive(private val context: AccountContext, private v
             FamilySnapshotZip.write(target, manifest, changed, photos, guard)
             val item = changed.garments.single { it.id == garmentId }
             val draft = FamilyAddDraft(FamilyPublication(remote.identity, id, remote.revision, FamilyArchive.digest(target, guard), target.length()),
-                garmentId, photoId, item.name.trim().take(120).ifBlank { "?" })
+                garmentId, photoId, TextLimits.takeTrimmed(item.name, 120).ifBlank { "?" })
             // Keep only the new photo for the preview; the shared photos stay inside the immutable ZIP.
             photos.directory.listFiles().orEmpty().filter { it.nameWithoutExtension != photoId }.forEach { check(it.delete()) }
             guard(); return draft

@@ -41,7 +41,7 @@ fun WardrobeCategoryChoice(base: String, customId: String, s: Snapshot, wardrobe
             reserved.any { CategoryRules.key(it) == CategoryRules.key(proposedName) }
         AlertDialog(onDismissRequest = { if (!busy) creating = false }, title = { Text(stringResource(R.string.category_add)) },
             text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(proposedName, { proposedName = it.take(60) }, singleLine = true, enabled = !busy,
+                OutlinedTextField(proposedName, { proposedName = TextLimits.input(it, 60) }, singleLine = true, enabled = !busy,
                     label = { Text(stringResource(R.string.category_custom_name)) }, modifier = Modifier.fillMaxWidth(),
                     isError = proposedName.isNotEmpty() && (!valid || duplicate), supportingText = {
                         if (duplicate) Text(stringResource(R.string.category_duplicate))
@@ -70,7 +70,7 @@ fun SubcategoryChoice(value: String, options: List<String>, change: (String) -> 
     }
     if (choosing) AlertDialog(onDismissRequest = { choosing = false }, title = { Text(stringResource(R.string.filter_subcategory)) },
         text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(query, { query = it.take(100) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+            OutlinedTextField(query, { query = TextLimits.input(it, 100) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                 label = { Text(stringResource(R.string.search_subcategories)) })
             val visible = options.filter { CategoryRules.matches(query, it) }
             if (options.isEmpty()) Text(stringResource(R.string.subcategory_empty))

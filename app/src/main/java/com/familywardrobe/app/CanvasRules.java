@@ -3,7 +3,7 @@ package com.familywardrobe.app;
 /** Normalized centres and sizes are independent of screen density and orientation. */
 public final class CanvasRules {
     private CanvasRules() {}
-    private static final java.util.regex.Pattern PIECE = java.util.regex.Pattern.compile("(owned|wish):[a-f0-9-]{36}");
+    private static final java.util.regex.Pattern PIECE = java.util.regex.Pattern.compile("(owned|wish):[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");  // canonical UUID only (BUG-15)
     /** Owned and wish keys, a generic idea category, or any key of the curated inspiration catalog. */
     public static boolean validKey(String key) {
         if (key == null || key.length() > 60) return false;

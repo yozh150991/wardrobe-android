@@ -10,7 +10,27 @@ public final class ShopMetadata {
     private static final Pattern META=Pattern.compile("<meta\\b([^>]{0,16000})>",Pattern.CASE_INSENSITIVE);
     private static final Pattern SCRIPT=Pattern.compile("<script\\b([^>]{0,4000})>([\\s\\S]*?)</script\\s*>",Pattern.CASE_INSENSITIVE);
     private static final Pattern ATTR=Pattern.compile("([A-Za-z_:][\\w:.-]*)\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))");
-    private static final Pattern ENTITY=Pattern.compile("&(#x[0-9a-fA-F]{1,6}|#[0-9]{1,7}|amp|quot|apos|lt|gt|nbsp);",Pattern.CASE_INSENSITIVE);
+    private static final Pattern ENTITY=Pattern.compile("&(#[xX][0-9a-fA-F]{1,6}|#[0-9]{1,7}|[A-Za-z][A-Za-z0-9]{1,31});");
+    /** Named entities seen on PL/UA/EU shop pages: HTML 4 Latin-1, typography, Polish and Czech letters. */
+    private static final Map<String,Integer> NAMED=new HashMap<>();
+    static {
+        String[] latin1={"nbsp","iexcl","cent","pound","curren","yen","brvbar","sect","uml","copy","ordf","laquo","not","shy","reg","macr",
+            "deg","plusmn","sup2","sup3","acute","micro","para","middot","cedil","sup1","ordm","raquo","frac14","frac12","frac34","iquest",
+            "Agrave","Aacute","Acirc","Atilde","Auml","Aring","AElig","Ccedil","Egrave","Eacute","Ecirc","Euml","Igrave","Iacute","Icirc","Iuml",
+            "ETH","Ntilde","Ograve","Oacute","Ocirc","Otilde","Ouml","times","Oslash","Ugrave","Uacute","Ucirc","Uuml","Yacute","THORN","szlig",
+            "agrave","aacute","acirc","atilde","auml","aring","aelig","ccedil","egrave","eacute","ecirc","euml","igrave","iacute","icirc","iuml",
+            "eth","ntilde","ograve","oacute","ocirc","otilde","ouml","divide","oslash","ugrave","uacute","ucirc","uuml","yacute","thorn","yuml"};
+        for(int n=0;n<latin1.length;n++)NAMED.put(latin1[n],160+n);
+        Object[] other={"amp",38,"AMP",38,"quot",34,"QUOT",34,"apos",39,"lt",60,"LT",60,"gt",62,"GT",62,
+            "ndash",0x2013,"mdash",0x2014,"lsquo",0x2018,"rsquo",0x2019,"sbquo",0x201a,"ldquo",0x201c,"rdquo",0x201d,"bdquo",0x201e,
+            "hellip",0x2026,"bull",0x2022,"prime",0x2032,"lsaquo",0x2039,"rsaquo",0x203a,"euro",0x20ac,"trade",0x2122,"minus",0x2212,
+            "thinsp",0x2009,"ensp",0x2002,"emsp",0x2003,"zwnj",0x200c,"zwj",0x200d,"OElig",0x152,"oelig",0x153,"Scaron",0x160,"scaron",0x161,
+            "Yuml",0x178,"Zcaron",0x17d,"zcaron",0x17e,"Aogon",0x104,"aogon",0x105,"Cacute",0x106,"cacute",0x107,"Ccaron",0x10c,"ccaron",0x10d,
+            "Eogon",0x118,"eogon",0x119,"Ecaron",0x11a,"ecaron",0x11b,"Lstrok",0x141,"lstrok",0x142,"Nacute",0x143,"nacute",0x144,
+            "Rcaron",0x158,"rcaron",0x159,"Sacute",0x15a,"sacute",0x15b,"Zacute",0x179,"zacute",0x17a,"Zdot",0x17b,"zdot",0x17c,
+            "Uring",0x16e,"uring",0x16f};
+        for(int n=0;n<other.length;n+=2)NAMED.put((String)other[n],(Integer)other[n+1]);
+    }
     private ShopMetadata() {}
     public static final class Product {
         public final String name, url, price, currency;
@@ -21,12 +41,16 @@ public final class ShopMetadata {
         }
     }
     public static List<Product> parse(String html,String page) {
-        if(html==null || html.length()>MAX_HTML || ShopImportRules.webUrl(page).isEmpty())throw new IllegalArgumentException("Invalid page");
+        if(html==null || ShopImportRules.webUrl(page).isEmpty())throw new IllegalArgumentException("Invalid page");
+        // Product metadata lives in <head>; a heavy page is parsed up to the limit instead of refused (BUG-04).
+        if(html.length()>MAX_HTML)html=TextLimits.take(html,MAX_HTML);
         List<Product> products=new ArrayList<>();
         Matcher scripts=SCRIPT.matcher(html);int count=0;
-        while(scripts.find() && count++<64 && products.size()<20){
+        // Only JSON-LD blocks count toward the bound: Next.js/Nuxt pages carry dozens of ordinary scripts (BUG-03).
+        while(count<64 && products.size()<20 && scripts.find()){
             Map<String,String> attributes=attributes(scripts.group(1));
             if(!attributes.getOrDefault("type","").split(";",2)[0].trim().equalsIgnoreCase("application/ld+json"))continue;
+            count++;
             String input=scripts.group(2).trim();if(input.length()>512000)continue;
             try{collect(new Json(input).read(),page,products,0);}catch(IllegalArgumentException ignored){/* Broken metadata has a manual fallback. */}
         }
@@ -40,13 +64,13 @@ public final class ShopMetadata {
         while(meta.find() && count++<1000){
             Map<String,String>a=attributes(meta.group(1));String key=a.getOrDefault("property",a.getOrDefault("name","")).toLowerCase(Locale.ROOT);
             String content=a.getOrDefault("content","");if(content.length()>4000)continue;
-            if(key.equals("og:image") || key.equals("og:image:secure_url"))addImage(images,page,content);
+            if(key.equals("og:image") || key.equals("og:image:secure_url"))addImage(images,page,content);  // decoded once
             tags.putIfAbsent(key,content);
         }
-        String title=clean(tags.getOrDefault("og:title",tags.getOrDefault("twitter:title","")),120);
+        String title=clean(tags.getOrDefault("og:title",tags.getOrDefault("twitter:title","")),120);  // already decoded by attributes()
         if(title.isEmpty()){
             Matcher m=Pattern.compile("<title\\b[^>]*>([^<]{0,2000})</title\\s*>",Pattern.CASE_INSENSITIVE).matcher(html);
-            if(m.find())title=clean(m.group(1),120);
+            if(m.find())title=clean(decode(m.group(1)),120);
         }
         if(images.isEmpty())addImage(images,page,tags.getOrDefault("twitter:image",""));
         String amount=tags.getOrDefault("product:price:amount",tags.getOrDefault("og:price:amount",""));
@@ -89,28 +113,30 @@ public final class ShopMetadata {
         String amount="",currency="";
         if(amounts.size()==1&&!uncertain){String[] pair=amounts.iterator().next().split(" ");amount=pair[0];currency=pair[1];}
         else if(!offers.isEmpty())uncertain=true;
-        return new Product(clean(string(m.get("name")),120),url,images,amount,currency,uncertain);
+        // JSON strings are not HTML-decoded by the browser, but shops often put entities in them: decode exactly once.
+        return new Product(clean(decode(string(m.get("name"))),120),url,images,amount,currency,uncertain);
     }
     private static void images(Object value,String page,List<String> result,int depth){
         if(depth>5||result.size()>=8)return;
         if(value instanceof List)for(Object image:(List<?>)value)images(image,page,result,depth+1);
         else if(value instanceof Map){Map<?,?> m=(Map<?,?>)value;images(m.containsKey("contentUrl")?m.get("contentUrl"):m.get("url"),page,result,depth+1);}
-        else addImage(result,page,string(value));
+        else addImage(result,page,decode(string(value)));
     }
-    private static void addImage(List<String> list,String page,String value){String url=ShopImportRules.resolve(page,decode(value));if(!url.isEmpty()&&!list.contains(url)&&list.size()<8)list.add(url);}
+    private static void addImage(List<String> list,String page,String value){String url=ShopImportRules.resolve(page,value);if(!url.isEmpty()&&!list.contains(url)&&list.size()<8)list.add(url);}
     private static String string(Object value){return value instanceof String?(String)value:value instanceof BigDecimal?((BigDecimal)value).toPlainString():"";}
     private static String price(String amount,String currency){
         if(!WishRules.CURRENCIES.contains(currency))return "";
         try {Long minor=WishRules.money(amount);return minor==null?"":BigDecimal.valueOf(minor,2).toPlainString();}catch(Exception e){return "";}
     }
-    private static String clean(String text,int max){String v=decode(text).replaceAll("[\\p{Cntrl}\\s]+"," ").trim();return v.substring(0,Math.min(v.length(),max));}
+    /** Callers decode first; cleaning only folds whitespace and cuts on a grapheme boundary (BUG-05/06). */
+    private static String clean(String text,int max){String v=text.replaceAll("[\\p{Cntrl}\\s]+"," ").trim();return TextLimits.takeTrimmed(v,max);}
     public static String decode(String input){
         Matcher m=ENTITY.matcher(input);StringBuffer out=new StringBuffer();
         while(m.find()){
-            String name=m.group(1).toLowerCase(Locale.ROOT),value=m.group();
+            String name=m.group(1),value=m.group();
             try{
-                if(name.startsWith("#")){int n=Integer.parseInt(name.substring(name.startsWith("#x")?2:1),name.startsWith("#x")?16:10);if(Character.isValidCodePoint(n)&&!(n>=0xd800&&n<=0xdfff))value=new String(Character.toChars(n));}
-                else switch(name){case "amp":value="&";break;case "quot":value="\"";break;case "apos":value="'";break;case "lt":value="<";break;case "gt":value=">";break;case "nbsp":value=" ";break;default:break;}
+                if(name.startsWith("#")){boolean hex=name.length()>1&&(name.charAt(1)=='x'||name.charAt(1)=='X');int n=Integer.parseInt(name.substring(hex?2:1),hex?16:10);if(Character.isValidCodePoint(n)&&n!=0&&!(n>=0xd800&&n<=0xdfff))value=new String(Character.toChars(n));}
+                else{Integer n=NAMED.get(name);if(n!=null)value=n==160?" ":new String(Character.toChars(n));}
             }catch(Exception ignored){}
             m.appendReplacement(out,Matcher.quoteReplacement(value));
         }m.appendTail(out);return out.toString();

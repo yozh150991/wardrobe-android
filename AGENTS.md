@@ -1,3 +1,7 @@
+## Current handoff — QA fixes, 20 October 2026
+
+0.14.13-qa-fixes/code 43 (0.14.12 + all 16 bugs of the 0.14.12 QA report), Room/backup 10. Read QA-FIXES-0.14.13.md. Backend changes in cloud/family-functions (IDN e-mails, final-sigma label keys, CRLF edits, bidi/invisible names) need a manual functions deploy. New TextLimits.java is the grapheme-safe truncation/visible-text helper; use TextLimits.input(it, N) in text fields instead of it.take(N). Next: device checks of shop import and .укр invitations, then FAM-03 shared outfits/queue/background sync.
+
 ## Current handoff — FAM-03 new shared item, 20 October 2026
 
 0.14.12-family-labels/code 42 (0.14.11 + shared custom categories/colours in the new-item form), Room/backup 10. Read FAMILY-NEW-0.14.11.md (and FAMILY-PHOTO-0.14.10.md). Owner/editor can create a new item directly in a shared wardrobe with a gallery/camera photo; it is an ordinary addition draft (FamilyAddController.prepareNew). Existing shared custom labels can be chosen; creating new shared labels is later. Next FAM-03: shared outfits, multi-operation queue, background sync; then FAM-04. Work in branches, merge via PR; CI compiles Kotlin and reports the JVM test count.

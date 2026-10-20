@@ -42,7 +42,7 @@ internal object FamilyAddition {
 internal data class FamilyNewItem(val name: String, val category: String, val color: String, val size: String = "",
     val location: String = "", val description: String = "", val season: String = "all", val style: String = "casual",
     val customCategoryId: String? = null, val customColorId: String? = null) {
-    val valid get() = name.trim().length in 1..120 && size.length <= 40 && location.length <= 200 && description.length <= 1000 &&
+    val valid get() = name.trim().length in 1..120 && TextLimits.hasVisibleText(name) && size.length <= 40 && location.length <= 200 && description.length <= 1000 &&
         category in Matching.categories && color in Matching.colors && season in Matching.seasons && style in Matching.styles
     /** Shared custom labels that may be used for this base category/colour. */
     fun categories(latest: Snapshot, target: Wardrobe) = latest.customCategories.filter { it.wardrobeId == target.id && it.baseCategory == category }

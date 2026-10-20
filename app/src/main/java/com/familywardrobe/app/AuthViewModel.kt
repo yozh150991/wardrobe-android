@@ -63,7 +63,7 @@ internal class AuthViewModel(application: Application) : AndroidViewModel(applic
 
     fun editEmail(value: String) {
         if (_ui.value.session != null || requests.value.busy) return
-        _ui.value = _ui.value.copy(email = value.take(254), emailError = false, error = null)
+        _ui.value = _ui.value.copy(email = TextLimits.input(value, 254), emailError = false, error = null)
     }
     fun clearFieldErrors() {
         _ui.value = _ui.value.copy(passwordError = false, confirmationError = false, error = null)

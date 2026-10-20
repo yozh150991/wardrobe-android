@@ -39,6 +39,9 @@ public final class FamilyCases {
     private static List<WardrobeScope.Row> with(WardrobeScope.Row extra) {
         List<WardrobeScope.Row> rows = both(); rows.add(extra); return rows;
     }
+    private static boolean accepted(List<WardrobeScope.Row> rows) {
+        try { WardrobeScope.select(A, rows); return true; } catch (IllegalArgumentException e) { return false; }
+    }
     public static void main(String[] args) {
         checks = 0;
         List<WardrobeScope.Row> rows = both();
@@ -111,6 +114,17 @@ public final class FamilyCases {
         }
         check(FamilyRules.validHash("ab".repeat(32)) && !FamilyRules.validHash("G".repeat(64)) && !FamilyRules.validHash("ab"), "Exact SHA-256 format");
         check(!FamilyRules.validUid("x\n") && !FamilyRules.validUid("x".repeat(129)) && FamilyRules.validUid("test-user"), "Owner identity bounds");
+        // BUG-16: the verdict for a deep chain must not depend on row order.
+        for (int length : new int[]{7, 8, 10}) {
+            List<WardrobeScope.Row> chain = new ArrayList<>();
+            chain.add(row("wardrobe:" + A, null, List.of()));
+            String parent = "wardrobe:" + A;
+            for (int i = 1; i <= length; i++) { chain.add(row("n" + i, parent, List.of())); parent = "n" + i; }
+            List<WardrobeScope.Row> backwards = new ArrayList<>(chain); Collections.reverse(backwards);
+            boolean forward = accepted(chain), backward = accepted(backwards);
+            check(forward == backward, "BUG-16 same verdict in both orders for depth " + length);
+            check(forward == (length <= WardrobeScope.MAX_DEPTH), "BUG-16 depth bound " + length);
+        }
         System.out.println("PASS: " + checks + " production family ownership, photo isolation, role, lease, revision and path assertions.");
     }
 }

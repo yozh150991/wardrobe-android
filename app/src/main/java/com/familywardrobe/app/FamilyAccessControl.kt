@@ -187,9 +187,9 @@ private fun FamilyInviteForm(vm: WardrobeViewModel, entry: FamilyDirectoryEntry,
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.family_invite_hint), style = MaterialTheme.typography.bodySmall)
-        OutlinedTextField(value = name, onValueChange = { name = it.take(80); request = UUID.randomUUID().toString() }, enabled = enabled,
+        OutlinedTextField(value = name, onValueChange = { name = TextLimits.input(it, 80); request = UUID.randomUUID().toString() }, enabled = enabled,
             label = { Text(stringResource(R.string.family_shared_name)) }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-        OutlinedTextField(value = email, onValueChange = { email = it.take(254); request = UUID.randomUUID().toString() }, enabled = enabled,
+        OutlinedTextField(value = email, onValueChange = { email = TextLimits.input(it, 254); request = UUID.randomUUID().toString() }, enabled = enabled,
             label = { Text(stringResource(R.string.auth_email)) }, modifier = Modifier.fillMaxWidth(), singleLine = true,
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Email))
         OutlinedButton(onClick = { editor = !editor; request = UUID.randomUUID().toString() }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
@@ -197,8 +197,9 @@ private fun FamilyInviteForm(vm: WardrobeViewModel, entry: FamilyDirectoryEntry,
         }
         Text(accessRole(if (editor) "editor" else "viewer"))
         if (editor) Text(stringResource(R.string.family_editor_hint), style = MaterialTheme.typography.bodySmall)
-        Button(onClick = { vm.familyAccess.invite(entry.remoteId, request, email, if (editor) "editor" else "viewer", name) },
-            enabled = enabled && email.contains('@') && name.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
+        // Same address rule as the family server, so an invalid address is caught before the network call (BUG-13).
+        Button(onClick = { vm.familyAccess.invite(entry.remoteId, request, AuthRules.email(email), if (editor) "editor" else "viewer", name) },
+            enabled = enabled && AuthRules.validEmail(email) && TextLimits.hasVisibleText(name), modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.family_invite_create))
         }
     }

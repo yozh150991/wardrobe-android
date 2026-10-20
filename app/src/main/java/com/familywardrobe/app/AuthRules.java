@@ -8,11 +8,31 @@ import java.util.regex.Pattern;
 /** Shared production validation and stable, path-safe account identity. Never stores credentials. */
 public final class AuthRules {
     private AuthRules() {}
-    private static final Pattern EMAIL = Pattern.compile("^[^\\s@]+@[^\\s@.]+(?:\\.[^\\s@.]+)+$");
+    /**
+     * Mirrors {@code membership.email()} on the family server (BUG-13): ASCII local part, an
+     * IDN domain is checked in its punycode form (BUG-08), TLD letters or {@code xn--}.
+     */
+    private static final Pattern EMAIL = Pattern.compile(
+        "[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\\.(?:[a-z]{2,63}|xn--[a-z0-9-]{1,59})");
     public static String email(String value) { return value == null ? "" : value.trim(); }
+    /** Lower-case address with the domain in ASCII (punycode), or "" when the server would refuse it. */
+    public static String serverEmail(String value) {
+        if (value == null || value.length() > 254) return "";
+        String trimmed = email(value);
+        int at = trimmed.lastIndexOf('@');
+        if (at <= 0 || at == trimmed.length() - 1) return "";
+        String local = trimmed.substring(0, at), domain = trimmed.substring(at + 1);
+        for (int i = 0; i < local.length(); i++) if (local.charAt(i) > 127) return "";
+        boolean ascii = true;
+        for (int i = 0; i < domain.length(); i++) if (domain.charAt(i) > 127) { ascii = false; break; }
+        if (!ascii) {
+            try { domain = java.net.IDN.toASCII(domain); } catch (IllegalArgumentException e) { return ""; }
+        }
+        String normalized = (local + "@" + domain).toLowerCase(java.util.Locale.ROOT);
+        return normalized.length() <= 254 && EMAIL.matcher(normalized).matches() ? normalized : "";
+    }
     public static boolean validEmail(String value) {
-        String normalized = email(value);
-        return normalized.length() <= 254 && EMAIL.matcher(normalized).matches();
+        return !serverEmail(value).isEmpty();
     }
     public static boolean validNewPassword(String value) {
         return value != null && value.length() >= 12 && value.length() <= 4096;

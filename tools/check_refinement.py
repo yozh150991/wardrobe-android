@@ -5,7 +5,7 @@ import re, shutil, subprocess, tempfile, xml.etree.ElementTree as E
 root=Path(__file__).resolve().parents[1]
 source=root/'app/src/main/java/com/familywardrobe/app'
 with tempfile.TemporaryDirectory(prefix='wardrobe-refinement-') as output:
-    names=['WardrobeRules','DailyRules','RecommendationRules','DailyDiagnostics','PhotoGeometry','PhotoViewportRules','PhotoMaskRules','VerifiedArchiveInput','LookNameRules','ImportReviewRules']
+    names=['WardrobeRules','DailyRules','RecommendationRules','DailyDiagnostics','PhotoGeometry','PhotoViewportRules','PhotoMaskRules','VerifiedArchiveInput','LookNameRules','ImportReviewRules','TextLimits']
     sources=[source/(name+'.java') for name in names]+[root/'app/src/test/java/com/familywardrobe/app/RefinementRulesCases.java']
     subprocess.run([shutil.which('java'),'-m','jdk.compiler/com.sun.tools.javac.Main','--release','17','-d',output,*map(str,sources)],check=True)
     subprocess.run([shutil.which('java'),'-cp',output,'com.familywardrobe.app.RefinementRulesCases'],check=True)

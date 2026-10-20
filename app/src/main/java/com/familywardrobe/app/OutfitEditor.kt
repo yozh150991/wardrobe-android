@@ -161,7 +161,7 @@ fun LookEditor(s: Snapshot, wardrobe: String, anchorId: String, outfitId: String
             message?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.onSurfaceVariant) }
             Text(stringResource(R.string.flex_shape_hint), style = MaterialTheme.typography.bodySmall)
             Text(stringResource(if (source == "inspiration") R.string.look_inspiration_reason else R.string.look_match_reason), style = MaterialTheme.typography.bodySmall)
-            OutlinedTextField(name, { name = it.take(80); nameError = false }, label = { Text(stringResource(R.string.outfit_name)) }, enabled = !busy, singleLine = true,
+            OutlinedTextField(name, { name = TextLimits.input(it, 80); nameError = false }, label = { Text(stringResource(R.string.outfit_name)) }, enabled = !busy, singleLine = true,
                 isError = nameError, supportingText = { if (nameError) Text(stringResource(R.string.wish_name_required)) }, modifier = Modifier.fillMaxWidth().focusRequester(nameFocus))
             if (keys.size != pieces.size) TextButton(onClick = { keys = ArrayList(pieces.map { it.key }); locks = ArrayList(locks.filter { it in keys }) }, enabled = !busy) { Text(stringResource(R.string.remove_missing_pieces)) }
             if (keys.size != pieces.size || pieces.any { !it.ready }) Text(stringResource(R.string.look_unavailable_hint), color = MaterialTheme.colorScheme.error)

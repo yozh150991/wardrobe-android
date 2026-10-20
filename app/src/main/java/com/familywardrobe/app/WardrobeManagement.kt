@@ -56,7 +56,7 @@ fun ManageWardrobes(snapshot: Snapshot, activeId: String, vm: WardrobeViewModel,
     }
     snapshot.wardrobes.find { it.id == renameId }?.let {
         AlertDialog(onDismissRequest = { if (!busy) renameId = "" }, title = { Text(stringResource(R.string.rename_wardrobe)) },
-            text = { Field(editedName, { value -> editedName = value.take(80) }, R.string.wardrobe_name, enabled = !busy) },
+            text = { Field(editedName, { value -> editedName = TextLimits.input(value, 80) }, R.string.wardrobe_name, enabled = !busy) },
             confirmButton = { TextButton(onClick = {
                 vm.renameWardrobe(renameId, editedName); renameId = ""
             }, enabled = !busy && editedName.isNotBlank()) { Text(stringResource(R.string.save)) } },
