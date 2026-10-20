@@ -70,7 +70,7 @@ internal fun FamilyPhotoDialog(vm: WardrobeViewModel, remote: String, dismiss: (
                         FamilyProblem.CONFLICT -> R.string.family_photo_conflict
                         FamilyProblem.EXPIRED -> R.string.family_add_expired
                         FamilyProblem.MISSING -> R.string.family_edit_missing
-                        FamilyProblem.ARCHIVE -> if (draft == null) R.string.photo_error_unreadable else R.string.family_archive
+                        FamilyProblem.ARCHIVE -> if (state.unreadablePhoto) R.string.photo_error_unreadable else R.string.family_archive
                         FamilyProblem.CONFIG -> R.string.family_members_config
                         FamilyProblem.LIMIT -> R.string.family_limit
                         FamilyProblem.EMAIL -> R.string.family_email

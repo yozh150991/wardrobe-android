@@ -1,4 +1,4 @@
-"""FAM-03 shared photo replacement (0.14.10): Ukrainian / English / Polish.
+"""FAM-03 shared photo replacement (0.14.10) and new shared items (0.14.11): Ukrainian / English / Polish.
 Run directly to append missing keys to the four resource sets (make_strings.py is stale)."""
 STRINGS = {
 'family_photo_open': ('Замінити фото', 'Replace photo', 'Zmień zdjęcie'),
@@ -16,6 +16,9 @@ STRINGS = {
 'family_photo_send_confirm': ('Замінити фото цієї речі для всіх учасників? Старе фото зникне зі спільної копії, якщо більше ніде не використовується.', 'Replace this item’s photo for all members? The old photo leaves the shared copy if nothing else uses it.', 'Zmienić zdjęcie tej rzeczy dla wszystkich uczestników? Stare zdjęcie zniknie ze wspólnej kopii, jeśli nic innego go nie używa.'),
 'family_photo_synced': ('Сервер підтвердив нове фото.', 'The server confirmed the new photo.', 'Serwer potwierdził nowe zdjęcie.'),
 'family_photo_conflict': ('Спільний гардероб змінився. Нове фото збережене локально. Онови основу чернетки й надішли ще раз.', 'The shared wardrobe has changed. The new photo is kept locally. Update the draft base and send it again.', 'Wspólna garderoba się zmieniła. Nowe zdjęcie jest zapisane lokalnie. Zaktualizuj podstawę szkicu i wyślij ponownie.'),
+'family_new_open': ('Нова річ із фото (галерея/камера)', 'New item with photo (gallery/camera)', 'Nowa rzecz ze zdjęciem (galeria/aparat)'),
+'family_new_hint': ('Заповни поля й вибери фото з галереї або зніми камерою. Фото додається як є, без вирізання фону. Річ одразу готується як чернетка для спільного гардероба; у твій приватний гардероб вона не потрапляє.', 'Fill in the fields and pick a gallery photo or take one with the camera. The photo is added as is, without background removal. The item is prepared as a draft for the shared wardrobe and is not added to your private wardrobe.', 'Uzupełnij pola i wybierz zdjęcie z galerii lub zrób je aparatem. Zdjęcie jest dodawane bez zmian, bez usuwania tła. Rzecz jest przygotowywana jako szkic dla wspólnej garderoby i nie trafia do Twojej prywatnej garderoby.'),
+'family_new_name_first': ('Спершу введи назву (до 120 символів), потім вибери фото.', 'Enter a name first (up to 120 characters), then choose a photo.', 'Najpierw wpisz nazwę (do 120 znaków), potem wybierz zdjęcie.'),
 'family_photo_rebase_confirm': ('Завантажити актуальну версію гардероба й застосувати до неї це саме нове фото? Надсилання — окремим кроком.', 'Download the current wardrobe and apply the same new photo to it? Sending is a separate step.', 'Pobrać aktualną garderobę i zastosować do niej to samo nowe zdjęcie? Wysłanie to osobny krok.'),
 }
 
