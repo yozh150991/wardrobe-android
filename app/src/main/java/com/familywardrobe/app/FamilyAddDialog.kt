@@ -1,9 +1,16 @@
 package com.familywardrobe.app
 
+import android.net.Uri
 import android.os.SystemClock
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -26,6 +33,29 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
     var tick by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
     var query by rememberSaveable { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
+    // New item directly in the shared wardrobe (FAM-03). Launchers live at the dialog level so a
+    // camera result is still delivered when the form item has scrolled out of the list.
+    var creating by rememberSaveable { mutableStateOf(false) }
+    var newName by rememberSaveable { mutableStateOf("") }
+    var newCategory by rememberSaveable { mutableStateOf("top") }
+    var newColor by rememberSaveable { mutableStateOf("black") }
+    var newSize by rememberSaveable { mutableStateOf("") }
+    var newLocation by rememberSaveable { mutableStateOf("") }
+    var newDescription by rememberSaveable { mutableStateOf("") }
+    var newSeason by rememberSaveable { mutableStateOf("all") }
+    var newStyle by rememberSaveable { mutableStateOf("casual") }
+    var pendingCapture by rememberSaveable { mutableStateOf("") }
+    LaunchedEffect(state.synced) {
+        if (state.synced) { creating = false; newName = ""; newSize = ""; newLocation = ""; newDescription = "" }
+    }
+    val fields = FamilyNewItem(newName, newCategory, newColor, newSize, newLocation, newDescription, newSeason, newStyle)
+    val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null && fields.valid) vm.familyAdd.prepareNew(fields, uri)
+    }
+    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success && pendingCapture.isNotEmpty() && fields.valid) vm.familyAdd.prepareNew(fields, Uri.parse(pendingCapture))
+        pendingCapture = ""
+    }
     DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, _ -> foreground = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED); tick = SystemClock.elapsedRealtime() }
         lifecycle.addObserver(observer); onDispose { lifecycle.removeObserver(observer) }
@@ -46,7 +76,7 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
                         FamilyProblem.ACCESS -> R.string.family_access
                         FamilyProblem.CONFLICT -> R.string.family_add_conflict
                         FamilyProblem.EXPIRED -> R.string.family_add_expired
-                        FamilyProblem.ARCHIVE -> R.string.family_archive
+                        FamilyProblem.ARCHIVE -> if (state.unreadablePhoto) R.string.photo_error_unreadable else R.string.family_archive
                         FamilyProblem.CONFIG -> R.string.family_members_config
                         FamilyProblem.LIMIT -> R.string.family_limit
                         FamilyProblem.EMAIL -> R.string.family_email
@@ -91,6 +121,37 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
                             Text(stringResource(R.string.family_edit_discard))
                         } }
                     } else if (readable && !state.synced) {
+                        item {
+                            OutlinedButton(onClick = { creating = !creating }, enabled = !state.running, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                                Text(stringResource(R.string.family_new_open))
+                            }
+                        }
+                        if (creating) item {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(stringResource(R.string.family_new_hint), style = MaterialTheme.typography.bodySmall)
+                                OutlinedTextField(newName, { newName = it.take(120) }, singleLine = true, label = { Text(stringResource(R.string.family_edit_name)) }, modifier = Modifier.fillMaxWidth())
+                                Choice(newCategory, Matching.categories, { newCategory = it }, R.string.category, enabled = !state.running)
+                                Choice(newColor, Matching.colors, { newColor = it }, R.string.color, enabled = !state.running)
+                                OutlinedTextField(newSize, { newSize = it.take(40) }, singleLine = true, label = { Text(stringResource(R.string.family_edit_size)) }, modifier = Modifier.fillMaxWidth())
+                                OutlinedTextField(newLocation, { newLocation = it.take(200) }, label = { Text(stringResource(R.string.family_edit_location)) }, modifier = Modifier.fillMaxWidth())
+                                OutlinedTextField(newDescription, { newDescription = it.take(1000) }, label = { Text(stringResource(R.string.family_edit_description)) }, modifier = Modifier.fillMaxWidth())
+                                Choice(newSeason, Matching.seasons, { newSeason = it }, R.string.season, enabled = !state.running)
+                                Choice(newStyle, Matching.styles, { newStyle = it }, R.string.style, enabled = !state.running)
+                                if (!fields.valid) Text(stringResource(R.string.family_new_name_first), style = MaterialTheme.typography.bodySmall)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    OutlinedButton(onClick = { gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                                        enabled = !state.running && fields.valid, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+                                        Icon(Icons.Outlined.PhotoLibrary, null); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.gallery))
+                                    }
+                                    OutlinedButton(onClick = {
+                                        runCatching { vm.familyAdd.newCapture() }.onSuccess { pendingCapture = it.toString(); camera.launch(it) }
+                                            .onFailure { vm.reportFailure(OperationKind.PHOTO, it as? Exception ?: IllegalStateException()) }
+                                    }, enabled = !state.running && fields.valid, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+                                        Icon(Icons.Outlined.PhotoCamera, null); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.camera))
+                                    }
+                                }
+                            }
+                        }
                         item {
                             Text(stringResource(R.string.family_add_choose, state.wardrobeName))
                             OutlinedTextField(query, { query = it }, singleLine = true, label = { Text(stringResource(R.string.family_read_search)) }, modifier = Modifier.fillMaxWidth())

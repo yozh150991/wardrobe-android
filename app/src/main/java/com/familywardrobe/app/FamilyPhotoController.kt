@@ -11,7 +11,7 @@ import kotlin.coroutines.coroutineContext
 internal data class FamilyPhotoState(val remoteId: String = "", val garmentId: String = "", val garmentName: String = "",
     val localWardrobe: String = "", val choices: List<Garment> = emptyList(), val draft: FamilyAddDraft? = null,
     val preview: PhotoStore? = null, val running: Boolean = false, val problem: FamilyProblem? = null,
-    val recoverable: Boolean = false, val synced: Boolean = false)
+    val recoverable: Boolean = false, val synced: Boolean = false, val unreadablePhoto: Boolean = false)
 
 /**
  * FAM-03 photo replacement for one existing shared item: same durable draft → explicit send →
@@ -32,7 +32,7 @@ internal class FamilyPhotoController(private val app: WardrobeApplication, priva
     // Actions are queued, never dropped (audit 0.14.6 №10).
     private fun run(block: suspend (FamilyBackend, () -> Unit) -> Unit) = scope.launch(Dispatchers.IO) { lock.withLock {
         try {
-            guard(); mutable.value = mutable.value.copy(running = true, problem = null, synced = false)
+            guard(); mutable.value = mutable.value.copy(running = true, problem = null, synced = false, unreadablePhoto = false)
             val work = coroutineContext; val checkpoint = { work.ensureActive(); guard() }
             block(FamilyBackend(session.identity, checkpoint), checkpoint); checkpoint()
         } catch (e: CancellationException) { throw e }
@@ -43,7 +43,7 @@ internal class FamilyPhotoController(private val app: WardrobeApplication, priva
                 lease.clear(); mutable.value.preview?.clearMemoryCache(); reader.invalidate()
                 mutable.value = FamilyPhotoState(remoteId = mutable.value.remoteId, localWardrobe = mutable.value.localWardrobe, running = true)
             }
-            mutable.value = mutable.value.copy(problem = problem)
+            mutable.value = mutable.value.copy(problem = problem, unreadablePhoto = e is UnreadablePhotoException)
         } finally { if (session.isOpen) mutable.value = mutable.value.copy(running = false) }
     } }
     private suspend fun authorize(backend: FamilyBackend, remote: String): FamilyRemote {

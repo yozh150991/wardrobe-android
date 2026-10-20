@@ -33,3 +33,21 @@ internal object FamilyAddition {
         return merged
     }
 }
+
+/**
+ * FAM-03: fields of a brand-new item created directly in a shared wardrobe (photo from the
+ * gallery/camera), without first saving a private item. Base categories/colours only.
+ */
+internal data class FamilyNewItem(val name: String, val category: String, val color: String, val size: String = "",
+    val location: String = "", val description: String = "", val season: String = "all", val style: String = "casual") {
+    val valid get() = name.trim().length in 1..120 && size.length <= 40 && location.length <= 200 && description.length <= 1000 &&
+        category in Matching.categories && color in Matching.colors && season in Matching.seasons && style in Matching.styles
+    /** The new shared item with fresh IDs; it is merged by [FamilyAddition.merge] like any other addition. */
+    fun selection(target: Wardrobe, fingerprint: String): Snapshot {
+        require(valid && (fingerprint.isEmpty() || Regex("[0-9a-f]{64}").matches(fingerprint)))
+        val item = Garment(wardrobeId = target.id, name = name.trim(), category = category, color = color, size = size.trim(),
+            location = location.trim(), description = description.trim(), photoId = newId(), season = season, style = style,
+            photoFingerprint = fingerprint)
+        return Snapshot(wardrobes = listOf(target), garments = listOf(item))
+    }
+}

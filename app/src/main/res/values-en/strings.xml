@@ -1138,7 +1138,7 @@ Your current wardrobe is unchanged.</string>
     <string name="family_edit_no_draft">No pending edit. Open an item and choose Edit fields.</string>
     <string name="family_edit_missing">This item is no longer in the server version. You can delete the local draft after a confirmed conflict.</string>
     <string name="family_edit_invalid">Check the fields: name is required; limits are 120 for name, 40 for size, 200 for location and 1000 for description.</string>
-    <string name="family_add_open">Add own item / open draft</string>
+    <string name="family_add_open">Add item / open draft</string>
     <string name="family_add_title">Add to shared wardrobe</string>
     <string name="family_add_hint">Choose a saved item from your active private wardrobe. All its fields, final photo, custom category and color are copied. Outfits, wears and purchase history are excluded. Your private item stays with you. Prepare a new item or photo in the regular editor first.</string>
     <string name="family_add_choose">Choose an item from “%1$s” to save a copy draft.</string>
@@ -1175,4 +1175,7 @@ Your current wardrobe is unchanged.</string>
     <string name="family_photo_synced">The server confirmed the new photo.</string>
     <string name="family_photo_conflict">The shared wardrobe has changed. The new photo is kept locally. Update the draft base and send it again.</string>
     <string name="family_photo_rebase_confirm">Download the current wardrobe and apply the same new photo to it? Sending is a separate step.</string>
+    <string name="family_new_open">New item with photo (gallery/camera)</string>
+    <string name="family_new_hint">Fill in the fields and pick a gallery photo or take one with the camera. The photo is added as is, without background removal. The item is prepared as a draft for the shared wardrobe and is not added to your private wardrobe.</string>
+    <string name="family_new_name_first">Enter a name first (up to 120 characters), then choose a photo.</string>
 </resources>

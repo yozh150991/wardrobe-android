@@ -1,6 +1,6 @@
 """Shared additions: Ukrainian / English / Polish."""
 STRINGS = {
-'family_add_open': ('Додати власну річ / відкрити чернетку','Add own item / open draft','Dodaj własną rzecz / otwórz szkic'),
+'family_add_open': ('Додати річ / відкрити чернетку','Add item / open draft','Dodaj rzecz / otwórz szkic'),
 'family_add_title': ('Додавання до спільного гардероба','Add to shared wardrobe','Dodaj do wspólnej garderoby'),
 'family_add_hint': ('Вибери збережену річ зі свого активного гардероба. Буде скопійовано всі її поля, кінцеве фото, власну категорію та колір. Образи, носіння й історія покупок не копіюються. Власна річ залишається у тебе. Нову річ або фото спочатку підготуй у звичайному редакторі.','Choose a saved item from your active private wardrobe. All its fields, final photo, custom category and color are copied. Outfits, wears and purchase history are excluded. Your private item stays with you. Prepare a new item or photo in the regular editor first.','Wybierz zapisaną rzecz ze swojej aktywnej prywatnej garderoby. Skopiujemy wszystkie jej pola, końcowe zdjęcie, własną kategorię i kolor. Zestawy, noszenia i historia zakupów nie są kopiowane. Prywatna rzecz pozostaje u Ciebie. Nową rzecz lub zdjęcie przygotuj najpierw w zwykłym edytorze.'),
 'family_add_choose': ('Вибери річ із гардероба «%1$s», щоб зберегти чернетку копії.','Choose an item from “%1$s” to save a copy draft.','Wybierz rzecz z garderoby „%1$s”, aby zapisać szkic kopii.'),

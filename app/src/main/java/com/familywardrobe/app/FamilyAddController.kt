@@ -9,7 +9,8 @@ import kotlin.coroutines.coroutineContext
 
 internal data class FamilyAddState(val remoteId: String = "", val localWardrobe: String = "", val wardrobeName: String = "",
     val choices: List<Garment> = emptyList(), val draft: FamilyAddDraft? = null, val preview: PhotoStore? = null,
-    val selection: Snapshot? = null, val running: Boolean = false, val problem: FamilyProblem? = null, val recoverable: Boolean = false, val synced: Boolean = false)
+    val selection: Snapshot? = null, val running: Boolean = false, val problem: FamilyProblem? = null, val recoverable: Boolean = false, val synced: Boolean = false,
+    val unreadablePhoto: Boolean = false)
 internal class FamilyAddController(private val app: WardrobeApplication, private val session: AccountSession,
     private val reader: FamilyReaderController, private val scope: CoroutineScope) {
     private val lease = FamilyReadLease(); private val lock = Mutex()
@@ -23,7 +24,7 @@ internal class FamilyAddController(private val app: WardrobeApplication, private
     // and the dialog then showed stale state (audit 0.14.6 №10 pattern).
     private fun run(block: suspend (FamilyBackend, () -> Unit) -> Unit) = scope.launch(Dispatchers.IO) { lock.withLock {
         try {
-            guard(); mutable.value = mutable.value.copy(running = true, problem = null, synced = false)
+            guard(); mutable.value = mutable.value.copy(running = true, problem = null, synced = false, unreadablePhoto = false)
             val work = coroutineContext; val checkpoint = { work.ensureActive(); guard() }
             block(FamilyBackend(session.identity, checkpoint), checkpoint); checkpoint()
         } catch (e: CancellationException) { throw e }
@@ -33,7 +34,7 @@ internal class FamilyAddController(private val app: WardrobeApplication, private
                 lease.clear(); mutable.value.preview?.clearMemoryCache(); reader.invalidate()
                 mutable.value = FamilyAddState(remoteId = mutable.value.remoteId, localWardrobe = mutable.value.localWardrobe, running = true)
             }
-            mutable.value = mutable.value.copy(problem = problem)
+            mutable.value = mutable.value.copy(problem = problem, unreadablePhoto = e is UnreadablePhotoException)
         } finally { if (session.isOpen) mutable.value = mutable.value.copy(running = false) }
     } }
     private suspend fun authorize(backend: FamilyBackend, remote: String): FamilyRemote {
@@ -95,6 +96,24 @@ internal class FamilyAddController(private val app: WardrobeApplication, private
         } finally { session.photos.unpin(setOf(photoId)) }
         try { authorize(backend, draft.remoteId); install(draft, null, checkpoint) }
         catch (e: Exception) { if (store.get(draft.remoteId) != draft) store.directory(draft.publication.archiveId).deleteRecursively(); throw e }
+    }
+    /** A camera file inside this account's FileProvider directory; imported and deleted by prepareNew. */
+    fun newCapture(): android.net.Uri = session.photos.newCapture()
+    /**
+     * New item directly in the shared wardrobe: the photo is imported as is (rotation and size
+     * limits, no cutout) into an isolated directory; nothing is written to the private wardrobe.
+     */
+    fun prepareNew(fields: FamilyNewItem, uri: android.net.Uri) = run { backend, checkpoint ->
+        require(fields.valid && mutable.value.draft == null && store.get(mutable.value.remoteId) == null)
+        val view = fresh(backend); val archive = FamilyAddArchive(session.context, session.repository, store, checkpoint)
+        val temporary = store.directory(newId()); val isolated = store.photos(temporary.name)
+        try {
+            val photoId = isolated.import(uri); checkpoint()
+            val selected = fields.selection(view.candidate.snapshot.wardrobes.single(), isolated.fingerprint(photoId))
+            val draft = archive.stage(view.remote, view.candidate.snapshot, selected, view.candidate.photos, isolated, photoId)
+            try { authorize(backend, draft.remoteId); install(draft, null, checkpoint) }
+            catch (e: Exception) { if (store.get(draft.remoteId) != draft) store.directory(draft.publication.archiveId).deleteRecursively(); throw e }
+        } finally { isolated.clearMemoryCache(); temporary.deleteRecursively() }
     }
     fun sync() = run { backend, checkpoint ->
         var draft = requireNotNull(mutable.value.draft)

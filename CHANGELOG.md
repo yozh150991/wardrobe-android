@@ -1,5 +1,13 @@
 # 0.14.5-family-reader — 18 October 2026
 
+## 0.14.11-family-new — 20 October 2026 (code 41)
+
+FAM-03: create a new item directly in a shared wardrobe — name, base category/colour,
+size, location, description, season, style and a gallery/camera photo imported as is —
+without a private copy. Reuses the addition draft/send/retry/rebase flow; no backend
+change. Unreadable photos now get their own message in the add and photo dialogs.
+See FAMILY-NEW-0.14.11.md.
+
 ## 0.14.10-family-photo — 20 October 2026 (code 40)
 
 FAM-03: replace the photo of an existing shared item (owner/editor) from the gallery,

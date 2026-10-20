@@ -1138,7 +1138,7 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="family_edit_no_draft">Brak niezakończonej edycji. Otwórz rzecz i wybierz Edytuj pola.</string>
     <string name="family_edit_missing">Tej rzeczy nie ma już w wersji na serwerze. Możesz usunąć lokalny szkic po potwierdzonym konflikcie.</string>
     <string name="family_edit_invalid">Sprawdź pola: nazwa jest wymagana; limity wynoszą 120 znaków dla nazwy, 40 dla rozmiaru, 200 dla miejsca i 1000 dla opisu.</string>
-    <string name="family_add_open">Dodaj własną rzecz / otwórz szkic</string>
+    <string name="family_add_open">Dodaj rzecz / otwórz szkic</string>
     <string name="family_add_title">Dodaj do wspólnej garderoby</string>
     <string name="family_add_hint">Wybierz zapisaną rzecz ze swojej aktywnej prywatnej garderoby. Skopiujemy wszystkie jej pola, końcowe zdjęcie, własną kategorię i kolor. Zestawy, noszenia i historia zakupów nie są kopiowane. Prywatna rzecz pozostaje u Ciebie. Nową rzecz lub zdjęcie przygotuj najpierw w zwykłym edytorze.</string>
     <string name="family_add_choose">Wybierz rzecz z garderoby „%1$s”, aby zapisać szkic kopii.</string>
@@ -1175,4 +1175,7 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="family_photo_synced">Serwer potwierdził nowe zdjęcie.</string>
     <string name="family_photo_conflict">Wspólna garderoba się zmieniła. Nowe zdjęcie jest zapisane lokalnie. Zaktualizuj podstawę szkicu i wyślij ponownie.</string>
     <string name="family_photo_rebase_confirm">Pobrać aktualną garderobę i zastosować do niej to samo nowe zdjęcie? Wysłanie to osobny krok.</string>
+    <string name="family_new_open">Nowa rzecz ze zdjęciem (galeria/aparat)</string>
+    <string name="family_new_hint">Uzupełnij pola i wybierz zdjęcie z galerii lub zrób je aparatem. Zdjęcie jest dodawane bez zmian, bez usuwania tła. Rzecz jest przygotowywana jako szkic dla wspólnej garderoby i nie trafia do Twojej prywatnej garderoby.</string>
+    <string name="family_new_name_first">Najpierw wpisz nazwę (do 120 znaków), potem wybierz zdjęcie.</string>
 </resources>
