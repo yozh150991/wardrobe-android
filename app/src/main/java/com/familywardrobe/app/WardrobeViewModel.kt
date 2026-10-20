@@ -30,11 +30,13 @@ class WardrobeViewModel internal constructor(application: Application, private v
         familyAccess.invalidateSession()
         familyEdit.invalidateSession()
         familyAdd.invalidateSession()
+        familyPhoto.invalidateSession()
         super.onCleared()
     }
     internal val familyReader = FamilyReaderController(application as WardrobeApplication, session, viewModelScope)
     internal val familyEdit = FamilyEditController(application as WardrobeApplication, session, familyReader, viewModelScope)
     internal val familyAdd = FamilyAddController(application as WardrobeApplication, session, familyReader, viewModelScope)
+    internal val familyPhoto = FamilyPhotoController(application as WardrobeApplication, session, familyReader, viewModelScope)
     internal val familyAccess = FamilyAccessController(application as WardrobeApplication, session, familyReader, viewModelScope)
     fun readFamily(remoteId: String, refresh: Boolean = false) = perform(OperationKind.CLOUD, cancellable = true) { familyReader.open(remoteId, refresh) }
     internal val family = FamilyTransferController(application as WardrobeApplication, session, viewModelScope)

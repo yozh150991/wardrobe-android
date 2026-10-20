@@ -1,5 +1,15 @@
 # 0.14.5-family-reader — 18 October 2026
 
+## 0.14.10-family-photo — 20 October 2026 (code 40)
+
+FAM-03: replace the photo of an existing shared item (owner/editor) from the gallery,
+the camera (as is, no background removal) or the final photo of one of your own items.
+Only that item's photoId/photoFingerprint change; the old photo leaves the shared copy
+only when nothing else uses it. Durable isolated draft, explicit send, receipt-first
+retry and CAS rebase via the existing begin_upload/commit; no backend change or deploy.
+99 backend tests (4 new) and host suites pass; Android CI in the PR; device checks open.
+See FAMILY-PHOTO-0.14.10.md.
+
 ## 0.14.9-family-add — 20 October 2026 (code 39)
 
 Codex package 0.14.8-family-add (19.10, code 38) integrated on top of

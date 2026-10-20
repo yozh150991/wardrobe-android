@@ -1159,4 +1159,20 @@ Your current wardrobe is unchanged.</string>
     <string name="daily_no_outerwear">No outerwear is available for this weather, so looks are suggested without it. Add a jacket or coat to include it.</string>
     <string name="family_snapshot_hint">The server copy is a snapshot from the transfer. Members do not see later changes yet: updating the copy arrives with shared editing.</string>
     <string name="wish_category_in_outfits">This item is already in saved looks, and the new category would make them impossible (for example two tops, or a dress with trousers). Change or remove it in those looks first.</string>
+    <string name="family_photo_open">Replace photo</string>
+    <string name="family_photo_title">Replace photo of a shared item</string>
+    <string name="family_photo_hint">The new photo is first saved as a draft on this device and is sent only after a separate confirmation. Other items and photos of the shared wardrobe stay unchanged.</string>
+    <string name="family_photo_item">Item: %1$s</string>
+    <string name="family_photo_current">Currently on the server</string>
+    <string name="family_photo_new">New photo (draft)</string>
+    <string name="family_photo_import_note">A gallery or camera photo is added as is, without background removal. To send a processed photo, save it in your own item first and choose “Photo from my item”.</string>
+    <string name="family_photo_from_item">Photo from my item</string>
+    <string name="family_photo_choose">Choose one of your items: its final photo is used. The item itself does not change.</string>
+    <string name="family_photo_saved">The new photo is saved on this device and has not been sent yet. Closing keeps the draft; one unfinished photo replacement per shared wardrobe.</string>
+    <string name="family_photo_other_draft">There is already an unfinished photo replacement for “%1$s”. Send or delete it to start another one.</string>
+    <string name="family_photo_send">Replace photo in the shared wardrobe</string>
+    <string name="family_photo_send_confirm">Replace this item’s photo for all members? The old photo leaves the shared copy if nothing else uses it.</string>
+    <string name="family_photo_synced">The server confirmed the new photo.</string>
+    <string name="family_photo_conflict">The shared wardrobe has changed. The new photo is kept locally. Update the draft base and send it again.</string>
+    <string name="family_photo_rebase_confirm">Download the current wardrobe and apply the same new photo to it? Sending is a separate step.</string>
 </resources>
