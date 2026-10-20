@@ -634,6 +634,8 @@ from family_access_strings import STRINGS as FAMILY_ACCESS_STRINGS
 STRINGS.update(FAMILY_ACCESS_STRINGS)
 from family_edit_strings import STRINGS as FAMILY_EDIT_STRINGS
 STRINGS.update(FAMILY_EDIT_STRINGS)
+from family_add_strings import STRINGS as FAMILY_ADD_STRINGS
+STRINGS.update(FAMILY_ADD_STRINGS)
 for folder, column in [('values',0),('values-uk',0),('values-en',1),('values-pl',2)]:
     dest=ROOT/folder/'strings.xml';dest.parent.mkdir(parents=True,exist_ok=True)
     lines=['<?xml version="1.0" encoding="utf-8"?>','<resources>']

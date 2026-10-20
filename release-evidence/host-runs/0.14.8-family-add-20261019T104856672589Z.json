@@ -1,0 +1,147 @@
+{
+  "release": "0.14.8-family-add",
+  "checked_at": "2026-10-19T10:48:56.672509+00:00",
+  "source_only": true,
+  "checks": [
+    {
+      "script": "check_project.py",
+      "exit_code": 0,
+      "output": "PASS: 4820 source/SQL checks; 11 XML files; 1141 localized strings; 72 DAO queries.\nNOT RUN: Kotlin compilation, Gradle lint, JVM tests, Android tests, APK build, device and emulator checks.\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_refinement.py",
+      "exit_code": 0,
+      "output": "PASS: 6817 production empty-reason, zoom/crop, mask cancellation, verified-archive, outfit-name and sequential-review assertions.\nPASS: source integration guards for contextual navigation/errors, cancellable export, fingerprint before restore writes, saved daily state, explicit collage mode, single photo dialog and full-row selection; UA/EN/PL keys match.\nNOT RUN: Kotlin compilation, native navigation/state restoration, touch, WorkManager/SAF, TalkBack, APK or device UX.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_experience.py",
+      "exit_code": 0,
+      "output": "PASS: 132 production flexible-outfit, recency, photo-mask and canvas assertions.\nPASS: actual schema 2→7 migrations preserve all seeded clothing, wear, looks, pending import and packed capsule rows; new defaults and per-wardrobe DAO updates verified.\nNOT RUN: Kotlin, Room code generation, WorkManager/provider, native masks, Compose gestures, APK and device checks.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_roadmap.py",
+      "exit_code": 0,
+      "output": "PASS: 46 production daily outfit, date, packing and cost-per-wear assertions.\nPASS: production Room migrations 4→5→6 retain garments, wear and looks, carry purchase prices, and enforce calendar/packing keys and cascades.\nNOT RUN: Kotlin, generated Room validation, native photo queue, live weather, Compose/device UI or APK.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_ux.py",
+      "exit_code": 0,
+      "output": "PASS: 76 production photo-result ownership and image-presentation checks.\nPASS: real Room migration 3->4 executed on migrated exported schema 2; every existing wish field retained.\nPASS: Kotlin source delimiters. This does not establish type correctness or compilation.\nNOT RUN: Kotlin/Compose, Room-generated schema validation, Firebase, native ML, device UI or APK.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_wardrobe.py",
+      "exit_code": 0,
+      "output": "PASS: 2147 production wardrobe assertions.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_wishes.py",
+      "exit_code": 0,
+      "output": "PASS: 2035 production money and optional-link assertions.\nPASS: 23 production collage-selection assertions (locks, refresh, seasons, partial and labelled references).\nPASS: 19 real migration statements on exported v2 schema; stable IDs, original budget, rollback, planned-reference SET NULL and CASCADE checks.\nNOT RUN: Kotlin, Room-generated schema validation, Compose, Firebase and Android runtime tests.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_auth.py",
+      "exit_code": 0,
+      "output": "PASS: 38 production auth validation, identity and cancellation assertions.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_management.py",
+      "exit_code": 0,
+      "output": "PASS: real DAO deletion SQL isolates wardrobes and removes dependents; failure rolls back; migration preserves data; rename disables automatic naming.\nNOT RUN: Room schema validation on Android, Kotlin compilation, Android tests and UI.\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_photo_rules.py",
+      "exit_code": 0,
+      "output": "PASS: 12 photo-rule scenarios against production PhotoRules.java. No ML model or Android runtime exercised.\nPASS: 7 crop/rotation geometry scenarios; production PhotoGeometry.java.\nPASS: 61 production mask/backdrop assertions; synthetic fixtures, not ML accuracy.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_theme.py",
+      "exit_code": 0,
+      "output": "PASS: 440 production text colour pairings in 11 palettes × 2 modes; minimum 4.52:1; 22 outline checks ≥3:1.\nNOT RUN: Kotlin/Compose compilation, Android rendering, TalkBack and on-device persistence.\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_auth_config.py",
+      "exit_code": 2,
+      "output": "NOT CONFIGURED: add the Firebase Android client file at app/google-services.json. See AUTHENTICATION.md.\n",
+      "status": "skipped_not_configured"
+    },
+    {
+      "script": "check_scenarios.py",
+      "exit_code": 0,
+      "output": "PASS: 294 production Java assertions for sync decisions, lost acknowledgements, account paths, varied inspiration and lock/replace behavior.\nPASS: production schema 2→8 retains seeded wardrobe, items, purchase, wear and outfit references; 42 durable triggers, restart queue, transaction rollback, remote echo suppression, edit-during-upload and receipt/history cascades.\nNOT RUN: Kotlin/Room generation, Compose, Android bitmap/URI, Firebase transactions/rules/emulators, WorkManager, APK or two real devices.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_shop_import.py",
+      "exit_code": 0,
+      "output": "PASS: 34 shop metadata and input assertions\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_purchase_advice.py",
+      "exit_code": 0,
+      "output": "PASS: 76 purchase advice assertions against production rules\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_photo_zoom.py",
+      "exit_code": 0,
+      "output": "PASS: 225 photo zoom assertions against production geometry\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_photo_editor.py",
+      "exit_code": 0,
+      "output": "PASS: 1774 photo editor assertions (history, redo branches, pixel brushes, alpha and cancellation)\nPASS: 22649 photo session assertions (soft brush, event-rate independence, cross-tool history, restoration and loupe)\nPASS: 52357 photo region/inspection assertions (connectivity, tolerance, transparency, history, cancellation, camera and divider)\nSynthetic 2048-square edge pass under 256 MiB: 144 ms (host, not Android)\nPASS: 588864 precision assertions (edge oracle, polygon coverage, protection, geometry, cancellation)\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_photo_reprocessing.py",
+      "exit_code": 0,
+      "output": "PASS: 108013 photo resolution assertions; 2048x2048 production refinement 252 ms on this host, -Xmx256m. Not Android/ML profiling.\nPASS: 14 actual SQLite replacement checks (stale, cross-wardrobe/account, metadata, repeat, deletion).\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_categories.py",
+      "exit_code": 0,
+      "output": "PASS: 31 production category/search assertions.\nPASS: production 8→9 migration preserves seeded garments/outfit/wear links; 7 invalid writes rejected; category uniqueness, wardrobe isolation, reopen, rollback, FK and cloud dirty/echo checks.\nNOT RUN: Room validation/code generation, Kotlin/Compose, native backup/restore/cloud or Firebase emulator.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_colors.py",
+      "exit_code": 0,
+      "output": "PASS: 22 production colour filter/name/search assertions.\nPASS: production 9→10 migration preserves seeded garments/outfit/wear links; 9 invalid writes rejected; color uniqueness, wardrobe isolation, reopen, rollback, FK and cloud dirty/echo checks.\nNOT RUN: Room validation/code generation, Kotlin/Compose, native backup/restore/cloud or Firebase emulator.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_family.py",
+      "exit_code": 0,
+      "output": "PASS: 70 production family ownership, photo isolation, role, lease, revision and path assertions.\nNOT RUN: Kotlin snapshot adapter/envelope, Android AtomicFile/Room/ZIP/UI, Firebase security or transport.\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_family_backend.py",
+      "exit_code": 0,
+      "output": "Firebase adapters/callable/rules: see release-specific emulator evidence; not run by this script.\ntest_competing_full_snapshot_commit_wins_without_added_item (test_additions.AdditionTests.test_competing_full_snapshot_commit_wins_without_added_item) ... ok\ntest_editor_addition_preserves_every_existing_entity_and_photo (test_additions.AdditionTests.test_editor_addition_preserves_every_existing_entity_and_photo) ... ok\ntest_existing_upload_uuid_cannot_change_photo_bytes_or_actor (test_additions.AdditionTests.test_existing_upload_uuid_cannot_change_photo_bytes_or_actor) ... ok\ntest_expired_pending_requires_new_archive_id_but_same_item_identity (test_additions.AdditionTests.test_expired_pending_requires_new_archive_id_but_same_item_identity) ... ok\ntest_foreign_wardrobe_reference_in_added_item_rejected (test_additions.AdditionTests.test_foreign_wardrobe_reference_in_added_item_rejected) ... ok\ntest_lost_commit_response_replays_after_later_edit_without_duplicate (test_additions.AdditionTests.test_lost_commit_response_replays_after_later_edit_without_duplicate) ... ok\ntest_missing_added_photo_and_unreferenced_private_photo_rejected (test_additions.AdditionTests.test_missing_added_photo_and_unreferenced_private_photo_rejected) ... ok\ntest_parallel_same_uuid_commit_returns_same_receipt (test_additions.AdditionTests.test_parallel_same_uuid_commit_returns_same_receipt) ... ok\ntest_revocation_during_final_archive_write_does_not_publish (test_additions.AdditionTests.test_revocation_during_final_archive_write_does_not_publish) ... ok\ntest_role_downgrade_blocks_pending_and_receipt_replay (test_additions.AdditionTests.test_role_downgrade_blocks_pending_and_receipt_replay) ... ok\ntest_stale_addition_rejected_and_explicit_rebase_preserves_other_edit (test_additions.AdditionTests.test_stale_addition_rejected_and_explicit_rebase_preserves_other_edit) ... ok\ntest_viewer_stranger_unverified_cannot_stage_addition (test_additions.AdditionTests.test_viewer_stranger_unverified_cannot_stage_addition) ... ok\ntest_archive_and_database_integer_validation_not_relaxed (test_callable_wire.CallableWireTests.test_archive_and_database_integer_validation_not_relaxed) ... ok\ntest_decoder_is_scoped_non_mutating_and_idempotent (test_callable_wire.CallableWireTests.test_decoder_is_scoped_non_mutating_and_idempotent) ... ok\ntest_domain_limits_unknown_fields_and_permissions_remain_enforced (test_callable_wire.CallableWireTests.test_domain_limits_unknown_fields_and_permissions_remain_enforced) ... ok\ntest_malformed_values_are_rejected (test_callable_wire.CallableWireTests.test_malformed_values_are_rejected) ... ok\ntest_one_item_mobile_request_reproduces_old_failure_then_commits (test_callable_wire.CallableWireTests.test_one_item_mobile_request_reproduces_old_failure_then_commits) ... ok\ntest_plain_and_wrapped_integer_boundaries (test_callable_wire.CallableWireTests.test_plain_and_wrapped_integer_boundaries) ... ok\ntest_callable_long_is_decoded (test_editing.EditingTests.test_callable_long_is_decoded) ... ok\ntest_corrupt_source_cannot_publish (test_editing.EditingTests.test_corrupt_source_cannot_publish) ... ok\ntest_editor_changes_only_requested_metadata_preserving_photos_and_relations (test_editing.EditingTests.test_editor_changes_only_requested_metadata_preserving_photos_and_relations) ... ok\ntest_expiry_before_publish (test_editing.EditingTests.test_expiry_before_publish) ... ok\ntest_explicit_rebase_preserves_other_fields (test_editing.EditingTests.test_explicit_rebase_preserves_other_fields) ... ok\ntest_field_types_lengths_and_name (test_editing.EditingTests.test_field_types_lengths_and_name) ... ok\ntest_full_snapshot_writer_wins_before_edit_publish (test_editing.EditingTests.test_full_snapshot_writer_wins_before_edit_publish) ... ok\ntest_lost_reply_replay_returns_same_receipt_once (test_editing.EditingTests.test_lost_reply_replay_returns_same_receipt_once) ... ok\ntest_missing_item_is_not_added (test_editing.EditingTests.test_missing_item_is_not_added) ... ok\ntest_owner_can_edit_all_four_fields (test_editing.EditingTests.test_owner_can_edit_all_four_fields) ... ok\ntest_parallel_same_request_is_idempotent (test_editing.EditingTests.test_parallel_same_request_is_idempotent) ... ok\ntest_parallel_writers_single_winner (test_editing.EditingTests.test_parallel_writers_single_winner) ... ok\ntest_protected_fields_and_empty_patch_denied (test_editing.EditingTests.test_protected_fields_and_empty_patch_denied) ... ok\ntest_quota_and_replay (test_editing.EditingTests.test_quota_and_replay) ... ok\ntest_replay_after_later_commit_does_not_revert (test_editing.EditingTests.test_replay_after_later_commit_does_not_revert) ... ok\ntest_replay_rechecks_access (test_editing.EditingTests.test_replay_rechecks_access) ... ok\ntest_request_numbers_and_paths_strict (test_editing.EditingTests.test_request_numbers_and_paths_strict) ... ok\ntest_retry_after_storage_failure_keeps_request_binding (test_editing.EditingTests.test_retry_after_storage_failure_keeps_request_binding) ... ok\ntest_revoke_or_downgrade_between_validation_and_publish (test_editing.EditingTests.test_revoke_or_downgrade_between_validation_and_publish) ... ok\ntest_same_uuid_different_binding_or_actor_rejected (test_editing.EditingTests.test_same_uuid_different_binding_or_actor_rejected) ... ok\ntest_stale_revision_does_not_overwrite (test_editing.EditingTests.test_stale_revision_does_not_overwrite) ... ok\ntest_utf16_limits_match_android (test_editing.EditingTests.test_utf16_limits_match_android) ... ok\ntest_viewer_stranger_unverified_denied (test_editing.EditingTests.test_viewer_stranger_unverified_denied) ... ok\ntest_all_collections_and_500_items (test_family.ArchiveTests.test_all_collections_and_500_items) ... ok\ntest_cross_wardrobe_and_dangling_references (test_family.ArchiveTests.test_cross_wardrobe_and_dangling_references) ... ok\ntest_duplicate_json_zip_nan (test_family.ArchiveTests.test_duplicate_json_zip_nan) ... /opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/zipfile/__init__.py:1625: UserWarning: Duplicate name: 'manifest.json'\n  return self._open_to_write(zinfo, force_zip64=force_zip64)\nok\ntest_duplicate_records_and_unknown_keys (test_family.ArchiveTests.test_duplicate_records_and_unknown_keys) ... ok\ntest_empty_wardrobe_and_no_photos (test_family.ArchiveTests.test_empty_wardrobe_and_no_photos) ... ok\ntest_identity_formats_and_privilege_fields (test_family.ArchiveTests.test_identity_formats_and_privilege_fields) ... ok\ntest_inspiration_and_missing_wish (test_family.ArchiveTests.test_inspiration_and_missing_wish) ... ok\ntest_old_receipt_nullable_fields (test_family.ArchiveTests.test_old_receipt_nullable_fields) ... ok\ntest_photo_exact_set_format_and_crc (test_family.ArchiveTests.test_photo_exact_set_format_and_crc) ... ok\ntest_plan_capsule_signature_and_layout_consistency (test_family.ArchiveTests.test_plan_capsule_signature_and_layout_consistency) ... ok\ntest_receipt_scope_and_photo_refs (test_family.ArchiveTests.test_receipt_scope_and_photo_refs) ... ok\ntest_archive_then_resume_denied (test_family.ServiceTests.test_archive_then_resume_denied) ... ok\ntest_create_replay_and_collision (test_family.ServiceTests.test_create_replay_and_collision) ... ok\ntest_editor_cannot_change_owner (test_family.ServiceTests.test_editor_cannot_change_owner) ... ok\ntest_expiry_after_validation (test_family.ServiceTests.test_expiry_after_validation) ... ok\ntest_final_collision_not_overwritten (test_family.ServiceTests.test_final_collision_not_overwritten) ... ok\ntest_first_commit_replay_resume_and_new_revision (test_family.ServiceTests.test_first_commit_replay_resume_and_new_revision) ... ok\ntest_membership_roles_expiry_and_revocation (test_family.ServiceTests.test_membership_roles_expiry_and_revocation) ... ok\ntest_missing_corrupt_and_path_spoof (test_family.ServiceTests.test_missing_corrupt_and_path_spoof) ... ok\ntest_quotas_and_replay (test_family.ServiceTests.test_quotas_and_replay) ... ok\ntest_replay_cannot_bypass_revocation (test_family.ServiceTests.test_replay_cannot_bypass_revocation) ... ok\ntest_restart_with_same_storage (test_family.ServiceTests.test_restart_with_same_storage) ... ok\ntest_revoked_after_validation_before_publish (test_family.ServiceTests.test_revoked_after_validation_before_publish) ... ok\ntest_revoked_during_upload (test_family.ServiceTests.test_revoked_during_upload) ... ok\ntest_same_commit_concurrent (test_family.ServiceTests.test_same_commit_concurrent) ... ok\ntest_strict_numbers (test_family.ServiceTests.test_strict_numbers) ... ok\ntest_two_writers_single_winner (test_family.ServiceTests.test_two_writers_single_winner) ... ok\ntest_unverified_and_forged_identity (test_family.ServiceTests.test_unverified_and_forged_identity) ... ok\ntest_upload_replay_requires_identical_binding (test_family.ServiceTests.test_upload_replay_requires_identical_binding) ... ok\ntest_archive_hides_directory_and_inbox_denies_accept (test_membership.MembershipTests.test_archive_hides_directory_and_inbox_denies_accept) ... ok\ntest_cancel_accepted_requires_member_revocation (test_membership.MembershipTests.test_cancel_accepted_requires_member_revocation) ... ok\ntest_cancel_pending_replay_never_grants (test_membership.MembershipTests.test_cancel_pending_replay_never_grants) ... ok\ntest_concurrent_accept_and_cancel_is_serializable (test_membership.MembershipTests.test_concurrent_accept_and_cancel_is_serializable) ... ok\ntest_concurrent_invites_have_one_pending_winner (test_membership.MembershipTests.test_concurrent_invites_have_one_pending_winner) ... ok\ntest_daily_quota_no_duplicate_charge (test_membership.MembershipTests.test_daily_quota_no_duplicate_charge) ... ok\ntest_decline_removes_inbox_and_cannot_accept (test_membership.MembershipTests.test_decline_removes_inbox_and_cannot_accept) ... ok\ntest_directory_and_member_capacity (test_membership.MembershipTests.test_directory_and_member_capacity) ... ok\ntest_discovery_finds_pre_index_owner_and_accepted_member (test_membership.MembershipTests.test_discovery_finds_pre_index_owner_and_accepted_member) ... ok\ntest_email_normalization_does_not_collapse_dots_or_plus_aliases (test_membership.MembershipTests.test_email_normalization_does_not_collapse_dots_or_plus_aliases) ... ok\ntest_expected_version_wire_long_and_boolean_denial (test_membership.MembershipTests.test_expected_version_wire_long_and_boolean_denial) ... ok\ntest_expiry_at_boundary_and_replace (test_membership.MembershipTests.test_expiry_at_boundary_and_replace) ... ok\ntest_inbox_capacity_is_bounded_and_expired_entries_pruned (test_membership.MembershipTests.test_inbox_capacity_is_bounded_and_expired_entries_pruned) ... ok\ntest_indexes_do_not_grant_access (test_membership.MembershipTests.test_indexes_do_not_grant_access) ... ok\ntest_invalid_email_role_fields_and_self (test_membership.MembershipTests.test_invalid_email_role_fields_and_self) ... ok\ntest_invitation_idempotence_and_collision (test_membership.MembershipTests.test_invitation_idempotence_and_collision) ... ok\ntest_leave_cannot_remove_owner_or_other_member (test_membership.MembershipTests.test_leave_cannot_remove_owner_or_other_member) ... ok\ntest_leave_reused_role_request_is_not_falsely_confirmed (test_membership.MembershipTests.test_leave_reused_role_request_is_not_falsely_confirmed) ... ok\ntest_member_listing_current_role_email_and_pending (test_membership.MembershipTests.test_member_listing_current_role_email_and_pending) ... ok\ntest_owner_only_management (test_membership.MembershipTests.test_owner_only_management) ... ok\ntest_revoke_removes_discovery_and_denies_head_and_old_accept (test_membership.MembershipTests.test_revoke_removes_discovery_and_denies_head_and_old_accept) ... ok\ntest_role_cas_and_idempotent_retry (test_membership.MembershipTests.test_role_cas_and_idempotent_retry) ... ok\ntest_uid_bound_after_accept_even_if_same_email (test_membership.MembershipTests.test_uid_bound_after_accept_even_if_same_email) ... ok\ntest_uid_paths_and_request_field_forgery (test_membership.MembershipTests.test_uid_paths_and_request_field_forgery) ... ok\ntest_verified_exact_email_required_no_client_identity_override (test_membership.MembershipTests.test_verified_exact_email_required_no_client_identity_override) ... ok\n\n----------------------------------------------------------------------\nRan 95 tests in 0.241s\n\nOK\n",
+      "status": "pass"
+    },
+    {
+      "script": "check_family_cache.py",
+      "exit_code": 0,
+      "output": "49 production family ZIP/lease assertions passed\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\nPicked up JAVA_TOOL_OPTIONS: -XX:-UsePerfData\n",
+      "status": "pass"
+    }
+  ],
+  "android": "Not executed by this runner. Consult the release-specific validation report; historical results do not validate the current source.",
+  "updater": "See archive package-validation.json for actual PowerShell updater validation; Windows filesystem is not exercised by Linux checks."
+}

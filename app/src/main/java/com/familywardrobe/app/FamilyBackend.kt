@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 
 /** Family metadata is callable-only; expectedActorUid binds asynchronous SDK authentication to its originating account. */
 internal class FamilyBackend(private val account: AuthIdentity, private val guard: () -> Unit,
-    app: FirebaseApp = FirebaseApp.getInstance()) : FamilyTransport, FamilyReadTransport {
+    app: FirebaseApp = FirebaseApp.getInstance()) : FamilyTransport, FamilyReadTransport, FamilyPublicationTransport {
     private val auth = FirebaseAuth.getInstance(app)
     private val functions = FirebaseFunctions.getInstance(app,"europe-west1")
     private val storage = FirebaseStorage.getInstance(app)
@@ -33,7 +33,7 @@ internal class FamilyBackend(private val account: AuthIdentity, private val guar
         try {
             val result = functions.getHttpsCallable(name).apply { setTimeout(if (name == "family_commit") 540 else 180,TimeUnit.SECONDS) }
                 .call(data + ("expectedActorUid" to account.uid)).await().data
-            check(); return result as? Map<*, *> ?: throw FamilyTransferException(FamilyProblem.ARCHIVE)
+            check(); return result as? Map<*, *> ?: throw FamilyTransferException(FamilyProblem.RETRY)
         } catch (e: FirebaseFunctionsException) {
             check(); val reason = (e.details as? Map<*, *>)?.get("reason")
             val problem = when {
@@ -86,6 +86,12 @@ internal class FamilyBackend(private val account: AuthIdentity, private val guar
             task.cancel()
             throw e
         } finally { task.removeOnProgressListener(listener) }
+    }
+    override suspend fun beginPublication(publication: FamilyPublication): FamilyTicket =
+        publication.ticket(call("family_begin_upload", publication.request()), account.uid)
+    override suspend fun commitPublication(publication: FamilyPublication) {
+        publication.receipt(call("family_commit", mapOf("remoteId" to publication.identity.remoteId,
+            "archiveId" to publication.archiveId)), account.uid)
     }
     override suspend fun begin(record: FamilyMigrationRecord) = FamilyWire.ticket(call("family_begin_upload",mapOf("remoteId" to record.remoteId,
         "archiveId" to record.archiveId,"baseRevision" to 0,"sha256" to record.fingerprint,"size" to record.archiveSize)),record)

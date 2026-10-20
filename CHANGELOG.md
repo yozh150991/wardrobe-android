@@ -1,5 +1,23 @@
 # 0.14.5-family-reader — 18 October 2026
 
+## 0.14.9-family-add — 20 October 2026 (code 39)
+
+Codex package 0.14.8-family-add (19.10, code 38) integrated on top of
+0.14.8-audit-fixes and renumbered, because code 38 was already released.
+Same audit fixes applied to the new code: FamilyAddController queues actions
+instead of dropping them (№10) and prepare() no longer holds the private write
+lock while copying shared photos and writing the ZIP (№4). See FAMILY-ADD-0.14.8.md.
+
+## 0.14.8-family-add — 19 October 2026 (Codex package, released as 0.14.9 code 39)
+
+FAM-03: copy a selected saved private item and final photo to a shared wardrobe.
+Remap only its item/photo/custom category/color; preserve all existing shared data.
+Durable isolated ZIP/journal, explicit preview/send, historical receipt retry and
+CAS rebase. Existing backend begin/commit reused; no new endpoint/rules/deploy.
+95 backend tests and 22 host suites pass. JVM7/Android8 prepared, not run; native
+build blocked before compilation by missing full JDK. No APK. Photo replacement,
+outfits, multi-operation outbox and background sync remain. See FAMILY-ADD-0.14.8.md.
+
 ## 0.14.8-audit-fixes — 20 October 2026 (code 38)
 
 Bugfixes from the 0.14.6 technical audit on top of 0.14.7-family-edit (no new features,
