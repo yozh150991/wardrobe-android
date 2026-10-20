@@ -5,7 +5,7 @@ import json
 import zipfile
 from .archive import validate_archive, MAX_ARCHIVE
 from .errors import require
-from .schema import valid_id, integer, text_length
+from .schema import valid_id, integer, text_length, visible_name
 
 EDIT_LIMITS = {'name': 120, 'size': 40, 'location': 200, 'description': 1000}
 
@@ -16,8 +16,9 @@ def validate_edit(data):
     require(type(changes) is dict and 0 < len(changes) <= 4 and set(changes) <= set(EDIT_LIMITS), 'Invalid edit fields')
     for key, value in changes.items():
         require(type(value) is str and text_length(value) <= EDIT_LIMITS[key], 'Edit text limit')
-        require(not any(ord(c) < 32 and c not in '\n\t' for c in value), 'Invalid edit text')
-        if key == 'name': require(bool(value.strip()), 'Name is required')
+        # Windows line breaks are accepted here exactly as in validate_snapshot (BUG-11).
+        require(not any(ord(c) < 32 and c not in '\n\r\t' for c in value), 'Invalid edit text')
+        if key == 'name': require(bool(value.strip()) and visible_name(value), 'Name is required')
 
 
 def patch_archive(source, root, data):

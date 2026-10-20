@@ -68,7 +68,7 @@ fun Wishlist(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, add: (String)
         item(span = { GridItemSpan(maxLineSpan) }) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.wishlist_intro), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                OutlinedTextField(query, { query = it.take(120) }, label = { Text(stringResource(R.string.picker_search)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(query, { query = TextLimits.input(it, 120) }, label = { Text(stringResource(R.string.picker_search)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("" to R.string.all, "need" to R.string.wishlist_needs, "product" to R.string.wishlist_products).forEach { (code,title) -> FilterChip(kind == code, { kind = code }, label = { Text(stringResource(title)) }) }
                 }
@@ -225,7 +225,7 @@ fun WishEditor(original: Wish?, wardrobe: String, kind: String, converting: Bool
             OutlinedButton(onClick = { gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.wish_photo_optional)) }
             if (photo.isNotBlank()) TextButton(onClick = { vm.rememberEditorPhoto(photoKey, ""); photo = "" }, enabled = !busy) { Text(stringResource(R.string.remove_photo)) }
         }
-        OutlinedTextField(name, { name = it.take(120) }, label = { Text(stringResource(R.string.name_required)) }, singleLine = true, enabled = !busy,
+        OutlinedTextField(name, { name = TextLimits.input(it, 120) }, label = { Text(stringResource(R.string.name_required)) }, singleLine = true, enabled = !busy,
             isError = validate && name.isBlank(), supportingText = { if (validate && name.isBlank()) Text(stringResource(R.string.wish_name_required)) }, modifier = Modifier.fillMaxWidth().focusRequester(nameFocus))
         CategoryChoice(category, { category = it }, title = R.string.category_required, enabled = !busy,
             modifier = Modifier.fillMaxWidth().focusRequester(categoryFocus))
@@ -237,18 +237,18 @@ fun WishEditor(original: Wish?, wardrobe: String, kind: String, converting: Bool
             TextButton(onClick = { advanced = !advanced }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Text(stringResource(R.string.additional_details)); Icon(if (advanced) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, null) }
             if (advanced) {
-                OutlinedTextField(link, { link = it.take(2000) }, label = { Text(stringResource(R.string.wish_link_optional)) }, singleLine = true,
+                OutlinedTextField(link, { link = TextLimits.input(it, 2000) }, label = { Text(stringResource(R.string.wish_link_optional)) }, singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), isError = validate && !linkValid, enabled = !busy,
                     supportingText = { if (validate && !linkValid) Text(stringResource(R.string.wish_link_error)) }, modifier = Modifier.fillMaxWidth().focusRequester(linkFocus))
                 Choice(color, listOf("") + Matching.colors, { color = it }, R.string.wish_color_optional, enabled = !busy, emptyLabel = R.string.not_specified)
-                OutlinedTextField(inspiration, { inspiration = it.take(2000) }, label = { Text(stringResource(R.string.wish_inspiration_optional)) }, minLines = 2, enabled = !busy, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(inspiration, { inspiration = TextLimits.input(it, 2000) }, label = { Text(stringResource(R.string.wish_inspiration_optional)) }, minLines = 2, enabled = !busy, modifier = Modifier.fillMaxWidth())
             }
             if (!converting && original?.needName?.isNotBlank() == true) NeedHistory(original, LocalConfiguration.current.locales[0])
         } else {
-            OutlinedTextField(requirements, { requirements = it.take(2000) }, label = { Text(stringResource(R.string.wish_requirements)) }, minLines = 2, enabled = !busy, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(link, { link = it.take(2000) }, label = { Text(stringResource(R.string.wish_link_optional)) }, enabled = !busy,
+            OutlinedTextField(requirements, { requirements = TextLimits.input(it, 2000) }, label = { Text(stringResource(R.string.wish_requirements)) }, minLines = 2, enabled = !busy, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(link, { link = TextLimits.input(it, 2000) }, label = { Text(stringResource(R.string.wish_link_optional)) }, enabled = !busy,
                 isError = validate && !linkValid, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth().focusRequester(linkFocus))
-            OutlinedTextField(inspiration, { inspiration = it.take(2000) }, label = { Text(stringResource(R.string.wish_inspiration_optional)) }, enabled = !busy, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(inspiration, { inspiration = TextLimits.input(it, 2000) }, label = { Text(stringResource(R.string.wish_inspiration_optional)) }, enabled = !busy, modifier = Modifier.fillMaxWidth())
         }
         Button(onClick = {
             validate = true
@@ -276,7 +276,7 @@ fun MoneyField(value: String, change: (String) -> Unit, currency: String, setCur
     title: Int, busy: Boolean, error: Boolean, focus: FocusRequester) {
     var expanded by remember { mutableStateOf(false) }
     val amount: @Composable (Modifier) -> Unit = { modifier ->
-        OutlinedTextField(value, { change(it.take(20)) }, label = { Text(stringResource(title)) }, singleLine = true, enabled = !busy,
+        OutlinedTextField(value, { change(TextLimits.input(it, 20)) }, label = { Text(stringResource(title)) }, singleLine = true, enabled = !busy,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), isError = error,
             supportingText = { if (error) Text(stringResource(R.string.wish_amount_error)) }, modifier = modifier.focusRequester(focus))
     }

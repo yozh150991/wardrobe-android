@@ -66,6 +66,25 @@ def strict_json(text):
         require(False, 'Invalid JSON')
 
 
+BIDI_CONTROLS = frozenset('\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069')
+
+
+def visible_name(value):
+    """No bidi embedding/override/isolate and at least one visible character (BUG-12).
+
+    ZWJ inside emoji sequences stays allowed; a name made only of spaces, format
+    characters, combining marks or variation selectors is refused. Mirrors TextLimits.java."""
+    if any(c in BIDI_CONTROLS for c in value):
+        return False
+    return any(not (c.isspace() or unicodedata.category(c) in ('Cc', 'Cf', 'Mn', 'Me', 'Zs', 'Zl', 'Zp')
+                    or 0xfe00 <= ord(c) <= 0xfe0f or 0xe0100 <= ord(c) <= 0xe01ef) for c in value)
+
+
+def label_key(value):
+    """Java String.toLowerCase(ROOT) writes a final sigma (ς) where Python lower() writes σ (BUG-09)."""
+    return value.replace('\u03c2', '\u03c3')
+
+
 def text_length(text):
     try:
         return len(text.encode('utf-16-le')) // 2
@@ -107,6 +126,7 @@ def row_shape(kind, row):
     if 'name' in row:
         limit = 60 if kind in ('customCategories','customColors') else 80 if kind in ('wardrobes','capsules') else 120
         require(0 < text_length(row['name'].strip()) <= limit)
+        require(visible_name(row['name']), 'Invalid name')
     for key in ('link', 'needLink'):
         if key in row and row[key].strip():
             try:
@@ -122,7 +142,8 @@ def row_shape(kind, row):
         name = row['name']
         clean = ' '.join(unicodedata.normalize('NFKC', name).split())
         require(name == clean and not any(unicodedata.category(c) in ('Cc','Cf') for c in name))
-        require(row['nameKey'] == clean.lower().replace('’', "'").replace('ʼ', "'").replace('‘', "'"))
+        expected = clean.lower().replace('’', "'").replace('ʼ', "'").replace('‘', "'")
+        require(row['nameKey'] == row['nameKey'].lower() and label_key(row['nameKey']) == label_key(expected))
     if kind == 'wishes':
         require(row['kind'] in ('need','product'))
         require(not row['ownedId'] or row['kind'] == 'product')
@@ -185,7 +206,7 @@ def validate_snapshot(snapshot, wardrobe_id):
             require(ref('customColors', g['customColorId'])['baseColor'] == g['color'])
 
     for kind in ('customCategories','customColors'):
-        keys = [r['nameKey'] for r in snapshot[kind]]
+        keys = [label_key(r['nameKey']) for r in snapshot[kind]]
         require(len(keys) == len(set(keys)), 'Duplicate custom name')
     for g in snapshot['garments']:
         garment_refs(g)

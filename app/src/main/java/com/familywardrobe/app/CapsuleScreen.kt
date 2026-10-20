@@ -128,7 +128,7 @@ private fun CapsuleEditor(original: Capsule?, wardrobe: String, vm: WardrobeView
     val busy by vm.busy.collectAsStateWithLifecycle()
     AlertDialog(onDismissRequest = { if (!busy) dismiss() }, title = { Text(stringResource(if (original == null) R.string.capsule_add else R.string.edit)) }, text = {
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(name, { name = it.take(80) }, label = { Text(stringResource(R.string.name)) }, singleLine = true, enabled = !busy)
+            OutlinedTextField(name, { name = TextLimits.input(it, 80) }, label = { Text(stringResource(R.string.name)) }, singleLine = true, enabled = !busy)
             Choice(kind, listOf("capsule", "trip"), { kind = it }, R.string.capsule_type, enabled = !busy,
                 optionLabels = mapOf("capsule" to R.string.capsule_kind, "trip" to R.string.capsule_trip))
             TextButton(onClick = { dateField = "start" }, enabled = !busy) { Text(stringResource(R.string.capsule_start, if (start.isBlank()) "—" else dateLabel(start))) }

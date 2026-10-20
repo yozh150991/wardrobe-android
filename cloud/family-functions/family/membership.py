@@ -6,8 +6,8 @@ All transaction reads precede writes (including role/revoke replays).
 """
 import hashlib
 import re
-from .errors import require
-from .schema import integer, valid_id
+from .errors import FamilyError, require
+from .schema import integer, valid_id, visible_name
 
 LIMIT = 50
 INVITE_TTL = 7 * 86400000
@@ -19,10 +19,24 @@ def authorize(actor, data, names):
     authenticate(actor); fields(data, names)
 
 
+_TRIM = ''.join(chr(c) for c in range(33))  # Same characters as Java String.trim() on the phone.
+_EMAIL = re.compile(r"[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.(?:[a-z]{2,63}|xn--[a-z0-9-]{1,59})")
+
+
 def email(value):
-    require(type(value) is str and len(value) <= 254 and value.isascii(), 'Invalid email')
-    value = value.strip().lower()
-    require(re.fullmatch(r"[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.[a-z]{2,63}", value), 'Invalid email')
+    """ASCII local part; an IDN domain (.укр) is compared in punycode, so both spellings are one key (BUG-08).
+
+    Mirrors AuthRules.serverEmail() in the Android app (BUG-13)."""
+    require(type(value) is str and len(value) <= 254, 'Invalid email')
+    local, at, domain = value.strip(_TRIM).rpartition('@')
+    require(at and local and domain and local.isascii(), 'Invalid email')
+    if not domain.isascii():
+        try:
+            domain = domain.encode('idna').decode('ascii')
+        except UnicodeError:
+            require(False, 'Invalid email')
+    value = (local + '@' + domain).lower()
+    require(len(value) <= 254 and _EMAIL.fullmatch(value), 'Invalid email')
     return value
 
 
@@ -80,7 +94,10 @@ class MembershipService:
 
     def invitations(self, actor, data):
         authorize(actor, data, '')
-        key = email_key(actor.email)
+        try:
+            key = email_key(actor.email)
+        except FamilyError:
+            return {'invitations': []}  # Nobody can address an invitation to this account (BUG-08).
         def operation(tx):
             entries = pending(state(tx, inbox_path(key))['entries'], self.clock())
             result = []
@@ -116,7 +133,7 @@ class MembershipService:
         require(recipient != sender, 'Cannot invite yourself')
         require(data['role'] in ('viewer', 'editor'), 'Invalid role')
         require(type(data['name']) is str and 0 < len(data['name'].strip()) <= 80 and
-                not any(ord(c) < 32 for c in data['name']), 'Invalid wardrobe name')
+                not any(ord(c) < 32 for c in data['name']) and visible_name(data['name']), 'Invalid wardrobe name')
         target = invite_path(data['inviteId']); remote = data['remoteId']
         slot_path = f'familyWardrobes/{remote}/inviteSlots/{key}'
         def operation(tx):

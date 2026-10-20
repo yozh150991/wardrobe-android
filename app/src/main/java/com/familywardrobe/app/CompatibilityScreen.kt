@@ -53,7 +53,7 @@ fun CompatibilityScreen(wish: Wish, s: Snapshot, vm: WardrobeViewModel, open: (G
     }
     val current = response?.takeIf { it.request == request }
     val report = current?.assessment
-    val name = stringResource(R.string.compatibility_saved_name, wish.name).take(80)
+    val name = TextLimits.take(stringResource(R.string.compatibility_saved_name, wish.name), 80)
     if (wish.kind != "product" || wish.ownedId.isNotBlank()) {
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
             Text(stringResource(R.string.advice_product_required))
@@ -85,7 +85,7 @@ fun CompatibilityScreen(wish: Wish, s: Snapshot, vm: WardrobeViewModel, open: (G
                 TextButton(onClick = { moreFields = !moreFields }, enabled = !busy) { Text(stringResource(R.string.advice_refine)) }
                 if (moreFields) {
                     Text(stringResource(R.string.advice_traits_hint), style = MaterialTheme.typography.bodySmall)
-                    OutlinedTextField(subcategory, { subcategory = it.take(60) }, label = { Text(stringResource(R.string.item_subcategory)) },
+                    OutlinedTextField(subcategory, { subcategory = TextLimits.input(it, 60) }, label = { Text(stringResource(R.string.item_subcategory)) },
                         modifier = Modifier.fillMaxWidth(), enabled = !busy)
                     Choice(season, listOf("") + Matching.seasons, { season = it }, R.string.season, enabled = !busy, emptyLabel = R.string.not_specified)
                     Choice(style, listOf("") + Matching.styles, { style = it }, R.string.style, enabled = !busy, emptyLabel = R.string.not_specified)
@@ -181,7 +181,7 @@ private fun AdvicePreviewCard(index: Int, preview: PurchasePreview, wish: Wish, 
     val pieces = if (alternative == null) preview.pieces else preview.pieces.map { if (it.wishId == wish.id) LookRules.owned(alternative) else it }
     val savedSignature = DailyRules.signature(pieces.map { it.ownedId ?: it.key })
     val existing = s.outfits.find { it.wardrobeId == wish.wardrobeId && it.signature == savedSignature }
-    val ownName = stringResource(R.string.advice_owned_name, alternative?.name.orEmpty()).take(80)
+    val ownName = TextLimits.take(stringResource(R.string.advice_owned_name, alternative?.name.orEmpty()), 80)
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(stringResource(R.string.daily_option, index + 1), style = MaterialTheme.typography.titleLarge)

@@ -1,5 +1,15 @@
 # 0.14.5-family-reader — 18 October 2026
 
+## 0.14.13-qa-fixes — 20 October 2026 (code 43)
+All 16 bugs from the 0.14.12 QA report fixed, each with a regression check. Shop import:
+locale quotes/ellipsis and brackets no longer break shared links, JSON-LD after many scripts
+is read, pages over 2 MiB are parsed instead of refused, entities decoded once (+ named
+entities), grapheme-safe truncation (also in form fields), duplicate keys ignore default
+port/empty query/fragment, http links fetched over https. Family backend (deploy needed):
+.укр/punycode e-mails, Java final-sigma label keys, CRLF in edits, bidi/invisible names refused.
+App: look names trimmed per grapheme, category definition trigger, invite e-mail checked like
+the server, canonical UUID canvas keys, order-independent scope depth. Backend 113 tests and
+host suites pass; Kotlin/Android in CI. See QA-FIXES-0.14.13.md.
 ## 0.14.12-family-labels — 20 October 2026 (code 42)
 
 FAM-03: the new shared item form can use the shared wardrobe's own custom categories and

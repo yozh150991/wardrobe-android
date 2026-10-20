@@ -44,6 +44,11 @@ with tempfile.TemporaryDirectory(prefix='wardrobe-categories-') as output:
     deny("UPDATE garments SET category='top' WHERE id='item'")
     deny("UPDATE garments SET wardrobeId='b' WHERE id='item'")
     deny("DELETE FROM custom_categories WHERE id='cat-a'")
+    # BUG-10: a used category definition is protected like a used colour definition.
+    deny("UPDATE custom_categories SET baseCategory='bottom' WHERE id='cat-a'")
+    deny("UPDATE custom_categories SET wardrobeId='b' WHERE id='cat-a'")
+    db.execute("UPDATE custom_categories SET name='Running shoes' WHERE id='cat-a'")  # renaming stays allowed
+    db.execute("UPDATE custom_categories SET baseCategory='top' WHERE id='cat-b'")  # unused definition stays editable
     revision = db.execute('SELECT localRevision FROM cloud_sync_meta').fetchone()[0]
     db.execute('BEGIN'); db.execute("UPDATE garments SET name='Uncommitted' WHERE id='item'")
     deny("UPDATE garments SET customCategoryId='cat-b' WHERE id='item'"); db.execute('ROLLBACK')

@@ -321,7 +321,7 @@ class Repository(val db: WardrobeDatabase, val writes: Mutex = Mutex()) {
         if (dao.allWardrobes().isEmpty()) dao.insertWardrobe(Wardrobe(id = DEFAULT_WARDROBE, name = name, usesDefaultName = true))
     } }
     suspend fun save(garment: Garment, photos: PhotoStore? = null): Boolean = writes.withLock {
-        require(garment.name.isNotBlank() && garment.photoId.isNotBlank() && garment.category in Matching.categories && garment.color in Matching.colors)
+        require(TextLimits.hasVisibleText(garment.name) && garment.photoId.isNotBlank() && garment.category in Matching.categories && garment.color in Matching.colors)
         require(garment.priceMinor == null || WishRules.validMinor(garment.priceMinor))
         require(garment.currency in WishRules.CURRENCIES && garment.subcategory.length <= 60 && (garment.photoFingerprint.isEmpty() || Regex("[a-f0-9]{64}").matches(garment.photoFingerprint)))
         val previous = dao.garment(garment.id)?.photoId

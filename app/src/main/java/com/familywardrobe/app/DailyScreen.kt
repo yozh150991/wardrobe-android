@@ -154,7 +154,7 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
         }
     }
     if (namingIds.isNotBlank()) AlertDialog(onDismissRequest = { namingIds = "" }, title = { Text(stringResource(R.string.outfit_name)) },
-        text = { Field(proposedName, { proposedName = it.take(80) }, R.string.outfit_name, enabled = !busy) },
+        text = { Field(proposedName, { proposedName = TextLimits.input(it, 80) }, R.string.outfit_name, enabled = !busy) },
         confirmButton = { TextButton(onClick = {
             val items = namingIds.split(',').mapNotNull { id -> s.garments.find { it.id == id } }
             vm.saveDaily(wardrobe, items, proposedName, occasion, weather, { id -> namingIds = ""; if (namingSchedule) schedule(id) else saved(id) }, capsule?.id.orEmpty(), packedOnly)
@@ -217,7 +217,7 @@ private fun CityDialog(controller: WeatherController, dismiss: () -> Unit) {
     AlertDialog(onDismissRequest = dismiss, title = { Text(stringResource(R.string.weather_choose_city)) }, text = {
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.weather_city_hint))
-            OutlinedTextField(query, { query = it.take(100); searched = false }, singleLine = true, label = { Text(stringResource(R.string.weather_city)) })
+            OutlinedTextField(query, { query = TextLimits.input(it, 100); searched = false }, singleLine = true, label = { Text(stringResource(R.string.weather_city)) })
             if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
             if (failed) Text(stringResource(R.string.weather_failed))
             if (searched && !loading && !failed && results.isEmpty()) Text(stringResource(R.string.weather_city_empty))

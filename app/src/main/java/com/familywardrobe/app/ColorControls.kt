@@ -45,7 +45,7 @@ fun WardrobeColorChoice(base: String, customId: String, s: Snapshot, wardrobe: S
             reserved.any { CategoryRules.key(it) == CategoryRules.key(proposedName) }
         AlertDialog(onDismissRequest = { if (!busy) creating = false }, title = { Text(stringResource(R.string.color_add)) },
             text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(proposedName, { proposedName = it.take(60) }, singleLine = true, enabled = !busy,
+                OutlinedTextField(proposedName, { proposedName = TextLimits.input(it, 60) }, singleLine = true, enabled = !busy,
                     label = { Text(stringResource(R.string.color_custom_name)) }, modifier = Modifier.fillMaxWidth(),
                     isError = proposedName.isNotEmpty() && (!valid || duplicate), supportingText = {
                         if (duplicate) Text(stringResource(R.string.color_duplicate))
@@ -87,7 +87,7 @@ fun ColorChoice(value: String, change: (String) -> Unit, enabled: Boolean = true
     }
     if (choosing) AlertDialog(onDismissRequest = { choosing = false }, title = { Text(stringResource(title)) }, text = {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(query, { query = it.take(100) }, label = { Text(stringResource(R.string.search_colors)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(query, { query = TextLimits.input(it, 100) }, label = { Text(stringResource(R.string.search_colors)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
             val visible = options.filter { CategoryRules.matches(query, titles.getValue(it)) }
             if (visible.isEmpty()) Text(stringResource(R.string.no_results))
             LazyColumn(Modifier.heightIn(max = 340.dp).selectableGroup()) {

@@ -216,7 +216,7 @@ class Backup(private val context: Context, private val repo: Repository, private
                         var restoredName: String
                         do {
                             val suffix = " — $restoredLabel ${number++}"
-                            restoredName = base.take((80 - suffix.length).coerceAtLeast(0)) + suffix
+                            restoredName = TextLimits.takeTrimmed(base, (80 - suffix.length).coerceAtLeast(0)) + suffix
                         } while (!usedNames.add(restoredName))
                         dao.insertWardrobe(w.copy(id = wardMap.getValue(w.id), name = restoredName,
                             createdAt = restoredAt + index, usesDefaultName = false))

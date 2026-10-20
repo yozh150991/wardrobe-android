@@ -54,7 +54,7 @@ internal fun ShopImportScreen(s: Snapshot, currentWardrobe: String, vm: Wardrobe
     }
     fun proceed() {
         val name = product?.optString("name").orEmpty().ifBlank {
-            if (sharedLinks.isEmpty()) sharedText.take(120) else ""
+            if (sharedLinks.isEmpty()) TextLimits.take(sharedText, 120) else ""
         }
         vm.prepareShopEditor(targetWardrobe, target, needId, name, validLink, photo,
             product?.optString("price").orEmpty(), product?.optString("currency").orEmpty())?.let(openEditor)
@@ -66,7 +66,7 @@ internal fun ShopImportScreen(s: Snapshot, currentWardrobe: String, vm: Wardrobe
             Text(stringResource(R.string.shop_choose_link))
             sharedLinks.forEach { value -> TextButton(onClick = { url = value; results = "[]"; selected = -1; photo = "" }, enabled = !busy) { Text(value) } }
         }
-        OutlinedTextField(url, { url = it.take(2000); results = "[]"; selected = -1; photo = "" },
+        OutlinedTextField(url, { url = TextLimits.input(it, 2000); results = "[]"; selected = -1; photo = "" },
             label = { Text(stringResource(R.string.wish_link_optional)) }, enabled = !busy,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth(),
             isError = url.isNotBlank() && ShopImportRules.webUrl(url).isBlank(),

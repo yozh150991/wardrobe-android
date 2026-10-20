@@ -138,16 +138,16 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
                         if (creating) item {
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(stringResource(R.string.family_new_hint), style = MaterialTheme.typography.bodySmall)
-                                OutlinedTextField(newName, { newName = it.take(120) }, singleLine = true, label = { Text(stringResource(R.string.family_edit_name)) }, modifier = Modifier.fillMaxWidth())
+                                OutlinedTextField(newName, { newName = TextLimits.input(it, 120) }, singleLine = true, label = { Text(stringResource(R.string.family_edit_name)) }, modifier = Modifier.fillMaxWidth())
                                 Choice(newCategory, Matching.categories, { newCategory = it; newCustomCategory = "" }, R.string.category, enabled = !state.running)
                                 if (customCategories.isNotEmpty()) NamedChoice(newCustomCategory, customCategories.map { it.id to it.name },
                                     { newCustomCategory = it }, R.string.family_new_custom_category, !state.running)
                                 Choice(newColor, Matching.colors, { newColor = it; newCustomColor = "" }, R.string.color, enabled = !state.running)
                                 if (customColors.isNotEmpty()) NamedChoice(newCustomColor, customColors.map { it.id to it.name },
                                     { newCustomColor = it }, R.string.family_new_custom_color, !state.running)
-                                OutlinedTextField(newSize, { newSize = it.take(40) }, singleLine = true, label = { Text(stringResource(R.string.family_edit_size)) }, modifier = Modifier.fillMaxWidth())
-                                OutlinedTextField(newLocation, { newLocation = it.take(200) }, label = { Text(stringResource(R.string.family_edit_location)) }, modifier = Modifier.fillMaxWidth())
-                                OutlinedTextField(newDescription, { newDescription = it.take(1000) }, label = { Text(stringResource(R.string.family_edit_description)) }, modifier = Modifier.fillMaxWidth())
+                                OutlinedTextField(newSize, { newSize = TextLimits.input(it, 40) }, singleLine = true, label = { Text(stringResource(R.string.family_edit_size)) }, modifier = Modifier.fillMaxWidth())
+                                OutlinedTextField(newLocation, { newLocation = TextLimits.input(it, 200) }, label = { Text(stringResource(R.string.family_edit_location)) }, modifier = Modifier.fillMaxWidth())
+                                OutlinedTextField(newDescription, { newDescription = TextLimits.input(it, 1000) }, label = { Text(stringResource(R.string.family_edit_description)) }, modifier = Modifier.fillMaxWidth())
                                 Choice(newSeason, Matching.seasons, { newSeason = it }, R.string.season, enabled = !state.running)
                                 Choice(newStyle, Matching.styles, { newStyle = it }, R.string.style, enabled = !state.running)
                                 if (!fields.valid) Text(stringResource(R.string.family_new_name_first), style = MaterialTheme.typography.bodySmall)

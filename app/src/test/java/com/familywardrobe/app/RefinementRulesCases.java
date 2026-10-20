@@ -91,6 +91,11 @@ public final class RefinementRulesCases {
         check(emoji.length()==79 && !Character.isHighSurrogate(emoji.charAt(emoji.length()-1)),"name never truncates half an emoji");
         String duplicateEmoji=LookNameRules.unique("a".repeat(75)+"👗"+"abc",List.of("a".repeat(75)+"👗"+"abc"));
         check(duplicateEmoji.equals("a".repeat(75)+" (2)"),"suffix truncation preserves complete code points");
+        String spaced=LookNameRules.unique("a".repeat(79)+" b",List.of("a".repeat(79)));
+        check(spaced.equals("a".repeat(76)+" (2)"),"BUG-07 truncation never leaves a trailing-space duplicate: '"+spaced+"'");
+        String flag=LookNameRules.unique("x".repeat(78)+"🇺🇦",List.of());
+        check(flag.equals("x".repeat(78)),"BUG-07 no half flag: "+flag.length());
+        check(LookNameRules.unique("x".repeat(76)+"🇺🇦",List.of()).equals("x".repeat(76)+"🇺🇦"),"whole flag kept when it fits");
         List<String> existing=new ArrayList<>();for(int i=0;i<50;i++){String name=LookNameRules.unique("Zestaw na dziś",existing);check(!existing.contains(name),"50 distinguishable outfit names");existing.add(name);}
     }
     private static void review() {

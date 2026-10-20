@@ -56,7 +56,7 @@ fun CategoryChoice(value: String, change: (String) -> Unit, enabled: Boolean = t
     }
     if (choosing) AlertDialog(onDismissRequest = { choosing = false }, title = { Text(stringResource(R.string.all_categories)) }, text = {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(query, { query = it.take(100) }, label = { Text(stringResource(R.string.search_categories)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(query, { query = TextLimits.input(it, 100) }, label = { Text(stringResource(R.string.search_categories)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
             LazyColumn(Modifier.heightIn(max = 340.dp).selectableGroup()) {
                 items(options.filter { CategoryRules.matches(query, titles.getValue(it)) }, key = { it.ifBlank { "all" } }) { code ->
                     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(code == value, role = Role.RadioButton, onClick = { change(code); choosing = false }), verticalAlignment = Alignment.CenterVertically) {
@@ -88,7 +88,7 @@ fun VisualPickerDialog(title: Int, options: List<VisualOption>, vm: WardrobeView
     val visible = options.filter { (category.isBlank() || category == it.category) && (it.name + " " + it.context).contains(query.trim(), ignoreCase = true) }
     AlertDialog(onDismissRequest = dismiss, title = { Text(stringResource(title)) }, text = {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(query, { query = it.take(120) }, singleLine = true, label = { Text(stringResource(R.string.picker_search)) }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(query, { query = TextLimits.input(it, 120) }, singleLine = true, label = { Text(stringResource(R.string.picker_search)) }, modifier = Modifier.fillMaxWidth())
             if (categories.size > 1) CategoryChoice(category, { category = it }, allowAll = true)
             Text(stringResource(R.string.picker_count, visible.size, options.size), style = MaterialTheme.typography.bodySmall)
             if (visible.isEmpty()) Text(stringResource(R.string.no_results))

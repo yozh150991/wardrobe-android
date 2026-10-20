@@ -81,11 +81,11 @@ internal fun FamilyEditDialog(vm: WardrobeViewModel, remote: String, dismiss: ()
                     Text(draft.original.getValue("name"), style = MaterialTheme.typography.titleMedium)
                     Text(stringResource(R.string.family_edit_base, draft.baseRevision))
                     val editable = !state.running && !draft.submitted
-                    OutlinedTextField(name, { name = it.take(120) }, enabled = editable, label = { Text(fieldLabel("name")) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(size, { size = it.take(40) }, enabled = editable, label = { Text(fieldLabel("size")) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(location, { location = it.take(200) }, enabled = editable, label = { Text(fieldLabel("location")) }, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(description, { description = it.take(1000) }, enabled = editable, label = { Text(fieldLabel("description")) }, modifier = Modifier.fillMaxWidth())
-                    Button(onClick = { vm.familyEdit.save(values) }, enabled = editable && name.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(name, { name = TextLimits.input(it, 120) }, enabled = editable, label = { Text(fieldLabel("name")) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(size, { size = TextLimits.input(it, 40) }, enabled = editable, label = { Text(fieldLabel("size")) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(location, { location = TextLimits.input(it, 200) }, enabled = editable, label = { Text(fieldLabel("location")) }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(description, { description = TextLimits.input(it, 1000) }, enabled = editable, label = { Text(fieldLabel("description")) }, modifier = Modifier.fillMaxWidth())
+                    Button(onClick = { vm.familyEdit.save(values) }, enabled = editable && TextLimits.hasVisibleText(name), modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.family_edit_save))
                     }
                     if (draft.submitted) Text(stringResource(R.string.family_edit_pending), style = MaterialTheme.typography.bodySmall)

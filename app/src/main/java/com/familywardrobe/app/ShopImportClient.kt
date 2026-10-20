@@ -54,7 +54,8 @@ internal object ShopImportClient {
                     require(status in 200..299)
                     val type = connection.contentType.orEmpty()
                     require(if (image) type.startsWith("image/", true) else type.startsWith("text/html", true) || type.startsWith("application/xhtml+xml", true))
-                    require(connection.contentLengthLong <= max)
+                    // Images must be complete. A page only needs its <head>: keep the first `max` bytes (BUG-04).
+                    if (image) require(connection.contentLengthLong <= max)
                     val output = ByteArrayOutputStream()
                     connection.inputStream.use { stream ->
                         val buffer = ByteArray(16 * 1024)
@@ -62,7 +63,11 @@ internal object ShopImportClient {
                             coroutineContext.ensureActive()
                             require(System.nanoTime() < deadline) { "Download deadline exceeded" }
                             val count = stream.read(buffer); if (count < 0) break
-                            require(output.size() + count <= max)
+                            if (output.size() + count > max) {
+                                require(!image)
+                                output.write(buffer, 0, max - output.size())
+                                break
+                            }
                             output.write(buffer, 0, count)
                         }
                     }
@@ -73,7 +78,9 @@ internal object ShopImportClient {
         throw IllegalArgumentException("Too many redirects")
     }
     suspend fun metadata(url: String): List<ShopMetadata.Product> {
-        val page = get(url, ShopMetadata.MAX_HTML, false)
+        // The validator accepts http links; fetch them over HTTPS instead of failing (QA observation).
+        val secure = if (url.startsWith("http://", ignoreCase = true)) "https://" + url.substring(7) else url
+        val page = get(secure, ShopMetadata.MAX_HTML, false)
         val name = Regex("charset\\s*=\\s*[\"']?([A-Za-z0-9_-]+)", RegexOption.IGNORE_CASE).find(page.contentType)?.groupValues?.get(1)
         val charset = runCatching { name?.let(java.nio.charset.Charset::forName) }.getOrNull() ?: Charsets.UTF_8
         return withContext(Dispatchers.Default) { ShopMetadata.parse(page.bytes.toString(charset), page.url) }

@@ -77,6 +77,8 @@ public final class ExperienceRulesCases {
         for(InspirationCatalog.Idea idea:InspirationCatalog.all()) ok(CanvasRules.validKey(idea.key));
         for(String category:WardrobeRules.CATEGORIES) ok(CanvasRules.validKey("idea:"+category));
         ok(CanvasRules.validKey("owned:0e6b1a2c-1111-4222-8333-944455556666"));
+        ok(!CanvasRules.validKey("owned:"+"-".repeat(36)));ok(!CanvasRules.validKey("wish:"+"a".repeat(36)));
+        ok(!CanvasRules.validKey("owned:0e6b1a2c11114222-8333-944455556666-"));ok(CanvasRules.validKey("wish:0e6b1a2c-1111-4222-8333-944455556666"));
         ok(CanvasRules.validKey("wish:0e6b1a2c-1111-4222-8333-944455556666"));
         ok(!CanvasRules.validKey("idea:top_shirt_pink"));
         ok(!CanvasRules.validKey("idea:"));

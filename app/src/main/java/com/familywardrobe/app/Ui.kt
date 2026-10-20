@@ -711,7 +711,7 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
             if (duplicates.isNotEmpty()) Text(stringResource(R.string.import_duplicate_hint, duplicates.first().name), color = MaterialTheme.colorScheme.primary)
             if (original == null && purchase == null && previousItem != null) TextButton(onClick = { copyingPrevious = true },
                 enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.import_copy_previous)) }
-            OutlinedTextField(name, { name = it.take(120) }, label = { Text(stringResource(R.string.name_required)) }, singleLine = true,
+            OutlinedTextField(name, { name = TextLimits.input(it, 120) }, label = { Text(stringResource(R.string.name_required)) }, singleLine = true,
                 enabled = !busy, isError = validation && name.isBlank(), supportingText = { if (validation && name.isBlank()) Text(stringResource(R.string.wish_name_required)) },
                 modifier = Modifier.fillMaxWidth().bringIntoViewRequester(fieldsView).focusRequester(nameFocus))
             WardrobeCategoryChoice(category, customCategoryId, catalog, wardrobe, vm, { base, custom ->
@@ -719,7 +719,7 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
                 category = base; customCategoryId = custom
             }, title = R.string.category_required, enabled = !busy,
                 modifier = Modifier.fillMaxWidth().bringIntoViewRequester(categoryView).focusRequester(categoryFocus))
-            Field(subcategory, { subcategory = it.take(60) }, R.string.item_subcategory, enabled = !busy)
+            Field(subcategory, { subcategory = TextLimits.input(it, 60) }, R.string.item_subcategory, enabled = !busy)
             val knownSubcategories = subcategoryOptions(catalog.garments, wardrobe, customCategoryId.ifBlank { category })
             if (knownSubcategories.isNotEmpty()) SubcategoryChoice(subcategory, knownSubcategories, { subcategory = it },
                 enabled = !busy, allowAll = false, title = R.string.subcategory_choose)
@@ -729,7 +729,7 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
             }, enabled = !busy)
             TextButton(onClick = { advanced = !advanced }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Text(stringResource(R.string.additional_details)); Icon(if (advanced) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, null) }
-            if (shopImported) OutlinedTextField(shopLink, { shopLink = it.take(2000) }, label = { Text(stringResource(R.string.wish_link_optional)) },
+            if (shopImported) OutlinedTextField(shopLink, { shopLink = TextLimits.input(it, 2000) }, label = { Text(stringResource(R.string.wish_link_optional)) },
                 modifier = Modifier.fillMaxWidth().bringIntoViewRequester(linkView), enabled = !busy, isError = validation && !WishRules.validLink(shopLink),
                 supportingText = { if (validation && !WishRules.validLink(shopLink)) Text(stringResource(R.string.wish_link_error)) })
             if (advanced) {
@@ -737,12 +737,12 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
                     MoneyField(price, { price = it }, currency, { currency = it }, R.string.item_price_optional, busy,
                         validation && !moneyValid, priceFocus)
                 }
-                Field(size, { size = it.take(40) }, R.string.size, enabled = !busy)
-                Field(location, { location = it.take(200) }, R.string.location, enabled = !busy, placeholder = stringResource(R.string.location_hint))
+                Field(size, { size = TextLimits.input(it, 40) }, R.string.size, enabled = !busy)
+                Field(location, { location = TextLimits.input(it, 200) }, R.string.location, enabled = !busy, placeholder = stringResource(R.string.location_hint))
                 Choice(season, Matching.seasons, { season = it }, R.string.season, enabled = !busy)
                 Choice(style, Matching.styles, { style = it }, R.string.style, enabled = !busy)
                 if (purchase == null && !shopImported) Choice(availability, Matching.availability, { availability = it }, R.string.availability, enabled = !busy)
-                OutlinedTextField(description, { description = it.take(1000) }, label = { Text(stringResource(R.string.description)) }, modifier = Modifier.fillMaxWidth(), minLines = 2, enabled = !busy)
+                OutlinedTextField(description, { description = TextLimits.input(it, 1000) }, label = { Text(stringResource(R.string.description)) }, modifier = Modifier.fillMaxWidth(), minLines = 2, enabled = !busy)
             }
             if (validation && photo.isBlank()) Text(stringResource(R.string.item_required_fields), color = MaterialTheme.colorScheme.error)
             if (imported != null) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -982,7 +982,7 @@ fun Toggle(title: Int, value: Boolean, change: (Boolean) -> Unit) {
 fun NameDialog(title: Int, field: Int, onDismiss: () -> Unit, onSave: (String) -> Unit) {
     var name by rememberSaveable { mutableStateOf("") }
     AlertDialog(onDismissRequest = onDismiss, title = { Text(stringResource(title)) },
-        text = { Field(name, { name = it.take(80) }, field) },
+        text = { Field(name, { name = TextLimits.input(it, 80) }, field) },
         confirmButton = { TextButton(onClick = { onSave(name.trim()) }, enabled = name.isNotBlank()) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } })
 }

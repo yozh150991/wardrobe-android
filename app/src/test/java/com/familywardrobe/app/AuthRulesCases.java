@@ -13,6 +13,11 @@ public final class AuthRulesCases {
         for (String value : new String[]{"", "me", "me@", "@example.com", "a@@example.com", "a b@example.com", "a@example..com", "a@example.com\nother"})
             check(!AuthRules.validEmail(value), "invalid email");
         check(!AuthRules.validEmail("x".repeat(250) + "@example.com"), "email length bounded");
+        check(AuthRules.serverEmail("olena@sait.xn--j1amh").equals("olena@sait.xn--j1amh"), "BUG-08 punycode TLD");
+        check(AuthRules.serverEmail(" Ivan@Пошта.укр ").equals("ivan@xn--80a1acn3a.xn--j1amh"), "BUG-08 IDN domain compared in punycode");
+        check(AuthRules.serverEmail(" ivan@example.com").equals("ivan@example.com"), "BUG-13 edge spaces are trimmed before sending");
+        for (String value : new String[]{"іван@example.com", "é@example.com", "a@b", "a@example.c", "a@-example.com", "a@example.com\nX"})
+            check(!AuthRules.validEmail(value), "BUG-13 client refuses what the server refuses: " + value);
         check(!AuthRules.validNewPassword("12345678901"), "11 characters rejected on signup");
         check(AuthRules.validNewPassword("123456789012"), "12 characters accepted");
         check(AuthRules.validNewPassword(" a long passphrase "), "spaces preserved and accepted");
