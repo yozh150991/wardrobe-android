@@ -1,0 +1,52 @@
+{
+  "release": "0.14.8-family-add",
+  "versionCode": 38,
+  "room_backup_version": 10,
+  "source_base": "0.14.7-family-edit",
+  "checked_at": "2026-10-19T10:51:47.477383+00:00",
+  "status": "FAM-03 partial; copy selected private item and final photo slice verify",
+  "executed": {
+    "host_report": "release-evidence/host-runs/0.14.8-family-add-20261019T104856672589Z.json",
+    "host_passed": 22,
+    "host_failed": 0,
+    "client_config": "explicit missing config skip",
+    "backend_tests": 95,
+    "new_backend_tests": 12,
+    "project_source_checks_final": 4820,
+    "localized_strings_per_locale": 1141,
+    "python_compileall": "pass",
+    "final_source_check_after_controller_recovery_change": "pass"
+  },
+  "prepared_not_run": {
+    "FamilyPublicationTest_JVM": 7,
+    "FamilyAdditionTest_Android": 4,
+    "FamilyAddStoreTest_Android": 4
+  },
+  "android_build": {
+    "command": "bash build-apk.sh testDebugUnitTest lintDebug assembleDebug",
+    "status": "blocked_before_compilation",
+    "reason": "Install a full JDK 17 or 21 and set JAVA_HOME"
+  },
+  "not_run": [
+    "Kotlin/Compose compilation",
+    "Android instrumentation",
+    "new Firebase emulator integration",
+    "lint",
+    "APK",
+    "two-device acceptance",
+    "live Firebase deploy",
+    "Windows/macOS updater"
+  ],
+  "remaining": [
+    "existing shared photo replacement",
+    "direct shared camera/gallery editor",
+    "shared outfit editing",
+    "multi-operation queue",
+    "background continuous sync",
+    "FAM-04 acceptance",
+    "FAM-02 email/history",
+    "local/server orphan GC and AppCheck/cost rollout"
+  ],
+  "server_change": "none; existing begin_upload/commit protocol reused",
+  "packaging": "See package-validation.json in outer update package"
+}

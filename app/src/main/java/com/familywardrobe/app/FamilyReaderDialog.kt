@@ -26,6 +26,7 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
     val state by vm.familyReader.state.collectAsStateWithLifecycle()
     val access by vm.familyAccess.state.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
+    var adding by rememberSaveable(remoteId) { mutableStateOf(false) }
     var editing by rememberSaveable(remoteId) { mutableStateOf(false) }
     var query by rememberSaveable(remoteId) { mutableStateOf("") }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -89,6 +90,9 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
                     }), style = MaterialTheme.typography.bodySmall)
                     if (view.remote.role in setOf("owner", "editor")) OutlinedButton(onClick = { vm.familyEdit.open(remoteId); editing = true },
                         enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_edit_resume)) }
+                    if (view.remote.role in setOf("owner", "editor")) OutlinedButton(onClick = {
+                        vm.familyAdd.open(remoteId, vm.active.value); adding = true
+                    }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_add_open)) }
                     OutlinedTextField(value = query, onValueChange = { query = it }, singleLine = true,
                         label = { Text(stringResource(R.string.family_read_search)) }, modifier = Modifier.fillMaxWidth())
                     val matches = snapshot.garments.filter { item ->
@@ -120,5 +124,6 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
             }
         }
     }
+    if (adding) FamilyAddDialog(vm, remoteId) { adding = false }
     if (editing) FamilyEditDialog(vm, remoteId) { editing = false }
 }

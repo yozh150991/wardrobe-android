@@ -1,12 +1,12 @@
 # Wardrobe — роадмап і передача роботи
 
-Оновлено: **2026-10-20, Europe/Warsaw**. Редакція документа: **25**.
-База вихідного коду: **0.14.8-audit-fixes**, `versionCode=38`, Room/backup **10**.
-Статус: 0.14.8 — багфікси за технічним аудитом 0.14.6 поверх FAM-03 на прохання користувача, verify; див. AUDIT-FIXES-0.14.8.md. FAM-01/03 — partial; FAM-02 — partial, реалізований обсяг verify. У 0.14.6 додано discovery після входу на іншому пристрої, запрошення в застосунку за підтвердженою email-адресою, accept/decline/cancel, owner-only roles/revoke і вихід учасника. Листи не надсилаються; окрема історія завершених запрошень ще потрібна. У 0.14.7 реалізовано перший обсяг спільного редагування полів із outbox/CAS; фото/додавання/образи та постійна синхронізація ще потрібні. За вказівкою користувача 18.10 «Багфікси будуть потім». Native-приймання й live deployment залишаються відкритими.
+Оновлено: **2026-10-20, Europe/Warsaw**. Редакція документа: **26**.
+База вихідного коду: **0.14.9-family-add**, `versionCode=39`, Room/backup **10**.
+Статус: 0.14.9 = Codex 0.14.8-family-add поверх 0.14.8-audit-fixes (багфікси аудиту 0.14.6, AUDIT-FIXES-0.14.8.md). FAM-01/03 — partial; FAM-02 — partial, реалізований обсяг verify. У 0.14.6 додано discovery після входу на іншому пристрої, запрошення в застосунку за підтвердженою email-адресою, accept/decline/cancel, owner-only roles/revoke і вихід учасника. Листи не надсилаються; окрема історія завершених запрошень ще потрібна. У 0.14.7 реалізовано перший обсяг спільного редагування полів із outbox/CAS; У 0.14.8 додано копіювання вибраної власної речі з кінцевим фото, чернеткою/retry/CAS. Заміна shared-фото, прямий shared camera/gallery, образи, черга та постійна синхронізація ще потрібні. За вказівкою користувача 18.10 «Багфікси будуть потім». Native-приймання й live deployment залишаються відкритими.
 
 Це головний документ для пріоритетів, незавершеної роботи й передачі завдань іншому агенту. Погоджено користувачем 7 жовтня 2026: спочатку спрощення каталогу та імпорт із магазину, потім розширення помічника перед покупкою; сімейний доступ — окремий пріоритетний блок. Решту ідей потрібно зберегти в беклозі. Нова пряма вказівка користувача має перевагу над цим планом.
 
-**Актуальна контрольна точка:** 0.14.8-audit-fixes/code38. Виправлено знахідки аудиту 0.14.6 (№1, 3, 5–8, 10, 12, 16–19; частково №4, 9, 11, 15). Host-набори, backend-тести та Android CI (unit/lint/APK) pass; пристрій — перевірити. family_commit 1 GiB/540 с потребує ручного deploy. Відкрито: №2, №13, №14, інкрементальне фото. Попередня точка: 0.14.7-family-edit/code37. FAM-03 partial: owner/editor змінює name/size/location/description наявної спільної речі; окремий durable outbox, explicit sync, UUID retry, server CAS та ручне порівняння/rebase. 83 backend tests pass, 22 host-набори pass; native compile/APK і новий emulator-сценарій не виконані. Наступне: розширити shared editing на фото/додавання/образи, multi-operation queue і continuous sync; далі FAM-04. Багфікси відкладені. Див. FAMILY-EDIT-0.14.7.md.
+**Актуальна контрольна точка:** 0.14.9-family-add/code39 (Codex 0.14.8-family-add поверх 0.14.8-audit-fixes; Android CI — див. PR). FAM-03 partial: owner/editor додає копію власної речі з готовим фото; лише вибрані поля/category/color, нові ID, окремий durable ZIP/journal, явне надсилання, historical receipt retry та explicit CAS rebase. Backend95 /host22 pass; нові JVM7/Android8 підготовлені, not run; native compile/APK blocked full JDK. Наступне: заміна фото наявної shared-речі, shared outfits, multi-operation queue і continuous sync; далі FAM-04. Direct shared gallery/camera ще відкриті. Багфікси відкладені. Див. FAMILY-ADD-0.14.8.md.
 
 ## 1. Швидкий старт для наступного агента
 
@@ -40,7 +40,7 @@ Wardrobe допомагає пам’ятати про наявний одяг �
 
 ## 3. Перевірена база та межі впевненості
 
-Джерело початкового аудиту: `wardrobe-release-update-0.11.2.zip`, отриманий 7 жовтня 2026; поточна база — `wardrobe-family-edit-0.14.7.zip` після reader 0.14.5, DEV-02/DEV-03 і photo hotfix3. Нижче «є в коді» не означає, що весь сценарій прийнятий на фізичному телефоні.
+Джерело початкового аудиту: `wardrobe-release-update-0.11.2.zip`, отриманий 7 жовтня 2026; поточна база — `wardrobe-family-add-0.14.8.zip` після reader 0.14.5, DEV-02/DEV-03 і photo hotfix3. Нижче «є в коді» не означає, що весь сценарій прийнятий на фізичному телефоні.
 
 | Напрям | Фактичний стан | Подальша робота |
 | --- | --- | --- |
@@ -63,7 +63,8 @@ Wardrobe допомагає пам’ятати про наявний одяг �
 
 | Артефакт | Призначення |
 | --- | --- |
-| `wardrobe-family-edit-0.14.7.zip` | Поточні джерела 0.14.7/code37, перший shared editor/CAS та updater після 0.14.6; без APK. |
+| `wardrobe-family-add-0.14.8.zip` | Поточні джерела 0.14.8/code38, додавання копії власної речі з фото; updater після 0.14.7, без APK. |
+| `wardrobe-family-edit-0.14.7.zip` | Попередні джерела 0.14.7/code37, перший shared editor/CAS та updater після 0.14.6; без APK. |
 | `wardrobe-family-access-0.14.6.zip` | Попередня база FAM-02, 0.14.6/code36; без APK. |
 | `wardrobe-family-reader-0.14.5.zip` | Попередня база 0.14.5/code35; без APK. |
 | `wardrobe-project-cleanup.zip` | Очищені джерела 0.14.4 і updater DEV-02; без APK. |
@@ -249,7 +250,7 @@ PHOTO-01–10 і PHOTO-12–14 реалізовані у джерелах; ст�
 
 ### FAM-03 — захист і синхронізація спільного гардероба
 
-**P0 для випуску R3 · partial · залежить від FAM-01–02.** У 0.14.1 реалізовані й перевірені серверні role/expiry/CAS guards та Storage rules. Android initial transfer є у 0.14.2, isolated read-only cache/lease у 0.14.5, roles/revoke у 0.14.6. У 0.14.7 є metadata editor для чотирьох полів, account-private durable outbox, явна синхронізація, stable UUID retry та CAS-conflict comparison/rebase. Далі: додавання/фото/образи, multi-operation outbox і continuous sync.
+**P0 для випуску R3 · partial · залежить від FAM-01–02.** У 0.14.1 реалізовані й перевірені серверні role/expiry/CAS guards та Storage rules. Android initial transfer є у 0.14.2, isolated read-only cache/lease у 0.14.5, roles/revoke у 0.14.6. У 0.14.7 є metadata editor для чотирьох полів, account-private durable outbox, явна синхронізація, stable UUID retry та CAS-conflict comparison/rebase. У 0.14.8 реалізовано додавання копії власної речі з готовим фото. Далі: заміна фото, прямий shared camera/gallery, shared outfits, multi-operation outbox і continuous sync.
 
 **Приймання:** viewer не записує дані навіть прямим SDK-запитом; editor змінює лише дозволений гардероб; сторонній UID не читає дані/фото; editor не видає права. Перевірити дві конкурентні правки, retry, видалення/архів, зміну ролі й відкликання під час upload. Прострочені офлайн-записи після відкликання відхиляються. При виявленні відкликання очистити/закрити кеш за обраною політикою. Не обіцяти миттєве стирання вже отриманих даних на відключеному пристрої.
 
@@ -408,9 +409,25 @@ DEV-01 (Git Safety) збережений; історична контрольн�
 - Backend83 pass (23 нових), host22 pass +1 explicit config skip. Android store5 та emulator1 підготовлені, not run. Full JDK відсутній: Android compilation/lint/APK не виконані. Деталі RELEASE-VALIDATION-0.14.7.json та FAMILY-EDIT-0.14.7.md.
 - Наступне FAM-03: shared photo/add/outfit editor, кілька queued operations і continuous sync; потім FAM-04. Поточна синхронізація запускається явно. FAM-02 email/history залишаються відкритими. Немає production deployment.
 
+### 2026-10-19 — FAM-03 shared addition — Codex, partial; slice verify
+
+- 0.14.8-family-add/code38, Room/backup10. Погоджене продовження; багфікси відкладені.
+- Owner/editor: вибір збереженої власної речі → durable copy draft/preview → окреме підтвердження надсилання. Нові ID речі/фото, вибрані custom category/color з remap/dedup; решта приватних сутностей не переноситься.
+- FamilyAddition/FamilyAddStore/FamilyAddArchive/FamilyAddController/FamilyAddDialog, FamilyPublication, спільний FamilySnapshotZip; Backend/WardrobeViewModel/Reader UI та UA/EN/PL підключені. Приватні Room/backup10 не змінені.
+- Stable archive UUID, immutable ZIP, exact historical receipt; malformed response лишає retry. Server CAS; явний rebase лише додавання до свіжої копії, без auto-overwrite. Не потрібні нові callable endpoints чи rules.
+- 95 backend tests pass (12 нових), 22 host suites pass +1 explicit missing config skip. JVM7 та Android8 підготовлені, not run. Native build blocked full JDK17/21; немає APK, emulator/live deployment. Докладно FAMILY-ADD-0.14.8.md та RELEASE-VALIDATION-0.14.8.json.
+- Межі: одна addition draft/гардероб; full scoped ZIP upload, локальний/server orphan GC ще потрібний. Direct shared gallery/camera та photo replacement ще не реалізовані. Наступне: заміна shared-фото й shared outfits, черга/continuous sync, FAM-04. FAM-02 email/history відкриті.
+- Пакет wardrobe-family-add-0.14.8.zip: джерела та conflict-checked updater після 0.14.7, зі збереженням локальних конфігів і rollback.
+
 ### 2026-10-20 — 0.14.8-audit-fixes — Claude, verify
 
 - Вказівка користувача 20.10: «Можеш виправити все?» — знахідки технічного аудиту 0.14.6 виправлено як багфікси. Спершу зроблено на 0.14.6, потім перенесено поверх 0.14.7-family-edit (той самий код, що розгорнуто 20.10).
 - Виправлено: падіння колажу з натхненням, «Назад» на відкритті сесії, фонова синхронізація після закриття Activity, експорт без lock на архівацію + debounce 60 с, CLOUD canBrowse, Daily без верхнього одягу, відбиток фото, VERIFIED перенос, черга дій доступу, family_commit ресурси, повідомлення busy, IP-діапазони, cleanup фото, назва чужого гардероба, категорія бажаної речі, rescueFiles.
 - Host-набори pass (+ explicit missing-client-config skip), backend pass. GitHub Actions run 39414605594: unit tests, lint і debug preview APK — pass (Kotlin компілюється). Emulator/пристрій не перевірено. Live deploy агент не виконував.
 - Відкрито: №2 збірка, №13 схеми Room 5/6/9, №14 керування категоріями/кольорами, інкрементальне фото, DNS rebinding, авто-режим «дощ». Деталі AUDIT-FIXES-0.14.8.md.
+
+### 2026-10-20 — 0.14.9-family-add — Claude, integration verify
+
+- Пакет wardrobe-family-add-0.14.8.zip (Codex, code 38) перенесено поверх 0.14.8-audit-fixes і перенумеровано на 0.14.9/code39, бо code 38 уже зайнятий. ci.yml і cloud/firebase.json (порт 8088) лишилися з main.
+- До нового коду застосовано правила аудиту: FamilyAddController чергує дії (№10), prepare() тримає приватний write lock лише для snapshot/вибору й pin фото, а копіювання спільних фото та ZIP — поза lock (№4).
+- Бекенд не змінювався, окрім тестів: деплой функцій для додавання не потрібен. Host-набори та backend-тести — у PR; Android CI — у PR; пристрій не перевірено.

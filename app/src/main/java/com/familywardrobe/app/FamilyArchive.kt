@@ -1,13 +1,9 @@
 package com.familywardrobe.app
 
-import android.graphics.BitmapFactory
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.withLock
 import java.io.File
-import java.io.FileOutputStream
 import java.security.MessageDigest
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 import kotlin.coroutines.coroutineContext
 
 /** Durable account-private bytes; excluded from all portable/private backup manifests. */
@@ -49,24 +45,7 @@ internal class FamilyArchive(private val context: AccountContext, private val re
             val revision = revision(); val state = WardrobeSnapshots.select(repo.snapshot(),record.wardrobeId)
             BackupStateRules.validate(state)
             val manifest = FamilyEnvelope(Backup(context,repo,photos)).encode(state,record.identity,0).toByteArray(Charsets.UTF_8)
-            val ids = state.photoIds().sorted(); require(ids.size <= 5000); var expanded = manifest.size.toLong()
-            FileOutputStream(temporary).use { output -> ZipOutputStream(output.buffered()).use { zip ->
-                zip.putNextEntry(ZipEntry("manifest.json")); zip.write(manifest); zip.closeEntry()
-                for (id in ids) {
-                    checkpoint(); val photo = photos.currentFile(id)
-                    require(photo.isFile && photo.extension in setOf("jpg","png") && photo.length() in 1..MAX_PHOTO)
-                    val dimensions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                    BitmapFactory.decodeFile(photo.path,dimensions)
-                    require(dimensions.outWidth in 1..8192 && dimensions.outHeight in 1..8192 &&
-                        dimensions.outWidth.toLong() * dimensions.outHeight <= 16L*1024*1024)
-                    expanded += photo.length(); require(expanded <= 256L*1024*1024)
-                    zip.putNextEntry(ZipEntry("photos/${photo.name}"))
-                    photo.inputStream().use { PhotoStore.copyLimited(it,zip,MAX_PHOTO,checkpoint) }; zip.closeEntry()
-                    require(temporary.length() <= FamilyWire.MAX_ARCHIVE)
-                }
-                zip.finish(); zip.flush(); output.fd.sync()
-            } }
-            checkpoint(); require(temporary.length() in 1..FamilyWire.MAX_ARCHIVE)
+            FamilySnapshotZip.write(temporary, manifest, state, photos, checkpoint)
             val hash = digest(temporary,checkpoint)
             check(temporary.renameTo(file(record)))
             // The bytes are durable before the checkpoint. PREPARED may safely rebuild after a crash.
@@ -74,7 +53,6 @@ internal class FamilyArchive(private val context: AccountContext, private val re
         } finally { temporary.delete() }
     }
     companion object {
-        private const val MAX_PHOTO = 12L*1024*1024
         internal fun digest(file: File, checkpoint: () -> Unit = {}): String {
             val hash = MessageDigest.getInstance("SHA-256"); val buffer = ByteArray(64*1024)
             file.inputStream().use { input -> while (true) {

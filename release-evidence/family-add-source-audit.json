@@ -1,0 +1,5 @@
+{
+  "status": "pass",
+  "scope": "disposable Git index; no commits/push or actual repository changes",
+  "output": "[Wardrobe Git Safety] PASS: 496 file versions checked; 0 commit snapshots.\n"
+}

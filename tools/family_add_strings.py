@@ -1,0 +1,20 @@
+"""Shared additions: Ukrainian / English / Polish."""
+STRINGS = {
+'family_add_open': ('Додати власну річ / відкрити чернетку','Add own item / open draft','Dodaj własną rzecz / otwórz szkic'),
+'family_add_title': ('Додавання до спільного гардероба','Add to shared wardrobe','Dodaj do wspólnej garderoby'),
+'family_add_hint': ('Вибери збережену річ зі свого активного гардероба. Буде скопійовано всі її поля, кінцеве фото, власну категорію та колір. Образи, носіння й історія покупок не копіюються. Власна річ залишається у тебе. Нову річ або фото спочатку підготуй у звичайному редакторі.','Choose a saved item from your active private wardrobe. All its fields, final photo, custom category and color are copied. Outfits, wears and purchase history are excluded. Your private item stays with you. Prepare a new item or photo in the regular editor first.','Wybierz zapisaną rzecz ze swojej aktywnej prywatnej garderoby. Skopiujemy wszystkie jej pola, końcowe zdjęcie, własną kategorię i kolor. Zestawy, noszenia i historia zakupów nie są kopiowane. Prywatna rzecz pozostaje u Ciebie. Nową rzecz lub zdjęcie przygotuj najpierw w zwykłym edytorze.'),
+'family_add_choose': ('Вибери річ із гардероба «%1$s», щоб зберегти чернетку копії.','Choose an item from “%1$s” to save a copy draft.','Wybierz rzecz z garderoby „%1$s”, aby zapisać szkic kopii.'),
+'family_add_empty': ('Речей не знайдено. Додай річ у свій гардероб або зміни пошук.','No items found. Add an item to your private wardrobe or change the search.','Nie znaleziono rzeczy. Dodaj rzecz do prywatnej garderoby lub zmień wyszukiwanie.'),
+'family_add_saved': ('Копію з фото збережено на цьому пристрої. Вона ще не надіслана. Закриття вікна зберігає чернетку; одна незавершена копія на спільний гардероб.','The copy and photo are saved on this device, but not sent. Closing keeps the draft; one pending copy per shared wardrobe.','Kopię ze zdjęciem zapisano na tym urządzeniu, ale nie wysłano. Zamknięcie zachowuje szkic; jedna oczekująca kopia na wspólną garderobę.'),
+'family_add_send': ('Додати до спільного гардероба','Add to shared wardrobe','Dodaj do wspólnej garderoby'),
+'family_add_send_confirm': ('Надіслати цю річ, її поля та фото? Вони стануть доступними учасникам спільного гардероба.','Send this item, its fields and photo? Members of the shared wardrobe will be able to see them.','Wysłać tę rzecz, jej pola i zdjęcie? Będą widoczne dla uczestników wspólnej garderoby.'),
+'family_add_synced': ('Сервер підтвердив додавання речі з фото.','The server confirmed the item and photo were added.','Serwer potwierdził dodanie rzeczy ze zdjęciem.'),
+'family_add_conflict': ('Спільний гардероб змінився. Копія збережена локально. Онови основу чернетки перед надсиланням.','The shared wardrobe changed. Your copy is saved locally. Refresh the draft base before sending.','Wspólna garderoba się zmieniła. Kopia jest zapisana lokalnie. Odśwież podstawę szkicu przed wysłaniem.'),
+'family_add_expired': ('Термін запиту минув. Онови основу чернетки та надішли її знову.','The request expired. Refresh the draft base and send it again.','Żądanie wygasło. Odśwież podstawę szkicu i wyślij je ponownie.'),
+'family_add_rebase': ('Оновити основу чернетки','Refresh draft base','Odśwież podstawę szkicu'),
+'family_add_rebase_confirm': ('Завантажити актуальний гардероб і додати до нього лише збережену копію цієї речі? Чужі зміни збережуться. Надсилання потрібно буде підтвердити окремо.','Load the current wardrobe and add only this saved item copy? Other members’ changes stay intact. Sending still needs a separate confirmation.','Pobrać aktualną garderobę i dodać do niej tylko zapisaną kopię tej rzeczy? Zmiany innych osób pozostaną. Wysyłanie wymaga osobnego potwierdzenia.'),
+'family_add_price': ('Ціна: %1$.2f %2$s','Price: %1$.2f %2$s','Cena: %1$.2f %2$s'),
+'family_add_flags': ('Улюблена: %1$s · рідко ношу: %2$s · виключена з пропозицій: %3$s','Favorite: %1$s · rarely worn: %2$s · excluded from suggestions: %3$s','Ulubiona: %1$s · rzadko noszona: %2$s · wykluczona z sugestii: %3$s'),
+'family_add_yes': ('так','yes','tak'),
+'family_add_no': ('ні','no','nie'),
+}
