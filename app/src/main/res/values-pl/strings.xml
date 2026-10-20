@@ -1159,4 +1159,20 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="daily_no_outerwear">Brak dostępnej odzieży wierzchniej na tę pogodę, więc zestawy dobrano bez niej. Dodaj kurtkę lub płaszcz, aby się pojawiała.</string>
     <string name="family_snapshot_hint">Kopia na serwerze to stan z chwili przeniesienia. Uczestnicy nie widzą jeszcze późniejszych zmian: aktualizacja kopii pojawi się razem ze wspólną edycją.</string>
     <string name="wish_category_in_outfits">Ta rzecz jest już w zapisanych zestawach, a nowa kategoria uczyniłaby je niemożliwymi (np. dwie góry albo sukienka ze spodniami). Najpierw zmień ją lub usuń z tych zestawów.</string>
+    <string name="family_photo_open">Zmień zdjęcie</string>
+    <string name="family_photo_title">Zmiana zdjęcia wspólnej rzeczy</string>
+    <string name="family_photo_hint">Nowe zdjęcie najpierw zapisuje się jako szkic na tym urządzeniu i jest wysyłane dopiero po osobnym potwierdzeniu. Inne rzeczy i zdjęcia wspólnej garderoby pozostają bez zmian.</string>
+    <string name="family_photo_item">Rzecz: %1$s</string>
+    <string name="family_photo_current">Obecnie na serwerze</string>
+    <string name="family_photo_new">Nowe zdjęcie (szkic)</string>
+    <string name="family_photo_import_note">Zdjęcie z galerii lub aparatu jest dodawane bez zmian, bez usuwania tła. Aby wysłać obrobione zdjęcie, najpierw zapisz je we własnej rzeczy i wybierz „Zdjęcie z mojej rzeczy”.</string>
+    <string name="family_photo_from_item">Zdjęcie z mojej rzeczy</string>
+    <string name="family_photo_choose">Wybierz swoją rzecz: zostanie użyte jej gotowe zdjęcie. Sama rzecz się nie zmieni.</string>
+    <string name="family_photo_saved">Nowe zdjęcie zapisano na tym urządzeniu i jeszcze nie wysłano. Zamknięcie zachowuje szkic; jedna niedokończona zmiana zdjęcia na wspólną garderobę.</string>
+    <string name="family_photo_other_draft">Istnieje już niedokończona zmiana zdjęcia dla „%1$s”. Wyślij ją lub usuń, aby zacząć kolejną.</string>
+    <string name="family_photo_send">Zmień zdjęcie we wspólnej garderobie</string>
+    <string name="family_photo_send_confirm">Zmienić zdjęcie tej rzeczy dla wszystkich uczestników? Stare zdjęcie zniknie ze wspólnej kopii, jeśli nic innego go nie używa.</string>
+    <string name="family_photo_synced">Serwer potwierdził nowe zdjęcie.</string>
+    <string name="family_photo_conflict">Wspólna garderoba się zmieniła. Nowe zdjęcie jest zapisane lokalnie. Zaktualizuj podstawę szkicu i wyślij ponownie.</string>
+    <string name="family_photo_rebase_confirm">Pobrać aktualną garderobę i zastosować do niej to samo nowe zdjęcie? Wysłanie to osobny krok.</string>
 </resources>
