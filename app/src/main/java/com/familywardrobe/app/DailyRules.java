@@ -43,7 +43,12 @@ public final class DailyRules {
                     WardrobeRules.compatibleSeasons(p.season, season) &&
                     (!fixed.containsKey(category) || fixed.get(category).equals(p.id))) choices.add(item);
             }
-            if (choices.isEmpty()) { beam = Collections.emptyList(); break; }
+            if (choices.isEmpty()) {
+                // Weather outerwear is a preferred layer, not a base piece: without a ready, season-compatible
+                // coat or jacket the look is still suggested. A pinned outerwear piece stays mandatory.
+                if (category.equals("outerwear") && !fixed.containsKey("outerwear")) continue;
+                beam = Collections.emptyList(); break;
+            }
             choices.sort(Comparator.<Item>comparingInt(i -> itemScore(i, style, date)).reversed()
                 .thenComparingInt(i -> Objects.hash(seed, i.piece.id)).thenComparing(i -> i.piece.id));
             if (choices.size() > 24) choices = new ArrayList<>(choices.subList(0, 24));

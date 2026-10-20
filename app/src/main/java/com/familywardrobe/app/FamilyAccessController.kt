@@ -4,6 +4,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.UUID
 import kotlin.coroutines.coroutineContext
 
@@ -24,8 +25,8 @@ internal class FamilyAccessController(private val app: WardrobeApplication, priv
             throw CancellationException("Account changed")
     }
     private fun run(block: suspend (FamilyBackend) -> Unit) {
-        scope.launch(Dispatchers.IO) {
-            if (!lock.tryLock()) return@launch
+        // Queue behind a running request: an accept/revoke tapped during refresh must not vanish silently.
+        scope.launch(Dispatchers.IO) { lock.withLock {
             try {
                 guard(); mutable.value = mutable.value.copy(running = true, problem = null, notice = null)
                 val work = coroutineContext
@@ -41,9 +42,8 @@ internal class FamilyAccessController(private val app: WardrobeApplication, priv
                 mutable.value = mutable.value.copy(problem = problem)
             } finally {
                 if (session.isOpen) mutable.value = mutable.value.copy(running = false)
-                lock.unlock()
             }
-        }
+        } }
     }
     private suspend fun reload(backend: FamilyBackend) {
         // Refresh invalidates any prior cached access, including a role changed elsewhere.

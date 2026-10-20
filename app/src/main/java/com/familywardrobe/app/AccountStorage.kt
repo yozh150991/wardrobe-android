@@ -86,10 +86,12 @@ internal class AccountSession(val identity: AuthIdentity, application: WardrobeA
     internal var privateJob: kotlinx.coroutines.Job? = null
     @Volatile private var closed = false
     internal val isOpen get() = !closed
-    fun close() {
+    /** [signedOut] = explicit sign-out. An Activity that merely finishes keeps the account's
+     * WorkManager sync/poll scheduled; workers verify the signed-in UID themselves. */
+    fun close(signedOut: Boolean = true) {
         if (closed) return
         closed = true
-        CloudSchedule.enabled(context, identity.key, false)
+        if (signedOut) CloudSchedule.enabled(context, identity.key, false)
         viewModelStore.clear()
         app.accountClosures[identity.key] = app.backgroundScope.launch(Dispatchers.IO) {
             privateJob?.join()

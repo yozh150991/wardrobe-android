@@ -103,13 +103,14 @@ internal class CloudSyncEngine(private val app: WardrobeApplication,private val 
         }
         val file=File(context.cacheDir,"cloud-upload-${newId()}.zip");var path=""
         try {
-            Backup(context,repo,photos).export(Uri.fromFile(file),::guard)
+            // The archive is a coherent snapshot of `staged`; later local edits keep `dirty` for the next pass.
+            val staged=Backup(context,repo,photos).export(Uri.fromFile(file),::guard)
             require(file.length()<=CloudBackend.MAX_ARCHIVE)
             val verification=Backup(context,repo,photos).verify(Uri.fromFile(file))
             repo.writes.withLock {
-                val current=meta();if(current.localRevision!=before.localRevision || !current.enabled)throw CloudChangedException()
+                val current=meta();if(staged<before.localRevision || staged>current.localRevision || !current.enabled)throw CloudChangedException()
                 path="users/${identity.uid}/snapshots/${newId()}.zip"
-                repo.dao.saveCloudMeta(current.copy(uploadPath=path,uploadHash=verification.fingerprint,uploadLocalRevision=current.localRevision,error=""))
+                repo.dao.saveCloudMeta(current.copy(uploadPath=path,uploadHash=verification.fingerprint,uploadLocalRevision=staged,error=""))
             }
             backend.upload(file,path);guard();if(!meta().enabled)return
             val accepted=try {
@@ -126,7 +127,7 @@ internal class CloudSyncEngine(private val app: WardrobeApplication,private val 
                 else throw e
             }
             guard()
-            update {it.copy(baseRevision=accepted.revision,dirty=!CloudSyncRules.canClearDirty(before.localRevision,it.localRevision),uploadPath="",uploadHash="",conflictRevision=0,conflictPath="",conflictHash="",error="",lastSuccess=System.currentTimeMillis())}
+            update {it.copy(baseRevision=accepted.revision,dirty=!CloudSyncRules.canClearDirty(staged,it.localRevision),uploadPath="",uploadHash="",conflictRevision=0,conflictPath="",conflictHash="",error="",lastSuccess=System.currentTimeMillis())}
             // The new head is committed before deleting the previous snapshot. Active heads are protected by rules.
             previous?.takeIf {it.path!=accepted.path}?.let {runCatching {backend.removeUncommitted(it.path)}}
         } finally {file.delete()}
@@ -208,6 +209,8 @@ class CloudSyncWorker(context: Context,parameters: WorkerParameters): CoroutineW
 }
 
 internal class CloudSyncController(private val app: WardrobeApplication,private val session: AccountSession,private val scope: CoroutineScope) {
+    /** Each upload is a full account archive: wait for a quiet minute instead of uploading after every tap. */
+    private companion object { const val DIRTY_DEBOUNCE_MS=60_000L }
     private val stored=session.repository.dao.cloudMetaFlow().filterNotNull()
     val state=stored.stateIn(scope,SharingStarted.Eagerly,CloudSyncMeta())
     val running=CloudSchedule.running(session.context,session.identity.key).stateIn(scope,SharingStarted.WhileSubscribed(5000),false)
@@ -221,7 +224,7 @@ internal class CloudSyncController(private val app: WardrobeApplication,private 
                 }
             }
         }
-        scope.launch {stored.map {Triple(it.enabled,it.localRevision,it.dirty)}.distinctUntilChanged().collectLatest { (enabled,_,dirty) ->if(enabled&&dirty){delay(1500);CloudSchedule.enqueue(session.context,session.identity.key)}}}
+        scope.launch {stored.map {Triple(it.enabled,it.localRevision,it.dirty)}.distinctUntilChanged().collectLatest { (enabled,_,dirty) ->if(enabled&&dirty){delay(DIRTY_DEBOUNCE_MS);CloudSchedule.enqueue(session.context,session.identity.key)}}}
         scope.coroutineContext[Job]?.invokeOnCompletion {listener?.remove()}
     }
     suspend fun enable(on: Boolean) = session.repository.writes.withLock {

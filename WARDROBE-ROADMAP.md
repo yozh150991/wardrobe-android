@@ -1,12 +1,12 @@
 # Wardrobe — роадмап і передача роботи
 
-Оновлено: **2026-10-19, Europe/Warsaw**. Редакція документа: **24**.
-База вихідного коду: **0.14.7-family-edit**, `versionCode=37`, Room/backup **10**.
-Статус: FAM-01/03 — partial; FAM-02 — partial, реалізований обсяг verify. У 0.14.6 додано discovery після входу на іншому пристрої, запрошення в застосунку за підтвердженою email-адресою, accept/decline/cancel, owner-only roles/revoke і вихід учасника. Листи не надсилаються; окрема історія завершених запрошень ще потрібна. У 0.14.7 реалізовано перший обсяг спільного редагування полів із outbox/CAS; фото/додавання/образи та постійна синхронізація ще потрібні. За вказівкою користувача 18.10 «Багфікси будуть потім». Native-приймання й live deployment залишаються відкритими.
+Оновлено: **2026-10-20, Europe/Warsaw**. Редакція документа: **25**.
+База вихідного коду: **0.14.8-audit-fixes**, `versionCode=38`, Room/backup **10**.
+Статус: 0.14.8 — багфікси за технічним аудитом 0.14.6 поверх FAM-03 на прохання користувача, verify; див. AUDIT-FIXES-0.14.8.md. FAM-01/03 — partial; FAM-02 — partial, реалізований обсяг verify. У 0.14.6 додано discovery після входу на іншому пристрої, запрошення в застосунку за підтвердженою email-адресою, accept/decline/cancel, owner-only roles/revoke і вихід учасника. Листи не надсилаються; окрема історія завершених запрошень ще потрібна. У 0.14.7 реалізовано перший обсяг спільного редагування полів із outbox/CAS; фото/додавання/образи та постійна синхронізація ще потрібні. За вказівкою користувача 18.10 «Багфікси будуть потім». Native-приймання й live deployment залишаються відкритими.
 
 Це головний документ для пріоритетів, незавершеної роботи й передачі завдань іншому агенту. Погоджено користувачем 7 жовтня 2026: спочатку спрощення каталогу та імпорт із магазину, потім розширення помічника перед покупкою; сімейний доступ — окремий пріоритетний блок. Решту ідей потрібно зберегти в беклозі. Нова пряма вказівка користувача має перевагу над цим планом.
 
-**Актуальна контрольна точка:** 0.14.7-family-edit/code37. FAM-03 partial: owner/editor змінює name/size/location/description наявної спільної речі; окремий durable outbox, explicit sync, UUID retry, server CAS та ручне порівняння/rebase. 83 backend tests pass, 22 host-набори pass; native compile/APK і новий emulator-сценарій не виконані. Наступне: розширити shared editing на фото/додавання/образи, multi-operation queue і continuous sync; далі FAM-04. Багфікси відкладені. Див. FAMILY-EDIT-0.14.7.md.
+**Актуальна контрольна точка:** 0.14.8-audit-fixes/code38. Виправлено знахідки аудиту 0.14.6 (№1, 3, 5–8, 10, 12, 16–19; частково №4, 9, 11, 15). Host-набори та backend-тести pass; Android CI і пристрій — перевірити. family_commit 1 GiB/540 с потребує ручного deploy. Відкрито: №2, №13, №14, інкрементальне фото. Попередня точка: 0.14.7-family-edit/code37. FAM-03 partial: owner/editor змінює name/size/location/description наявної спільної речі; окремий durable outbox, explicit sync, UUID retry, server CAS та ручне порівняння/rebase. 83 backend tests pass, 22 host-набори pass; native compile/APK і новий emulator-сценарій не виконані. Наступне: розширити shared editing на фото/додавання/образи, multi-operation queue і continuous sync; далі FAM-04. Багфікси відкладені. Див. FAMILY-EDIT-0.14.7.md.
 
 ## 1. Швидкий старт для наступного агента
 
@@ -407,3 +407,10 @@ DEV-01 (Git Safety) збережений; історична контрольн�
 - Змінені FamilyEditStore/Controller/Dialog, reader/ViewModel/backend bridge, resources, Python editing service/callable, tests/version/docs. Список у package manifest.
 - Backend83 pass (23 нових), host22 pass +1 explicit config skip. Android store5 та emulator1 підготовлені, not run. Full JDK відсутній: Android compilation/lint/APK не виконані. Деталі RELEASE-VALIDATION-0.14.7.json та FAMILY-EDIT-0.14.7.md.
 - Наступне FAM-03: shared photo/add/outfit editor, кілька queued operations і continuous sync; потім FAM-04. Поточна синхронізація запускається явно. FAM-02 email/history залишаються відкритими. Немає production deployment.
+
+### 2026-10-20 — 0.14.8-audit-fixes — Claude, verify
+
+- Вказівка користувача 20.10: «Можеш виправити все?» — знахідки технічного аудиту 0.14.6 виправлено як багфікси. Спершу зроблено на 0.14.6, потім перенесено поверх 0.14.7-family-edit (той самий код, що розгорнуто 20.10).
+- Виправлено: падіння колажу з натхненням, «Назад» на відкритті сесії, фонова синхронізація після закриття Activity, експорт без lock на архівацію + debounce 60 с, CLOUD canBrowse, Daily без верхнього одягу, відбиток фото, VERIFIED перенос, черга дій доступу, family_commit ресурси, повідомлення busy, IP-діапазони, cleanup фото, назва чужого гардероба, категорія бажаної речі, rescueFiles.
+- Host-набори pass (+ explicit missing-client-config skip), backend pass. Kotlin/Compose — через Android CI job; пристрій не перевірено. Live deploy агент не виконував.
+- Відкрито: №2 збірка, №13 схеми Room 5/6/9, №14 керування категоріями/кольорами, інкрементальне фото, DNS rebinding, авто-режим «дощ». Деталі AUDIT-FIXES-0.14.8.md.

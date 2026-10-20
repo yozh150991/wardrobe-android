@@ -1138,4 +1138,8 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="family_edit_no_draft">Brak niezakończonej edycji. Otwórz rzecz i wybierz Edytuj pola.</string>
     <string name="family_edit_missing">Tej rzeczy nie ma już w wersji na serwerze. Możesz usunąć lokalny szkic po potwierdzonym konflikcie.</string>
     <string name="family_edit_invalid">Sprawdź pola: nazwa jest wymagana; limity wynoszą 120 znaków dla nazwy, 40 dla rozmiaru, 200 dla miejsca i 1000 dla opisu.</string>
+    <string name="operation_wait">Poczekaj, aż zakończy się bieżąca operacja.</string>
+    <string name="daily_no_outerwear">Brak dostępnej odzieży wierzchniej na tę pogodę, więc zestawy dobrano bez niej. Dodaj kurtkę lub płaszcz, aby się pojawiała.</string>
+    <string name="family_snapshot_hint">Kopia na serwerze to stan z chwili przeniesienia. Uczestnicy nie widzą jeszcze późniejszych zmian: aktualizacja kopii pojawi się razem ze wspólną edycją.</string>
+    <string name="wish_category_in_outfits">Ta rzecz jest już w zapisanych zestawach, a nowa kategoria uczyniłaby je niemożliwymi (np. dwie góry albo sukienka ze spodniami). Najpierw zmień ją lub usuń z tych zestawów.</string>
 </resources>

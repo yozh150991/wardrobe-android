@@ -14,6 +14,17 @@ import kotlin.coroutines.coroutineContext
 
 /** Public HTTPS only: no WebView, script execution, login, cookies or service credentials. */
 internal object ShopImportClient {
+    /** Local, private, shared, documentation, benchmark and reserved ranges are never fetched. */
+    private fun nonPublic(address: InetAddress): Boolean {
+        if (address.isAnyLocalAddress || address.isLoopbackAddress || address.isLinkLocalAddress ||
+            address.isSiteLocalAddress || address.isMulticastAddress) return true
+        val b = address.address.map { it.toInt() and 255 }
+        return if (b.size == 4) b[0] == 0 || b[0] >= 240 || (b[0] == 100 && b[1] in 64..127) ||
+            (b[0] == 192 && b[1] == 0 && b[2] in setOf(0, 2)) || (b[0] == 198 && b[1] in 18..19) ||
+            (b[0] == 198 && b[1] == 51 && b[2] == 100) || (b[0] == 203 && b[1] == 0 && b[2] == 113)
+        else (b[0] and 0xfe) == 0xfc || (b[0] == 0x20 && b[1] == 0x01 && b[2] == 0x0d && b[3] == 0xb8) ||
+            (b[0] == 0 && b[1] == 0x64 && b[2] == 0xff && b[3] == 0x9b)
+    }
     private data class Response(val url: String, val bytes: ByteArray, val contentType: String)
     private suspend fun get(input: String, max: Int, image: Boolean): Response = withContext(Dispatchers.IO) {
         var url = input
@@ -25,13 +36,7 @@ internal object ShopImportClient {
             val target = URL(url)
             require(target.protocol.equals("https", true) && target.port in setOf(-1, 443))
             val addresses = InetAddress.getAllByName(target.host)
-            require(addresses.isNotEmpty() && addresses.none { address ->
-                val bytes = address.address
-                address.isAnyLocalAddress || address.isLoopbackAddress || address.isLinkLocalAddress ||
-                    address.isSiteLocalAddress || address.isMulticastAddress ||
-                    (bytes.size == 16 && (bytes[0].toInt() and 0xfe) == 0xfc) ||
-                    (bytes.size == 4 && (bytes[0].toInt() and 255) == 100 && (bytes[1].toInt() and 255) in 64..127)
-            })
+            require(addresses.isNotEmpty() && addresses.none(::nonPublic))
             val connection = target.openConnection() as HttpsURLConnection
             try {
                 connection.instanceFollowRedirects = false

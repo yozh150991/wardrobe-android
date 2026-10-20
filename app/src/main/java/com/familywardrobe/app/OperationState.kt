@@ -8,13 +8,14 @@ enum class OperationKind(val title: Int, val canBrowse: Boolean = false) {
     PHOTO(R.string.operation_photo), MASK(R.string.operation_mask), IMPORT(R.string.operation_import), SHOP(R.string.shop_loading),
     EXPORT(R.string.operation_export, true), VERIFY(R.string.operation_verify, true),
     PREVIEW_RESTORE(R.string.operation_verify, true), RESTORE(R.string.operation_restore),
-    FOLDER(R.string.operation_folder), CAPSULE(R.string.operation_capsule), CLOUD(R.string.operation_cloud), CLEANUP(R.string.operation_cleanup, true)
+    FOLDER(R.string.operation_folder), CAPSULE(R.string.operation_capsule), CLOUD(R.string.operation_cloud, true), CLEANUP(R.string.operation_cleanup, true)
 }
 enum class FailureAction { RETRY, FILE, EXPORT_LOCATION, FOLDER, REFRESH, CLOSE }
 data class OperationState(val kind: OperationKind, val cancellable: Boolean, val cancelling: Boolean = false)
 data class OperationFailure(val message: Int, val action: FailureAction, val kind: OperationKind)
 class StaleSelectionException : IllegalArgumentException()
 class BackupChangedException : IllegalStateException()
+class WishCategoryInUseException : IllegalArgumentException()
 
 internal fun operationFailure(kind: OperationKind, error: Exception): OperationFailure {
     val causes = generateSequence<Throwable>(error) { it.cause }.take(12).toList()
@@ -22,6 +23,8 @@ internal fun operationFailure(kind: OperationKind, error: Exception): OperationF
         return OperationFailure(R.string.failure_space, FailureAction.RETRY, kind)
     if (error is StaleSelectionException)
         return OperationFailure(R.string.failure_stale_selection, FailureAction.REFRESH, kind)
+    if (error is WishCategoryInUseException)
+        return OperationFailure(R.string.wish_category_in_outfits, FailureAction.CLOSE, kind)
     if (error is BackupChangedException)
         return OperationFailure(R.string.failure_backup_changed, FailureAction.FILE, kind)
     if (kind == OperationKind.CLOUD) {

@@ -96,9 +96,12 @@ private fun AuthScreen(vm: AuthViewModel, state: AuthUiState) {
             }
         }
     }
-    BackHandler((request.busy && !request.cancelling) || state.page != AuthPage.LOGIN || state.locked) {
+    // System Back while the verified session is opening must not sign out of the SDK: offline
+    // re-entry would be impossible. Only the explicit Cancel button cancels opening.
+    val openingOnly = state.page == AuthPage.OPENING && !request.busy
+    BackHandler(!openingOnly && ((request.busy && !request.cancelling) || state.page != AuthPage.LOGIN || state.locked)) {
         if (request.cancelling) return@BackHandler
-        if (request.busy || state.page in setOf(AuthPage.OPENING, AuthPage.CLAIM, AuthPage.STORAGE_ERROR)) vm.cancel()
+        if (request.busy || state.page in setOf(AuthPage.CLAIM, AuthPage.STORAGE_ERROR)) vm.cancel()
         else if (state.page != AuthPage.LOGIN) vm.show(AuthPage.LOGIN)
         else confirmSwitch = true
     }

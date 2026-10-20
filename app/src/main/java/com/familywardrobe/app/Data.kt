@@ -178,6 +178,7 @@ interface WardrobeDao {
     @Upsert suspend fun saveWish(value: Wish)
     @Insert suspend fun insertIdeas(values: List<OutfitIdea>)
     @Query("DELETE FROM wishes WHERE id=:id") suspend fun deleteWish(id: String)
+    @Query("UPDATE outfit_ideas SET category=:category WHERE wishId=:wishId") suspend fun updateIdeaCategory(wishId: String, category: String)
     @Query("DELETE FROM wears WHERE garmentId=:id AND date=:date") suspend fun clearItemDay(id: String, date: String)
     @Query("DELETE FROM wears WHERE source=:source AND date=:date") suspend fun clearSourceDay(source: String, date: String)
     @Query("SELECT COUNT(*) FROM wears WHERE source=:source AND date=:date") suspend fun sourceCount(source: String, date: String): Int
@@ -353,8 +354,19 @@ class Repository(val db: WardrobeDatabase, val writes: Mutex = Mutex()) {
         require(previous == null || previous.wardrobeId == next.wardrobeId)
         require(previous == null || previous.kind == next.kind || converting)
         validateWish(next)
+        val categoryChanged = previous != null && previous.category != next.category
+        if (categoryChanged) {
+            // A planned piece keeps its outfits valid: a new category must not create two tops or a dress with trousers.
+            val ideas = dao.allIdeas(); val parts = dao.allParts()
+            ideas.filter { it.wishId == next.id }.forEach { idea ->
+                val categories = parts.filter { it.outfitId == idea.outfitId }.map { requireNotNull(dao.garment(it.garmentId)).category } +
+                    ideas.filter { it.outfitId == idea.outfitId && it.partId != idea.partId }.map { it.category } + next.category
+                if (!WardrobeRules.validCategories(categories)) throw WishCategoryInUseException()
+            }
+        }
         db.withTransaction {
             dao.saveWish(next)
+            if (categoryChanged) dao.updateIdeaCategory(next.id, next.category)
             if (converting) recordWishEvent(next.event("candidate"))
         }
         val oldPhoto = previous?.photoId.orEmpty()

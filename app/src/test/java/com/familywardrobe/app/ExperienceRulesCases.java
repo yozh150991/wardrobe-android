@@ -35,7 +35,8 @@ public final class ExperienceRulesCases {
         ok(fixed.size()==1 && fixed.get(0).contains("dress") && !fixed.get(0).contains("top"));
         ok(DailyRules.generate(all,"home","everyday","warm","2026-10-02","seed",Set.of(),Map.of("top","top","dress","dress"),3).isEmpty());
         ok(DailyRules.generate(all,"other","everyday","warm","2026-10-02","seed",Set.of(),Map.of(),3).isEmpty());
-        ok(DailyRules.generate(all,"home","everyday","cold","2026-10-02","seed",Set.of(),Map.of(),3).isEmpty());
+        // 0.14.7: no coat in the wardrobe no longer empties cold-weather suggestions.
+        ok(!DailyRules.generate(all,"home","everyday","cold","2026-10-02","seed",Set.of(),Map.of(),3).isEmpty());
         String rejected=DailyRules.signature(fixed.get(0));
         ok(DailyRules.generate(all,"home","everyday","warm","2026-10-02","seed",Set.of(rejected),Map.of("dress","dress"),3).isEmpty());
         List<LookSelection.Piece> selected=Arrays.asList(new LookSelection.Piece("d","dress","all"),new LookSelection.Piece("s","shoes","all"),
@@ -72,6 +73,15 @@ public final class ExperienceRulesCases {
         }
         refuses(()->CanvasRules.constrain("dress",Float.NaN,0,1));
         refuses(()->CanvasRules.initial("dress",0,13));
+        // 0.14.7: every curated inspiration key must be a valid canvas key (a move used to crash the collage).
+        for(InspirationCatalog.Idea idea:InspirationCatalog.all()) ok(CanvasRules.validKey(idea.key));
+        for(String category:WardrobeRules.CATEGORIES) ok(CanvasRules.validKey("idea:"+category));
+        ok(CanvasRules.validKey("owned:0e6b1a2c-1111-4222-8333-944455556666"));
+        ok(CanvasRules.validKey("wish:0e6b1a2c-1111-4222-8333-944455556666"));
+        ok(!CanvasRules.validKey("idea:top_shirt_pink"));
+        ok(!CanvasRules.validKey("idea:"));
+        ok(!CanvasRules.validKey("photo:0e6b1a2c-1111-4222-8333-944455556666"));
+        ok(!CanvasRules.validKey(null));
         System.out.println("PASS: "+count+" production flexible-outfit, recency, photo-mask and canvas assertions.");
     }
 }

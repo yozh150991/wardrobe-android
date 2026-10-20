@@ -16,7 +16,8 @@ object OutfitCanvasState {
         } }
         require(result.map { it.key }.distinct().size == result.size)
         result.forEach { p ->
-            require(p.key.length <= 60 && p.key.matches(Regex("(owned|wish):[a-f0-9-]{36}|idea:(${Matching.categories.joinToString("|")})")))
+            // Catalog inspiration keys (idea:top_shirt_white) are valid canvas keys too.
+            require(CanvasRules.validKey(p.key))
             require(p.x.isFinite() && p.y.isFinite() && p.scale.isFinite() && p.x in 0f..1f && p.y in 0f..1f && p.scale in .6f..1.8f && p.z in 0 until WardrobeRules.MAX_PARTS)
         }
         return result
@@ -35,7 +36,10 @@ object OutfitCanvasState {
             CanvasPlacement(p.key, point[0], point[1], point[2], old?.z ?: index)
         }
     }
-    fun change(pieces: List<LookPiece>, text: String, key: String, dx: Float = 0f, dy: Float = 0f, zoom: Float = 1f, front: Boolean = false): String {
+    /** Called from gesture and click handlers: an invalid layout keeps the previous one instead of crashing. */
+    fun change(pieces: List<LookPiece>, text: String, key: String, dx: Float = 0f, dy: Float = 0f, zoom: Float = 1f, front: Boolean = false): String =
+        runCatching { changed(pieces, text, key, dx, dy, zoom, front) }.getOrDefault(text)
+    private fun changed(pieces: List<LookPiece>, text: String, key: String, dx: Float, dy: Float, zoom: Float, front: Boolean): String {
         val parts = placements(pieces, text); val p = pieces.find { it.key == key } ?: return text
         val old = parts.single { it.key == key }; val point = CanvasRules.constrain(p.category, old.x + dx, old.y + dy, old.scale * zoom)
         val changed = parts.map { if (it.key == key) it.copy(x = point[0], y = point[1], scale = point[2]) else it }

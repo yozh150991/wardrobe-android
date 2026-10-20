@@ -31,7 +31,7 @@ internal class FamilyBackend(private val account: AuthIdentity, private val guar
     private suspend fun call(name: String, data: Map<String, Any>): Map<*, *> {
         check()
         try {
-            val result = functions.getHttpsCallable(name).apply { setTimeout(180,TimeUnit.SECONDS) }
+            val result = functions.getHttpsCallable(name).apply { setTimeout(if (name == "family_commit") 540 else 180,TimeUnit.SECONDS) }
                 .call(data + ("expectedActorUid" to account.uid)).await().data
             check(); return result as? Map<*, *> ?: throw FamilyTransferException(FamilyProblem.ARCHIVE)
         } catch (e: FirebaseFunctionsException) {

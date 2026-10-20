@@ -243,28 +243,42 @@ class PhotoStore(private val context: Context) {
         require(PhotoResolutionRules.matchesMask(base.outWidth, base.outHeight, mask.outWidth, mask.outHeight, finalResolution))
         require(mask.outWidth.toLong() * mask.outHeight <= 16_000_000)
     }
+    private val pinned get() = PINS.computeIfAbsent(directory.absolutePath) { java.util.concurrent.ConcurrentHashMap() }
+    private val cleanupLock get() = CLEANUP_LOCKS.computeIfAbsent(directory.absolutePath) { Any() }
+    /** A photo being archived is never deleted mid-copy; its removal is deferred to the retry queue. */
+    fun pin(ids: Set<String>) { ids.forEach { id -> pinned.merge(id, 1) { old, added -> old + added } } }
+    fun unpin(ids: Set<String>) { ids.forEach { id -> pinned.computeIfPresent(id) { _, count -> if (count <= 1) null else count - 1 } } }
     suspend fun remove(ids: Set<String>): Boolean = withContext(Dispatchers.IO) {
-        var removed = true
-        val pending = cleanupPrefs.getStringSet("pending", emptySet()).orEmpty().toMutableSet()
-        ids.forEach { id ->
-            var photoRemoved = true
-            cache.remove("$id:false"); cache.remove("$id:true")
-            for (extension in ALL_EXTENSIONS) {
-                // A filesystem cleanup failure must not turn a committed DB deletion into a retry.
-                val ok = runCatching { val f = file(id, extension); !f.exists() || f.delete() }.getOrDefault(false)
-                if (!ok) { removed = false; photoRemoved = false }
+        // One read-modify-write of the retry queue at a time (foreground, workers, reprocessing).
+        synchronized(cleanupLock) {
+            var removed = true
+            val pending = cleanupPrefs.getStringSet("pending", emptySet()).orEmpty().toMutableSet()
+            ids.forEach { id ->
+                if (pinned.containsKey(id)) { pending.add(id); return@forEach }
+                var photoRemoved = true
+                cache.remove("$id:false"); cache.remove("$id:true")
+                for (extension in ALL_EXTENSIONS) {
+                    // A filesystem cleanup failure must not turn a committed DB deletion into a retry.
+                    val ok = runCatching { val f = file(id, extension); !f.exists() || f.delete() }.getOrDefault(false)
+                    if (!ok) { removed = false; photoRemoved = false }
+                }
+                if (photoRemoved) pending.remove(id) else pending.add(id)
             }
-            if (photoRemoved) pending.remove(id) else pending.add(id)
+            cleanupPrefs.edit().putStringSet("pending", pending).commit()
+            removed
         }
-        cleanupPrefs.edit().putStringSet("pending", pending).apply()
-        removed
     }
     suspend fun retryRemovals(protectedIds: Set<String>): Boolean {
-        val pending = cleanupPrefs.getStringSet("pending", emptySet()).orEmpty().filter { ID.matches(it) }.toSet() - protectedIds
-        cleanupPrefs.edit().putStringSet("pending", pending).apply()
+        val pending = synchronized(cleanupLock) {
+            val retained = cleanupPrefs.getStringSet("pending", emptySet()).orEmpty().filter { ID.matches(it) }.toSet() - protectedIds
+            cleanupPrefs.edit().putStringSet("pending", retained).commit()
+            retained
+        }
         return remove(pending)
     }
     companion object {
+        private val PINS = java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.ConcurrentHashMap<String, Int>>()
+        private val CLEANUP_LOCKS = java.util.concurrent.ConcurrentHashMap<String, Any>()
         // original is accepted only for cleanup of releases <= 0.2.0.
         val ALL_EXTENSIONS = listOf("original", "jpg", "png")
         val ID = Regex("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}")

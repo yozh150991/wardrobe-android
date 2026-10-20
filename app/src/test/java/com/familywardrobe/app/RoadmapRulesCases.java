@@ -19,7 +19,8 @@ public final class RoadmapRulesCases {
         var rejected = Set.of(DailyRules.signature(warm.get(0)),DailyRules.signature(warm.get(1)));
         check(DailyRules.generate(items,"home","everyday","warm","2026-10-02","seed",rejected,Map.of(),3).isEmpty());
         check(DailyRules.generate(items,"home","work","cold","2026-10-02","seed",Set.of(),Map.of(),3).stream().allMatch(x->x.contains("o1")));
-        check(DailyRules.generate(items.stream().filter(x->!x.piece.category.equals("outerwear")).toList(),"home","work","cold","2026-10-02","seed",Set.of(),Map.of(),3).isEmpty());
+        var noCoat = DailyRules.generate(items.stream().filter(x->!x.piece.category.equals("outerwear")).toList(),"home","work","cold","2026-10-02","seed",Set.of(),Map.of(),3);
+        check(!noCoat.isEmpty() && noCoat.stream().noneMatch(x->x.contains("o1")));
         List<DailyRules.Item> preview = new ArrayList<>(items); preview.add(item("candidate", "home", "other_item", "all", "available", false));
         var purchase = DailyRules.generate(preview,"home","everyday","warm","2026-10-02","preview",Set.of(),Map.of("other_item","candidate"),20);
         check(purchase.size()==2);check(purchase.stream().allMatch(x->x.size()==4&&x.contains("candidate")));
