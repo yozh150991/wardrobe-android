@@ -1,5 +1,14 @@
 # 0.14.5-family-reader — 18 October 2026
 
+## 0.14.7-family-edit — 19 October 2026 (code 37)
+
+FAM-03 metadata editor for existing shared items: name/size/location/description,
+account-isolated durable drafts, explicit sync, stable UUID replay, authoritative
+role/expiry/CAS checks, comparison and explicit rebase. Photos/other entities
+preserved. 83 backend tests and 22 host suites pass; native build, Android5 and
+emulator1 tests not run. No APK/live deployment. Full shared editing and continuous
+sync remain partial. See FAMILY-EDIT-0.14.7.md; bugfixes deferred.
+
 ## 0.14.6-family-access — 18 October 2026 (code 36)
 
 FAM-02: callable-only in-app invitations by verified email; owner/member discovery,

@@ -1,0 +1,46 @@
+{
+  "release": "0.14.7-family-edit",
+  "versionCode": 37,
+  "room_backup_version": 10,
+  "source_base": "0.14.6-family-access",
+  "checked_at": "2026-10-19T09:29:22.414818+00:00",
+  "status": "FAM-03 partial; item metadata editing slice verify",
+  "executed": {
+    "host_report": "release-evidence/host-runs/0.14.7-family-edit-20261019T092618541071Z.json",
+    "host_passed": 22,
+    "host_failed": 0,
+    "client_config": "explicit missing config skip",
+    "backend_tests": 83,
+    "new_backend_tests": 23,
+    "project_source_checks": 4742,
+    "localized_strings_per_locale": 1124,
+    "python_compileall": "pass"
+  },
+  "prepared_not_run": {
+    "FamilyEditStoreTest": 5,
+    "emulator_editing.py": 1
+  },
+  "android_build": {
+    "command": "bash build-apk.sh testDebugUnitTest lintDebug assembleDebug",
+    "status": "blocked_before_compilation",
+    "reason": "Install a full JDK 17 or 21 and set JAVA_HOME"
+  },
+  "not_run": [
+    "Kotlin/Compose compilation",
+    "Android instrumentation",
+    "Firebase emulator adapters/callable integration for this release",
+    "lint",
+    "APK",
+    "two-device acceptance",
+    "live Firebase deploy",
+    "Windows/macOS updater"
+  ],
+  "remaining": [
+    "shared photo/add/outfit editing",
+    "multi-operation queue",
+    "background continuous sync",
+    "FAM-04 acceptance",
+    "FAM-02 email delivery/history",
+    "GC/AppCheck/cost rollout"
+  ]
+}

@@ -25,6 +25,7 @@ import kotlinx.coroutines.delay
 internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismiss: () -> Unit) {
     val state by vm.familyReader.state.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
+    var editing by rememberSaveable(remoteId) { mutableStateOf(false) }
     var query by rememberSaveable(remoteId) { mutableStateOf("") }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var foreground by remember(lifecycle) { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
@@ -80,6 +81,8 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
                         "editor" -> R.string.family_read_editor
                         else -> R.string.family_read_viewer
                     }), style = MaterialTheme.typography.bodySmall)
+                    if (view.remote.role in setOf("owner", "editor")) OutlinedButton(onClick = { vm.familyEdit.open(remoteId); editing = true },
+                        enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_edit_resume)) }
                     OutlinedTextField(value = query, onValueChange = { query = it }, singleLine = true,
                         label = { Text(stringResource(R.string.family_read_search)) }, modifier = Modifier.fillMaxWidth())
                     val matches = snapshot.garments.filter { item ->
@@ -92,6 +95,9 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
                                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     ZoomableItemPhoto(garment.photoId, view.candidate.photos, Modifier.fillMaxWidth().height(200.dp),
                                         garment.name, garmentColour = garment.color)
+                                    if (view.remote.role in setOf("owner", "editor")) OutlinedButton(onClick = { vm.familyEdit.open(remoteId, garment.id); editing = true }, enabled = !busy) {
+                                        Text(stringResource(R.string.family_edit_open))
+                                    }
                                     Text(garment.name, style = MaterialTheme.typography.titleMedium)
                                     Text(snapshot.customCategories.find { it.id == garment.customCategoryId }?.name
                                         ?: stringResource(label(garment.category)))
@@ -108,4 +114,5 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
             }
         }
     }
+    if (editing) FamilyEditDialog(vm, remoteId) { editing = false }
 }

@@ -39,6 +39,7 @@ internal class FamilyBackend(private val account: AuthIdentity, private val guar
             val problem = when {
                 reason in setOf("UPLOAD_EXPIRED", "INVITE_EXPIRED") -> FamilyProblem.EXPIRED
                 reason == "INVITE_CLOSED" -> FamilyProblem.CONFLICT
+                reason == "EDIT_ITEM_MISSING" -> FamilyProblem.MISSING
                 reason == "ARCHIVE_MISSING" -> FamilyProblem.MISSING
                 e.code in setOf(FirebaseFunctionsException.Code.UNAUTHENTICATED,FirebaseFunctionsException.Code.PERMISSION_DENIED) -> FamilyProblem.ACCESS
                 e.code in setOf(FirebaseFunctionsException.Code.NOT_FOUND,FirebaseFunctionsException.Code.FAILED_PRECONDITION) -> FamilyProblem.CONFIG
@@ -51,7 +52,7 @@ internal class FamilyBackend(private val account: AuthIdentity, private val guar
         }
     }
     suspend fun accessCall(operation: String, data: Map<String, Any>): Map<*, *> {
-        require(operation in setOf("directory", "invitations", "members", "invite", "respond_invite", "cancel_invite", "change_member", "leave"))
+        require(operation in setOf("directory", "invitations", "members", "invite", "respond_invite", "cancel_invite", "change_member", "leave", "edit_item"))
         return call("family_$operation", data)
     }
     override suspend fun create(record: FamilyMigrationRecord) = FamilyWire.remote(call("family_create",mapOf("remoteId" to record.remoteId,"wardrobeId" to record.wardrobeId)))
