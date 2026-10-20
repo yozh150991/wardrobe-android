@@ -79,6 +79,23 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
       - name: Unit tests, lint and preview APK
         run: bash build-apk.sh -PciPreview=true testDebugUnitTest lintDebug assembleDebug
+      - name: Exported Room schema matches the entities
+        run: |
+          # Room re-exports the current schema during the build; a diff means the entities
+          # changed without a committed schema (and usually without a migration).
+          git status --porcelain -- app/schemas
+          test -z "$(git status --porcelain -- app/schemas)"
+      - name: Unit test summary
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          totals = dict(tests=0, failures=0, errors=0, skipped=0)
+          for path in glob.glob('app/build/test-results/testDebugUnitTest/*.xml'):
+              suite = ET.parse(path).getroot()
+              for key in totals: totals[key] += int(suite.get(key, 0))
+          print(f"::notice title=JVM unit tests::{totals['tests']} tests, {totals['failures']} failures, {totals['errors']} errors, {totals['skipped']} skipped")
+          PY
       - name: Upload Android reports
         if: always()
         uses: actions/upload-artifact@v7
