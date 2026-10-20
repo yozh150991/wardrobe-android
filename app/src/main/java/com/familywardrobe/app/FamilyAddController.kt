@@ -109,7 +109,7 @@ internal class FamilyAddController(private val app: WardrobeApplication, private
         val temporary = store.directory(newId()); val isolated = store.photos(temporary.name)
         try {
             val photoId = isolated.import(uri); checkpoint()
-            val selected = fields.selection(view.candidate.snapshot.wardrobes.single(), isolated.fingerprint(photoId))
+            val selected = fields.selection(view.candidate.snapshot.wardrobes.single(), isolated.fingerprint(photoId), view.candidate.snapshot)
             val draft = archive.stage(view.remote, view.candidate.snapshot, selected, view.candidate.photos, isolated, photoId)
             try { authorize(backend, draft.remoteId); install(draft, null, checkpoint) }
             catch (e: Exception) { if (store.get(draft.remoteId) != draft) store.directory(draft.publication.archiveId).deleteRecursively(); throw e }

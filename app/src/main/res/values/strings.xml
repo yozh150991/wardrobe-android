@@ -1178,4 +1178,7 @@
     <string name="family_new_open">Нова річ із фото (галерея/камера)</string>
     <string name="family_new_hint">Заповни поля й вибери фото з галереї або зніми камерою. Фото додається як є, без вирізання фону. Річ одразу готується як чернетка для спільного гардероба; у твій приватний гардероб вона не потрапляє.</string>
     <string name="family_new_name_first">Спершу введи назву (до 120 символів), потім вибери фото.</string>
+    <string name="family_new_custom_category">Власна категорія спільного гардероба</string>
+    <string name="family_new_custom_color">Власний колір спільного гардероба</string>
+    <string name="family_new_custom_none">Без власної</string>
 </resources>

@@ -32,4 +32,24 @@ class FamilyNewItemTest {
         }
         assertTrue(runCatching { fields.selection(shared, "nothex") }.exceptionOrNull() is IllegalArgumentException)
     }
+
+    @Test fun sharedCustomLabelIsReusedNotDuplicated() {
+        val category = CustomCategory(wardrobeId = shared.id, name = "Coats", nameKey = "coats", baseCategory = "outerwear")
+        val color = CustomColor(wardrobeId = shared.id, name = "Ink", nameKey = "ink", baseColor = "navy")
+        val withLabels = latest.copy(customCategories = listOf(category), customColors = listOf(color))
+        val chosen = fields.copy(customCategoryId = category.id, customColorId = color.id)
+        assertEquals(listOf(category), chosen.categories(withLabels, shared)); assertEquals(listOf(color), chosen.colors(withLabels, shared))
+        val merged = FamilyAddition.merge(withLabels, chosen.selection(shared, "", withLabels))
+        val item = merged.garments.last()
+        assertEquals(category.id, item.customCategoryId); assertEquals(color.id, item.customColorId)
+        assertEquals(listOf(category), merged.customCategories); assertEquals(listOf(color), merged.customColors)
+    }
+
+    @Test fun customLabelOfAnotherBaseOrMissingIsRejected() {
+        val category = CustomCategory(wardrobeId = shared.id, name = "Shirts", nameKey = "shirts", baseCategory = "top")
+        val withLabel = latest.copy(customCategories = listOf(category))
+        assertTrue(fields.categories(withLabel, shared).isEmpty())
+        assertTrue(runCatching { fields.copy(customCategoryId = category.id).selection(shared, "", withLabel) }.exceptionOrNull() is IllegalArgumentException)
+        assertTrue(runCatching { fields.copy(customColorId = newId()).selection(shared, "", withLabel) }.exceptionOrNull() is IllegalArgumentException)
+    }
 }

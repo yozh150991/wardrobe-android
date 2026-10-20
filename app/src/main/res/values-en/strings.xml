@@ -1178,4 +1178,7 @@ Your current wardrobe is unchanged.</string>
     <string name="family_new_open">New item with photo (gallery/camera)</string>
     <string name="family_new_hint">Fill in the fields and pick a gallery photo or take one with the camera. The photo is added as is, without background removal. The item is prepared as a draft for the shared wardrobe and is not added to your private wardrobe.</string>
     <string name="family_new_name_first">Enter a name first (up to 120 characters), then choose a photo.</string>
+    <string name="family_new_custom_category">Shared wardrobe custom category</string>
+    <string name="family_new_custom_color">Shared wardrobe custom colour</string>
+    <string name="family_new_custom_none">None</string>
 </resources>

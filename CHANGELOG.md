@@ -1,5 +1,11 @@
 # 0.14.5-family-reader — 18 October 2026
 
+## 0.14.12-family-labels — 20 October 2026 (code 42)
+
+FAM-03: the new shared item form can use the shared wardrobe's own custom categories and
+colours (only existing ones matching the chosen base); merge reuses the label by nameKey,
+no duplicates. JVM tests extended. No backend change. See FAMILY-NEW-0.14.11.md.
+
 ## 0.14.11-family-new — 20 October 2026 (code 41)
 
 FAM-03: create a new item directly in a shared wardrobe — name, base category/colour,
