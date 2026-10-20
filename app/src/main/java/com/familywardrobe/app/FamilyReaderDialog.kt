@@ -24,6 +24,7 @@ import kotlinx.coroutines.delay
 @Composable
 internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismiss: () -> Unit) {
     val state by vm.familyReader.state.collectAsStateWithLifecycle()
+    val access by vm.familyAccess.state.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
     var editing by rememberSaveable(remoteId) { mutableStateOf(false) }
     var query by rememberSaveable(remoteId) { mutableStateOf("") }
@@ -74,7 +75,12 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
                 }), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                 if (view != null) key(view.candidate) {
                     val snapshot = view.candidate.snapshot
-                    Text(snapshot.wardrobes.single().displayName(), style = MaterialTheme.typography.titleMedium)
+                    // A default-named wardrobe of another owner must not read as the member's own "My wardrobe".
+                    val shared = access.wardrobes.find { it.remoteId == remoteId }?.name.orEmpty()
+                    val wardrobe = snapshot.wardrobes.single()
+                    Text(shared.ifBlank { if (view.remote.role == "owner") wardrobe.displayName()
+                        else if (wardrobe.usesDefaultName) stringResource(R.string.family_unnamed) else wardrobe.name },
+                        style = MaterialTheme.typography.titleMedium)
                     Text(stringResource(R.string.family_read_counts, view.remote.revision, snapshot.garments.size, snapshot.outfits.size, snapshot.wishes.size))
                     Text(stringResource(when (view.remote.role) {
                         "owner" -> R.string.family_read_owner

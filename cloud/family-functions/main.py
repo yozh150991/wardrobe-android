@@ -60,7 +60,9 @@ def family_begin_upload(request: https_fn.CallableRequest):
     return dispatch(request, 'begin_upload')
 
 
-@https_fn.on_call()
+# family_commit holds a <=128 MiB archive in memory and fully decodes up to 5000 photos:
+# 512 MiB / 180 s could time out or run out of memory for a large wardrobe (audit 0.14.7).
+@https_fn.on_call(memory=options.MemoryOption.GB_1, timeout_sec=540)
 def family_commit(request: https_fn.CallableRequest):
     return dispatch(request, 'commit')
 

@@ -3,6 +3,15 @@ package com.familywardrobe.app;
 /** Normalized centres and sizes are independent of screen density and orientation. */
 public final class CanvasRules {
     private CanvasRules() {}
+    private static final java.util.regex.Pattern PIECE = java.util.regex.Pattern.compile("(owned|wish):[a-f0-9-]{36}");
+    /** Owned and wish keys, a generic idea category, or any key of the curated inspiration catalog. */
+    public static boolean validKey(String key) {
+        if (key == null || key.length() > 60) return false;
+        if (PIECE.matcher(key).matches()) return true;
+        if (!key.startsWith("idea:")) return false;
+        for (String category : WardrobeRules.CATEGORIES) if (InspirationCatalog.validKey(key, category)) return true;
+        return false;
+    }
     public static float width(String category,float scale) {
         return (category.equals("dress") || category.equals("jumpsuit") ? .42f : category.equals("bottom") ? .28f :
             category.equals("top") || category.equals("outerwear") || category.equals("layer") ? .36f : category.equals("shoes") ? .38f : .22f)*scale;

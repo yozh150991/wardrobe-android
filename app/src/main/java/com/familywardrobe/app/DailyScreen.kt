@@ -73,6 +73,8 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                 if (capsule != null) Text(capsule.name, style = MaterialTheme.typography.titleMedium)
                 Text(stringResource(label(occasion)) + " · " + stringResource(label(weather)) +
                     if (packedOnly) " · " + stringResource(R.string.capsule_packed_only) else "", style = MaterialTheme.typography.bodyMedium)
+                if (weather in setOf("cold", "cool", "rain") && s.garments.none { it.wardrobeId == wardrobe && it.category == "outerwear" && WardrobeRules.ready(it.rulePiece()) })
+                    Text(stringResource(R.string.daily_no_outerwear), style = MaterialTheme.typography.bodySmall)
                 TextButton(onClick = { configuring = true }, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.configure_conditions)) }
             }
         }

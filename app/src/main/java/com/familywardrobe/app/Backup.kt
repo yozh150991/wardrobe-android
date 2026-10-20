@@ -22,43 +22,53 @@ import java.util.zip.ZipOutputStream
 
 /** Portable, user-selected ZIP. Import adds new wardrobes and never replaces existing ones. */
 class Backup(private val context: Context, private val repo: Repository, private val photos: PhotoStore) {
-    suspend fun export(uri: Uri, guard: () -> Unit = {}, wardrobeId: String? = null) = withContext(Dispatchers.IO) {
-        repo.writes.withLock {
-            val checkpoint = { coroutineContext.ensureActive(); guard() }
-            val staging = File(context.filesDir, "backup-staging").apply { mkdirs() }
-            staging.listFiles()?.filter { file ->
-                Regex("[a-f0-9-]{36}\\.zip").matches(file.name) &&
-                    System.currentTimeMillis() - file.lastModified() > 86_400_000L
-            }?.forEach { it.delete() }
-            val archive = File(staging, "${newId()}.zip")
-            try {
+    /** Returns the cloud localRevision of the exported snapshot (-1 without sync metadata).
+     * Only the snapshot and the photo pins take the account write lock; ZIP writing and
+     * verification run without it, so the UI is not blocked for the whole archive. */
+    suspend fun export(uri: Uri, guard: () -> Unit = {}, wardrobeId: String? = null): Long = withContext(Dispatchers.IO) {
+        val checkpoint = { coroutineContext.ensureActive(); guard() }
+        val staging = File(context.filesDir, "backup-staging").apply { mkdirs() }
+        val archive = File(staging, "${newId()}.zip")
+        var pinned = emptySet<String>()
+        try {
+            val (state, json, revision) = repo.writes.withLock {
+                staging.listFiles()?.filter { file ->
+                    Regex("[a-f0-9-]{36}\\.zip").matches(file.name) &&
+                        System.currentTimeMillis() - file.lastModified() > 86_400_000L
+                }?.forEach { it.delete() }
                 checkpoint()
                 val complete = repo.snapshot()
+                val revision = repo.dao.cloudMeta()?.localRevision ?: -1L
                 val state = if (wardrobeId == null) complete else WardrobeSnapshots.select(complete, wardrobeId)
                 BackupStateRules.validate(state)
                 val json = encode(state).toString().toByteArray(Charsets.UTF_8)
                 require(json.size <= 8 * 1024 * 1024 && state.photoIds().size <= 10_000 && state.wears.size <= 100_000)
                 val photoBytes = state.photoIds().sumOf { photos.currentFile(it).length() }
                 require(photoBytes + json.size <= 20L * 1024 * 1024 * 1024)
-                ZipOutputStream(archive.outputStream().buffered()).use { zip ->
-                    zip.putNextEntry(ZipEntry("manifest.json")); zip.write(json); zip.closeEntry()
-                    for (id in state.photoIds()) {
-                        checkpoint()
-                        val file = photos.currentFile(id)
-                        require(file.isFile && file.length() in 1..PhotoStore.MAX_PHOTO) { "Missing photo" }
-                        zip.putNextEntry(ZipEntry("photos/${file.name}"))
-                        file.inputStream().use { transfer(it, zip, checkpoint) }; zip.closeEntry()
-                    }
+                // Deletions of these final photos are deferred until the archive is written.
+                pinned = state.photoIds(); photos.pin(pinned)
+                Triple(state, json, revision)
+            }
+            ZipOutputStream(archive.outputStream().buffered()).use { zip ->
+                zip.putNextEntry(ZipEntry("manifest.json")); zip.write(json); zip.closeEntry()
+                for (id in state.photoIds()) {
+                    checkpoint()
+                    val file = photos.currentFile(id)
+                    require(file.isFile && file.length() in 1..PhotoStore.MAX_PHOTO) { "Missing photo" }
+                    zip.putNextEntry(ZipEntry("photos/${file.name}"))
+                    file.inputStream().use { transfer(it, zip, checkpoint) }; zip.closeEntry()
                 }
-                val expected = archive.inputStream().use { digest(it, checkpoint) }
-                requireNotNull(context.contentResolver.openOutputStream(uri, "wt")).use { output ->
-                    archive.inputStream().use { transfer(it, output, checkpoint) }
-                }
-                val actual = requireNotNull(context.contentResolver.openInputStream(uri)).use { digest(it, checkpoint) }
-                require(MessageDigest.isEqual(expected, actual)) { "Backup verification failed" }
-                checkpoint()
-            } finally { archive.delete() }
-        }
+            }
+            photos.unpin(pinned); pinned = emptySet()
+            val expected = archive.inputStream().use { digest(it, checkpoint) }
+            requireNotNull(context.contentResolver.openOutputStream(uri, "wt")).use { output ->
+                archive.inputStream().use { transfer(it, output, checkpoint) }
+            }
+            val actual = requireNotNull(context.contentResolver.openInputStream(uri)).use { digest(it, checkpoint) }
+            require(MessageDigest.isEqual(expected, actual)) { "Backup verification failed" }
+            checkpoint()
+            revision
+        } finally { photos.unpin(pinned); archive.delete() }
     }
     private fun transfer(input: InputStream, output: OutputStream, checkpoint: () -> Unit) {
         val buffer = ByteArray(64 * 1024)

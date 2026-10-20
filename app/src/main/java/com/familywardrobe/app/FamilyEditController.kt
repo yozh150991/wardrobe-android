@@ -4,6 +4,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.coroutineContext
 
 internal data class FamilyEditState(val remoteId: String = "", val draft: FamilyEditDraft? = null, val running: Boolean = false,
@@ -19,8 +20,9 @@ internal class FamilyEditController(private val app: WardrobeApplication, privat
         if (!session.isOpen || app.authBackend.signedInIdentity()?.key != session.identity.key) throw CancellationException("Account changed")
     }
     private fun run(block: suspend (FamilyBackend) -> Unit) {
-        scope.launch(Dispatchers.IO) {
-            if (!lock.tryLock()) return@launch
+        // Queue instead of dropping: a tap during another call used to be ignored silently
+        // and the dialog then showed the previous item's state (audit 0.14.6 №10 pattern).
+        scope.launch(Dispatchers.IO) { lock.withLock {
             try {
                 guard(); mutable.value = mutable.value.copy(running = true, problem = null, saved = false, synced = false)
                 val work = coroutineContext
@@ -41,8 +43,8 @@ internal class FamilyEditController(private val app: WardrobeApplication, privat
                     lease.clear(); reader.invalidate(); mutable.value = FamilyEditState(remoteId = mutable.value.remoteId, running = true)
                 }
                 mutable.value = mutable.value.copy(problem = problem, conflict = mutable.value.conflict || problem == FamilyProblem.CONFLICT)
-            } finally { if (session.isOpen) mutable.value = mutable.value.copy(running = false); lock.unlock() }
-        }
+            } finally { if (session.isOpen) mutable.value = mutable.value.copy(running = false) }
+        } }
     }
     private suspend fun authorize(backend: FamilyBackend, remoteId: String): FamilyRemote {
         backend.authenticate()

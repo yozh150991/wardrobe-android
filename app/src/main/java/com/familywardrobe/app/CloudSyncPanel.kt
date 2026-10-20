@@ -25,6 +25,8 @@ fun CloudSyncPanel(vm: WardrobeViewModel) {
     val snapshot by vm.state.collectAsStateWithLifecycle()
     var choice by remember { mutableStateOf<CloudChoice?>(null) }
     val locale = LocalConfiguration.current.locales[0]
+    // Directory listing only when a sync result or operation state changes, not on every recomposition.
+    val rescues = remember(state.lastSuccess, state.conflictRevision, busy) { vm.cloud.rescueFiles() }
     OutlinedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -59,7 +61,7 @@ fun CloudSyncPanel(vm: WardrobeViewModel) {
                     }
                 }
             }
-            vm.cloud.rescueFiles().forEach { rescue ->
+            rescues.forEach { rescue ->
                 TextButton(onClick = { vm.previewRestore(Uri.fromFile(rescue)) }, enabled = !busy) { Text(stringResource(R.string.cloud_rescue_at,
                     DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, locale).format(Date(rescue.lastModified())))) }
             }

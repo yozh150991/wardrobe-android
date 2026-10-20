@@ -1,5 +1,17 @@
 # 0.14.5-family-reader — 18 October 2026
 
+## 0.14.8-audit-fixes — 20 October 2026 (code 38)
+
+Bugfixes from the 0.14.6 technical audit on top of 0.14.7-family-edit (no new features,
+Room/backup 10 unchanged): collage crash on inspiration keys, Back on session opening
+no longer signs out, Activity close keeps background sync, export snapshot under lock
+with ZIP outside it and 60 s dirty debounce, CLOUD operations allow browsing, daily
+looks without outerwear, photo fingerprint kept on edit, VERIFIED family transfer no
+longer fails, queued family access actions, family_commit 1 GiB/540 s (needs manual
+deploy), busy notice, reserved IP ranges, synchronized photo cleanup, member wardrobe
+title, wish category vs outfits, cached rescue files. Host suites and backend tests
+pass; Kotlin build and device checks not run by the author. See AUDIT-FIXES-0.14.8.md.
+
 ## 0.14.7-family-edit — 19 October 2026 (code 37)
 
 FAM-03 metadata editor for existing shared items: name/size/location/description,

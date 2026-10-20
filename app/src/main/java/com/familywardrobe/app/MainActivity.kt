@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,12 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null) receiveShare(intent)
+        // Root Back keeps the task like Android 12+ does: finishing the Activity would clear the
+        // account session and cancel running exports, family transfers and photo work on Android 8–11.
+        // Compose BackHandlers are registered later and take priority for nested screens and dialogs.
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() { moveTaskToBack(true) }
+        })
         enableEdgeToEdge()
         setContent {
             val vm: AppearanceViewModel = viewModel()

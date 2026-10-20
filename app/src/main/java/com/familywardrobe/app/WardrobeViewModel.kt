@@ -260,7 +260,8 @@ class WardrobeViewModel internal constructor(application: Application, private v
         if (work.cancellable) { operation.value = work.copy(cancelling = true); operationJob?.cancel() }
     }
     fun perform(kind: OperationKind = OperationKind.SAVE, cancellable: Boolean = false, block: suspend () -> Unit) {
-        if (busy.value) return
+        // Say why a tap did nothing instead of silently dropping it.
+        if (busy.value) { if (notice.value == null) notice.value = R.string.operation_wait; return }
         busy.value = true; dismissFailure(); operation.value = OperationState(kind, cancellable)
         operationJob = viewModelScope.launch {
             try { block() } catch (e: CancellationException) {

@@ -45,7 +45,9 @@ internal class FamilyTransferEngine(private val local: FamilyLocalTransfer, priv
         if (record.phase == FamilyMigrationPhase.PREPARED || remote.revision != 1L || h.revision != 1L || h.base != 0L ||
             h.archiveId != record.archiveId || h.path != record.path || h.hash != record.fingerprint || h.author != record.ownerUid ||
             record.archiveSize > 0 && h.size != record.archiveSize) throw FamilyTransferException(FamilyProblem.CONFLICT)
-        checkpoint(); local.confirm(local.uploaded(record), remote)
+        // A verified initial copy stays verified: later local edits are not part of that snapshot
+        // and must not turn a completed transfer into an OLDER error on a repeated check.
+        if (record.phase != FamilyMigrationPhase.VERIFIED) { checkpoint(); local.confirm(local.uploaded(record), remote) }
         checkpoint(); progress(FamilyStep.DONE, 0, 0); return true
     }
     suspend fun run(id: String) {

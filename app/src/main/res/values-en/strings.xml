@@ -1138,4 +1138,8 @@ Your current wardrobe is unchanged.</string>
     <string name="family_edit_no_draft">No pending edit. Open an item and choose Edit fields.</string>
     <string name="family_edit_missing">This item is no longer in the server version. You can delete the local draft after a confirmed conflict.</string>
     <string name="family_edit_invalid">Check the fields: name is required; limits are 120 for name, 40 for size, 200 for location and 1000 for description.</string>
+    <string name="operation_wait">Please wait until the current operation finishes.</string>
+    <string name="daily_no_outerwear">No outerwear is available for this weather, so looks are suggested without it. Add a jacket or coat to include it.</string>
+    <string name="family_snapshot_hint">The server copy is a snapshot from the transfer. Members do not see later changes yet: updating the copy arrives with shared editing.</string>
+    <string name="wish_category_in_outfits">This item is already in saved looks, and the new category would make them impossible (for example two tops, or a dress with trousers). Change or remove it in those looks first.</string>
 </resources>

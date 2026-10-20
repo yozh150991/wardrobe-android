@@ -68,9 +68,14 @@ internal fun FamilyTransferControl(vm: WardrobeViewModel) {
             Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(12.dp),verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(wardrobe?.displayName() ?: stringResource(R.string.family_missing_local),style = MaterialTheme.typography.titleMedium)
                 Text(stringResource(if (record.phase == FamilyMigrationPhase.VERIFIED) R.string.family_complete else R.string.family_pending))
-                if (record.phase != FamilyMigrationPhase.PREPARED && cloud.localRevision != record.sourceRevision)
-                    Text(stringResource(R.string.family_local_changes),style = MaterialTheme.typography.bodySmall)
-                OutlinedButton(onClick = { vm.transferFamily(record.wardrobeId) },enabled = enabled,modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_resume)) }
+                if (record.phase == FamilyMigrationPhase.VERIFIED) {
+                    // The initial server copy is a fixed snapshot until shared editing (FAM-03) publishes revisions.
+                    if (cloud.localRevision != record.sourceRevision) Text(stringResource(R.string.family_snapshot_hint),style = MaterialTheme.typography.bodySmall)
+                } else {
+                    if (record.phase != FamilyMigrationPhase.PREPARED && cloud.localRevision != record.sourceRevision)
+                        Text(stringResource(R.string.family_local_changes),style = MaterialTheme.typography.bodySmall)
+                    OutlinedButton(onClick = { vm.transferFamily(record.wardrobeId) },enabled = enabled,modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_resume)) }
+                }
                 OutlinedButton(onClick = { reading = record.remoteId; vm.readFamily(record.remoteId) }, enabled = enabled,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.family_read_open)) }
                 if (record.phase != FamilyMigrationPhase.VERIFIED && wardrobe != null) TextButton(onClick = { selected = record.wardrobeId; restart = true },enabled = enabled) {

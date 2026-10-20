@@ -651,7 +651,9 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
                     .copy(name = name.trim(), category = category, color = color, size = size.trim(), location = location.trim(),
                         description = description.trim(), photoId = finalPhoto, season = season, style = style,
                         availability = if (purchase == null) availability else "available", archived = if (purchase == null) seed?.archived ?: false else false,
-                        priceMinor = WishRules.money(price), currency = currency, subcategory = CategoryRules.clean(subcategory), photoFingerprint = fingerprint, customCategoryId = customCategoryId.takeIf { it.isNotBlank() },
+                        priceMinor = WishRules.money(price), currency = currency, subcategory = CategoryRules.clean(subcategory),
+                        // An unchanged photo keeps the original-import fingerprint used for duplicate detection.
+                        photoFingerprint = if (original != null && finalPhoto == original.photoId) original.photoFingerprint else fingerprint, customCategoryId = customCategoryId.takeIf { it.isNotBlank() },
                         customColorId = customColorId.takeIf { it.isNotBlank() })
                 if (imported != null) vm.saveImported(imported.id, next, if (addNext) reviewNextIds else emptyList()) { onDirtyChange(false); done(next.id, addNext) }
                 else if (shopImported) vm.saveShopOwned(next, shopLink) { saved -> onDirtyChange(false); done(saved, addNext) }

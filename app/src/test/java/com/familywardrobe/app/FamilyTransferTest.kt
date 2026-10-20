@@ -74,6 +74,10 @@ class FamilyTransferTest {
         e.run(ward); assertEquals(FamilyMigrationPhase.VERIFIED,l.record.phase); assertEquals(1,r.resumes)
         e.run(ward); assertEquals(1,r.uploads); assertEquals(1,l.stages)
     }
+    @Test fun verifiedTransferStaysCompleteAfterLocalEdits() = scenario { l,r,e ->
+        e.run(ward); assertEquals(1,l.confirms); l.rev++
+        e.run(ward); assertEquals(FamilyMigrationPhase.VERIFIED,l.record.phase); assertEquals(1,l.confirms); assertEquals(1,r.uploads)
+    }
     @Test fun lostUploadReplyDoesNotOverwriteImmutableBlob() = scenario { l,r,e ->
         r.loseUpload = true; failure(FamilyProblem.RETRY) { e.run(ward) }
         assertEquals(FamilyMigrationPhase.STAGED,l.record.phase)

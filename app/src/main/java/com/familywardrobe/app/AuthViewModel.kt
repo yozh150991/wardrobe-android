@@ -189,6 +189,7 @@ internal class AuthViewModel(application: Application) : AndroidViewModel(applic
         openingGeneration++
         backend.removeListener(authListener)
         if (requests.value.busy) backend.cancel()
-        _ui.value.session?.close()
+        // Not a sign-out: background cloud sync stays scheduled for the still signed-in account.
+        _ui.value.session?.close(signedOut = false)
     }
 }
