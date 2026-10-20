@@ -1,12 +1,12 @@
 # Wardrobe — роадмап і передача роботи
 
-Оновлено: **2026-10-18, Europe/Warsaw**. Редакція документа: **23**.
-База вихідного коду: **0.14.6-family-access**, `versionCode=36`, Room/backup **10**.
-Статус: FAM-01/03 — partial; FAM-02 — partial, реалізований обсяг verify. У 0.14.6 додано discovery після входу на іншому пристрої, запрошення в застосунку за підтвердженою email-адресою, accept/decline/cancel, owner-only roles/revoke і вихід учасника. Листи не надсилаються; окрема історія завершених запрошень ще потрібна. Спільне редагування та постійна синхронізація — наступний блок. За вказівкою користувача 18.10 «Багфікси будуть потім». Native-приймання й live deployment залишаються відкритими.
+Оновлено: **2026-10-19, Europe/Warsaw**. Редакція документа: **24**.
+База вихідного коду: **0.14.7-family-edit**, `versionCode=37`, Room/backup **10**.
+Статус: FAM-01/03 — partial; FAM-02 — partial, реалізований обсяг verify. У 0.14.6 додано discovery після входу на іншому пристрої, запрошення в застосунку за підтвердженою email-адресою, accept/decline/cancel, owner-only roles/revoke і вихід учасника. Листи не надсилаються; окрема історія завершених запрошень ще потрібна. У 0.14.7 реалізовано перший обсяг спільного редагування полів із outbox/CAS; фото/додавання/образи та постійна синхронізація ще потрібні. За вказівкою користувача 18.10 «Багфікси будуть потім». Native-приймання й live deployment залишаються відкритими.
 
 Це головний документ для пріоритетів, незавершеної роботи й передачі завдань іншому агенту. Погоджено користувачем 7 жовтня 2026: спочатку спрощення каталогу та імпорт із магазину, потім розширення помічника перед покупкою; сімейний доступ — окремий пріоритетний блок. Решту ідей потрібно зберегти в беклозі. Нова пряма вказівка користувача має перевагу над цим планом.
 
-**Актуальна контрольна точка:** 0.14.6-family-access/code36. FAM-02 API та Android UI реалізовані; 60 backend-тестів pass, 22 host-набори pass. Android-компіляція/APK та нові emulator-сценарії не виконані. Наступне FAM-03: shared editing/CAS із ізольованими чернетками та явним розв’язанням конфліктів; потім FAM-04. Див. FAMILY-ACCESS-0.14.6.md. Попередні контрольні точки нижче — історія.
+**Актуальна контрольна точка:** 0.14.7-family-edit/code37. FAM-03 partial: owner/editor змінює name/size/location/description наявної спільної речі; окремий durable outbox, explicit sync, UUID retry, server CAS та ручне порівняння/rebase. 83 backend tests pass, 22 host-набори pass; native compile/APK і новий emulator-сценарій не виконані. Наступне: розширити shared editing на фото/додавання/образи, multi-operation queue і continuous sync; далі FAM-04. Багфікси відкладені. Див. FAMILY-EDIT-0.14.7.md.
 
 ## 1. Швидкий старт для наступного агента
 
@@ -40,7 +40,7 @@ Wardrobe допомагає пам’ятати про наявний одяг �
 
 ## 3. Перевірена база та межі впевненості
 
-Джерело початкового аудиту: `wardrobe-release-update-0.11.2.zip`, отриманий 7 жовтня 2026; поточна база — `wardrobe-family-access-0.14.6.zip` після reader 0.14.5, DEV-02/DEV-03 і photo hotfix3. Нижче «є в коді» не означає, що весь сценарій прийнятий на фізичному телефоні.
+Джерело початкового аудиту: `wardrobe-release-update-0.11.2.zip`, отриманий 7 жовтня 2026; поточна база — `wardrobe-family-edit-0.14.7.zip` після reader 0.14.5, DEV-02/DEV-03 і photo hotfix3. Нижче «є в коді» не означає, що весь сценарій прийнятий на фізичному телефоні.
 
 | Напрям | Фактичний стан | Подальша робота |
 | --- | --- | --- |
@@ -63,7 +63,8 @@ Wardrobe допомагає пам’ятати про наявний одяг �
 
 | Артефакт | Призначення |
 | --- | --- |
-| `wardrobe-family-access-0.14.6.zip` | Поточні джерела 0.14.6/code36, FAM-02 і updater після 0.14.5; без APK. |
+| `wardrobe-family-edit-0.14.7.zip` | Поточні джерела 0.14.7/code37, перший shared editor/CAS та updater після 0.14.6; без APK. |
+| `wardrobe-family-access-0.14.6.zip` | Попередня база FAM-02, 0.14.6/code36; без APK. |
 | `wardrobe-family-reader-0.14.5.zip` | Попередня база 0.14.5/code35; без APK. |
 | `wardrobe-project-cleanup.zip` | Очищені джерела 0.14.4 і updater DEV-02; без APK. |
 | `wardrobe-photo-cleanup-hotfix3.zip` | База джерел 0.14.4-photo-hotfix3, накопичувальний updater для 0.14.2/hotfix1/hotfix2, фото-тести й інструкція; без APK. |
@@ -248,7 +249,7 @@ PHOTO-01–10 і PHOTO-12–14 реалізовані у джерелах; ст�
 
 ### FAM-03 — захист і синхронізація спільного гардероба
 
-**P0 для випуску R3 · partial · залежить від FAM-01–02.** У 0.14.1 реалізовані й перевірені серверні role/expiry/CAS guards та Storage rules. Android initial transfer є у 0.14.2, isolated read-only cache/lease у 0.14.5, roles/revoke у 0.14.6. Потрібні mutable shared store, спільне редагування, pending writes, continuous CAS sync та конфлікти.
+**P0 для випуску R3 · partial · залежить від FAM-01–02.** У 0.14.1 реалізовані й перевірені серверні role/expiry/CAS guards та Storage rules. Android initial transfer є у 0.14.2, isolated read-only cache/lease у 0.14.5, roles/revoke у 0.14.6. У 0.14.7 є metadata editor для чотирьох полів, account-private durable outbox, явна синхронізація, stable UUID retry та CAS-conflict comparison/rebase. Далі: додавання/фото/образи, multi-operation outbox і continuous sync.
 
 **Приймання:** viewer не записує дані навіть прямим SDK-запитом; editor змінює лише дозволений гардероб; сторонній UID не читає дані/фото; editor не видає права. Перевірити дві конкурентні правки, retry, видалення/архів, зміну ролі й відкликання під час upload. Прострочені офлайн-записи після відкликання відхиляються. При виявленні відкликання очистити/закрити кеш за обраною політикою. Не обіцяти миттєве стирання вже отриманих даних на відключеному пристрої.
 
@@ -396,3 +397,13 @@ DEV-01 (Git Safety) збережений; історична контрольн�
 - Змінено family backend/service/adapters/wire/main, Android FamilyAccess*/FamilyBackend/FamilyReaderController/ViewModel/Ui, ресурси, тести, version/docs. Повний список — package manifest. Приватні DB, backup, signing і live rules не змінені.
 - Backend60 pass (25 нових); host22 pass +1 explicit missing-client-config skip. Kotlin7 і emulator2 підготовлені, не виконані. Build зупинився до компіляції: Install a full JDK17 or21 and set JAVA_HOME. APK немає. Деталі RELEASE-VALIDATION-0.14.6.json.
 - Доставка листів/історія terminal invitations та приймання залишаються відкритими. Наступне FAM-03: isolated mutable shared model/editor, outbox, CAS conflict/retry; далі FAM-04. Production rollout/GC/AppCheck/costs окремо. Джерела та updater: wardrobe-family-access-0.14.6.zip.
+
+### 2026-10-19 — FAM-03, shared item metadata editor — Codex, partial; slice verify
+
+- 0.14.7-family-edit/code37, Room/backup10. Продовження розробки за запитом користувача; багфікси відкладені.
+- Owner/editor: name/size/location/description існуючої речі. Окрема AtomicFile чернетка на гардероб, Save draft та Send changes, відновлення після рестарту, immutable submitted UUID, retries, server conflict comparison й explicit rebase.
+- Backend family_edit_item: strict field allowlist/UTF16 limits, перевірений current ZIP, metadata patch із точним збереженням фото/решти snapshot, immutable archive, повторні role/expiry/CAS перевірки перед publish. Request journal ідентифікує retry, навіть після пізнішої ревізії; квота120/day спільна з uploads.
+- UI UA/EN/PL: viewer без edit, підтвердження discard/rebase, unknown outcome блокує зміну payload/discard; metadata ховається в background/після lease. Private Room/backup/config/signing/live rules не змінені.
+- Змінені FamilyEditStore/Controller/Dialog, reader/ViewModel/backend bridge, resources, Python editing service/callable, tests/version/docs. Список у package manifest.
+- Backend83 pass (23 нових), host22 pass +1 explicit config skip. Android store5 та emulator1 підготовлені, not run. Full JDK відсутній: Android compilation/lint/APK не виконані. Деталі RELEASE-VALIDATION-0.14.7.json та FAMILY-EDIT-0.14.7.md.
+- Наступне FAM-03: shared photo/add/outfit editor, кілька queued operations і continuous sync; потім FAM-04. Поточна синхронізація запускається явно. FAM-02 email/history залишаються відкритими. Немає production deployment.

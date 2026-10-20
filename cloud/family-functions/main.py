@@ -103,3 +103,8 @@ def family_change_member(request: https_fn.CallableRequest):
 @https_fn.on_call()
 def family_leave(request: https_fn.CallableRequest):
     return dispatch(request, 'leave')
+
+
+@https_fn.on_call()
+def family_edit_item(request: https_fn.CallableRequest):
+    return dispatch(request, 'edit_item')
