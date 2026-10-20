@@ -1,8 +1,5 @@
 package com.familywardrobe.app;
 
-import java.text.BreakIterator;
-import java.util.Locale;
-
 /**
  * Length limits stay in UTF-16 units (the same units the backend counts), but a cut never
  * lands inside a surrogate pair or a grapheme cluster (flags, ZWJ emoji, combining marks).
@@ -16,13 +13,45 @@ public final class TextLimits {
         if (text == null) return "";
         if (maximum <= 0) return "";
         if (text.length() <= maximum) return text;
-        BreakIterator graphemes = BreakIterator.getCharacterInstance(Locale.ROOT);
-        graphemes.setText(text);
-        int end = graphemes.preceding(maximum + 1);
-        if (end == BreakIterator.DONE || end > maximum) end = 0;
-        // Defensive: never return a lone high surrogate even if the iterator is lenient.
-        if (end > 0 && Character.isHighSurrogate(text.charAt(end - 1))) end--;
+        int end = 0;
+        for (int next = nextBoundary(text, 0); next <= maximum; next = nextBoundary(text, next)) {
+            end = next;
+            if (next >= text.length()) break;
+        }
         return text.substring(0, end);
+    }
+
+    /**
+     * End of the grapheme cluster that starts at {@code start}. A small, JDK-independent subset of
+     * UAX #29 (java.text.BreakIterator only follows it from Java 20, CI runs 17): surrogate pairs,
+     * combining marks, variation selectors, emoji modifiers and tags, ZWJ sequences and flag pairs.
+     */
+    static int nextBoundary(String text, int start) {
+        int length = text.length();
+        if (start >= length) return length;
+        int first = text.codePointAt(start);
+        int i = start + Character.charCount(first);
+        if (first == '\r' && i < length && text.charAt(i) == '\n') return i + 1;
+        boolean flag = regional(first);
+        if (flag && i < length && regional(text.codePointAt(i))) i += Character.charCount(text.codePointAt(i));
+        while (i < length) {
+            int c = text.codePointAt(i);
+            if (extend(c)) { i += Character.charCount(c); continue; }
+            if (text.codePointBefore(i) == 0x200D && !Character.isWhitespace(c)) {  // ZWJ joins the next emoji
+                i += Character.charCount(c); continue;
+            }
+            break;
+        }
+        return i;
+    }
+
+    private static boolean regional(int c) { return c >= 0x1F1E6 && c <= 0x1F1FF; }
+
+    private static boolean extend(int c) {
+        int type = Character.getType(c);
+        return type == Character.NON_SPACING_MARK || type == Character.ENCLOSING_MARK || type == Character.COMBINING_SPACING_MARK
+            || c == 0x200D || (c >= 0xFE00 && c <= 0xFE0F) || (c >= 0xE0100 && c <= 0xE01EF)
+            || (c >= 0x1F3FB && c <= 0x1F3FF) || (c >= 0xE0020 && c <= 0xE007F);
     }
 
     /** Bidi embedding, override and isolate controls: they let one name display as another (BUG-12). */
