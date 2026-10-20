@@ -28,6 +28,7 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
     val busy by vm.busy.collectAsStateWithLifecycle()
     var adding by rememberSaveable(remoteId) { mutableStateOf(false) }
     var editing by rememberSaveable(remoteId) { mutableStateOf(false) }
+    var photo by rememberSaveable(remoteId) { mutableStateOf(false) }
     var query by rememberSaveable(remoteId) { mutableStateOf("") }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var foreground by remember(lifecycle) { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
@@ -105,8 +106,11 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
                                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     ZoomableItemPhoto(garment.photoId, view.candidate.photos, Modifier.fillMaxWidth().height(200.dp),
                                         garment.name, garmentColour = garment.color)
-                                    if (view.remote.role in setOf("owner", "editor")) OutlinedButton(onClick = { vm.familyEdit.open(remoteId, garment.id); editing = true }, enabled = !busy) {
-                                        Text(stringResource(R.string.family_edit_open))
+                                    if (view.remote.role in setOf("owner", "editor")) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        OutlinedButton(onClick = { vm.familyEdit.open(remoteId, garment.id); editing = true }, enabled = !busy,
+                                            modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text(stringResource(R.string.family_edit_open)) }
+                                        OutlinedButton(onClick = { vm.familyPhoto.open(remoteId, garment.id, garment.name, vm.active.value); photo = true }, enabled = !busy,
+                                            modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text(stringResource(R.string.family_photo_open)) }
                                     }
                                     Text(garment.name, style = MaterialTheme.typography.titleMedium)
                                     Text(snapshot.customCategories.find { it.id == garment.customCategoryId }?.name
@@ -126,4 +130,5 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
     }
     if (adding) FamilyAddDialog(vm, remoteId) { adding = false }
     if (editing) FamilyEditDialog(vm, remoteId) { editing = false }
+    if (photo) FamilyPhotoDialog(vm, remoteId) { photo = false }
 }

@@ -11,9 +11,15 @@ internal data class FamilyAddDraft(val publication: FamilyPublication, val garme
     val remoteId get() = publication.identity.remoteId
 }
 
-/** One durable immutable addition per wardrobe/account; never part of portable backup. */
-internal class FamilyAddStore(private val context: AccountContext, private val account: AuthIdentity) {
-    private val root = File(context.noBackupFilesDir, "family-additions/${account.key}")
+/**
+ * One durable immutable publication draft per wardrobe/account; never part of portable backup.
+ * Additions use "family-additions"; photo replacements reuse the same journal format in their
+ * own folder, so the two kinds of drafts never overwrite each other.
+ */
+internal class FamilyAddStore(private val context: AccountContext, private val account: AuthIdentity,
+    folder: String = "family-additions") {
+    init { require(folder in setOf("family-additions", "family-photo-replacements")) }
+    private val root = File(context.noBackupFilesDir, "$folder/${account.key}")
     private val lock = locks.computeIfAbsent(root.canonicalPath) { Any() }
     companion object { private val locks = java.util.concurrent.ConcurrentHashMap<String, Any>() }
     init { require(context.location.key == account.key) }
