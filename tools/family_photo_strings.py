@@ -19,6 +19,9 @@ STRINGS = {
 'family_new_open': ('Нова річ із фото (галерея/камера)', 'New item with photo (gallery/camera)', 'Nowa rzecz ze zdjęciem (galeria/aparat)'),
 'family_new_hint': ('Заповни поля й вибери фото з галереї або зніми камерою. Фото додається як є, без вирізання фону. Річ одразу готується як чернетка для спільного гардероба; у твій приватний гардероб вона не потрапляє.', 'Fill in the fields and pick a gallery photo or take one with the camera. The photo is added as is, without background removal. The item is prepared as a draft for the shared wardrobe and is not added to your private wardrobe.', 'Uzupełnij pola i wybierz zdjęcie z galerii lub zrób je aparatem. Zdjęcie jest dodawane bez zmian, bez usuwania tła. Rzecz jest przygotowywana jako szkic dla wspólnej garderoby i nie trafia do Twojej prywatnej garderoby.'),
 'family_new_name_first': ('Спершу введи назву (до 120 символів), потім вибери фото.', 'Enter a name first (up to 120 characters), then choose a photo.', 'Najpierw wpisz nazwę (do 120 znaków), potem wybierz zdjęcie.'),
+'family_new_custom_category': ('Власна категорія спільного гардероба', 'Shared wardrobe custom category', 'Własna kategoria wspólnej garderoby'),
+'family_new_custom_color': ('Власний колір спільного гардероба', 'Shared wardrobe custom colour', 'Własny kolor wspólnej garderoby'),
+'family_new_custom_none': ('Без власної', 'None', 'Brak'),
 'family_photo_rebase_confirm': ('Завантажити актуальну версію гардероба й застосувати до неї це саме нове фото? Надсилання — окремим кроком.', 'Download the current wardrobe and apply the same new photo to it? Sending is a separate step.', 'Pobrać aktualną garderobę i zastosować do niej to samo nowe zdjęcie? Wysłanie to osobny krok.'),
 }
 

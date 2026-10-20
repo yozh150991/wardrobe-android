@@ -44,11 +44,20 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
     var newDescription by rememberSaveable { mutableStateOf("") }
     var newSeason by rememberSaveable { mutableStateOf("all") }
     var newStyle by rememberSaveable { mutableStateOf("casual") }
+    var newCustomCategory by rememberSaveable { mutableStateOf("") }
+    var newCustomColor by rememberSaveable { mutableStateOf("") }
+    // Shared custom labels come from the server copy the reader already holds for this wardrobe.
+    val reader by vm.familyReader.state.collectAsStateWithLifecycle()
+    val sharedSnapshot = reader.view?.takeIf { reader.remoteId == remote }?.candidate?.snapshot
+    val sharedWardrobe = sharedSnapshot?.wardrobes?.singleOrNull()
     var pendingCapture by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(state.synced) {
-        if (state.synced) { creating = false; newName = ""; newSize = ""; newLocation = ""; newDescription = "" }
+        if (state.synced) { creating = false; newName = ""; newSize = ""; newLocation = ""; newDescription = ""; newCustomCategory = ""; newCustomColor = "" }
     }
-    val fields = FamilyNewItem(newName, newCategory, newColor, newSize, newLocation, newDescription, newSeason, newStyle)
+    val fields = FamilyNewItem(newName, newCategory, newColor, newSize, newLocation, newDescription, newSeason, newStyle,
+        newCustomCategory.ifEmpty { null }, newCustomColor.ifEmpty { null })
+    val customCategories = if (sharedSnapshot != null && sharedWardrobe != null) fields.categories(sharedSnapshot, sharedWardrobe) else emptyList()
+    val customColors = if (sharedSnapshot != null && sharedWardrobe != null) fields.colors(sharedSnapshot, sharedWardrobe) else emptyList()
     val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null && fields.valid) vm.familyAdd.prepareNew(fields, uri)
     }
@@ -130,8 +139,12 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(stringResource(R.string.family_new_hint), style = MaterialTheme.typography.bodySmall)
                                 OutlinedTextField(newName, { newName = it.take(120) }, singleLine = true, label = { Text(stringResource(R.string.family_edit_name)) }, modifier = Modifier.fillMaxWidth())
-                                Choice(newCategory, Matching.categories, { newCategory = it }, R.string.category, enabled = !state.running)
-                                Choice(newColor, Matching.colors, { newColor = it }, R.string.color, enabled = !state.running)
+                                Choice(newCategory, Matching.categories, { newCategory = it; newCustomCategory = "" }, R.string.category, enabled = !state.running)
+                                if (customCategories.isNotEmpty()) NamedChoice(newCustomCategory, customCategories.map { it.id to it.name },
+                                    { newCustomCategory = it }, R.string.family_new_custom_category, !state.running)
+                                Choice(newColor, Matching.colors, { newColor = it; newCustomColor = "" }, R.string.color, enabled = !state.running)
+                                if (customColors.isNotEmpty()) NamedChoice(newCustomColor, customColors.map { it.id to it.name },
+                                    { newCustomColor = it }, R.string.family_new_custom_color, !state.running)
                                 OutlinedTextField(newSize, { newSize = it.take(40) }, singleLine = true, label = { Text(stringResource(R.string.family_edit_size)) }, modifier = Modifier.fillMaxWidth())
                                 OutlinedTextField(newLocation, { newLocation = it.take(200) }, label = { Text(stringResource(R.string.family_edit_location)) }, modifier = Modifier.fillMaxWidth())
                                 OutlinedTextField(newDescription, { newDescription = it.take(1000) }, label = { Text(stringResource(R.string.family_edit_description)) }, modifier = Modifier.fillMaxWidth())
@@ -172,4 +185,24 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
             when (confirm) { "send" -> vm.familyAdd.sync(); "rebase" -> vm.familyAdd.rebase(); else -> vm.familyAdd.discard() }; confirm = ""
         }, enabled = !state.running && readable) { Text(stringResource(R.string.family_confirm_action)) } },
         dismissButton = { TextButton(onClick = { confirm = "" }) { Text(stringResource(R.string.cancel)) } })
+}
+
+/** Dropdown of named options (shared custom labels); "" means none. */
+@Composable
+private fun NamedChoice(value: String, options: List<Pair<String, String>>, change: (String) -> Unit, title: Int, enabled: Boolean) {
+    var expanded by remember { mutableStateOf(false) }
+    val none = stringResource(R.string.family_new_custom_none)
+    Box(Modifier.fillMaxWidth()) {
+        OutlinedButton(onClick = { expanded = true }, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(title), style = MaterialTheme.typography.labelSmall)
+                Text(options.find { it.first == value }?.second ?: none)
+            }
+        }
+        DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
+            (listOf("" to none) + options).forEach { (id, name) ->
+                DropdownMenuItem(text = { Text(name) }, onClick = { expanded = false; change(id) })
+            }
+        }
+    }
 }

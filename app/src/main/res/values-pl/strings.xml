@@ -1178,4 +1178,7 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="family_new_open">Nowa rzecz ze zdjęciem (galeria/aparat)</string>
     <string name="family_new_hint">Uzupełnij pola i wybierz zdjęcie z galerii lub zrób je aparatem. Zdjęcie jest dodawane bez zmian, bez usuwania tła. Rzecz jest przygotowywana jako szkic dla wspólnej garderoby i nie trafia do Twojej prywatnej garderoby.</string>
     <string name="family_new_name_first">Najpierw wpisz nazwę (do 120 znaków), potem wybierz zdjęcie.</string>
+    <string name="family_new_custom_category">Własna kategoria wspólnej garderoby</string>
+    <string name="family_new_custom_color">Własny kolor wspólnej garderoby</string>
+    <string name="family_new_custom_none">Brak</string>
 </resources>
