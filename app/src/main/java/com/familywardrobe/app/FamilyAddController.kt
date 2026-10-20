@@ -19,8 +19,9 @@ internal class FamilyAddController(private val app: WardrobeApplication, private
     private fun guard() {
         if (!session.isOpen || app.authBackend.signedInIdentity()?.key != session.identity.key) throw CancellationException("Account changed")
     }
-    private fun run(block: suspend (FamilyBackend, () -> Unit) -> Unit) = scope.launch(Dispatchers.IO) {
-        if (!lock.tryLock()) return@launch
+    // Queue instead of dropping: a tap during another call used to be ignored silently
+    // and the dialog then showed stale state (audit 0.14.6 №10 pattern).
+    private fun run(block: suspend (FamilyBackend, () -> Unit) -> Unit) = scope.launch(Dispatchers.IO) { lock.withLock {
         try {
             guard(); mutable.value = mutable.value.copy(running = true, problem = null, synced = false)
             val work = coroutineContext; val checkpoint = { work.ensureActive(); guard() }
@@ -33,8 +34,8 @@ internal class FamilyAddController(private val app: WardrobeApplication, private
                 mutable.value = FamilyAddState(remoteId = mutable.value.remoteId, localWardrobe = mutable.value.localWardrobe, running = true)
             }
             mutable.value = mutable.value.copy(problem = problem)
-        } finally { if (session.isOpen) mutable.value = mutable.value.copy(running = false); lock.unlock() }
-    }
+        } finally { if (session.isOpen) mutable.value = mutable.value.copy(running = false) }
+    } }
     private suspend fun authorize(backend: FamilyBackend, remote: String): FamilyRemote {
         backend.authenticate(); val started = android.os.SystemClock.elapsedRealtime()
         return backend.readHead(remote).also {
@@ -80,12 +81,18 @@ internal class FamilyAddController(private val app: WardrobeApplication, private
     fun prepare(itemId: String) = run { backend, checkpoint ->
         require(mutable.value.draft == null && store.get(mutable.value.remoteId) == null)
         val view = fresh(backend); val archive = FamilyAddArchive(session.context, session.repository, store, checkpoint)
-        val draft = session.repository.writes.withLock {
+        // Hold the private write lock only to read the item and pin its photo. Copying every
+        // shared photo and writing the ZIP can take minutes and must not block the user's
+        // own edits (audit 0.14.6 №4 pattern); the pin keeps cleanup from deleting the photo.
+        val (selected, photoId) = session.repository.writes.withLock {
             val source = session.repository.snapshot()
             val item = source.garments.single { it.id == itemId && it.wardrobeId == mutable.value.localWardrobe && !it.archived }
-            val selected = FamilyAddition.select(source, item.id, view.candidate.snapshot.wardrobes.single())
-            archive.stage(view.remote, view.candidate.snapshot, selected, view.candidate.photos, session.photos, item.photoId)
+            session.photos.pin(setOf(item.photoId))
+            FamilyAddition.select(source, item.id, view.candidate.snapshot.wardrobes.single()) to item.photoId
         }
+        val draft = try {
+            archive.stage(view.remote, view.candidate.snapshot, selected, view.candidate.photos, session.photos, photoId)
+        } finally { session.photos.unpin(setOf(photoId)) }
         try { authorize(backend, draft.remoteId); install(draft, null, checkpoint) }
         catch (e: Exception) { if (store.get(draft.remoteId) != draft) store.directory(draft.publication.archiveId).deleteRecursively(); throw e }
     }
