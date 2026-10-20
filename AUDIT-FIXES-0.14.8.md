@@ -10,10 +10,11 @@
 
 - Host-набори (`tools/run_host_checks.py --allow-missing-client-config`) — pass,
   включно з тестами family backend. `check_version.py` — pass (38 > 37).
-- **Kotlin/Compose не компілювались і не запускались** у цьому середовищі
-  (Google Maven/Gradle недоступні). Потрібно зібрати `testDebugUnitTest lintDebug
-  assembleDebug` і перевірити на пристрої. Новий JVM-тест
-  `FamilyTransferTest.verifiedTransferStaysCompleteAfterLocalEdits` не запускався.
+- **GitHub Actions, 20.10.2026:** «Wardrobe CI» pass для PR #1 (run 39414605594) і для
+  0.14.7-family-edit (run 39414592920): Source and Git safety + Android debug preview
+  (`testDebugUnitTest lintDebug assembleDebug`, CI preview APK). Кількість JVM-тестів
+  не зведено: артефакт звітів агентові недоступний. Instrumented/emulator-тести
+  й перевірка на пристрої не виконувались.
 - Live deploy не виконувався. Зміна `cloud/family-functions/main.py`
   (пам'ять/таймаут) набуде чинності лише після ручного розгортання функцій.
   Storage/Firestore rules не змінювались.
