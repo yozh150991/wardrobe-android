@@ -2,8 +2,8 @@ package com.familywardrobe.app
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Redo
-import androidx.compose.material.icons.outlined.Undo
+import androidx.compose.material.icons.automirrored.outlined.Redo
+import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.Saver
@@ -33,11 +33,11 @@ fun PhotoHistoryControls(history: PhotoEditHistory, enabled: Boolean, onChange: 
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedButton(onClick = { onChange(history.undo()) }, enabled = enabled && history.canUndo(),
             modifier = Modifier.weight(1f).heightIn(min = 48.dp).semantics { contentDescription = undo }) {
-            Icon(Icons.Outlined.Undo, null); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.photo_history_undo))
+            Icon(Icons.AutoMirrored.Outlined.Undo, null); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.photo_history_undo))
         }
         OutlinedButton(onClick = { onChange(history.redo()) }, enabled = enabled && history.canRedo(),
             modifier = Modifier.weight(1f).heightIn(min = 48.dp).semantics { contentDescription = redo }) {
-            Icon(Icons.Outlined.Redo, null); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.photo_history_redo))
+            Icon(Icons.AutoMirrored.Outlined.Redo, null); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.photo_history_redo))
         }
     }
 }

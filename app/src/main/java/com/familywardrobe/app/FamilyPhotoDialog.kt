@@ -82,7 +82,7 @@ internal fun FamilyPhotoDialog(vm: WardrobeViewModel, remote: String, dismiss: (
                             vm.familyPhoto.open(remote, state.garmentId, state.garmentName, state.localWardrobe.ifEmpty { vm.active.value })
                         }, enabled = state.garmentId.isNotEmpty()) { Text(stringResource(R.string.family_read_refresh)) }
                     }
-                    if (current != null && view != null && (draft == null || draft.garmentId == current.id)) item {
+                    if (current != null && (draft == null || draft.garmentId == current.id)) item {
                         Text(stringResource(R.string.family_photo_current), style = MaterialTheme.typography.labelLarge)
                         ZoomableItemPhoto(current.photoId, view.candidate.photos, Modifier.fillMaxWidth().height(200.dp), current.name, garmentColour = current.color)
                     }
