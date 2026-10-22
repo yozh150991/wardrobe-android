@@ -8,7 +8,7 @@ parser.add_argument('--allow-missing-client-config', action='store_true',
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[1]
 names = ['check_project.py', 'check_refinement.py', 'check_experience.py', 'check_roadmap.py', 'check_ux.py', 'check_wardrobe.py', 'check_wishes.py',
-         'check_auth.py', 'check_management.py', 'check_photo_rules.py', 'check_theme.py', 'check_auth_config.py', 'check_scenarios.py', 'check_shop_import.py', 'check_purchase_advice.py', 'check_photo_zoom.py', 'check_photo_editor.py', 'check_photo_reprocessing.py', 'check_categories.py', 'check_colors.py', 'check_family.py', 'check_family_backend.py', 'check_family_cache.py']
+         'check_auth.py', 'check_management.py', 'check_photo_rules.py', 'check_theme.py', 'check_auth_config.py', 'check_scenarios.py', 'check_shop_import.py', 'check_purchase_advice.py', 'check_photo_zoom.py', 'check_photo_editor.py', 'check_photo_reprocessing.py', 'check_categories.py', 'check_colors.py', 'check_family.py', 'check_family_backend.py', 'check_family_cache.py', 'check_qa_regression.py']
 # Shared PID/performance-file tracking can collide in containerized parallel processes.
 # This flag changes JVM diagnostics only; it does not change domain test behavior.
 task_env = dict(os.environ)

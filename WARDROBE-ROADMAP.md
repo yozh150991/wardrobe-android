@@ -467,3 +467,11 @@ DEV-01 (Git Safety) збережений; історична контрольн�
 - Перевірки: backend 113 pass (14 нових test_qa_regressions, падають на 0.14.12), run_host_checks pass із новими JVM/SQLite-асертами. Kotlin/Android — у CI PR; пристрій не перевірено.
 - Далі: деплой family functions; на телефоні — імпорт з Allegro/Zalando/Reserved і запрошення на адресу .укр; потім продовжити FAM-03 (спільні образи, черга, фонова синхронізація).
 
+
+### 2026-10-22 — QA-регресія за 5 техніками — Claude, verify (лише тести)
+
+- Вказівка користувача 22.10: «як General QA… опиши автотестами увесь продукт, додай у репозиторій для регресії і знайди баги» (EP, BVA, State Transition, Pairwise, Error Guessing). Версія не змінена: 0.14.13-qa-fixes/code43, продакшн-код не змінено.
+- Додано: `app/src/test/.../Qa*` (6 Java-наборів, `QaRegressionTest.kt`, `QaFamilyWireTest.kt`), `cloud/family-functions/tests/test_qa_techniques.py`, `tools/check_qa_regression.py` (у `run_host_checks.py`). Звіт і 13 багів — QA-REPORT-0.14.13.md.
+- Відкриті баги записані як строгі очікувані падіння: регресія зелена, поки баг відтворюється, і падає після виправлення — тоді `knownBug` стає звичайним асертом.
+- Перевірки тут: run_host_checks pass; backend 139 pass (2 expected failures — QA-01, QA-04); Kotlin JUnit QA 10/10 pass (компілятор 2.0.21). Android CI, emulator rules і пристрій — не виконано.
+- Далі: виправити QA-01 (висока) і QA-02…QA-05; QA-01/QA-04 потребують деплою family functions.
