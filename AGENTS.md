@@ -1,3 +1,7 @@
+## Current handoff — QA bug fixes, 22 October 2026
+
+0.14.14-qa-fixes2/code 44, Room/backup 10. All 13 bugs of QA-REPORT-0.14.13.md fixed; read QA-FIXES-0.14.14.md. The QA suites now have no open bugs (every former knownBug is a regular assertion). Backend changes (invite names in UTF-16 units + legacy filtering, RFC e-mail, family_edit_item 1 GiB/540 s) need a manual functions deploy. Saved names must pass TextLimits.hasVisibleText in form and repository; restores use CategoryRules.validStoredName for older labels. Next: deploy, device checks, then FAM-03.
+
 ## Current handoff — QA regression suites, 22 October 2026
 
 Tests only, 0.14.13-qa-fixes/code 43 unchanged. Read QA-REPORT-0.14.13.md: 13 open bugs (QA-01 high: server counts invite names in code points, phone in UTF-16 → recipient's invitation list unparsable). Technique-tagged suites: app/src/test Qa*Cases.java (+ QaRegressionTest.kt, QaFamilyWireTest.kt), cloud/family-functions/tests/test_qa_techniques.py, tools/check_qa_regression.py (in run_host_checks). Open bugs are strict expected failures (knownBug / expectedFailure / known_bug): when you fix one, its check fails until you turn it into a regular assertion and update the report.

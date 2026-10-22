@@ -129,7 +129,17 @@ public final class ShopMetadata {
         try {Long minor=WishRules.money(amount);return minor==null?"":BigDecimal.valueOf(minor,2).toPlainString();}catch(Exception e){return "";}
     }
     /** Callers decode first; cleaning only folds whitespace and cuts on a grapheme boundary (BUG-05/06). */
-    private static String clean(String text,int max){String v=text.replaceAll("[\\p{Cntrl}\\s]+"," ").trim();return TextLimits.takeTrimmed(v,max);}
+    private static String clean(String text,int max){return cleanName(text,max);}
+    /**
+     * A single-line name from untrusted text (a shop page or a shared message): no bidi controls, whitespace
+     * folded, whole graphemes, and "" unless a visible character remains, as the family server requires (QA-06).
+     */
+    public static String cleanName(String text,int max){
+        if(text==null)return "";
+        String v=TextLimits.stripBidiControls(text).replaceAll("[\\p{Cntrl}\\s\\u2028\\u2029]+"," ").trim();
+        v=TextLimits.takeTrimmed(v,max);
+        return TextLimits.hasVisibleText(v)?v:"";
+    }
     public static String decode(String input){
         Matcher m=ENTITY.matcher(input);StringBuffer out=new StringBuffer();
         while(m.find()){

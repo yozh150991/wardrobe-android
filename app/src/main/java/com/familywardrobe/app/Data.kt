@@ -336,7 +336,8 @@ class Repository(val db: WardrobeDatabase, val writes: Mutex = Mutex()) {
         photos.remove(candidates - referencedPhotos())
     }
     suspend fun saveWish(value: Wish, converting: Boolean, photos: PhotoStore): Boolean = writes.withLock {
-        validateWish(value)
+        // Saving needs a visible name like the family server (QA-03); restore keeps older names readable.
+        validateWish(value); require(TextLimits.hasVisibleText(value.name))
         val previous = dao.wish(value.id)
         require(value.ownedId.isBlank() && previous?.ownedId.orEmpty().isBlank())
         val next = if (converting) {
@@ -399,10 +400,10 @@ class Repository(val db: WardrobeDatabase, val writes: Mutex = Mutex()) {
         true
     }
     suspend fun addWardrobe(name: String) = writes.withLock {
-        require(name.trim().length in 1..80); dao.insertWardrobe(Wardrobe(name = name.trim()))
+        require(name.trim().length in 1..80 && TextLimits.hasVisibleText(name)); dao.insertWardrobe(Wardrobe(name = name.trim()))
     }
     suspend fun renameWardrobe(id: String, name: String) = writes.withLock {
-        require(name.trim().length in 1..80)
+        require(name.trim().length in 1..80 && TextLimits.hasVisibleText(name))
         require(dao.renameWardrobe(id, name.trim()) == 1)
     }
     suspend fun deleteWardrobe(id: String, photos: PhotoStore): WardrobeDeletion = writes.withLock {
@@ -444,7 +445,7 @@ class Repository(val db: WardrobeDatabase, val writes: Mutex = Mutex()) {
     suspend fun saveLook(wardrobe: String, pieces: List<LookPiece>, name: String, occasion: String, weather: String, source: String, outfitId: String = "", photos: PhotoStore? = null, layout: String? = null, background: String? = null): String = writes.withLock {
         val oldPhotos = dao.allIdeas().filter { it.outfitId == outfitId }.map { it.photoId }.filter { it.isNotBlank() }.toSet()
         val saved = db.withTransaction {
-            require(name.trim().length in 1..80 && pieces.isNotEmpty() && pieces.size <= WardrobeRules.MAX_PARTS)
+            require(name.trim().length in 1..80 && TextLimits.hasVisibleText(name) && pieces.isNotEmpty() && pieces.size <= WardrobeRules.MAX_PARTS)
             require(pieces.all { it.category in Matching.categories && it.name.isNotBlank() })
             require(WardrobeRules.validCategories(pieces.map { it.category }) && pieces.map { it.key }.distinct().size == pieces.size)
             require(occasion in LookRules.OCCASIONS && weather in LookRules.WEATHERS && source in LookRules.SOURCES)

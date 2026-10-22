@@ -12,7 +12,7 @@ import java.io.File
 
 /**
  * Family wire parsing and read/publish coordinators on the phone: boundary values of every server field,
- * the client/server limit mismatch QA-01, progress fractions and the read-lease state machine.
+ * the shared client/server name limit (QA-01), progress fractions and the read-lease state machine.
  */
 class QaFamilyWireTest {
     private val remote = "00000000-0000-4000-8000-000000000001"
@@ -50,18 +50,13 @@ class QaFamilyWireTest {
         qa.isFalse(EP, "blank invitation name", accepted { FamilyAccessWire.invitations(mapOf("invitations" to listOf(invite("name" to "  ")))) })
         qa.isFalse(EP, "missing list", accepted { FamilyAccessWire.invitations(emptyMap<String, Any>()) })
         qa.isFalse(EG, "owner role in a membership", accepted { FamilyAccessWire.members(mapOf("members" to listOf(member("role" to "owner")), "invitations" to emptyList<Any>())) })
-        // QA-01: the server (membership.invite) limits the shared-wardrobe name to 80 *code points*; the phone parses
-        // at most 80 UTF-16 units. An owner (any modified client) can send an invitation named with 80 emoji, which the
-        // server stores and returns; the recipient's whole invitation list then fails to parse, and after acceptance
-        // their and the owner's family directory (displayName) fails too.
-        qa.knownBug(BVA, "QA-01", "emoji wardrobe name breaks invitation/directory parsing") {
-            val name = emoji.repeat(80)
-            check(name.codePointCount(0, name.length) == 80) { "fixture: 80 code points" }
-            FamilyAccessWire.invitations(mapOf("invitations" to listOf(invite("name" to name), invite("inviteId" to remote))))
-            FamilyAccessWire.directory(mapOf("wardrobes" to listOf(entry("name" to name))))
-        }
+        // QA-01 (fixed in 0.14.14): phone and server share one limit, 80 UTF-16 units; the server refuses longer
+        // names and hides legacy ones, so this parser never meets them (tests/test_qa_techniques.py).
+        qa.isTrue(BVA, "40 emoji = 80 units", accepted { FamilyAccessWire.invitations(mapOf("invitations" to listOf(invite("name" to emoji.repeat(40))))) })
+        qa.isFalse(BVA, "41 emoji = 82 units", accepted { FamilyAccessWire.invitations(mapOf("invitations" to listOf(invite("name" to emoji.repeat(41))))) })
+        qa.isTrue(BVA, "directory name of 40 emoji", accepted { FamilyAccessWire.directory(mapOf("wardrobes" to listOf(entry("name" to emoji.repeat(40))))) })
         qa.done()
-        assertTrue(qa.reproducedBugs().contains("QA-01"))
+        assertTrue(qa.reproducedBugs().isEmpty())
     }
 
     @Test fun uploadProgressBoundaries() {

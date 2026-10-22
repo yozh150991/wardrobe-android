@@ -54,7 +54,7 @@ internal fun ShopImportScreen(s: Snapshot, currentWardrobe: String, vm: Wardrobe
     }
     fun proceed() {
         val name = product?.optString("name").orEmpty().ifBlank {
-            if (sharedLinks.isEmpty()) TextLimits.take(sharedText, 120) else ""
+            if (sharedLinks.isEmpty()) ShopMetadata.cleanName(sharedText, 120) else ""
         }
         vm.prepareShopEditor(targetWardrobe, target, needId, name, validLink, photo,
             product?.optString("price").orEmpty(), product?.optString("currency").orEmpty())?.let(openEditor)

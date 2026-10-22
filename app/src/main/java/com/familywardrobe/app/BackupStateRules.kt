@@ -22,10 +22,10 @@ object BackupStateRules {
         val garments = s.garments.associateBy { it.id }; val outfits = s.outfits.associateBy { it.id }; val plans = s.plans.associateBy { it.id }
         val wishes = s.wishes.associateBy { it.id }; val capsules = s.capsules.associateBy { it.id }
         require(s.customCategories.all { it.wardrobeId in wardrobes && it.baseCategory in Matching.categories &&
-            CategoryRules.validName(it.name) && CategoryRules.clean(it.name) == it.name && CategoryRules.key(it.name) == it.nameKey })
+            CategoryRules.validStoredName(it.name) && CategoryRules.clean(it.name) == it.name && CategoryRules.key(it.name) == it.nameKey })
         require(s.customCategories.map { it.wardrobeId to it.nameKey }.distinct().size == s.customCategories.size)
         require(s.customColors.all { it.wardrobeId in wardrobes && it.baseColor in Matching.colors &&
-            CategoryRules.validName(it.name) && CategoryRules.clean(it.name) == it.name && CategoryRules.key(it.name) == it.nameKey })
+            CategoryRules.validStoredName(it.name) && CategoryRules.clean(it.name) == it.name && CategoryRules.key(it.name) == it.nameKey })
         require(s.customColors.map { it.wardrobeId to it.nameKey }.distinct().size == s.customColors.size)
         require(s.wardrobes.all { it.name.trim().length in 1..80 && it.noRepeatDays in 0..30 })
         require(s.garments.all { validCategory(it) && validColor(it) && it.wardrobeId in wardrobes && WishRules.validMinor(it.priceMinor) && it.currency in wishCurrencies && it.name.trim().length in 1..120 && it.category in Matching.categories && it.color in Matching.colors && it.season in Matching.seasons && it.style in Matching.styles && it.availability in Matching.availability && PhotoStore.ID.matches(it.photoId) && it.subcategory.length <= 60 && (it.photoFingerprint.isBlank() || Regex("[a-f0-9]{64}").matches(it.photoFingerprint)) })

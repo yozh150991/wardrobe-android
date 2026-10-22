@@ -3,7 +3,7 @@ import androidx.room.withTransaction
 import kotlinx.coroutines.sync.withLock
 
 suspend fun Repository.saveCapsule(value: Capsule): String = writes.withLock {
-    require(value.name.trim().length in 1..80 && value.kind in setOf("capsule", "trip") && RoadmapRules.period(value.startDate, value.endDate))
+    require(value.name.trim().length in 1..80 && TextLimits.hasVisibleText(value.name) && value.kind in setOf("capsule", "trip") && RoadmapRules.period(value.startDate, value.endDate))
     db.withTransaction {
         require(dao.allWardrobes().any { it.id == value.wardrobeId })
         val previous = dao.capsule(value.id); require(previous == null || previous.wardrobeId == value.wardrobeId)

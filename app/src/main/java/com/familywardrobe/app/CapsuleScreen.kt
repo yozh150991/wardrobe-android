@@ -137,7 +137,7 @@ private fun CapsuleEditor(original: Capsule?, wardrobe: String, vm: WardrobeView
             if (!RoadmapRules.period(start, end)) Text(stringResource(R.string.capsule_date_error), color = MaterialTheme.colorScheme.error)
         }
     }, confirmButton = { TextButton(onClick = { vm.saveCapsule(Capsule(id, wardrobe, name, kind, start, end), saved) },
-        enabled = !busy && name.isNotBlank() && RoadmapRules.period(start, end)) { Text(stringResource(R.string.save)) } },
+        enabled = !busy && TextLimits.hasVisibleText(name) && RoadmapRules.period(start, end)) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = dismiss, enabled = !busy) { Text(stringResource(R.string.cancel)) } })
     if (dateField.isNotBlank()) DateChoiceDialog((if (dateField == "start") start else end).ifBlank { LocalDate.now().toString() }, { dateField = "" }) {
         if (dateField == "start") { start = it; if (end.isBlank()) end = it } else { end = it; if (start.isBlank()) start = it }; dateField = ""

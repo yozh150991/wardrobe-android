@@ -17,7 +17,7 @@ public final class ShopImportRules {
     public static String webUrl(String value) {
         if (value == null || value.length() > 2000) return "";
         try {
-            URI u = new URI(value.trim());
+            URI u = new URI(WishRules.asciiHost(value));  // IDN shop domains (QA-07)
             String scheme = u.getScheme(), host = u.getHost();
             if (scheme == null || host == null || host.isEmpty() || u.getRawUserInfo() != null ||
                     !(scheme.equalsIgnoreCase("https") || scheme.equalsIgnoreCase("http"))) return "";
@@ -66,10 +66,12 @@ public final class ShopImportRules {
             String scheme=u.getScheme().toLowerCase(Locale.ROOT);
             String host=u.getHost().toLowerCase(Locale.ROOT);
             if(host.endsWith(".")&&host.length()>1)host=host.substring(0,host.length()-1);
+            // Shops redirect www and the import loads http over https: one page, one key (QA-08).
+            if(host.startsWith("www.")&&host.indexOf('.',4)>0)host=host.substring(4);
             int port=u.getPort();
             // Default ports and the fragment never identify a different product (BUG-14).
             boolean defaultPort=port<0||(scheme.equals("https")&&port==443)||(scheme.equals("http")&&port==80);
-            return scheme+"://"+host+(defaultPort?"":":"+port)+
+            return "https://"+host+(defaultPort?"":":"+port)+
                 (u.getRawPath().isEmpty()?"/":u.getRawPath())+(query.isEmpty()?"":"?"+String.join("&",query));
         }catch(Exception e){return valid;}
     }

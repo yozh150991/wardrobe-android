@@ -7,7 +7,7 @@ All transaction reads precede writes (including role/revoke replays).
 import hashlib
 import re
 from .errors import FamilyError, require
-from .schema import integer, valid_id, visible_name
+from .schema import integer, text_length, valid_id, visible_name
 
 LIMIT = 50
 INVITE_TTL = 7 * 86400000
@@ -20,7 +20,10 @@ def authorize(actor, data, names):
 
 
 _TRIM = ''.join(chr(c) for c in range(33))  # Same characters as Java String.trim() on the phone.
-_EMAIL = re.compile(r"[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.(?:[a-z]{2,63}|xn--[a-z0-9-]{1,59})")
+_ATOM = r"[a-z0-9!#$%&'*+/=?^_`{|}~-]+"
+_LABEL = r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?"
+# RFC 5321 dot-atom local part and RFC 1035 labels (QA-11); identical to AuthRules.EMAIL on the phone.
+_EMAIL = re.compile(_ATOM + r"(?:\." + _ATOM + r")*@(?:" + _LABEL + r"\.)+(?:[a-z]{2,63}|xn--[a-z0-9-]{1,59})")
 
 
 def email(value):
@@ -36,8 +39,15 @@ def email(value):
         except UnicodeError:
             require(False, 'Invalid email')
     value = (local + '@' + domain).lower()
-    require(len(value) <= 254 and _EMAIL.fullmatch(value), 'Invalid email')
+    require(len(value) <= 254 and len(local) <= 64 and _EMAIL.fullmatch(value), 'Invalid email')
     return value
+
+
+def display_name(value):
+    """Shared-wardrobe name on invitations and the directory. Counted in UTF-16 units like every other
+    field and like the phone parser (FamilyAccessWire, 80 units): 80 emoji are 160 units (QA-01)."""
+    return (type(value) is str and 0 < text_length(value.strip()) <= 80 and
+            not any(ord(c) < 32 for c in value) and visible_name(value))
 
 
 def email_key(value):
@@ -59,7 +69,8 @@ def visible(tx, remote, actor, now):
             role = member['role']
     if role is None: return None
     return {k: root[k] for k in ('remoteId', 'wardrobeId', 'ownerUid')} | {
-        'role': role, 'name': root.get('displayName', ''), 'ownerEmail': root.get('ownerEmail', ''), 'ready': root.get('head') is not None}
+        # A name stored before QA-01 that the phone cannot parse is hidden rather than breaking the whole list.
+        'role': role, 'name': root.get('displayName', '') if display_name(root.get('displayName', '')) else '', 'ownerEmail': root.get('ownerEmail', ''), 'ready': root.get('head') is not None}
 
 
 def pending(entries, now):
@@ -105,7 +116,7 @@ class MembershipService:
                 invite = tx.get(invite_path(id_))
                 root = tx.get(f"familyWardrobes/{invite['remoteId']}") if invite else None
                 if (invite and invite['recipientKey'] == key and invite['status'] == 'pending' and
-                    invite['expiresAt'] > self.clock() and root and not root['archived']):
+                    invite['expiresAt'] > self.clock() and root and not root['archived'] and display_name(invite['name'])):
                     result.append(invite)
             return {'invitations': result}
         return self.store.run(operation)
@@ -123,7 +134,8 @@ class MembershipService:
             invites = []
             for id_ in sorted(pending(metadata['invites'], self.clock())):
                 value = tx.get(invite_path(id_))
-                if value and value['status'] == 'pending' and value['expiresAt'] > self.clock(): invites.append(value)
+                if value and value['status'] == 'pending' and value['expiresAt'] > self.clock() and display_name(value['name']):
+                    invites.append(value)
             return {'members': members, 'invitations': invites}
         return self.store.run(operation)
 
@@ -132,8 +144,7 @@ class MembershipService:
         recipient = email(data['email']); sender = email(actor.email); key = email_key(recipient)
         require(recipient != sender, 'Cannot invite yourself')
         require(data['role'] in ('viewer', 'editor'), 'Invalid role')
-        require(type(data['name']) is str and 0 < len(data['name'].strip()) <= 80 and
-                not any(ord(c) < 32 for c in data['name']) and visible_name(data['name']), 'Invalid wardrobe name')
+        require(display_name(data['name']), 'Invalid wardrobe name')
         target = invite_path(data['inviteId']); remote = data['remoteId']
         slot_path = f'familyWardrobes/{remote}/inviteSlots/{key}'
         def operation(tx):

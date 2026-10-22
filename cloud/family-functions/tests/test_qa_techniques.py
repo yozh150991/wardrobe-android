@@ -102,13 +102,13 @@ class InputTechniques(Base):
             self.assertEqual(normal, email(raw))
         self.assertEqual(email_key('ivan@пошта.укр'), email_key('IVAN@xn--80a1acn3a.xn--j1amh'))
         for bad in ['', 'anna', '@example.com', 'anna@', 'анна@example.com', 'anna@localhost', 'an na@example.com',
-                    ' anna@example.com', 'anna@example.c0m', None, 42]:
+                    '\u00a0anna@example.com', 'anna@example.c0m', None, 42]:
             self.error('invalid-argument', lambda: email(bad))
 
     def test_ep_visible_name_classes(self):
-        for ok in ['Shirt', 'Сукня', '7', EMOJI, '\U0001F468‍\U0001F469', 'é', ' x ']:
+        for ok in ['Shirt', 'Сукня', '7', EMOJI, '\U0001F468\u200d\U0001F469', 'e\u0301', ' x ']:
             self.assertTrue(visible_name(ok), ok)
-        for bad in ['', ' ', ' ', '　', '​', '‍', '́', '️', 'a‮b', '⁦x⁩', '\n\t']:
+        for bad in ['', ' ', '\u00a0', '\u3000', '\u200b', '\u200d', '\u0301', '\ufe0f', 'a\u202eb', '\u2066x\u2069', '\n\t']:
             self.assertFalse(visible_name(bad), repr(bad))
 
     def test_ep_label_keys_fold_final_sigma(self):
@@ -189,11 +189,30 @@ class InputTechniques(Base):
         self.error('invalid-argument', lambda: self.invite(inviteId=uid(901), email='x@example.com', name='a' * 81))
         self.error('invalid-argument', lambda: self.invite(inviteId=uid(902), email='y@example.com', name='   '))
 
-    @unittest.expectedFailure
     def test_bva_qa01_invitation_name_counts_utf16_units_like_the_phone(self):
-        """QA-01: 80 emoji = 160 UTF-16 units. The phone parser (FamilyAccessWire) refuses names over 80 units,
-        so the server must refuse them too; today it counts code points and stores the name."""
-        self.error('invalid-argument', lambda: self.invite(name=EMOJI * 80))
+        """QA-01 (fixed in 0.14.14): one limit with the phone parser, 80 UTF-16 units."""
+        self.invite(name=EMOJI * 40)
+        self.error('invalid-argument', lambda: self.invite(inviteId=uid(901), email='x@example.com', name=EMOJI * 41))
+        self.error('invalid-argument', lambda: self.invite(inviteId=uid(902), email='y@example.com', name=EMOJI * 80))
+
+    def test_eg_qa01_legacy_names_never_break_lists(self):
+        """Invitations stored before the fix are hidden from the lists; a legacy directory name is shown blank."""
+        self.invite()
+        invite = self.store.data[f'familyInvites/{uid(900)}']
+        self.store.seed(f'familyInvites/{uid(900)}', invite | {'name': EMOJI * 80})
+        self.assertEqual([], self.service.invitations(self.user, {})['invitations'])
+        self.assertEqual([], self.service.members(self.owner, dict(remoteId=REMOTE))['invitations'])
+        root = self.store.data[f'familyWardrobes/{REMOTE}']
+        self.store.seed(f'familyWardrobes/{REMOTE}', root | {'displayName': EMOJI * 80})
+        self.assertEqual('', self.service.directory(self.owner, {})['wardrobes'][0]['name'])
+
+    def test_ep_qa11_rfc_email_rules(self):
+        """QA-11 (fixed in 0.14.14): dot-atom local part <= 64, RFC 1035 labels; same rule as AuthRules."""
+        for bad in ['a..b@example.com', '.a@example.com', 'a.@example.com', 'a@x.-y.com', 'a@x-.com',
+                    'a@' + 'b' * 64 + '.com', 'a' * 65 + '@example.com']:
+            self.error('invalid-argument', lambda: email(bad))
+        for ok in ['a' * 64 + '@example.com', 'a@' + 'b' * 63 + '.com', 'first.last@example.co.uk', 'a@my-shop.example.com']:
+            self.assertEqual(ok, email(ok))
 
 
 class StateTransitions(Base):
@@ -302,7 +321,7 @@ class Pairwise(Base):
     def test_pw_invite_request_combinations(self):
         roles = ['viewer', 'editor', 'owner', '']
         emails = ['ok', 'self', 'idn', 'invalid']
-        names = ['Family', 'a' * 80, 'a' * 81, '  ', 'Bad‮name', 'Tab\tname']
+        names = ['Family', 'a' * 80, 'a' * 81, '  ', 'Bad\u202ename', 'Tab\tname']
         actors = ['owner', 'editor', 'stranger']
         self.seed_member(self.editor, 'editor')
         rows = all_pairs(len(roles), len(emails), len(names), len(actors))
@@ -313,7 +332,7 @@ class Pairwise(Base):
             request = dict(remoteId=REMOTE, inviteId=uid(4000 + n), email=address, role=roles[r], name=names[nm])
             # Oracle in the server's validation order: request fields first, then ownership.
             invalid = (emails[e] == 'invalid' or (emails[e] == 'self' and actors[a] == 'owner') or roles[r] not in ('viewer', 'editor')
-                       or names[nm] in ('a' * 81, '  ', 'Bad‮name', 'Tab\tname'))
+                       or names[nm] in ('a' * 81, '  ', 'Bad\u202ename', 'Tab\tname'))
             with self.subTest(row=(roles[r], emails[e], names[nm][:8], actors[a])):
                 if invalid:
                     self.error('invalid-argument', lambda: self.service.invite(actor, request))
@@ -334,7 +353,7 @@ class ErrorGuessing(Base):
         s = snapshot(); s['wishes'][0]['link'] = 'javascript:alert(1)'; bad.append(('script link', s))
         s = snapshot(); s['wishes'][0]['link'] = 'https://user:pw@shop.pl'; bad.append(('credential link', s))
         s = snapshot(); s['photoFiles'] = {}; bad.append(('photo set mismatch', s))
-        s = snapshot(); s['wardrobes'][0]['name'] = 'Home‮'; bad.append(('bidi name', s))
+        s = snapshot(); s['wardrobes'][0]['name'] = 'Home\u202e'; bad.append(('bidi name', s))
         for label, value in bad:
             with self.subTest(label):
                 self.assertFalse(self.accepted(value))
@@ -354,16 +373,15 @@ class ErrorGuessing(Base):
             return self.service.edit_item(self.editor, dict(remoteId=REMOTE, editId=uid(n), garmentId=GARMENT,
                                                             baseRevision=self.store.data[f'familyWardrobes/{REMOTE}']['revision'], changes=changes))
         self.assertEqual('committed', edit(5000, {'description': 'line\r\nnext\ttab'})['status'])
-        for n, changes in enumerate([{'name': '​'}, {'name': 'a‮b'}, {'description': 'bell\x07'}, {'name': 'a' * 121},
+        for n, changes in enumerate([{'name': '\u200b'}, {'name': 'a\u202eb'}, {'description': 'bell\x07'}, {'name': 'a' * 121},
                                      {'photoId': uid(1)}, {}], 5001):
             with self.subTest(changes=changes):
                 self.error('invalid-argument', lambda: edit(n, changes))
 
-    @unittest.expectedFailure
     def test_eg_qa04_edit_function_has_commit_resources(self):
-        """QA-04: family_edit_item reads the head ZIP (<=128 MiB), rewrites it and fully decodes every photo twice
-        (validate source + validate result), but runs with the global 512 MiB / 180 s while family_commit, which
-        decodes once, was raised to 1 GiB / 540 s (audit 0.14.7). Large shared wardrobes cannot be edited."""
+        """QA-04 (fixed in 0.14.14): family_edit_item reads the head ZIP (<=128 MiB), rewrites it and fully decodes every photo twice
+        (validate source + validate result); it used to run with the global 512 MiB / 180 s while family_commit, which
+        decodes once, was raised to 1 GiB / 540 s (audit 0.14.7). Both now have the same resources."""
         tree = ast.parse((Path(__file__).resolve().parents[1] / 'main.py').read_text(encoding='utf-8'))
         def resources(name):
             function = next(f for f in tree.body if isinstance(f, ast.FunctionDef) and f.name == name)

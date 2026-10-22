@@ -7,7 +7,7 @@ import java.util.*;
 
 /**
  * Wardrobe, outfit, canvas, calendar, recommendation, diagnostics and purchase-advice rules.
- * Techniques: EP, BVA, EG (+ open bugs QA-05, QA-13).
+ * Techniques: EP, BVA, EG (regressions of fixed QA-05, QA-13).
  */
 public final class QaWardrobeDomainCases {
     private QaWardrobeDomainCases() {}
@@ -164,12 +164,10 @@ public final class QaWardrobeDomainCases {
         qa.equal(BVA, "6 pieces use the grid", 6, spots(list("top", "bottom", "shoes", "outerwear", "bag", "hat")));
         qa.equal(BVA, "12 pieces use the grid", 12, spots(list("top", "bottom", "shoes", "outerwear", "bag", "hat", "tights",
             "other_item", "accessory", "accessory", "accessory", "accessory")));
-        // QA-13: in the free-form layout (<= 5 pieces) a layer and outerwear, or two layers, start on exactly the
-        // same spot, so one valid piece is hidden under the other until the user drags it away.
-        qa.knownBug(EG, "QA-13", "canvas stacks layer/outerwear on one spot", () -> {
-            expect(spots(list("top", "bottom", "shoes", "layer", "outerwear")) == 5, "layer + outerwear overlap");
-            expect(spots(list("top", "bottom", "shoes", "layer", "layer")) == 5, "two layers overlap");
-        });
+        // QA-13 (fixed in 0.14.14): a layer, a second layer and outerwear start on different spots.
+        qa.equal(EG, "layer + outerwear", 5, spots(list("top", "bottom", "shoes", "layer", "outerwear")));
+        qa.equal(EG, "two layers", 5, spots(list("top", "bottom", "shoes", "layer", "layer")));
+        qa.equal(EG, "two layers + outerwear", 5, spots(list("dress", "shoes", "layer", "layer", "outerwear")));
         qa.raises(BVA, "13 pieces", IllegalArgumentException.class, () -> CanvasRules.initial("bag", 0, 13));
         qa.raises(BVA, "zero pieces", IllegalArgumentException.class, () -> CanvasRules.initial("bag", 0, 0));
         qa.raises(BVA, "index == total", IllegalArgumentException.class, () -> CanvasRules.initial("bag", 3, 3));
@@ -326,20 +324,19 @@ public final class QaWardrobeDomainCases {
         qa.equal(EP, "missing shoes reported", List.of(list("shoes")), PurchaseAdviceRules.analyze(shirt,
             list2(owned("b", "bottom", "all", "black", "available", true)), Collections.emptySet(), "everyday", "any_weather", DATE,
             Collections.emptySet()).missingLayouts);
-        // QA-05: the generator treats weather outerwear as optional (DailyRules), but the "what is missing" hint
-        // still requires it on cool/cold/rain days: a look the user rejected is explained as "buy outerwear",
-        // and a missing pair of shoes is reported as "shoes + outerwear".
+        // QA-05 (fixed in 0.14.14): weather outerwear is optional for the hint, as in the generator.
         String signature = DailyRules.signature(ok.previews.get(0).ids);
-        qa.knownBug(EG, "QA-05", "purchase advice demands optional outerwear", () -> {
-            for (String weather : list("cool", "cold", "rain")) {
-                PurchaseAdviceRules.Analysis rejected = PurchaseAdviceRules.analyze(shirt, base, Collections.emptySet(), "everyday",
-                    weather, DATE, Collections.singleton(signature));
-                expect(rejected.previews.isEmpty(), "fixture: the only look is rejected");
-                expect(rejected.missingLayouts.isEmpty(), weather + ": rejection explained as missing " + rejected.missingLayouts);
-            }
-            PurchaseAdviceRules.Analysis noShoes = PurchaseAdviceRules.analyze(shirt, list2(owned("b", "bottom", "all", "black", "available", true)),
-                Collections.emptySet(), "everyday", "cold", DATE, Collections.emptySet());
-            expect(noShoes.missingLayouts.equals(List.of(list("shoes"))), "cold day reports " + noShoes.missingLayouts);
-        });
+        for (String weather : list("cool", "cold", "rain")) {
+            PurchaseAdviceRules.Analysis rejected = PurchaseAdviceRules.analyze(shirt, base, Collections.emptySet(), "everyday",
+                weather, DATE, Collections.singleton(signature));
+            qa.isTrue(EG, weather + ": the only look is rejected", rejected.previews.isEmpty());
+            qa.equal(EG, weather + ": rejection is not a missing piece", List.of(), rejected.missingLayouts);
+        }
+        qa.equal(EG, "cold day without shoes asks only for shoes", List.of(list("shoes")), PurchaseAdviceRules.analyze(shirt,
+            list2(owned("b", "bottom", "all", "black", "available", true)), Collections.emptySet(), "everyday", "cold", DATE,
+            Collections.emptySet()).missingLayouts);
+        qa.equal(EG, "outerwear purchase still needs a base", List.of(list("dress", "shoes"), list("jumpsuit", "shoes"), list("top", "bottom", "shoes")),
+            PurchaseAdviceRules.analyze(new PurchaseAdviceRules.Profile("c", W, "outerwear", "", "", "", "", ""), list2(), Collections.emptySet(),
+                "everyday", "rain", DATE, Collections.emptySet()).missingLayouts);
     }
 }

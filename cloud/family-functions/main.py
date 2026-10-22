@@ -107,6 +107,8 @@ def family_leave(request: https_fn.CallableRequest):
     return dispatch(request, 'leave')
 
 
-@https_fn.on_call()
+# family_edit_item reads the head ZIP, rewrites it and validates (decodes every photo of) both the source and
+# the result: at least the resources of family_commit, which decodes once (QA-04).
+@https_fn.on_call(memory=options.MemoryOption.GB_1, timeout_sec=540)
 def family_edit_item(request: https_fn.CallableRequest):
     return dispatch(request, 'edit_item')

@@ -37,7 +37,7 @@ fun WardrobeColorChoice(base: String, customId: String, s: Snapshot, wardrobe: S
         change(custom?.baseColor ?: selected, custom?.id.orEmpty())
     }, enabled = enabled && !busy, title = title, allowAll = allowAll, modifier = modifier,
         showSelectedValue = showSelectedValue, customColors = colors, onAdd = { query ->
-            proposedName = query.take(60); proposedBase = base.takeIf { it in Matching.colors }.orEmpty(); creating = true
+            proposedName = TextLimits.input(query, 60); proposedBase = base.takeIf { it in Matching.colors }.orEmpty(); creating = true
         })
     if (creating) {
         val valid = CategoryRules.validName(proposedName)

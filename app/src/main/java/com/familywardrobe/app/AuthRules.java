@@ -12,8 +12,14 @@ public final class AuthRules {
      * Mirrors {@code membership.email()} on the family server (BUG-13): ASCII local part, an
      * IDN domain is checked in its punycode form (BUG-08), TLD letters or {@code xn--}.
      */
+    private static final String ATOM = "[a-z0-9!#$%&'*+/=?^_`{|}~-]+";
+    private static final String LABEL = "[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?";
+    /**
+     * RFC 5321 dot-atom local part (no leading, trailing or double dots) and RFC 1035 labels of at most
+     * 63 characters that neither start nor end with a hyphen (QA-11). The server uses the same expression.
+     */
     private static final Pattern EMAIL = Pattern.compile(
-        "[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\\.(?:[a-z]{2,63}|xn--[a-z0-9-]{1,59})");
+        ATOM + "(?:\\." + ATOM + ")*@(?:" + LABEL + "\\.)+(?:[a-z]{2,63}|xn--[a-z0-9-]{1,59})");
     public static String email(String value) { return value == null ? "" : value.trim(); }
     /** Lower-case address with the domain in ASCII (punycode), or "" when the server would refuse it. */
     public static String serverEmail(String value) {
@@ -29,13 +35,14 @@ public final class AuthRules {
             try { domain = java.net.IDN.toASCII(domain); } catch (IllegalArgumentException e) { return ""; }
         }
         String normalized = (local + "@" + domain).toLowerCase(java.util.Locale.ROOT);
-        return normalized.length() <= 254 && EMAIL.matcher(normalized).matches() ? normalized : "";
+        return normalized.length() <= 254 && local.length() <= 64 && EMAIL.matcher(normalized).matches() ? normalized : "";
     }
     public static boolean validEmail(String value) {
         return !serverEmail(value).isEmpty();
     }
+    /** "12 to 4096 characters": the minimum counts characters (code points), so six emoji are six (QA-12). */
     public static boolean validNewPassword(String value) {
-        return value != null && value.length() >= 12 && value.length() <= 4096;
+        return value != null && value.codePointCount(0, value.length()) >= 12 && value.length() <= 4096;
     }
     public static String accountKey(String project, String uid) {
         if (project == null || project.isEmpty() || uid == null || uid.isEmpty())

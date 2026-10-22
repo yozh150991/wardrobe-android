@@ -59,7 +59,7 @@ fun ManageWardrobes(snapshot: Snapshot, activeId: String, vm: WardrobeViewModel,
             text = { Field(editedName, { value -> editedName = TextLimits.input(value, 80) }, R.string.wardrobe_name, enabled = !busy) },
             confirmButton = { TextButton(onClick = {
                 vm.renameWardrobe(renameId, editedName); renameId = ""
-            }, enabled = !busy && editedName.isNotBlank()) { Text(stringResource(R.string.save)) } },
+            }, enabled = !busy && TextLimits.hasVisibleText(editedName)) { Text(stringResource(R.string.save)) } },
             dismissButton = { TextButton(onClick = { renameId = "" }, enabled = !busy) { Text(stringResource(R.string.cancel)) } })
     }
     snapshot.wardrobes.find { it.id == deleteId }?.let { w ->

@@ -35,7 +35,9 @@ public final class CanvasRules {
             case "bottom": x=.66f;y=.36f;break;
             case "dress": case "jumpsuit":x=.35f;y=.38f;break;
             case "shoes":x=.32f;y=.83f;break;
-            case "layer": case "outerwear":x=.76f;y=.31f;s=.8f;break;
+            // A layer sits below the outerwear spot; a second layer alternates, so none hides another (QA-13).
+            case "outerwear":x=.76f;y=.31f;s=.8f;break;
+            case "layer":x=.70f;y=.42f+(index%2)*.16f;s=.8f;break;
             default:x=.78f;y=.61f+(index%3)*.12f;s=.8f;
         }
         return constrain(category,x,y,s);
