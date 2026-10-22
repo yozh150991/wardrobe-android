@@ -148,6 +148,9 @@ if raw_take:
 for path in sorted(main.glob('*.kt')):
     if re.search(r'\{\s*\w+\s*=\s*it\.take\(\d+\)', path.read_text(encoding='utf-8')):
         failures.append(f'{path.name}: text field uses it.take(N) instead of TextLimits.input (BUG-05 regression)')
+# QA-04 (fixed in 0.14.14): the phone waits as long as the server may work on commit and edit (540 s).
+if 'setOf("family_commit", "family_edit_item")) 540' not in source('FamilyBackend.kt'):
+    failures.append('FamilyBackend callable timeout for family_edit_item is shorter than the server timeout (QA-04 regression)')
 # QA-06 (fixed in 0.14.14): a shared message used as the product name is cleaned like page metadata.
 if 'ShopMetadata.cleanName(sharedText' not in source('ShopImportScreen.kt'):
     failures.append('ShopImportScreen shared-text name is not cleaned with ShopMetadata.cleanName (QA-06 regression)')
