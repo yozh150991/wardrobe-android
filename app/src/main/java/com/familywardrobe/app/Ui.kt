@@ -603,7 +603,7 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
     val importReports by vm.batchImporter.diagnostics.reports.collectAsStateWithLifecycle()
     val savedPhotoReport = imported?.let { importReports[it.id] }?.takeIf { it.sourceId == photo }
     fun showRequiredFields() { editorScope.launch {
-        if (name.isBlank()) { fieldsView.bringIntoView(); nameFocus.requestFocus() }
+        if (!TextLimits.hasVisibleText(name)) { fieldsView.bringIntoView(); nameFocus.requestFocus() }
         else { categoryView.bringIntoView(); categoryFocus.requestFocus() }
     } }
     LaunchedEffect(validation, advanced, moneyValid) {
@@ -612,7 +612,7 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
     val saveBlocker = when {
         hasPhotoSession -> R.string.photo_session_finish
         photo.isBlank() -> R.string.photo_save_missing
-        name.isBlank() -> R.string.wish_name_required
+        !TextLimits.hasVisibleText(name) -> R.string.wish_name_required
         category !in Matching.categories -> R.string.photo_save_category
         !moneyValid -> R.string.wish_amount_error
         shopImported && !WishRules.validLink(shopLink) -> R.string.wish_link_error
@@ -636,10 +636,10 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
     fun saveItem(addNext: Boolean, confirmedDuplicate: Boolean = false) {
         if (vm.photoSessionValue(editorPhotoKey, photo) != null) { editingPhoto = true; return }
         val finalPhoto = vm.latestEditorPhoto(editorPhotoKey) ?: photo
-        validation = name.isBlank() || finalPhoto.isBlank() || category !in Matching.categories || !moneyValid || (shopImported && !WishRules.validLink(shopLink))
+        validation = !TextLimits.hasVisibleText(name) || finalPhoto.isBlank() || category !in Matching.categories || !moneyValid || (shopImported && !WishRules.validLink(shopLink))
         when {
             finalPhoto.isBlank() -> editorScope.launch { photoView.bringIntoView() }
-            name.isBlank() || category !in Matching.categories -> showRequiredFields()
+            !TextLimits.hasVisibleText(name) || category !in Matching.categories -> showRequiredFields()
             !moneyValid -> {
                 if (advanced) editorScope.launch { priceView.bringIntoView(); priceFocus.requestFocus() }
                 else advanced = true
@@ -712,7 +712,7 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
             if (original == null && purchase == null && previousItem != null) TextButton(onClick = { copyingPrevious = true },
                 enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.import_copy_previous)) }
             OutlinedTextField(name, { name = TextLimits.input(it, 120) }, label = { Text(stringResource(R.string.name_required)) }, singleLine = true,
-                enabled = !busy, isError = validation && name.isBlank(), supportingText = { if (validation && name.isBlank()) Text(stringResource(R.string.wish_name_required)) },
+                enabled = !busy, isError = validation && !TextLimits.hasVisibleText(name), supportingText = { if (validation && !TextLimits.hasVisibleText(name)) Text(stringResource(R.string.wish_name_required)) },
                 modifier = Modifier.fillMaxWidth().bringIntoViewRequester(fieldsView).focusRequester(nameFocus))
             WardrobeCategoryChoice(category, customCategoryId, catalog, wardrobe, vm, { base, custom ->
                 if (base != category || custom != customCategoryId) subcategory = ""
@@ -983,6 +983,6 @@ fun NameDialog(title: Int, field: Int, onDismiss: () -> Unit, onSave: (String) -
     var name by rememberSaveable { mutableStateOf("") }
     AlertDialog(onDismissRequest = onDismiss, title = { Text(stringResource(title)) },
         text = { Field(name, { name = TextLimits.input(it, 80) }, field) },
-        confirmButton = { TextButton(onClick = { onSave(name.trim()) }, enabled = name.isNotBlank()) { Text(stringResource(R.string.save)) } },
+        confirmButton = { TextButton(onClick = { onSave(name.trim()) }, enabled = TextLimits.hasVisibleText(name)) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } })
 }

@@ -6,7 +6,7 @@ import static com.familywardrobe.app.QaCheck.expect;
 import java.util.Arrays;
 import java.util.List;
 
-/** Android Share intake, duplicate hints and offline product metadata. EP, BVA, EG (+ QA-06, QA-08). */
+/** Android Share intake, duplicate hints and offline product metadata. EP, BVA, EG (regressions of fixed QA-06, QA-08). */
 public final class QaShopImportCases {
     private QaShopImportCases() {}
     private static final String PAGE = "https://shop.pl/p/1";
@@ -74,12 +74,12 @@ public final class QaShopImportCases {
         qa.equal(EP, "invalid link has no key", "", ShopImportRules.linkKey("not a link"));
         qa.equal(BVA, "empty query equals no query", ShopImportRules.linkKey("https://shop.pl/p"), ShopImportRules.linkKey("https://shop.pl/p?"));
         qa.equal(BVA, "empty path is root", ShopImportRules.linkKey("https://shop.pl/"), ShopImportRules.linkKey("https://shop.pl"));
-        // QA-08: the import loads http links over https, and shops redirect www/non-www, yet these spellings of
-        // one page get different duplicate keys, so the "already on your list" hint is missed.
-        qa.knownBug(EG, "QA-08", "duplicate hint misses http/https and www variants", () -> {
-            expect(ShopImportRules.linkKey("http://shop.pl/p?id=7&size=m").equals(key), "http vs https");
-            expect(ShopImportRules.linkKey("https://www.shop.pl/p?id=7&size=m").equals(key), "www vs bare host");
-        });
+        // QA-08 (fixed in 0.14.14): http/https and www are one page for the duplicate hint.
+        qa.equal(EG, "http and https", key, ShopImportRules.linkKey("http://shop.pl/p?id=7&size=m"));
+        qa.equal(EG, "www and bare host", key, ShopImportRules.linkKey("https://www.shop.pl/p?id=7&size=m"));
+        qa.equal(EG, "http on port 80", key, ShopImportRules.linkKey("http://WWW.shop.pl:80/p?size=m&id=7"));
+        qa.isFalse(EG, "www. as the whole host is kept", ShopImportRules.linkKey("https://www.pl/p").equals(ShopImportRules.linkKey("https://pl/p")));
+        qa.isFalse(EG, "a different subdomain is another shop", key.equals(ShopImportRules.linkKey("https://m.shop.pl/p?id=7&size=m")));
     }
 
     private static String ld(String json) { return "<script type=\"application/ld+json\">" + json + "</script>"; }
@@ -166,12 +166,12 @@ public final class QaShopImportCases {
         qa.equal(EG, "markup in a name stays plain text", "<b>x</b>", one(ld("{\"@type\":\"Product\",\"name\":\"<b>x</b>\"}")).name);
         qa.equal(EG, "closing script tag inside JSON ends the block like a browser", "",
             one(ld("{\"@type\":\"Product\",\"name\":\"<script>x</script>\"}")).name);
-        // QA-06: product names come from untrusted pages; bidi overrides survive cleaning, are pre-filled into
-        // the wish, and the family server later refuses the whole wardrobe (schema.visible_name, BUG-12).
-        qa.knownBug(EG, "QA-06", "bidi controls kept in imported product names", () -> {
-            String name = one("<meta property=\"og:title\" content=\"&#x202E;Sukienka\">").name;
-            expect(name.codePoints().noneMatch(TextLimits::isBidiControl), "name contains a bidi control");
-            expect(TextLimits.hasVisibleText(name), "imported name must be acceptable to the family server");
-        });
+        // QA-06 (fixed in 0.14.14): untrusted names lose bidi controls and need a visible character.
+        qa.equal(EG, "bidi removed from og:title", "Sukienka", one("<meta property=\"og:title\" content=\"&#x202E;Sukienka\">").name);
+        qa.equal(EG, "bidi removed from JSON-LD", "Coat", one(ld("{\"@type\":\"Product\",\"name\":\"\\u2066Coat\\u2069\"}")).name);
+        qa.equal(EG, "invisible-only name becomes empty", "", one("<meta property=\"og:title\" content=\"&#x200B;&#x200D;\">").name);
+        qa.equal(EG, "shared text name is one line", "Look at this coat", ShopMetadata.cleanName("Look\nat\u2028this\u202e coat", 120));
+        qa.equal(BVA, "shared text name cut to 120", 120, ShopMetadata.cleanName("a".repeat(130), 120).length());
+        qa.equal(EG, "null shared text", "", ShopMetadata.cleanName(null, 120));
     }
 }

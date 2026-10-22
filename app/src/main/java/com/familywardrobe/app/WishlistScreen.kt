@@ -209,7 +209,7 @@ fun WishEditor(original: Wish?, wardrobe: String, kind: String, converting: Bool
         put("requirements", requirements); put("link", link); put("color", color); put("inspiration", inspiration); put("photo", photo); put("advanced", advanced)
     }.toString()
     LaunchedEffect(advanced, validate, linkValid) {
-        if (advanced && validate && !linkValid && name.isNotBlank() && category.isNotBlank() && amountValid) linkFocus.requestFocus()
+        if (advanced && validate && !linkValid && TextLimits.hasVisibleText(name) && category.isNotBlank() && amountValid) linkFocus.requestFocus()
     }
     val baseline = remember { payload }
     LaunchedEffect(payload) { onDirty(payload != baseline || restored != null); vm.keepDraft("wish", wardrobe, original?.id.orEmpty(), JSONObject(payload)) }
@@ -226,7 +226,7 @@ fun WishEditor(original: Wish?, wardrobe: String, kind: String, converting: Bool
             if (photo.isNotBlank()) TextButton(onClick = { vm.rememberEditorPhoto(photoKey, ""); photo = "" }, enabled = !busy) { Text(stringResource(R.string.remove_photo)) }
         }
         OutlinedTextField(name, { name = TextLimits.input(it, 120) }, label = { Text(stringResource(R.string.name_required)) }, singleLine = true, enabled = !busy,
-            isError = validate && name.isBlank(), supportingText = { if (validate && name.isBlank()) Text(stringResource(R.string.wish_name_required)) }, modifier = Modifier.fillMaxWidth().focusRequester(nameFocus))
+            isError = validate && !TextLimits.hasVisibleText(name), supportingText = { if (validate && !TextLimits.hasVisibleText(name)) Text(stringResource(R.string.wish_name_required)) }, modifier = Modifier.fillMaxWidth().focusRequester(nameFocus))
         CategoryChoice(category, { category = it }, title = R.string.category_required, enabled = !busy,
             modifier = Modifier.fillMaxWidth().focusRequester(categoryFocus))
         if (validate && category.isBlank()) Text(stringResource(R.string.wish_category_required), color = MaterialTheme.colorScheme.error)
@@ -253,7 +253,7 @@ fun WishEditor(original: Wish?, wardrobe: String, kind: String, converting: Bool
         Button(onClick = {
             validate = true
             when {
-                name.isBlank() -> nameFocus.requestFocus()
+                !TextLimits.hasVisibleText(name) -> nameFocus.requestFocus()
                 category.isBlank() -> categoryFocus.requestFocus()
                 !amountValid -> amountFocus.requestFocus()
                 !linkValid -> { advanced = true; if (!product) linkFocus.requestFocus() }

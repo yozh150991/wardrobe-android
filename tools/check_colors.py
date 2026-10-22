@@ -7,7 +7,7 @@ from host_schema import SOURCE, migrate
 ROOT = Path(__file__).resolve().parents[1]
 with tempfile.TemporaryDirectory(prefix='wardrobe-colors-') as output:
     subprocess.run(['java', '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output,
-                    str(SOURCE / 'CategoryRules.java'), str(SOURCE / 'ColorRules.java'),
+                    str(SOURCE / 'CategoryRules.java'), str(SOURCE / 'TextLimits.java'), str(SOURCE / 'ColorRules.java'),
                     str(ROOT / 'app/src/test/java/com/familywardrobe/app/ColorCases.java')], check=True)
     subprocess.run(['java', '-cp', output, 'com.familywardrobe.app.ColorCases'], check=True)
     path = Path(output) / 'migration.db'

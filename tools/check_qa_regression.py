@@ -59,13 +59,13 @@ with tempfile.TemporaryDirectory(prefix='wardrobe-qa-') as output:
     from family.membership import email as server_email  # noqa: E402
     from family.schema import text_length, visible_name  # noqa: E402
 
-    names = ['Shirt', 'Сукня', 'Ὀδυσσεύς', 'İstanbul', 'Straße', '\U0001F600', '\U0001F468‍\U0001F469‍\U0001F467',
-             '\U0001F1FA\U0001F1E6', 'é', '́', '️', '⃝', '​', '‍', ' ', '　', ' ',
-             '‎', '‏', '­', 'ㅤ', '⠀', 'ᅟ', '᠎', '\U000e0041', '', 'ＡＢ',
-             'ﬁ', 'ﷺ', 'a‮b', '⁦x⁩', ' Ink  blue ', 'м’ята', 'a' * 60, 'a' * 61, 'ﷺ' * 4,
+    names = ['Shirt', 'Сукня', 'Ὀδυσσεύς', 'İstanbul', 'Straße', '\U0001F600', '\U0001F468\u200d\U0001F469\u200d\U0001F467',
+             '\U0001F1FA\U0001F1E6', 'e\u0301', '\u0301', '\ufe0f', '\u20dd', '\u200b', '\u200d', '\u00a0', '\u3000', '\u2028',
+             '\u200e', '\u200f', '\u00ad', '\u3164', '\u2800', '\u115f', '\u180e', '\U000e0041', '\ue000', 'ＡＢ',
+             'ﬁ', 'ﷺ', 'a\u202eb', '\u2066x\u2069', ' Ink  blue ', 'м’ята', 'a' * 60, 'a' * 61, 'ﷺ' * 4,
              'Tab\tname', 'Line\nname', '\x07bell']
     emails = ['a@b.co', 'A@B.CO', ' a@b.co ', 'ivan@пошта.укр', 'ivan@ПОШТА.укр', 'x@straße.de', 'x@münchen.de',
-              'x@ドメイン.テスト', 'x@ex。com', 'x@ＥＸ.com', 'a@b.co ', 'a..b@b.co', 'a@-b.co', 'a@b-.co',
+              'x@ドメイン.テスト', 'x@ex。com', 'x@ＥＸ.com', 'a@b.co\u00a0', 'a..b@b.co', 'a@-b.co', 'a@b-.co',
               'a@b', 'a@1.23', 'ä@b.co', 'a@b.co.', 'a@xn--80a1acn3a.xn--j1amh', 'a@xn--.xn--', 'a+b@b.co',
               'a' * 64 + '@b.co', 'a@' + 'b' * 63 + '.co', 'a@' + 'b' * 64 + '.co']
     corpus = names + emails
@@ -105,53 +105,54 @@ with tempfile.TemporaryDirectory(prefix='wardrobe-qa-') as output:
         failures.append(f'TextLimits.hasVisibleText differs from schema.visible_name for {[ascii(v) for v in visible_mismatch]}')
     if email_mismatch:
         failures.append(f'AuthRules.serverEmail differs from membership.email: {[ascii(v) for v in email_mismatch]}')
-    # QA-02: invisible-only custom labels pass on the phone and are refused by the server.
-    expected_label_gap = {'́', '️', '⃝'}
-    unexpected = [v for v in label_mismatch if v not in expected_label_gap]
-    if unexpected:
-        failures.append(f'new custom-label parity gap: {[ascii(v) for v in unexpected]}')
-    known_bug('QA-02', expected_label_gap <= set(label_mismatch), 'custom label parity')
-    print(f'PASS: client/server parity on {len(corpus)} Unicode samples ({checks} comparisons); '
-          f'known label gap: {sorted(ascii(v) for v in label_mismatch)}')
+    # QA-02 (fixed in 0.14.14): a new custom label needs the same visible character as on the server.
+    if label_mismatch:
+        failures.append(f'custom-label parity gap (QA-02 regression): {[ascii(v) for v in label_mismatch]}')
+    print(f'PASS: client/server parity on {len(corpus)} Unicode samples ({checks} comparisons)')
 
 # ---------- Source guards for Compose screens (error guessing) ----------
 def source(name):
     return (main / name).read_text(encoding='utf-8')
 
-# QA-03: names saved locally must satisfy the same visibility rule as the family server, otherwise one
-# invisible name (ZWSP, combining mark) aborts the whole shared-wardrobe transfer.
+# QA-03 (fixed in 0.14.14): names saved locally satisfy the family server's visibility rule, otherwise one
+# invisible name (ZWSP, combining mark) aborts the whole shared-wardrobe transfer. Screen and repository both check.
 def body(name, signature):
-    """Text of one Kotlin member function: from its signature to the next member declaration."""
+    """Text of one Kotlin function: from its signature to the next declaration at the same or outer level."""
     text = source(name); start = text.index(signature)
-    ends = [i for i in (text.find('\n    suspend fun ', start + 1), text.find('\n    fun ', start + 1)) if i > 0]
+    ends = [i for i in (text.find('\n    suspend fun ', start + 1), text.find('\n    fun ', start + 1),
+                        text.find('\nsuspend fun ', start + 1), text.find('\nfun ', start + 1)) if i > 0]
     return text[start:min(ends) if ends else len(text)]
 
-# A form is fixed when its screen or the repository write behind it applies the visibility rule.
-name_forms = {
-    'wish name': [source('WishlistScreen.kt')],
-    'look name': [source('OutfitEditor.kt') + source('DailyScreen.kt'), body('Data.kt', 'suspend fun saveLook(')],
-    'capsule/trip name': [source('CapsuleScreen.kt'), source('CapsuleOperations.kt')],
-    'wardrobe name': [source('WardrobeManagement.kt'), body('Data.kt', 'suspend fun renameWardrobe(')],
+name_rules = {
+    'wish form': source('WishlistScreen.kt'), 'wish save': body('Data.kt', 'suspend fun saveWish(value: Wish, converting'),
+    'item form': body('Ui.kt', 'validation = '), 'look editor': source('OutfitEditor.kt'), 'daily look dialog': source('DailyScreen.kt'),
+    'look save': body('Data.kt', 'suspend fun saveLook('), 'capsule form': source('CapsuleScreen.kt'),
+    'capsule save': body('CapsuleOperations.kt', 'suspend fun Repository.saveCapsule('),
+    'wardrobe rename form': source('WardrobeManagement.kt'), 'wardrobe rename': body('Data.kt', 'suspend fun renameWardrobe(id: String, name: String) = writes'),
+    'new wardrobe dialog': body('Ui.kt', 'fun NameDialog('), 'new wardrobe': body('Data.kt', 'suspend fun addWardrobe('),
 }
-missing = [label for label, places in name_forms.items() if not any('hasVisibleText' in place for place in places)]
-known_bug('QA-03', bool(missing), 'name forms validate visible text')
+missing = [label for label, text in name_rules.items() if 'hasVisibleText' not in text]
+if missing:
+    failures.append(f'names saved without TextLimits.hasVisibleText (QA-03 regression): {missing}')
 # Regular guard: the forms already fixed in 0.14.13 keep the visibility rule.
 for file in ['FamilyAddition.kt', 'FamilyEditDialog.kt', 'FamilyAccessControl.kt']:
     if 'hasVisibleText' not in source(file):
         failures.append(f'{file} lost TextLimits.hasVisibleText (BUG-12 regression)')
 if 'hasVisibleText(garment.name)' not in source('Data.kt'):
     failures.append('Data.kt garment save lost the visible-name rule (BUG-12 regression)')
-# QA-09: prefilled custom label names are cut with String.take (half emoji, bidi kept) instead of TextLimits.input.
+# QA-09 (fixed in 0.14.14): prefilled custom label names go through TextLimits.input, not String.take.
 raw_take = [f for f in ['CategoryControls.kt', 'ColorControls.kt'] if re.search(r'\bquery\.take\(', source(f))]
-known_bug('QA-09', bool(raw_take), 'custom label prefill uses TextLimits.input')
+if raw_take:
+    failures.append(f'custom label prefill uses String.take (QA-09 regression): {raw_take}')
 # Regular guard: no text field change handler goes back to it.take(N) (BUG-05 regression).
 for path in sorted(main.glob('*.kt')):
     if re.search(r'\{\s*\w+\s*=\s*it\.take\(\d+\)', path.read_text(encoding='utf-8')):
         failures.append(f'{path.name}: text field uses it.take(N) instead of TextLimits.input (BUG-05 regression)')
-# QA-06 (fallback path): shared text used as a product name is cut with take() but bidi controls are kept.
-known_bug('QA-06', 'TextLimits.take(sharedText, 120)' in source('ShopImportScreen.kt'), 'shared-text fallback name now strips bidi controls')
+# QA-06 (fixed in 0.14.14): a shared message used as the product name is cleaned like page metadata.
+if 'ShopMetadata.cleanName(sharedText' not in source('ShopImportScreen.kt'):
+    failures.append('ShopImportScreen shared-text name is not cleaned with ShopMetadata.cleanName (QA-06 regression)')
 
-print(f'PASS: source guards; open bugs still reproduced: {", ".join(sorted(reproduced, key=lambda b: (len(b), b)))}')
+print(f'PASS: source guards; open bugs still reproduced: {", ".join(sorted(reproduced, key=lambda b: (len(b), b))) or "none"}')
 if failures:
     for failure in failures:
         print('FAIL:', failure)

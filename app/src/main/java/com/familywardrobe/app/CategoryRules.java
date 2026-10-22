@@ -31,7 +31,16 @@ public final class CategoryRules {
             .replace('\u02bc', '\'').replace('\u2018', '\'');
     }
 
+    /** A new custom label: what the family server accepts too, so it needs a visible character (QA-02). */
     public static boolean validName(String value) {
+        return validStoredName(value) && TextLimits.hasVisibleText(clean(value));
+    }
+
+    /**
+     * Restore/backup check for labels saved before QA-02. Not stricter than older releases, so an existing
+     * backup never becomes unrestorable; new labels must pass {@link #validName}.
+     */
+    public static boolean validStoredName(String value) {
         String name = clean(value);
         return !name.isEmpty() && name.length() <= 60 &&
             name.codePoints().noneMatch(cp -> Character.isISOControl(cp) || Character.getType(cp) == Character.FORMAT);

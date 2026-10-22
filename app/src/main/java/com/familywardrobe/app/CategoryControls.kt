@@ -33,7 +33,7 @@ fun WardrobeCategoryChoice(base: String, customId: String, s: Snapshot, wardrobe
         change(custom?.baseCategory ?: selected, custom?.id.orEmpty())
     }, enabled = enabled && !busy, title = title, allowAll = allowAll, modifier = modifier,
         showSelectedValue = showSelectedValue, customCategories = categories, onAdd = { query ->
-            proposedName = query.take(60); proposedBase = base.takeIf { it in Matching.categories }.orEmpty(); creating = true
+            proposedName = TextLimits.input(query, 60); proposedBase = base.takeIf { it in Matching.categories }.orEmpty(); creating = true
         })
     if (creating) {
         val valid = CategoryRules.validName(proposedName)

@@ -70,7 +70,7 @@ fun LookEditor(s: Snapshot, wardrobe: String, anchorId: String, outfitId: String
     LaunchedEffect(payload) { onStage(stage == 0); onDirty(payload != baseline || restored != null || original == null && pieces.isNotEmpty()); vm.keepDraft("look", wardrobe, outfitId, JSONObject(payload)) }
     fun submit(target: String) { vm.saveCanvasLook(wardrobe, pieces, name, occasion, weather, source, target, layout, background) { onDirty(false); done(it) } }
     fun save() {
-        if (name.isBlank()) { nameError = true; nameFocus.requestFocus(); return }
+        if (!TextLimits.hasVisibleText(name)) { nameError = true; nameFocus.requestFocus(); return }
         val signature = pieces.map { it.ownedId ?: it.key }.sorted().joinToString("|")
         val duplicate = s.outfits.find { it.wardrobeId == wardrobe && it.signature == signature && it.id != outfitId }
         if (duplicate != null) duplicateLookId = duplicate.id else submit(outfitId)

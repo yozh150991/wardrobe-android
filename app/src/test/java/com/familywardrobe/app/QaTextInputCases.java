@@ -1,7 +1,6 @@
 package com.familywardrobe.app;
 
 import static com.familywardrobe.app.QaCheck.Technique.*;
-import static com.familywardrobe.app.QaCheck.expect;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -9,13 +8,13 @@ import java.util.List;
 
 /**
  * Text entry rules shared by every form: grapheme-safe limits, visible names, money, links, e-mail,
- * passwords, custom labels and look names. Techniques: EP, BVA, EG (+ open bugs QA-02, QA-07, QA-10, QA-11, QA-12).
+ * passwords, custom labels and look names. Techniques: EP, BVA, EG (regressions of fixed QA-02, QA-07, QA-10, QA-11, QA-12).
  */
 public final class QaTextInputCases {
     private QaTextInputCases() {}
     private static final String EMOJI = "😀";             // 😀 one code point, two UTF-16 units
     private static final String FLAG_UA = "🇺🇦"; // 🇺🇦 two regional indicators, four units
-    private static final String FAMILY = "👨‍👩‍👧"; // ZWJ sequence, eight units
+    private static final String FAMILY = "👨\u200d👩\u200d👧"; // ZWJ sequence, eight units
 
     public static void main(String[] args) { run(); }
 
@@ -37,7 +36,7 @@ public final class QaTextInputCases {
         qa.equal(EP, "null is empty", "", TextLimits.take(null, 10));
         qa.equal(EP, "ASCII under limit unchanged", "Shirt", TextLimits.take("Shirt", 10));
         qa.equal(EP, "Cyrillic counts one unit per letter", "Сорочка", TextLimits.take("Сорочка біла", 7));
-        qa.equal(EP, "combining accent stays with its letter", "Café", TextLimits.take("Café noir", 5));
+        qa.equal(EP, "combining accent stays with its letter", "Cafe\u0301", TextLimits.take("Cafe\u0301 noir", 5));
         qa.equal(EP, "CRLF is one grapheme", "a", TextLimits.take("a\r\nb", 2));
         // BVA: limit -1, 0, 1 and exactly at / one past the text length.
         qa.equal(BVA, "negative limit", "", TextLimits.take("abc", -1));
@@ -54,26 +53,26 @@ public final class QaTextInputCases {
         qa.equal(BVA, "ZWJ family 8 units", FAMILY, TextLimits.take(FAMILY, 8));
         qa.equal(BVA, "three flags cut after the second pair", FLAG_UA + FLAG_UA, TextLimits.take(FLAG_UA + FLAG_UA + FLAG_UA, 11));
         // Every prefix produced by take() is valid UTF-16 (no lone surrogate), for every limit.
-        String mixed = "Ж" + EMOJI + FLAG_UA + "é" + FAMILY + "❤️" + "z";
+        String mixed = "Ж" + EMOJI + FLAG_UA + "e\u0301" + FAMILY + "❤\ufe0f" + "z";
         for (int limit = 0; limit <= mixed.length() + 1; limit++) {
             String cut = TextLimits.take(mixed, limit);
             qa.isTrue(BVA, "prefix within limit " + limit, cut.length() <= Math.max(0, limit) && mixed.startsWith(cut));
             qa.isFalse(EG, "no lone surrogate at " + limit, !cut.isEmpty() && Character.isHighSurrogate(cut.charAt(cut.length() - 1)));
         }
         // EG: pasted bidi controls are removed before the limit is applied.
-        qa.equal(EG, "input strips RLO", "abc", TextLimits.input("a‮b⁦c", 10));
-        qa.equal(EG, "input strips then limits", "ab", TextLimits.input("‮‮ab", 2));
+        qa.equal(EG, "input strips RLO", "abc", TextLimits.input("a\u202eb\u2066c", 10));
+        qa.equal(EG, "input strips then limits", "ab", TextLimits.input("\u202e\u202eab", 2));
         qa.equal(EG, "takeTrimmed never ends with a space", "a b", TextLimits.takeTrimmed("  a b  c", 4));
         qa.equal(EG, "takeTrimmed of null", "", TextLimits.takeTrimmed(null, 5));
     }
 
     private static void visibleNames(QaCheck qa) {
         // EP valid classes.
-        for (String name : Arrays.asList("Shirt", "Сукня", "7", EMOJI, FAMILY, FLAG_UA, "é", " a ", "あ"))
+        for (String name : Arrays.asList("Shirt", "Сукня", "7", EMOJI, FAMILY, FLAG_UA, "e\u0301", " a ", "あ"))
             qa.isTrue(EP, "visible: " + name, TextLimits.hasVisibleText(name));
         // EP invalid classes: empty, whitespace, format, marks, selectors, bidi (even next to letters).
-        for (String name : Arrays.asList(null, "", " ", "\t\n", " ", "　", "​", "‍", "́", "️",
-                "⃝", " ", "Bad‮name", "⁦x⁩"))
+        for (String name : Arrays.asList(null, "", " ", "\t\n", "\u00a0", "\u3000", "\u200b", "\u200d", "\u0301", "\ufe0f",
+                "\u20dd", "\u2028", "Bad\u202ename", "\u2066x\u2069"))
             qa.isFalse(EP, "invisible or bidi: " + (name == null ? "null" : codes(name)), TextLimits.hasVisibleText(name));
     }
 
@@ -83,7 +82,7 @@ public final class QaTextInputCases {
         qa.equal(EP, "comma decimal", 35050L, WishRules.money("350,50"));
         qa.equal(EP, "dot decimal one digit", 35050L, WishRules.money("350.5"));
         qa.equal(EP, "grouped with space", 123456L, WishRules.money("1 234,56"));
-        qa.equal(EP, "grouped with NBSP", 123456L, WishRules.money("1 234,56"));
+        qa.equal(EP, "grouped with NBSP", 123456L, WishRules.money("1\u00a0234,56"));
         qa.equal(EP, "surrounding spaces", 100L, WishRules.money("  1  "));
         qa.equal(EP, "blank is no price", null, WishRules.money("   "));
         // EP invalid classes.
@@ -125,13 +124,15 @@ public final class QaTextInputCases {
         qa.equal(BVA, "boundary string length", 2000, at2000.length());
         qa.isTrue(BVA, "link of 2000 characters", WishRules.validLink(at2000));
         qa.isFalse(BVA, "link of 2001 characters", WishRules.validLink(at2000 + "a"));
-        // QA-07: an internationalised shop domain (.укр, .рф, café.fr) is a valid web link, and the same
-        // app already accepts .укр e-mail addresses (BUG-08). java.net.URI returns a null host for it.
-        qa.knownBug(EP, "QA-07", "IDN shop links rejected", () -> {
-            expect(WishRules.validLink("https://магазин.укр/сукня"), "validLink rejects an IDN host");
-            expect(!ShopImportRules.webUrl("https://магазин.укр/сукня").isEmpty(), "webUrl rejects an IDN host");
-            expect(!ShopImportRules.urls("Глянь https://магазин.укр/сукня").isEmpty(), "shared IDN link is dropped");
-        });
+        // QA-07 (fixed in 0.14.14): an internationalised shop domain is a valid link, like a .укр e-mail address.
+        qa.isTrue(EP, "IDN link valid", WishRules.validLink("https://магазин.укр/сукня"));
+        qa.equal(EP, "IDN host as punycode", "https://xn--80aairftm.xn--j1amh/%D1%81%D1%83%D0%BA%D0%BD%D1%8F",
+            ShopImportRules.webUrl("https://магазин.укр/сукня"));
+        qa.equal(EP, "shared IDN link kept", 1, ShopImportRules.urls("Глянь https://магазин.укр/сукня").size());
+        qa.equal(EP, "IDN with port and query", "https://xn--caf-dma.fr:8443/a?b=1", ShopImportRules.webUrl("https://café.fr:8443/a?b=1"));
+        qa.equal(EG, "IDN and punycode are one duplicate key", ShopImportRules.linkKey("https://xn--caf-dma.fr/a"), ShopImportRules.linkKey("https://CAFÉ.fr/a"));
+        qa.isFalse(EG, "IDN host with a space stays invalid", WishRules.validLink("https://ма газин.укр/"));
+        qa.isFalse(EG, "IDN host with credentials stays invalid", WishRules.validLink("https://u:p@магазин.укр/"));
     }
 
     private static void email(QaCheck qa) {
@@ -146,20 +147,24 @@ public final class QaTextInputCases {
                 "anna@localhost", "anna@example.1", "anna@@example.com", "anna@exa mple.com", "anna@-example.com"))
             qa.isFalse(EP, "invalid e-mail " + bad, AuthRules.validEmail(bad));
         // BVA: total length 254/255 and TLD length 2/1 and 63/64.
-        String domain = "@x.com";
-        qa.isTrue(BVA, "254 characters", AuthRules.validEmail("a".repeat(254 - domain.length()) + domain));
-        qa.isFalse(BVA, "255 characters", AuthRules.validEmail("a".repeat(255 - domain.length()) + domain));
+        // Total 254/255 with a 64-character local part and labels of at most 63 characters.
+        String local = "a".repeat(64), labels = "b".repeat(63) + "." + "c".repeat(63) + ".";
+        String at254 = local + "@" + labels + "d".repeat(57) + ".com";
+        qa.equal(BVA, "fixture is 254", 254, at254.length());
+        qa.isTrue(BVA, "254 characters", AuthRules.validEmail(at254));
+        qa.isFalse(BVA, "255 characters", AuthRules.validEmail(local + "@" + labels + "d".repeat(58) + ".com"));
         qa.isTrue(BVA, "TLD of 2 letters", AuthRules.validEmail("a@x.pl"));
         qa.isFalse(BVA, "TLD of 1 letter", AuthRules.validEmail("a@x.p"));
         qa.isTrue(BVA, "TLD of 63 letters", AuthRules.validEmail("a@x." + "p".repeat(63)));
         qa.isFalse(BVA, "TLD of 64 letters", AuthRules.validEmail("a@x." + "p".repeat(64)));
-        // QA-11: addresses no mail system accepts pass the shared client/server rule, so invitations can
-        // be sent to unreachable mailboxes (RFC 5321/1035: dot rules, label hyphens, local part <= 64).
-        qa.knownBug(EG, "QA-11", "RFC-invalid e-mail addresses accepted", () -> {
-            for (String bad : Arrays.asList("a..b@example.com", ".a@example.com", "a.@example.com", "a@x.-y.com",
-                    "a".repeat(65) + "@example.com"))
-                expect(!AuthRules.validEmail(bad), "accepted " + bad);
-        });
+        // QA-11 (fixed in 0.14.14): RFC 5321 dot-atom local part (<= 64) and RFC 1035 labels, same rule as the server.
+        for (String bad : Arrays.asList("a..b@example.com", ".a@example.com", "a.@example.com", "a@x.-y.com", "a@x-.com",
+                "a@" + "b".repeat(64) + ".com", "a".repeat(65) + "@example.com"))
+            qa.isFalse(EP, "RFC-invalid " + bad, AuthRules.validEmail(bad));
+        qa.isTrue(BVA, "local part of 64", AuthRules.validEmail("a".repeat(64) + "@example.com"));
+        qa.isTrue(BVA, "label of 63", AuthRules.validEmail("a@" + "b".repeat(63) + ".com"));
+        qa.isTrue(EP, "dotted local part", AuthRules.validEmail("first.last@example.co.uk"));
+        qa.isTrue(EP, "hyphen inside a label", AuthRules.validEmail("a@my-shop.example.com"));
     }
 
     private static void passwordsAndAccounts(QaCheck qa) {
@@ -170,9 +175,10 @@ public final class QaTextInputCases {
         qa.isFalse(BVA, "4097 characters", AuthRules.validNewPassword("a".repeat(4097)));
         qa.isFalse(EP, "null password", AuthRules.validNewPassword(null));
         qa.isTrue(EP, "spaces are allowed", AuthRules.validNewPassword("correct horse battery"));
-        // QA-12: the hint promises "12 to 4096 characters", but length() counts UTF-16 units: six emoji pass.
-        qa.knownBug(BVA, "QA-12", "password length counts UTF-16 units", () ->
-            expect(!AuthRules.validNewPassword(EMOJI.repeat(6)), "6 visible characters accepted as 12"));
+        // QA-12 (fixed in 0.14.14): the minimum counts characters, not UTF-16 units.
+        qa.isFalse(BVA, "6 emoji are 6 characters", AuthRules.validNewPassword(EMOJI.repeat(6)));
+        qa.isFalse(BVA, "11 emoji", AuthRules.validNewPassword(EMOJI.repeat(11)));
+        qa.isTrue(BVA, "12 emoji", AuthRules.validNewPassword(EMOJI.repeat(12)));
         // Account keys: deterministic, path-safe, unambiguous.
         String key = AuthRules.accountKey("project", "uid");
         qa.isTrue(EP, "account key is 64 hex", AuthRules.validAccountKey(key));
@@ -189,7 +195,7 @@ public final class QaTextInputCases {
     private static void customLabels(QaCheck qa) {
         // EP: normalisation classes.
         qa.equal(EP, "NFKC full-width", "AB", CategoryRules.clean("ＡＢ"));
-        qa.equal(EP, "collapse inner spaces and NBSP", "Ink blue", CategoryRules.clean("  Ink   blue "));
+        qa.equal(EP, "collapse inner spaces and NBSP", "Ink blue", CategoryRules.clean("  Ink\u00a0\u00a0 blue "));
         qa.equal(EP, "key lower-case", "ink blue", CategoryRules.key("INK Blue"));
         qa.equal(EP, "key unifies apostrophes", CategoryRules.key("м'ята"), CategoryRules.key("м’ята"));
         qa.equal(EP, "key unifies modifier apostrophe", CategoryRules.key("м'ята"), CategoryRules.key("мʼята"));
@@ -200,14 +206,15 @@ public final class QaTextInputCases {
         qa.isTrue(BVA, "1 character", CategoryRules.validName("a"));
         qa.isFalse(BVA, "0 characters", CategoryRules.validName("   "));
         // EP invalid classes.
-        for (String bad : Arrays.asList("a\u0000b", "a\u0007", "​", "a‮b", "⁦x⁩", "a‍b"))
+        for (String bad : Arrays.asList("a\u0000b", "a\u0007", "\u200b", "a\u202eb", "\u2066x\u2069", "a\u200db"))
             qa.isFalse(EP, "invalid label " + codes(bad), CategoryRules.validName(bad));
-        // QA-02: invisible-only names (combining marks, variation selectors) pass on the phone but the family
-        // server refuses them (schema.visible_name), which aborts the whole shared-wardrobe transfer.
-        qa.knownBug(EP, "QA-02", "custom label of invisible marks accepted", () -> {
-            for (String invisible : Arrays.asList("́", "️", "́́", "⃝"))
-                expect(!CategoryRules.validName(invisible), "accepted " + codes(invisible));
-        });
+        // QA-02 (fixed in 0.14.14): a new label needs a visible character, as on the family server ...
+        for (String invisible : Arrays.asList("\u0301", "\ufe0f", "\u0301\u0301", "\u20dd"))
+            qa.isFalse(EP, "invisible label " + codes(invisible), CategoryRules.validName(invisible));
+        qa.isTrue(EP, "accented label", CategoryRules.validName("Cafe\u0301"));
+        // ... while a label saved before the fix still restores from a backup.
+        qa.isTrue(EG, "stored invisible label restores", CategoryRules.validStoredName("\u0301"));
+        qa.isFalse(EG, "stored rule still refuses controls", CategoryRules.validStoredName("a\u202eb"));
         // Search: tokens, case and apostrophes.
         qa.isTrue(EP, "empty query matches", CategoryRules.matches("", "anything"));
         qa.isTrue(EP, "token match across fields", CategoryRules.matches("blue shirt", "Shirt", "Blue"));
@@ -231,10 +238,10 @@ public final class QaTextInputCases {
         String emojiAtEdge = "a".repeat(79) + EMOJI;
         qa.equal(EG, "half emoji never kept", "a".repeat(79), LookNameRules.unique(emojiAtEdge, none));
         qa.equal(EG, "name equal to an existing name with spaces", "Look (2)", LookNameRules.unique("Look", Arrays.asList("  Look ")));
-        // QA-10: "Café" typed with a combining accent (iOS/macOS keyboards, pasted text) and "Café" with é are
-        // the same visible name, but the duplicate check compares code points without normalisation.
-        qa.knownBug(EG, "QA-10", "look names differ only by Unicode normalisation", () ->
-            expect(!LookNameRules.unique("Café", Arrays.asList("Café")).equals("Café"), "visual duplicate accepted"));
+        // QA-10 (fixed in 0.14.14): "Café" with a combining accent and with é is one name.
+        qa.equal(EG, "NFD duplicate of NFC", "Caf\u00e9 (2)", LookNameRules.unique("Cafe\u0301", Arrays.asList("Caf\u00e9")));
+        qa.equal(EG, "NFC duplicate of NFD", "Caf\u00e9 (2)", LookNameRules.unique("Caf\u00e9", Arrays.asList("Cafe\u0301")));
+        qa.equal(EG, "new decomposed name stored composed", "Caf\u00e9", LookNameRules.unique("Cafe\u0301", none));
     }
 
     static String codes(String text) {

@@ -158,7 +158,7 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
         confirmButton = { TextButton(onClick = {
             val items = namingIds.split(',').mapNotNull { id -> s.garments.find { it.id == id } }
             vm.saveDaily(wardrobe, items, proposedName, occasion, weather, { id -> namingIds = ""; if (namingSchedule) schedule(id) else saved(id) }, capsule?.id.orEmpty(), packedOnly)
-        }, enabled = !busy && proposedName.isNotBlank()) { Text(stringResource(R.string.save)) } },
+        }, enabled = !busy && TextLimits.hasVisibleText(proposedName)) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = { namingIds = "" }, enabled = !busy) { Text(stringResource(R.string.cancel)) } })
     if (noReplacement) AlertDialog(onDismissRequest = { noReplacement = false }, text = { Text(stringResource(R.string.daily_no_replacement)) }, confirmButton = { TextButton(onClick = { noReplacement = false }) { Text(stringResource(R.string.close)) } })
 }

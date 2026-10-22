@@ -33,7 +33,7 @@ internal object ShopImportClient {
             coroutineContext.ensureActive()
             require(System.nanoTime() < deadline) { "Download deadline exceeded" }
             require(ShopImportRules.webUrl(url).isNotBlank())
-            val target = URL(url)
+            val target = URL(ShopImportRules.webUrl(url))  // IDN host as punycode (QA-07)
             require(target.protocol.equals("https", true) && target.port in setOf(-1, 443))
             val addresses = InetAddress.getAllByName(target.host)
             require(addresses.isNotEmpty() && addresses.none(::nonPublic))

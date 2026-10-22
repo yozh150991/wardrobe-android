@@ -144,8 +144,8 @@ public final class PurchaseAdviceRules {
     private static List<List<String>> missing(Profile profile,List<DailyRules.Item> eligible,String weather) {
         List<List<String>> result=new ArrayList<>();
         for(List<String> base:WardrobeRules.baseLayouts(Collections.singleton(profile.category))) {
+            // Weather outerwear is optional in DailyRules, so it is never reported as the missing piece (QA-05).
             List<String> required=new ArrayList<>(base);
-            if(Arrays.asList("cool","cold","rain").contains(weather))required.add("outerwear");
             if(!required.contains(profile.category))required.add(profile.category);
             List<String> absent=new ArrayList<>();
             for(String category:required) {

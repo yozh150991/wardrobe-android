@@ -1,5 +1,16 @@
 # 0.14.5-family-reader — 18 October 2026
 
+## 0.14.14-qa-fixes2 — 22 October 2026 (code 44)
+All 13 bugs of the QA regression report (QA-REPORT-0.14.13.md) fixed; their strict expected
+failures are now regular regression checks. Family backend (deploy needed): invitation names
+limited to 80 UTF-16 units like the phone, legacy over-long names hidden from lists, RFC e-mail
+rule (same on the phone), family_edit_item gets the commit's 1 GiB / 540 s. App: every saved
+name (wish, item, look, capsule, wardrobe, custom label) needs a visible character; imported
+shop names lose bidi controls; IDN shop links work; http/https and www share a duplicate key;
+purchase advice no longer demands optional outerwear; NFC look names; password minimum in
+characters; canvas layers no longer overlap outerwear. Backups with older labels still
+restore. Backend 141 tests, host suites and Kotlin QA JUnit pass; Android in CI. See QA-FIXES-0.14.14.md.
+
 ## 0.14.13-qa-fixes — 20 October 2026 (code 43)
 All 16 bugs from the 0.14.12 QA report fixed, each with a regression check. Shop import:
 locale quotes/ellipsis and brackets no longer break shared links, JSON-LD after many scripts
