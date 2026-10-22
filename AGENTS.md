@@ -1,3 +1,7 @@
+## Current handoff — QA regression suites, 22 October 2026
+
+Tests only, 0.14.13-qa-fixes/code 43 unchanged. Read QA-REPORT-0.14.13.md: 13 open bugs (QA-01 high: server counts invite names in code points, phone in UTF-16 → recipient's invitation list unparsable). Technique-tagged suites: app/src/test Qa*Cases.java (+ QaRegressionTest.kt, QaFamilyWireTest.kt), cloud/family-functions/tests/test_qa_techniques.py, tools/check_qa_regression.py (in run_host_checks). Open bugs are strict expected failures (knownBug / expectedFailure / known_bug): when you fix one, its check fails until you turn it into a regular assertion and update the report.
+
 ## Current handoff — QA fixes, 20 October 2026
 
 0.14.13-qa-fixes/code 43 (0.14.12 + all 16 bugs of the 0.14.12 QA report), Room/backup 10. Read QA-FIXES-0.14.13.md. Backend changes in cloud/family-functions (IDN e-mails, final-sigma label keys, CRLF edits, bidi/invisible names) need a manual functions deploy. New TextLimits.java is the grapheme-safe truncation/visible-text helper; use TextLimits.input(it, N) in text fields instead of it.take(N). Next: device checks of shop import and .укр invitations, then FAM-03 shared outfits/queue/background sync.
