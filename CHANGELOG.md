@@ -6,7 +6,7 @@
 - Список черги, вибір/видалення окремої правки, FIFO й підтверджене пакетне надсилання.
 - Refresh незавершених правок із об’єднанням незалежних полів, зупинка на конфлікті,
   точний submitted retry після втрати відповіді, збереження решти черги.
-- Атомарний outbox v1 → v2, без змін Room/backup 10; 20 JVM і 2 instrumentation tests.
+- Атомарний outbox v1 → v2, без змін Room/backup 10; 22 JVM і 2 instrumentation tests.
 - Новий backend deployment не потрібний; photo/add/outfit queues і background sync далі.
 
 

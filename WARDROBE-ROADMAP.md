@@ -14,7 +14,7 @@ FAM-01/02/03 загалом partial; черги add/photo/outfits, фонова 
 Нова пряма вказівка користувача має перевагу над цим планом.
 
 **Актуальна контрольна точка:** 0.14.16-family-queue/code46, Codex, 23.10.2026.
-20 нових JVM-тестів і 2 instrumented tests. Host runner: 23 suites pass, Firebase client config skipped; backend 148 pass.
+22 нових JVM-тестів і 2 instrumented tests. Host runner: 23 suites pass, Firebase client config skipped; backend 148 pass.
 Android CI цієї гілки перевірити перед передачею.
 Спільне native-приймання відкладене користувачем; це не блокує погоджену розробку.
 
@@ -518,6 +518,6 @@ and device acceptance remain pending; no live Firebase deployment is included.
 - Гілка `feat/family-edit-queue-0.14.16` поверх PR #13, версія 0.14.16/code46.
 - FamilyEditQueue/Sender, FamilyEditStore journal v2, Controller/Dialog: кілька речей,
   FIFO, CAS, batch confirmation, safe field merge, stop-on-error, точний submitted retry.
-- UA/EN/PL/fallback, 20 JVM tests + 2 Android store tests; Room/backup 10 незмінні.
+- UA/EN/PL/fallback, 22 JVM tests + 2 Android store tests; Room/backup 10 незмінні.
 - Див. FAMILY-QUEUE-0.14.16.md для міграції, меж і native-матриці.
 - Наступне: add/photo/outfit queues, фонова синхронізація, потім FAM-04.

@@ -117,7 +117,7 @@ internal fun FamilyEditDialog(vm: WardrobeViewModel, remote: String, dismiss: ()
                     if (state.queue.isNotEmpty() && state.queue.firstOrNull()?.garmentId != draft.garmentId)
                         Text(stringResource(R.string.family_queue_wait), style = MaterialTheme.typography.bodySmall)
                     if (state.conflict) {
-                        OutlinedButton(onClick = { vm.familyEdit.reviewConflict() }, enabled = !state.running, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_edit_review)) }
+                        OutlinedButton(onClick = { vm.familyEdit.reviewConflict() }, enabled = !state.running && !unsaved, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_edit_review)) }
                         state.latest?.let { latest ->
                             Text(stringResource(R.string.family_edit_comparison))
                             draft.changes.forEach { (field, local) ->
@@ -125,7 +125,7 @@ internal fun FamilyEditDialog(vm: WardrobeViewModel, remote: String, dismiss: ()
                                 Text(stringResource(R.string.family_edit_server_value, latest.values.getValue(field)))
                                 Text(stringResource(R.string.family_edit_local_value, local))
                             }
-                            OutlinedButton(onClick = { confirmKeep = true }, enabled = !state.running, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_edit_keep)) }
+                            OutlinedButton(onClick = { confirmKeep = true }, enabled = !state.running && !unsaved, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_edit_keep)) }
                         }
                     }
                     TextButton(onClick = { confirmDiscard = true }, enabled = !state.running && (!draft.submitted || state.conflict), modifier = Modifier.fillMaxWidth()) {

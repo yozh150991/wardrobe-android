@@ -80,9 +80,12 @@ internal class FamilyEditController(private val app: WardrobeApplication, privat
         store.put(updated, store.get(current.remoteId, current.garmentId).also { require(it == null || it == current) }); guard()
         mutable.value = mutable.value.copy(draft = updated, saved = true, queue = store.list(current.remoteId))
     }
-    fun sync(all: Boolean = false) = run { backend ->
-        val current = requireNotNull(if (all) mutable.value.queue.firstOrNull() else mutable.value.draft)
-        val remote = current.remoteId
+    fun sync(all: Boolean = false) {
+        // Capture the user's selection before enqueuing work: a double tap must not send the next item.
+        val shown = mutable.value
+        val confirmed = (if (all) shown.queue else listOfNotNull(shown.draft)).toList()
+        run { backend ->
+        val remote = shown.remoteId
         val work = coroutineContext
         val sender = FamilyEditQueueSender(object : FamilyEditQueuePort {
             override fun checkpoint() { work.ensureActive(); guard() }
@@ -104,10 +107,11 @@ internal class FamilyEditController(private val app: WardrobeApplication, privat
                 require(revision.toDouble() == (draft.baseRevision + 1).toDouble())
             }
         })
-        sender.send(remote, all, current)
+        sender.send(remote, confirmed)
         val remaining = store.list(remote)
         mutable.value = mutable.value.copy(draft = remaining.firstOrNull(), queue = remaining, synced = true, conflict = false)
         reader.open(remote, refresh = true)
+        }
     }
     fun reviewConflict() = run { backend ->
         val current = requireNotNull(mutable.value.draft); require(mutable.value.conflict)

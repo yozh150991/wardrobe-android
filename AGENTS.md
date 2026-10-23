@@ -4,7 +4,7 @@
 FamilyEditQueue/Sender + journal v2 support up to 100 account-private metadata drafts,
 one per shared item. FIFO per remote; explicit single/batch send, field-aware refresh
 only for unsubmitted requests, stop-on-error and exact submitted retry. Read legacy v1,
-write v2 atomically. Shared add/photo/outfit journals remain unchanged. 20 JVM + 2 new
+write v2 atomically. Shared add/photo/outfit journals remain unchanged. 22 JVM + 2 new
 instrumentation tests; verify this PR CI, device acceptance pending. Based on PR #13
 whose CI 39999768334 passed. Next: add/photo/outfit queues, background sync, FAM-04.
 

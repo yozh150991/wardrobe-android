@@ -57,10 +57,11 @@ internal interface FamilyEditQueuePort {
 
 /** One explicit send processes a fixed FIFO prefix. Any failure stops before the next item. */
 internal class FamilyEditQueueSender(private val port: FamilyEditQueuePort) {
-    suspend fun send(remote: String, all: Boolean, expectedHead: FamilyEditDraft): Int {
+    suspend fun send(remote: String, confirmed: List<FamilyEditDraft>): Int {
         port.checkpoint()
-        val selected = port.pending(remote).let { if (all) it else it.take(1) }
-        require(selected.firstOrNull() == expectedHead) { "Queue changed" }
+        val selected = confirmed.toList()
+        require(selected.isNotEmpty() && selected.all { it.remoteId == remote })
+        require(port.pending(remote).take(selected.size) == selected) { "Queue changed" }
         for ((index, selectedDraft) in selected.withIndex()) {
             port.checkpoint()
             require(port.pending(remote).firstOrNull() == selectedDraft) { "Queue changed" }

@@ -107,61 +107,74 @@ class FamilyEditQueueTest {
     }
     @Test fun batchSendsFifoAndAdvancesBaseAfterEveryReceipt() = runBlocking {
         val a = draft(); val b = draft(); val port = Port(listOf(a, b))
-        assertEquals(2, FamilyEditQueueSender(port).send(remote, true, a))
+        assertEquals(2, FamilyEditQueueSender(port).send(remote, port.pending(remote)))
         assertEquals(listOf(a.garmentId, b.garmentId), port.requests.map { it.garmentId })
         assertEquals(listOf(4L, 5L), port.requests.map { it.baseRevision }); assertTrue(port.rows.isEmpty())
     }
     @Test fun singleSendLeavesTailAndOtherWardrobesIntact() = runBlocking {
         val a = draft(); val b = draft(); val other = draft(remoteId = newId()); val port = Port(listOf(other, a, b))
-        assertEquals(1, FamilyEditQueueSender(port).send(remote, false, a))
+        assertEquals(1, FamilyEditQueueSender(port).send(remote, listOf(a)))
         assertEquals(listOf(other, b), port.rows)
     }
     @Test fun cannotSendOutOfOrderOrWithStaleHead() = runBlocking {
         val a = draft(); val b = draft(); val port = Port(listOf(a, b))
-        assertTrue(runCatching { FamilyEditQueueSender(port).send(remote, false, b) }.isFailure)
+        assertTrue(runCatching { FamilyEditQueueSender(port).send(remote, listOf(b)) }.isFailure)
         assertTrue(port.requests.isEmpty()); assertEquals(listOf(a, b), port.rows)
     }
     @Test fun lostResponseRetriesSamePayloadBeforeAdvancingTail() = runBlocking {
         val a = draft(); val b = draft(); val port = Port(listOf(a, b)); port.lostResponse = true
-        assertTrue(runCatching { FamilyEditQueueSender(port).send(remote, true, a) }.isFailure)
+        assertTrue(runCatching { FamilyEditQueueSender(port).send(remote, port.pending(remote)) }.isFailure)
         val uncertain = port.rows.first(); assertTrue(uncertain.submitted)
         assertEquals(b, port.rows.last()); assertEquals(1, port.requests.size)
-        FamilyEditQueueSender(port).send(remote, true, uncertain)
+        FamilyEditQueueSender(port).send(remote, port.pending(remote))
         assertEquals(port.requests[0], port.requests[1]); assertEquals(2, port.receipts.size)
         assertEquals(2, port.latestCalls); assertTrue(port.rows.isEmpty())
     }
     @Test fun conflictKeepsHeadAndDoesNotSendTail() = runBlocking {
         val a = draft(); val b = draft(); val port = Port(listOf(a, b)); port.revision++
         port.server[a.garmentId] = fields + ("location" to "Box")
-        val error = runCatching { FamilyEditQueueSender(port).send(remote, true, a) }.exceptionOrNull()
+        val error = runCatching { FamilyEditQueueSender(port).send(remote, port.pending(remote)) }.exceptionOrNull()
         assertEquals(FamilyProblem.CONFLICT, (error as FamilyTransferException).problem)
         assertEquals(listOf(a, b), port.rows); assertTrue(port.requests.isEmpty())
     }
     @Test fun deletedItemStopsQueueWithoutDroppingDraft() = runBlocking {
         val a = draft(); val b = draft(); val port = Port(listOf(a, b)); port.server.remove(a.garmentId)
-        val error = runCatching { FamilyEditQueueSender(port).send(remote, true, a) }.exceptionOrNull()
+        val error = runCatching { FamilyEditQueueSender(port).send(remote, port.pending(remote)) }.exceptionOrNull()
         assertEquals(FamilyProblem.MISSING, (error as FamilyTransferException).problem)
         assertEquals(listOf(a, b), port.rows); assertTrue(port.requests.isEmpty())
     }
     @Test fun alreadyAppliedFieldsNeedNoDuplicateNetworkWrite() = runBlocking {
         val a = draft(); val port = Port(listOf(a)); port.server[a.garmentId] = a.values; port.revision++
-        FamilyEditQueueSender(port).send(remote, true, a)
+        FamilyEditQueueSender(port).send(remote, port.pending(remote))
         assertTrue(port.rows.isEmpty()); assertTrue(port.requests.isEmpty())
     }
     @Test fun accountClosureAfterCommitKeepsExactRequestForRecovery() = runBlocking {
         val a = draft(); val b = draft(); val port = Port(listOf(a, b)); port.afterPublish = { port.stopped = true }
-        val error = runCatching { FamilyEditQueueSender(port).send(remote, true, a) }.exceptionOrNull()
+        val error = runCatching { FamilyEditQueueSender(port).send(remote, port.pending(remote)) }.exceptionOrNull()
         assertTrue(error is CancellationException); assertEquals(1, port.requests.size)
         assertEquals(port.requests.single(), port.rows.first()); assertEquals(b, port.rows.last())
     }
     @Test fun operationsAddedDuringSendAreNotIncludedWithoutConfirmation() = runBlocking {
         val a = draft(); val b = draft(); val port = Port(listOf(a)); port.afterPublish = { port.rows = FamilyEditQueue.put(port.rows, b, null) }
-        assertEquals(1, FamilyEditQueueSender(port).send(remote, true, a))
+        assertEquals(1, FamilyEditQueueSender(port).send(remote, port.pending(remote)))
         assertEquals(listOf(b), port.rows); assertEquals(1, port.requests.size)
     }
     @Test fun savedNoOpFromLegacyClientDoesNotBlockTail() = runBlocking {
         val a = draft().copy(values = fields); val b = draft(); val port = Port(listOf(a, b))
-        assertEquals(2, FamilyEditQueueSender(port).send(remote, true, a))
+        assertEquals(2, FamilyEditQueueSender(port).send(remote, port.pending(remote)))
         assertEquals(listOf(b.garmentId), port.requests.map { it.garmentId }); assertTrue(port.rows.isEmpty())
+    }
+    @Test fun repeatedTapCannotAdvanceToAnotherItem() = runBlocking {
+        val a = draft(); val b = draft(); val port = Port(listOf(a, b)); val confirmed = listOf(a)
+        val sender = FamilyEditQueueSender(port)
+        sender.send(remote, confirmed)
+        assertTrue(runCatching { sender.send(remote, confirmed) }.isFailure)
+        assertEquals(listOf(b), port.rows); assertEquals(1, port.requests.size)
+    }
+    @Test fun batchSelectionIsFixedBeforeItWaitsForOtherWork() = runBlocking {
+        val a = draft(); val b = draft(); val port = Port(listOf(a)); val confirmed = port.pending(remote)
+        port.rows = FamilyEditQueue.put(port.rows, b, null)
+        FamilyEditQueueSender(port).send(remote, confirmed)
+        assertEquals(listOf(b), port.rows); assertEquals(1, port.requests.size)
     }
 }

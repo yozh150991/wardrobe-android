@@ -42,9 +42,9 @@ baseRevision і changes. Після рестарту спочатку повто
 
 ## Перевірки
 
-- 20 нових JVM-тестів: FIFO/CAS/межі 100–101, кілька гардеробів, міграція v1,
+- 22 нових JVM-тестів: FIFO/CAS/межі 100–101, кілька гардеробів, міграція v1,
   submitted recovery, конфлікт/видалення, незалежні поля, already-applied,
-  account cancellation, незмінний пакет і no-op старого клієнта.
+  account cancellation, незмінний пакет, double tap і no-op старого клієнта.
 - 2 нових instrumented store tests (разом 7): кілька речей після restart,
   атомарна міграція з незміненим submitted request. Не виконані на пристрої.
 - Host runner: 23 suites pass, Firebase client config skipped; backend 148 pass. Android CI — перевірити для PR.
