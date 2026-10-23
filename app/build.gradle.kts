@@ -15,8 +15,8 @@ android {
         applicationId = "com.familywardrobe.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 44
-        versionName = "0.14.14-qa-fixes2"
+        versionCode = 45
+        versionName = "0.14.15-family-outfits"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
@@ -66,6 +66,8 @@ dependencies {
     ksp("androidx.room:room-compiler:2.7.1")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
     testImplementation("junit:junit:4.13.2")
+    // Exercise real canvas/draft JSON in local JVM tests instead of Android stub defaults.
+    testImplementation("org.json:json:20240303")
     // Real SQLite for RoomMigrationSchemaTest (production migrations vs exported schemas).
     testImplementation("org.xerial:sqlite-jdbc:3.46.1.3")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")

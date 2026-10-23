@@ -1,3 +1,15 @@
+## Current handoff — FAM-03 shared outfits, 23 October 2026
+
+0.14.15-family-outfits/code 45, Room/backup 10. Read FAMILY-OUTFITS-0.14.15.md.
+Shared reader displays outfit collages; owner/editor creates/edits through the existing
+LookEditor with LookEditorPort and LocalLookPhotos. Form + immutable publication live in
+account-private family-outfits, one pending outfit per remote. Explicit send, receipt-first
+retry and confirmed rebase; preserve history and reconcile capsule packing. All sources use
+only shared garments/wishes or catalog inspiration. No new backend/rules deployment.
+Host 23 pass + missing client config skipped; backend 148 pass. New JVM tests need CI;
+5 instrumentation tests and device acceptance not run. Next: multi-operation queue,
+background sync, FAM-04. Earlier handoffs below are historical, not current status.
+
 ## Current handoff — QA bug fixes, 22 October 2026
 
 0.14.14-qa-fixes2/code 44, Room/backup 10. All 13 bugs of QA-REPORT-0.14.13.md fixed; read QA-FIXES-0.14.14.md. The QA suites now have no open bugs (every former knownBug is a regular assertion). Backend changes (invite names in UTF-16 units + legacy filtering, RFC e-mail, family_edit_item 1 GiB/540 s) need a manual functions deploy. Saved names must pass TextLimits.hasVisibleText in form and repository; restores use CategoryRules.validStoredName for older labels. Next: deploy, device checks, then FAM-03.
@@ -117,3 +129,12 @@ CI preview: -PciPreview=true → com.familywardrobe.app.ci, локальний d
 Release tag має збігатися з v + versionName; code збільшується для нового релізу.
 Перед GitHub push повтори audit локального index/history; hooks установлюються на кожному clone.
 Не оголошувати remote/CI підключеними без підтвердження.
+
+### Publication checkpoint — 23 October 2026
+
+Branch `feat/family-outfits-0.14.15`, based on main
+`797daadb2f173627e8f05ef3c8db4aa20afc10af`. GitHub write authorization was restored
+and verified by a successful create-tree request on 23 October 2026, after earlier
+403 failures. Publication proceeds through a draft PR; Android/JVM CI results
+must be verified for that PR before marking this work validated. Instrumentation
+and device acceptance remain pending; no live Firebase deployment is included.

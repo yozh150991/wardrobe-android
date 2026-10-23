@@ -1181,4 +1181,16 @@ Your current wardrobe is unchanged.</string>
     <string name="family_new_custom_category">Shared wardrobe custom category</string>
     <string name="family_new_custom_color">Shared wardrobe custom colour</string>
     <string name="family_new_custom_none">None</string>
+    <string name="family_look_title">Shared outfit</string>
+    <string name="family_look_open">Create outfit / resume draft</string>
+    <string name="family_look_edit">Edit outfit</string>
+    <string name="family_look_hint">The outfit is saved to the shared wardrobe after you confirm sending.</string>
+    <string name="family_look_draft_hint">One outfit draft per shared wardrobe. An unfinished draft opens first. Saving prepares changes for sending.</string>
+    <string name="family_look_synced">Shared outfit saved.</string>
+    <string name="family_look_send">Send outfit</string>
+    <string name="family_look_send_confirm">Save this outfit to the shared wardrobe? Its members will see the changes.</string>
+    <string name="family_look_conflict">The shared wardrobe changed or this combination already exists. Your draft is kept. Refresh and review the changes.</string>
+    <string name="family_look_rebase_confirm">Load the current wardrobe and apply your draft? Sending it will replace the current version of this outfit. Other outfits are preserved.</string>
+    <string name="family_look_missing">The outfit or a selected item was removed. Open the current wardrobe and review the outfit.</string>
+    <string name="family_look_validation">Could not prepare the outfit. Check its name, item availability and compatible seasons. Your draft is kept.</string>
 </resources>

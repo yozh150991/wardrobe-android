@@ -1,12 +1,21 @@
 # Wardrobe — роадмап і передача роботи
 
-Оновлено: **2026-10-20, Europe/Warsaw**. Редакція документа: **30**.
-База вихідного коду: **0.14.14-qa-fixes2**, `versionCode=44`, Room/backup **10**.
-Статус: 0.14.14 — виправлено 13 багів QA-регресії (QA-FIXES-0.14.14.md; потрібен деплой family functions); 0.14.13 — виправлено 16 багів QA-звіту 0.14.12 (QA-FIXES-0.14.13.md; потрібен деплой family functions); 0.14.12 — власні категорії/кольори спільного гардероба у формі нової речі; 0.14.11 — FAM-03 нова річ прямо в спільний гардероб із галереї/камери, verify; FAMILY-NEW-0.14.11.md. 0.14.10 — FAM-03 заміна фото спільної речі (галерея/камера/фото власної речі), verify; FAMILY-PHOTO-0.14.10.md. 0.14.9 = Codex 0.14.8-family-add поверх 0.14.8-audit-fixes (багфікси аудиту 0.14.6, AUDIT-FIXES-0.14.8.md). FAM-01/03 — partial; FAM-02 — partial, реалізований обсяг verify. У 0.14.6 додано discovery після входу на іншому пристрої, запрошення в застосунку за підтвердженою email-адресою, accept/decline/cancel, owner-only roles/revoke і вихід учасника. Листи не надсилаються; окрема історія завершених запрошень ще потрібна. У 0.14.7 реалізовано перший обсяг спільного редагування полів із outbox/CAS; У 0.14.8 додано копіювання вибраної власної речі з кінцевим фото, чернеткою/retry/CAS. Заміна shared-фото, прямий shared camera/gallery, образи, черга та постійна синхронізація ще потрібні. За вказівкою користувача 18.10 «Багфікси будуть потім». Native-приймання й live deployment залишаються відкритими.
+Оновлено: **2026-10-23, Europe/Warsaw**. Редакція документа: **31**.
+База вихідного коду: **0.14.15-family-outfits**, `versionCode=45`, Room/backup **10**.
+Статус: FAM-03 shared outfits реалізовані, verify: перегляд колажів, створення/редагування
+через чинний конструктор, account-private форма/publication, явне надсилання, retry/CAS.
+Фото/камера/галерея та наявні власні мітки спільного гардероба реалізовані у 0.14.10–12.
+FAM-01/02/03 загалом partial; черга кількох операцій, фонова синхронізація, історія
+запрошень, FAM-04 і native-приймання залишаються відкритими. Попередні QA-виправлення
+0.14.13–14 інтегровані; їхній live functions deploy не підтверджений.
 
 Це головний документ для пріоритетів, незавершеної роботи й передачі завдань іншому агенту. Погоджено користувачем 7 жовтня 2026: спочатку спрощення каталогу та імпорт із магазину, потім розширення помічника перед покупкою; сімейний доступ — окремий пріоритетний блок. Решту ідей потрібно зберегти в беклозі. Нова пряма вказівка користувача має перевагу над цим планом.
 
-**Актуальна контрольна точка:** 0.14.14-qa-fixes2/code44: усі 13 багів QA-REPORT-0.14.13 виправлені, регресія без відкритих багів (backend 141 pass, host pass, Kotlin QA JUnit pass); Android CI — у PR; деплой family functions і пристрій не виконані. 0.14.13-qa-fixes/code43: усі 16 багів QA-звіту 0.14.12 виправлені з регресійними тестами (backend 113 pass, host pass); Android CI — у PR; деплой Cloud Functions і пристрій не виконані. 0.14.12-family-labels/code42: наявні власні мітки спільного гардероба у формі нової речі. 0.14.11-family-new/code41: нова спільна річ із галереї/камери без приватної копії; Android CI — у PR; пристрій не перевірено. 0.14.10-family-photo/code40: заміна фото спільної речі; backend 99 pass, host pass, Android CI — у PR; пристрій не перевірено. 0.14.9-family-add/code39 (Codex 0.14.8-family-add поверх 0.14.8-audit-fixes; Android CI — див. PR). FAM-03 partial: owner/editor додає копію власної речі з готовим фото; лише вибрані поля/category/color, нові ID, окремий durable ZIP/journal, явне надсилання, historical receipt retry та explicit CAS rebase. Backend95 /host22 pass; нові JVM7/Android8 підготовлені, not run; native compile/APK blocked full JDK. Наступне: заміна фото наявної shared-речі, shared outfits, multi-operation queue і continuous sync; далі FAM-04. Direct shared gallery/camera ще відкриті. Багфікси відкладені. Див. FAMILY-ADD-0.14.8.md.
+**Актуальна контрольна точка:** 0.14.15-family-outfits/code45; див. FAMILY-OUTFITS-0.14.15.md.
+Host: 23 pass + missing Firebase client config skipped; backend 148 pass. 12 нових JVM
+тестів підготовлені для CI; 5 instrumented tests і пристрій не виконані. Локальний
+Android build blocked до Gradle (немає повного JDK/SDK). Наступне: multi-operation
+queue і continuous sync, далі FAM-04. Успішний CI попереднього main не є доказом цього PR.
 
 ## 1. Швидкий старт для наступного агента
 
@@ -250,7 +259,7 @@ PHOTO-01–10 і PHOTO-12–14 реалізовані у джерелах; ст�
 
 ### FAM-03 — захист і синхронізація спільного гардероба
 
-**P0 для випуску R3 · partial · залежить від FAM-01–02.** У 0.14.1 реалізовані й перевірені серверні role/expiry/CAS guards та Storage rules. Android initial transfer є у 0.14.2, isolated read-only cache/lease у 0.14.5, roles/revoke у 0.14.6. У 0.14.7 є metadata editor для чотирьох полів, account-private durable outbox, явна синхронізація, stable UUID retry та CAS-conflict comparison/rebase. У 0.14.8 реалізовано додавання копії власної речі з готовим фото. У 0.14.10 — заміна фото наявної спільної речі (галерея/камера як є або готове фото власної речі). У 0.14.11 — нова річ прямо в спільний гардероб (поля + фото з галереї/камери), без приватної копії. У 0.14.12 — у цій формі доступні наявні власні категорії/кольори спільного гардероба. Далі: заміна фото, прямий shared camera/gallery, shared outfits, multi-operation outbox і continuous sync.
+**P0 для випуску R3 · partial · залежить від FAM-01–02.** У 0.14.1 реалізовані й перевірені серверні role/expiry/CAS guards та Storage rules. Android initial transfer є у 0.14.2, isolated read-only cache/lease у 0.14.5, roles/revoke у 0.14.6. У 0.14.7 є metadata editor для чотирьох полів, account-private durable outbox, явна синхронізація, stable UUID retry та CAS-conflict comparison/rebase. У 0.14.8 реалізовано додавання копії власної речі з готовим фото. У 0.14.10 — заміна фото наявної спільної речі (галерея/камера як є або готове фото власної речі). У 0.14.11 — нова річ прямо в спільний гардероб (поля + фото з галереї/камери), без приватної копії. У 0.14.12 — у цій формі доступні наявні власні категорії/кольори спільного гардероба. У 0.14.15 — shared outfits через чинний конструктор, ізольовані чернетки й явне надсилання/retry/rebase. Далі: multi-operation outbox і continuous sync.
 
 **Приймання:** viewer не записує дані навіть прямим SDK-запитом; editor змінює лише дозволений гардероб; сторонній UID не читає дані/фото; editor не видає права. Перевірити дві конкурентні правки, retry, видалення/архів, зміну ролі й відкликання під час upload. Прострочені офлайн-записи після відкликання відхиляються. При виявленні відкликання очистити/закрити кеш за обраною політикою. Не обіцяти миттєве стирання вже отриманих даних на відключеному пристрої.
 
@@ -483,3 +492,22 @@ DEV-01 (Git Safety) збережений; історична контрольн�
 - Сумісність: резервні копії зі старими мітками відновлюються (CategoryRules.validStoredName); невидимі старі назви форма просить змінити при редагуванні.
 - Перевірки: run_host_checks pass; backend 141 pass; Kotlin QA JUnit 10/10 pass. Android CI — у PR; пристрій не перевірено.
 - Далі: деплой family functions; на телефоні — запрошення, імпорт `.укр`-посилання, збереження назв; потім FAM-03 (спільні образи, черга, фонова синхронізація).
+
+### 2026-10-23 — FAM-03 спільні образи — Codex, verify
+
+- Створення/редагування через чинний LookEditor, ізольовані чернетки, publication retry/CAS.
+- Гілка feat/family-outfits-0.14.15 від main 797daad; native-приймання залишається спільним етапом.
+
+- Реалізовано FamilyOutfitChange/Store/Controller/Dialog, LookEditorPort, shared photo provider і reader collages; UA/EN/PL.
+- Preserve ID/createdAt, історію носіння, worn-плани; reconcile capsule packing. Room/backup 10 без міграції.
+- Host 23 pass + config skipped, backend 148 pass; JVM12 очікують CI, Android5/device не виконані.
+- Новий backend deployment не потрібний; старі deployment/native задачі не закриті. Далі queue/background sync.
+
+### Publication checkpoint — 23 October 2026
+
+Branch `feat/family-outfits-0.14.15`, based on main
+`797daadb2f173627e8f05ef3c8db4aa20afc10af`. GitHub write authorization was restored
+and verified by a successful create-tree request on 23 October 2026, after earlier
+403 failures. Publication proceeds through a draft PR; Android/JVM CI results
+must be verified for that PR before marking this work validated. Instrumentation
+and device acceptance remain pending; no live Firebase deployment is included.

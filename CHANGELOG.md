@@ -1,3 +1,12 @@
+## 0.14.15-family-outfits — 23 October 2026 (code 45)
+
+FAM-03: show shared outfit collages and create/edit looks with the existing constructor,
+including owned/mixed/inspiration, pins, replacements and canvas controls. Account-private
+editor autosave and immutable publication; explicit send, receipt-first retry and confirmed
+CAS rebase. Preserve historical wears/plans; reconcile capsule packing. No private Room
+writes or new backend endpoints/rules. Host 23 pass (client config skipped), backend 148 pass;
+12 JVM tests added for CI, 5 instrumented tests pending. See FAMILY-OUTFITS-0.14.15.md.
+
 # 0.14.5-family-reader — 18 October 2026
 
 ## 0.14.14-qa-fixes2 — 22 October 2026 (code 44)
