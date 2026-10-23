@@ -2,8 +2,8 @@
 STRINGS = {
 'family_edit_title': ('Редагування спільної речі','Edit shared item','Edytuj wspólną rzecz'),
 'family_edit_open': ('Редагувати поля','Edit fields','Edytuj pola'),
-'family_edit_resume': ('Відкрити незавершену правку','Open pending edit','Otwórz niezakończoną edycję'),
-'family_edit_hint': ('Назва, розмір, місце й опис. «Зберегти чернетку» записує зміни лише на цьому пристрої; «Надіслати зміни» публікує їх для сім’ї. На один гардероб — одна незавершена правка.','Name, size, location and description. Save draft keeps changes on this device; Send changes publishes them to the family. One pending edit per wardrobe.','Nazwa, rozmiar, miejsce i opis. Zapisz szkic zachowuje zmiany na tym urządzeniu; Wyślij zmiany udostępnia je rodzinie. Jedna niezakończona edycja na garderobę.'),
+'family_edit_resume': ('Черга правок речей', 'Item edit queue', 'Kolejka zmian rzeczy'),
+'family_edit_hint': ('Зберігай правки кількох речей, а потім надсилай по одній або всю чергу. Одна чернетка на річ, до 100 на акаунт. Чернетки зберігаються лише на цьому пристрої.', 'Save edits for several items, then send one at a time or the whole queue. One draft per item, up to 100 per account. Drafts are kept on this device only.', 'Zapisuj zmiany kilku rzeczy, a następnie wysyłaj je pojedynczo lub całą kolejkę. Jeden szkic na rzecz, do 100 na konto. Szkice są przechowywane tylko na tym urządzeniu.'),
 'family_edit_name': ('Назва','Name','Nazwa'),
 'family_edit_size': ('Розмір','Size','Rozmiar'),
 'family_edit_location': ('Місце зберігання','Storage location','Miejsce przechowywania'),

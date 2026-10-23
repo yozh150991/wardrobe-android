@@ -1,21 +1,22 @@
 # Wardrobe — роадмап і передача роботи
 
-Оновлено: **2026-10-23, Europe/Warsaw**. Редакція документа: **31**.
-База вихідного коду: **0.14.15-family-outfits**, `versionCode=45`, Room/backup **10**.
-Статус: FAM-03 shared outfits реалізовані, verify: перегляд колажів, створення/редагування
-через чинний конструктор, account-private форма/publication, явне надсилання, retry/CAS.
-Фото/камера/галерея та наявні власні мітки спільного гардероба реалізовані у 0.14.10–12.
-FAM-01/02/03 загалом partial; черга кількох операцій, фонова синхронізація, історія
-запрошень, FAM-04 і native-приймання залишаються відкритими. Попередні QA-виправлення
-0.14.13–14 інтегровані; їхній live functions deploy не підтверджений.
+Оновлено: **2026-10-23, Europe/Warsaw**. Редакція документа: **32**.
+База вихідного коду: **0.14.16-family-queue**, `versionCode=46`, Room/backup **10**.
+Статус: FAM-03 metadata queue реалізована, verify: кілька речей одного гардероба,
+FIFO, список чернеток і підтверджене пакетне надсилання. Див. FAMILY-QUEUE-0.14.16.md.
+Попередні спільні образи — PR #13, CI 39999768334 pass (unit/lint/preview APK).
+FAM-01/02/03 загалом partial; черги add/photo/outfits, фонова синхронізація,
+історія запрошень, FAM-04 і native-приймання залишаються відкритими.
+Попередній live functions deploy 0.14.13–14 не підтверджений.
 
-Це головний документ для пріоритетів, незавершеної роботи й передачі завдань іншому агенту. Погоджено користувачем 7 жовтня 2026: спочатку спрощення каталогу та імпорт із магазину, потім розширення помічника перед покупкою; сімейний доступ — окремий пріоритетний блок. Решту ідей потрібно зберегти в беклозі. Нова пряма вказівка користувача має перевагу над цим планом.
+Це головний документ для пріоритетів, незавершеної роботи й передачі завдань іншому агенту.
+Погоджений порядок: спрощення каталогу та імпорт → помічник покупки → сімейний доступ.
+Нова пряма вказівка користувача має перевагу над цим планом.
 
-**Актуальна контрольна точка:** 0.14.15-family-outfits/code45; див. FAMILY-OUTFITS-0.14.15.md.
-Host: 23 pass + missing Firebase client config skipped; backend 148 pass. 12 нових JVM
-тестів підготовлені для CI; 5 instrumented tests і пристрій не виконані. Локальний
-Android build blocked до Gradle (немає повного JDK/SDK). Наступне: multi-operation
-queue і continuous sync, далі FAM-04. Успішний CI попереднього main не є доказом цього PR.
+**Актуальна контрольна точка:** 0.14.16-family-queue/code46, Codex, 23.10.2026.
+20 нових JVM-тестів і 2 instrumented tests. Host runner: 23 suites pass, Firebase client config skipped; backend 148 pass.
+Android CI цієї гілки перевірити перед передачею.
+Спільне native-приймання відкладене користувачем; це не блокує погоджену розробку.
 
 ## 1. Швидкий старт для наступного агента
 
@@ -259,7 +260,7 @@ PHOTO-01–10 і PHOTO-12–14 реалізовані у джерелах; ст�
 
 ### FAM-03 — захист і синхронізація спільного гардероба
 
-**P0 для випуску R3 · partial · залежить від FAM-01–02.** У 0.14.1 реалізовані й перевірені серверні role/expiry/CAS guards та Storage rules. Android initial transfer є у 0.14.2, isolated read-only cache/lease у 0.14.5, roles/revoke у 0.14.6. У 0.14.7 є metadata editor для чотирьох полів, account-private durable outbox, явна синхронізація, stable UUID retry та CAS-conflict comparison/rebase. У 0.14.8 реалізовано додавання копії власної речі з готовим фото. У 0.14.10 — заміна фото наявної спільної речі (галерея/камера як є або готове фото власної речі). У 0.14.11 — нова річ прямо в спільний гардероб (поля + фото з галереї/камери), без приватної копії. У 0.14.12 — у цій формі доступні наявні власні категорії/кольори спільного гардероба. У 0.14.15 — shared outfits через чинний конструктор, ізольовані чернетки й явне надсилання/retry/rebase. Далі: multi-operation outbox і continuous sync.
+**P0 для випуску R3 · partial · залежить від FAM-01–02.** У 0.14.1 реалізовані й перевірені серверні role/expiry/CAS guards та Storage rules. Android initial transfer є у 0.14.2, isolated read-only cache/lease у 0.14.5, roles/revoke у 0.14.6. У 0.14.7 є metadata editor для чотирьох полів, account-private durable outbox, явна синхронізація, stable UUID retry та CAS-conflict comparison/rebase. У 0.14.8 реалізовано додавання копії власної речі з готовим фото. У 0.14.10 — заміна фото наявної спільної речі (галерея/камера як є або готове фото власної речі). У 0.14.11 — нова річ прямо в спільний гардероб (поля + фото з галереї/камери), без приватної копії. У 0.14.12 — у цій формі доступні наявні власні категорії/кольори спільного гардероба. У 0.14.15 — shared outfits через чинний конструктор, ізольовані чернетки й явне надсилання/retry/rebase. У 0.14.16 — multi-item metadata queue/FIFO/batch send, outbox v2. Далі: add/photo/outfit queues і continuous sync.
 
 **Приймання:** viewer не записує дані навіть прямим SDK-запитом; editor змінює лише дозволений гардероб; сторонній UID не читає дані/фото; editor не видає права. Перевірити дві конкурентні правки, retry, видалення/архів, зміну ролі й відкликання під час upload. Прострочені офлайн-записи після відкликання відхиляються. При виявленні відкликання очистити/закрити кеш за обраною політикою. Не обіцяти миттєве стирання вже отриманих даних на відключеному пристрої.
 
@@ -511,3 +512,12 @@ and verified by a successful create-tree request on 23 October 2026, after earli
 403 failures. Publication proceeds through a draft PR; Android/JVM CI results
 must be verified for that PR before marking this work validated. Instrumentation
 and device acceptance remain pending; no live Firebase deployment is included.
+
+### 2026-10-23 — FAM-03 черга правок речей — Codex, verify
+
+- Гілка `feat/family-edit-queue-0.14.16` поверх PR #13, версія 0.14.16/code46.
+- FamilyEditQueue/Sender, FamilyEditStore journal v2, Controller/Dialog: кілька речей,
+  FIFO, CAS, batch confirmation, safe field merge, stop-on-error, точний submitted retry.
+- UA/EN/PL/fallback, 20 JVM tests + 2 Android store tests; Room/backup 10 незмінні.
+- Див. FAMILY-QUEUE-0.14.16.md для міграції, меж і native-матриці.
+- Наступне: add/photo/outfit queues, фонова синхронізація, потім FAM-04.

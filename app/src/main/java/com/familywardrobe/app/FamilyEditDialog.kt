@@ -36,13 +36,16 @@ internal fun FamilyEditDialog(vm: WardrobeViewModel, remote: String, dismiss: ()
     var confirmKeep by remember { mutableStateOf(false) }
     var dirty by remember { mutableStateOf(false) }
     var confirmClose by remember { mutableStateOf(false) }
+    var confirmSend by remember { mutableStateOf(false) }
+    var showQueue by remember { mutableStateOf(false) }
     DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, _ -> foreground = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED); tick = SystemClock.elapsedRealtime() }
         lifecycle.addObserver(observer); onDispose { lifecycle.removeObserver(observer) }
     }
     LaunchedEffect(foreground) { while (foreground) { tick = SystemClock.elapsedRealtime(); delay(500) } }
-    val readable = tick >= 0 && foreground && vm.familyEdit.readable()
+    val readable = tick >= 0 && foreground && state.remoteId == remote && vm.familyEdit.readable()
     val draft = state.draft?.takeIf { state.remoteId == remote && readable }
+    LaunchedEffect(draft?.editId) { dirty = false }
     val close = { if (dirty) confirmClose = true else dismiss() }
     Dialog(onDismissRequest = close, properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)) {
         Surface(Modifier.fillMaxSize()) {
@@ -52,7 +55,26 @@ internal fun FamilyEditDialog(vm: WardrobeViewModel, remote: String, dismiss: ()
                 Text(stringResource(R.string.family_edit_hint), style = MaterialTheme.typography.bodySmall)
                 TextButton(onClick = close) { Text(stringResource(R.string.close)) }
                 if (state.running) LinearProgressIndicator(Modifier.fillMaxWidth())
+                if (state.completed > 0) Text(stringResource(R.string.family_queue_progress, state.completed, state.total))
                 if (state.synced) Text(stringResource(R.string.family_edit_synced))
+                if (readable && state.queue.isNotEmpty()) {
+                    OutlinedButton(onClick = { showQueue = !showQueue }, enabled = !state.running, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.family_queue_count, state.queue.size))
+                    }
+                    if (showQueue) {
+                        Text(stringResource(R.string.family_queue_order), style = MaterialTheme.typography.bodySmall)
+                        state.queue.forEachIndexed { index, pending ->
+                            OutlinedButton(onClick = { vm.familyEdit.open(remote, pending.garmentId); showQueue = false },
+                                enabled = !state.running && !dirty, modifier = Modifier.fillMaxWidth()) {
+                                Text(stringResource(R.string.family_queue_item, index + 1, pending.values.getValue("name")))
+                            }
+                        }
+                    }
+                    if (state.queue.size > 1) Button(onClick = { confirmSend = true },
+                        enabled = !state.running && !dirty && !state.conflict, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.family_queue_send))
+                    }
+                }
                 if (state.saved) Text(stringResource(R.string.family_edit_saved))
                 state.problem?.let { problem -> Text(stringResource(when (problem) {
                     FamilyProblem.ACCESS -> R.string.family_access
@@ -85,13 +107,15 @@ internal fun FamilyEditDialog(vm: WardrobeViewModel, remote: String, dismiss: ()
                     OutlinedTextField(size, { size = TextLimits.input(it, 40) }, enabled = editable, label = { Text(fieldLabel("size")) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(location, { location = TextLimits.input(it, 200) }, enabled = editable, label = { Text(fieldLabel("location")) }, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(description, { description = TextLimits.input(it, 1000) }, enabled = editable, label = { Text(fieldLabel("description")) }, modifier = Modifier.fillMaxWidth())
-                    Button(onClick = { vm.familyEdit.save(values) }, enabled = editable && TextLimits.hasVisibleText(name), modifier = Modifier.fillMaxWidth()) {
+                    Button(onClick = { vm.familyEdit.save(values) }, enabled = editable && TextLimits.hasVisibleText(name) && values != draft.original, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.family_edit_save))
                     }
                     if (draft.submitted) Text(stringResource(R.string.family_edit_pending), style = MaterialTheme.typography.bodySmall)
-                    Button(onClick = { vm.familyEdit.sync() }, enabled = !state.running && !unsaved && draft.changes.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
+                    Button(onClick = { vm.familyEdit.sync() }, enabled = !state.running && !unsaved && !state.conflict && draft.changes.isNotEmpty() && state.queue.firstOrNull() == draft, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(if (draft.submitted) R.string.family_edit_retry else R.string.family_edit_sync))
                     }
+                    if (state.queue.isNotEmpty() && state.queue.firstOrNull()?.garmentId != draft.garmentId)
+                        Text(stringResource(R.string.family_queue_wait), style = MaterialTheme.typography.bodySmall)
                     if (state.conflict) {
                         OutlinedButton(onClick = { vm.familyEdit.reviewConflict() }, enabled = !state.running, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_edit_review)) }
                         state.latest?.let { latest ->
@@ -111,11 +135,11 @@ internal fun FamilyEditDialog(vm: WardrobeViewModel, remote: String, dismiss: ()
             }
         }
     }
-    if (confirmDiscard || confirmKeep || confirmClose) AlertDialog(onDismissRequest = { confirmDiscard = false; confirmKeep = false; confirmClose = false },
-        text = { Text(stringResource(when { confirmClose -> R.string.family_edit_close_confirm; confirmKeep -> R.string.family_edit_keep_confirm; else -> R.string.family_edit_discard_confirm })) },
+    if (confirmDiscard || confirmKeep || confirmClose || confirmSend) AlertDialog(onDismissRequest = { confirmDiscard = false; confirmKeep = false; confirmClose = false; confirmSend = false },
+        text = { Text(stringResource(when { confirmSend -> R.string.family_queue_confirm; confirmClose -> R.string.family_edit_close_confirm; confirmKeep -> R.string.family_edit_keep_confirm; else -> R.string.family_edit_discard_confirm })) },
         confirmButton = { TextButton(onClick = {
-            when { confirmClose -> dismiss(); confirmKeep -> vm.familyEdit.keepLocalChanges(); else -> { dirty = false; vm.familyEdit.discard() } }
-            confirmDiscard = false; confirmKeep = false; confirmClose = false
-        }, enabled = !state.running) { Text(stringResource(R.string.family_confirm_action)) } },
-        dismissButton = { TextButton(onClick = { confirmDiscard = false; confirmKeep = false; confirmClose = false }) { Text(stringResource(R.string.cancel)) } })
+            when { confirmSend -> vm.familyEdit.sync(all = true); confirmClose -> dismiss(); confirmKeep -> vm.familyEdit.keepLocalChanges(); else -> { dirty = false; vm.familyEdit.discard() } }
+            confirmDiscard = false; confirmKeep = false; confirmClose = false; confirmSend = false
+        }, enabled = !state.running && (confirmClose || readable)) { Text(stringResource(R.string.family_confirm_action)) } },
+        dismissButton = { TextButton(onClick = { confirmDiscard = false; confirmKeep = false; confirmClose = false; confirmSend = false }) { Text(stringResource(R.string.cancel)) } })
 }

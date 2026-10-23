@@ -9,7 +9,8 @@ import kotlin.coroutines.coroutineContext
 
 internal data class FamilyEditState(val remoteId: String = "", val draft: FamilyEditDraft? = null, val running: Boolean = false,
     val problem: FamilyProblem? = null, val saved: Boolean = false, val synced: Boolean = false,
-    val conflict: Boolean = false, val latest: FamilyEditDraft? = null)
+    val conflict: Boolean = false, val latest: FamilyEditDraft? = null,
+    val queue: List<FamilyEditDraft> = emptyList(), val completed: Int = 0, val total: Int = 0)
 internal class FamilyEditController(private val app: WardrobeApplication, private val session: AccountSession,
     private val reader: FamilyReaderController, private val scope: CoroutineScope) {
     private val lease = FamilyReadLease()
@@ -24,7 +25,7 @@ internal class FamilyEditController(private val app: WardrobeApplication, privat
         // and the dialog then showed the previous item's state (audit 0.14.6 №10 pattern).
         scope.launch(Dispatchers.IO) { lock.withLock {
             try {
-                guard(); mutable.value = mutable.value.copy(running = true, problem = null, saved = false, synced = false)
+                guard(); mutable.value = mutable.value.copy(running = true, problem = null, saved = false, synced = false, completed = 0, total = 0)
                 val work = coroutineContext
                 val backend = FamilyBackend(session.identity, { work.ensureActive(); guard() })
                 block(backend); work.ensureActive(); guard()
@@ -36,7 +37,7 @@ internal class FamilyEditController(private val app: WardrobeApplication, privat
                 if (e is FamilyTransferException && problem in setOf(FamilyProblem.ARCHIVE, FamilyProblem.MISSING, FamilyProblem.LIMIT)) {
                     mutable.value.draft?.takeIf { it.submitted }?.let { previous ->
                         val editable = previous.copy(editId = newId(), submitted = false)
-                        store.put(editable, previous); mutable.value = mutable.value.copy(draft = editable)
+                        store.put(editable, previous); mutable.value = mutable.value.copy(draft = editable, queue = store.list(previous.remoteId))
                     }
                 }
                 if (problem == FamilyProblem.ACCESS) {
@@ -63,35 +64,50 @@ internal class FamilyEditController(private val app: WardrobeApplication, privat
         return FamilyEditDraft(remote, garment, newId(), view.remote.revision, item.familyFields(), item.familyFields())
     }
     fun open(remote: String, garment: String? = null) = run { backend ->
+        lease.clear()
         mutable.value = FamilyEditState(remoteId = remote, running = true)
         authorize(backend, remote)
-        val pending = store.get(remote)
+        val pending = store.get(remote, garment)
         val draft = pending ?: garment?.let { fresh(backend, remote, it) }
-        mutable.value = mutable.value.copy(draft = draft, saved = pending != null)
+        mutable.value = mutable.value.copy(draft = draft, saved = pending != null, queue = store.list(remote))
     }
     fun save(values: Map<String, String>) = run {
         if (!readable()) throw FamilyTransferException(FamilyProblem.EXPIRED)
         val current = requireNotNull(mutable.value.draft); require(!current.submitted)
-        require(values.getValue("name").isNotBlank())
-        val updated = current.copy(values = values.toMap()); store.put(updated, store.get(current.remoteId).also { require(it == null || it == current) }); guard()
-        mutable.value = mutable.value.copy(draft = updated, saved = true)
+        require(TextLimits.hasVisibleText(values.getValue("name")))
+        val updated = current.copy(values = values.toMap())
+        require(updated.changes.isNotEmpty())
+        store.put(updated, store.get(current.remoteId, current.garmentId).also { require(it == null || it == current) }); guard()
+        mutable.value = mutable.value.copy(draft = updated, saved = true, queue = store.list(current.remoteId))
     }
-    fun sync() = run { backend ->
-        var draft = requireNotNull(mutable.value.draft); require(draft.changes.isNotEmpty())
-        authorize(backend, draft.remoteId)
-        // Persist exact immutable request BEFORE the call. A timeout retries this UUID.
-        val previous = draft
-        draft = draft.copy(submitted = true); store.put(draft, previous)
-        mutable.value = mutable.value.copy(draft = draft, latest = null)
-        val result = backend.accessCall("edit_item", mapOf("remoteId" to draft.remoteId, "editId" to draft.editId,
-            "garmentId" to draft.garmentId, "baseRevision" to draft.baseRevision, "changes" to draft.changes))
-        require(result["status"] == "committed" && result["editId"] == draft.editId && result["remoteId"] == draft.remoteId)
-        val revision = result["revision"] as? Number ?: error("Invalid edit response")
-        require(revision.toDouble() == (draft.baseRevision + 1).toDouble())
-        guard(); store.remove(draft)
-        mutable.value = mutable.value.copy(draft = null, synced = true, conflict = false)
-        // The receipt confirms the write even if a newer edit has since been committed.
-        reader.open(draft.remoteId, refresh = true)
+    fun sync(all: Boolean = false) = run { backend ->
+        val current = requireNotNull(if (all) mutable.value.queue.firstOrNull() else mutable.value.draft)
+        val remote = current.remoteId
+        val work = coroutineContext
+        val sender = FamilyEditQueueSender(object : FamilyEditQueuePort {
+            override fun checkpoint() { work.ensureActive(); guard() }
+            override fun pending(remote: String) = store.list(remote)
+            override fun put(next: FamilyEditDraft, expected: FamilyEditDraft) { checkpoint(); store.put(next, expected) }
+            override fun remove(expected: FamilyEditDraft) { checkpoint(); store.remove(expected) }
+            override suspend fun latest(draft: FamilyEditDraft) = fresh(backend, draft.remoteId, draft.garmentId)
+            override fun progress(draft: FamilyEditDraft, completed: Int, total: Int) {
+                checkpoint()
+                mutable.value = mutable.value.copy(draft = draft, queue = store.list(remote), completed = completed,
+                    total = total, latest = null, conflict = false)
+            }
+            override suspend fun publish(draft: FamilyEditDraft) {
+                authorize(backend, draft.remoteId)
+                val result = backend.accessCall("edit_item", mapOf("remoteId" to draft.remoteId, "editId" to draft.editId,
+                    "garmentId" to draft.garmentId, "baseRevision" to draft.baseRevision, "changes" to draft.changes))
+                require(result["status"] == "committed" && result["editId"] == draft.editId && result["remoteId"] == draft.remoteId)
+                val revision = result["revision"] as? Number ?: error("Invalid edit response")
+                require(revision.toDouble() == (draft.baseRevision + 1).toDouble())
+            }
+        })
+        sender.send(remote, all, current)
+        val remaining = store.list(remote)
+        mutable.value = mutable.value.copy(draft = remaining.firstOrNull(), queue = remaining, synced = true, conflict = false)
+        reader.open(remote, refresh = true)
     }
     fun reviewConflict() = run { backend ->
         val current = requireNotNull(mutable.value.draft); require(mutable.value.conflict)
@@ -103,13 +119,14 @@ internal class FamilyEditController(private val app: WardrobeApplication, privat
         val current = requireNotNull(mutable.value.draft); val latest = requireNotNull(mutable.value.latest)
         require(mutable.value.conflict && current.remoteId == latest.remoteId && current.garmentId == latest.garmentId)
         val rebased = latest.copy(values = latest.values + current.changes)
-        store.put(rebased, current); mutable.value = mutable.value.copy(draft = rebased, latest = null, conflict = false, saved = true)
+        store.put(rebased, current); mutable.value = mutable.value.copy(draft = rebased, latest = null, conflict = false, saved = true, queue = store.list(current.remoteId))
     }
     fun discard() = run {
         val draft = mutable.value.draft
         require(draft == null || !draft.submitted || mutable.value.conflict)
-        if (draft != null && store.get(draft.remoteId)?.editId == draft.editId) store.remove(draft)
-        mutable.value = mutable.value.copy(draft = null, latest = null, conflict = false)
+        if (draft != null && store.get(draft.remoteId, draft.garmentId)?.editId == draft.editId) store.remove(draft)
+        val remaining = store.list(mutable.value.remoteId)
+        mutable.value = mutable.value.copy(draft = remaining.firstOrNull(), queue = remaining, latest = null, conflict = false)
     }
     fun invalidateSession() { lease.clear(); mutable.value = FamilyEditState() }
 }
