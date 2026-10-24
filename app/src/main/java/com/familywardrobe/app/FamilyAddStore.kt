@@ -2,7 +2,6 @@ package com.familywardrobe.app
 
 import android.content.ContextWrapper
 import android.util.AtomicFile
-import org.json.JSONObject
 import java.io.File
 
 internal data class FamilyAddDraft(val publication: FamilyPublication, val garmentId: String, val photoId: String,
@@ -12,7 +11,7 @@ internal data class FamilyAddDraft(val publication: FamilyPublication, val garme
 }
 
 /**
- * One durable immutable publication draft per wardrobe/account; never part of portable backup.
+ * Ordered durable immutable publication drafts per wardrobe/account; never part of portable backup.
  * Additions use "family-additions"; photo replacements reuse the same journal format in their
  * own folder, so the two kinds of drafts never overwrite each other.
  */
@@ -34,30 +33,34 @@ internal class FamilyAddStore(private val context: AccountContext, private val a
         override fun getFilesDir() = directory(archiveId)
         override fun getCacheDir() = File(directory(archiveId), "temporary").apply { check(mkdirs() || isDirectory) }
     })
-    fun get(remote: String): FamilyAddDraft? = synchronized(lock) {
+    fun list(remote: String): List<FamilyAddDraft> = synchronized(lock) { read(remote) }
+    fun get(remote: String, garment: String? = null): FamilyAddDraft? = synchronized(lock) {
+        read(remote).find { garment == null || it.garmentId == garment }
+    }
+    private fun read(remote: String): List<FamilyAddDraft> {
         val file = journal(remote)
-        if (!file.baseFile.exists() && !File(file.baseFile.path + ".bak").exists()) return@synchronized null
-        val bytes = file.openRead().use { input -> java.io.ByteArrayOutputStream().also { PhotoStore.copyLimited(input, it, 8192) }.toByteArray() }
-        val j = JSONObject(bytes.toString(Charsets.UTF_8)); require(j.getInt("version") == 1 && j.getString("account") == account.key && j.getString("remoteId") == remote)
-        FamilyAddDraft(FamilyPublication(FamilyArchiveIdentity(remote, j.getString("wardrobeId"), j.getString("ownerUid")),
-            j.getString("archiveId"), j.getLong("baseRevision"), j.getString("sha256"), j.getLong("size")),
-            j.getString("garmentId"), j.getString("photoId"), j.getString("name"), j.getBoolean("submitted"))
+        if (!file.baseFile.exists() && !File(file.baseFile.path + ".bak").exists()) return emptyList()
+        val bytes = file.openRead().use { input -> java.io.ByteArrayOutputStream().also { PhotoStore.copyLimited(input, it, 64L * 1024) }.toByteArray() }
+        return FamilyMediaQueue.decode(bytes.toString(Charsets.UTF_8), account.key, remote)
     }
     fun put(draft: FamilyAddDraft, expected: FamilyAddDraft?) = synchronized(lock) {
-        require(get(draft.remoteId) == expected || get(draft.remoteId) == draft) { "Draft changed" }
-        val p = draft.publication; val j = JSONObject().put("version", 1).put("account", account.key)
-            .put("remoteId", draft.remoteId).put("wardrobeId", p.identity.wardrobeId).put("ownerUid", p.identity.ownerUid)
-            .put("archiveId", p.archiveId).put("baseRevision", p.baseRevision).put("sha256", p.hash).put("size", p.size)
-            .put("garmentId", draft.garmentId).put("photoId", draft.photoId).put("name", draft.name).put("submitted", draft.submitted)
-        check(root.mkdirs() || root.isDirectory)
-        require(expected != null || root.listFiles().orEmpty().count { it.extension == "json" } < 100)
-        val file = journal(draft.remoteId); val out = file.startWrite()
-        try { out.write(j.toString().toByteArray(Charsets.UTF_8)); out.fd.sync(); file.finishWrite(out) }
+        val rows = FamilyMediaQueue.put(read(draft.remoteId), draft, expected)
+        write(draft.remoteId, rows)
+    }
+    private fun write(remote: String, rows: List<FamilyAddDraft>) {
+        val bytes = FamilyMediaQueue.encode(rows, account.key, remote).toByteArray(Charsets.UTF_8)
+        require(bytes.size <= 64 * 1024); check(root.mkdirs() || root.isDirectory)
+        val file = journal(remote)
+        if (!file.baseFile.exists() && !File(file.baseFile.path + ".bak").exists() &&
+            root.listFiles().orEmpty().count { it.extension == "json" } >= 100) throw FamilyTransferException(FamilyProblem.LIMIT)
+        val out = file.startWrite()
+        try { out.write(bytes); out.fd.sync(); file.finishWrite(out) }
         catch (e: Exception) { file.failWrite(out); throw e }
     }
     fun remove(expected: FamilyAddDraft) = synchronized(lock) {
-        require(get(expected.remoteId) == expected); journal(expected.remoteId).delete()
-        require(get(expected.remoteId) == null)
+        val rows = FamilyMediaQueue.remove(read(expected.remoteId), expected)
+        if (rows.isEmpty()) journal(expected.remoteId).delete() else write(expected.remoteId, rows)
+        require(get(expected.remoteId, expected.garmentId) == null)
         directory(expected.publication.archiveId).deleteRecursively(); Unit
     }
     fun checked(draft: FamilyAddDraft, guard: () -> Unit): File = archive(draft).also {

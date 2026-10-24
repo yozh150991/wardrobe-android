@@ -37,6 +37,7 @@ internal fun FamilyPhotoDialog(vm: WardrobeViewModel, remote: String, dismiss: (
     var choosing by rememberSaveable { mutableStateOf(false) }
     var confirm by remember { mutableStateOf("") }
     var pendingCapture by rememberSaveable { mutableStateOf("") }
+    var pendingGeneration by rememberSaveable { mutableLongStateOf(-1L) }
     DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, _ -> foreground = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED); tick = SystemClock.elapsedRealtime() }
         lifecycle.addObserver(observer); onDispose { lifecycle.removeObserver(observer) }
@@ -45,16 +46,16 @@ internal fun FamilyPhotoDialog(vm: WardrobeViewModel, remote: String, dismiss: (
     val readable = tick >= 0 && foreground && vm.familyPhoto.readable() && state.remoteId == remote
     val draft = state.draft?.takeIf { readable }
     val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) vm.familyPhoto.prepareFromUri(uri)
+        if (uri != null) vm.familyPhoto.prepareFromUri(uri, pendingGeneration)
     }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success && pendingCapture.isNotEmpty()) vm.familyPhoto.prepareFromUri(Uri.parse(pendingCapture))
+        if (success && pendingCapture.isNotEmpty()) vm.familyPhoto.prepareFromUri(Uri.parse(pendingCapture), pendingGeneration)
         pendingCapture = ""
     }
     // The current shared photo, from the read-only server copy the reader already holds.
     val view = reader.view?.takeIf { readable && reader.remoteId == remote && it.readable(tick) && vm.familyReader.readable(it) }
     val current = view?.candidate?.snapshot?.garments?.find { it.id == state.garmentId }
-    val choose = readable && draft == null && !state.synced && !state.running
+    val choose = readable && draft == null && !state.synced && !state.running && state.queue.size < FamilyMediaQueue.LIMIT
     Dialog(onDismissRequest = dismiss, properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -62,7 +63,13 @@ internal fun FamilyPhotoDialog(vm: WardrobeViewModel, remote: String, dismiss: (
                 TextButton(onClick = dismiss) { Text(stringResource(R.string.close)) }
                 if (state.running) LinearProgressIndicator(Modifier.fillMaxWidth())
                 LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    item { Text(stringResource(R.string.family_photo_hint)) }
+                    item { Text(stringResource(R.string.family_media_photo_hint)) }
+                    if (readable && state.queue.isNotEmpty()) item {
+                        FamilyMediaQueuePanel(state.queue, !state.running) { pending ->
+                            choosing = false
+                            vm.familyPhoto.open(remote, pending.garmentId, pending.name, state.localWardrobe)
+                        }
+                    }
                     if (state.garmentName.isNotBlank()) item { Text(stringResource(R.string.family_photo_item, state.garmentName), style = MaterialTheme.typography.titleMedium) }
                     if (state.synced) item { Text(stringResource(R.string.family_photo_synced)) }
                     state.problem?.let { problem -> item { Text(stringResource(when (problem) {
@@ -87,9 +94,6 @@ internal fun FamilyPhotoDialog(vm: WardrobeViewModel, remote: String, dismiss: (
                         ZoomableItemPhoto(current.photoId, view.candidate.photos, Modifier.fillMaxWidth().height(200.dp), current.name, garmentColour = current.color)
                     }
                     if (draft != null) {
-                        if (draft.garmentId != state.garmentId) item {
-                            Text(stringResource(R.string.family_photo_other_draft, draft.name))
-                        }
                         item {
                             Text(stringResource(R.string.family_photo_new), style = MaterialTheme.typography.labelLarge)
                             state.preview?.let { ZoomableItemPhoto(draft.photoId, it, Modifier.fillMaxWidth().height(240.dp), draft.name) }
@@ -97,10 +101,11 @@ internal fun FamilyPhotoDialog(vm: WardrobeViewModel, remote: String, dismiss: (
                             Text(stringResource(R.string.family_photo_saved))
                         }
                         if (draft.submitted) item { Text(stringResource(R.string.family_edit_pending)) }
-                        item { Button(onClick = { confirm = "send" }, enabled = !state.running && !state.recoverable, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                        item { Button(onClick = { confirm = "send" }, enabled = !state.running && !state.recoverable && state.queue.firstOrNull() == draft, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                             Text(stringResource(if (draft.submitted) R.string.family_edit_retry else R.string.family_photo_send))
                         } }
-                        if (state.recoverable) item { OutlinedButton(onClick = { confirm = "rebase" }, enabled = !state.running, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                        if (state.queue.firstOrNull() != draft) item { Text(stringResource(R.string.family_media_queue_wait)) }
+                        if (state.recoverable || (!draft.submitted && state.queue.firstOrNull() == draft)) item { OutlinedButton(onClick = { confirm = "rebase" }, enabled = !state.running, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                             Text(stringResource(R.string.family_add_rebase))
                         } }
                         item { TextButton(onClick = { confirm = "discard" }, enabled = !state.running && (!draft.submitted || state.recoverable), modifier = Modifier.fillMaxWidth()) {
@@ -110,12 +115,12 @@ internal fun FamilyPhotoDialog(vm: WardrobeViewModel, remote: String, dismiss: (
                         item {
                             Text(stringResource(R.string.family_photo_import_note), style = MaterialTheme.typography.bodySmall)
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                OutlinedButton(onClick = { gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                                OutlinedButton(onClick = { pendingGeneration = state.generation; gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                                     enabled = choose, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
                                     Icon(Icons.Outlined.PhotoLibrary, null); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.gallery))
                                 }
                                 OutlinedButton(onClick = {
-                                    runCatching { vm.familyPhoto.newCapture() }.onSuccess { pendingCapture = it.toString(); camera.launch(it) }
+                                    runCatching { vm.familyPhoto.newCapture() }.onSuccess { pendingGeneration = state.generation; pendingCapture = it.toString(); camera.launch(it) }
                                         .onFailure { vm.reportFailure(OperationKind.PHOTO, it as? Exception ?: IllegalStateException()) }
                                 }, enabled = choose, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
                                     Icon(Icons.Outlined.PhotoCamera, null); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.camera))
