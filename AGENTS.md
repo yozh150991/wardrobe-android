@@ -1,3 +1,14 @@
+## Current handoff — FAM-03 outfit queue, 24 October 2026
+
+0.14.18-family-outfit-queue/code 48, Room/backup 10. Read FAMILY-OUTFIT-QUEUE-0.14.18.md.
+FamilyOutfitQueue + atomic v2 store preserve one unfinished form alongside up to 10
+immutable publications / 512 MiB active ZIPs per remote. Promotion consumes exact form
+atomically; v1 migration preserves submitted receipt, corrupt v2 never falls back.
+Only selected head sends; explicit rebase, expected draft/generation guards; independent
+form survives sending/discarding queue entries. 18 JVM + 5 new instrumentation tests;
+verify current CI. Base main includes PR #15, CI 40128849612 passed 191 JVM/lint/APK.
+Next: common scheduling, opt-in background sync, FAM-04. Native/GC/live fixes pending.
+
 ## Current handoff — FAM-03 media queues, 24 October 2026
 
 0.14.17-family-media-queue/code 47, Room/backup 10. Read FAMILY-MEDIA-QUEUE-0.14.17.md.

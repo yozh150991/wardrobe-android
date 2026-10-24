@@ -2,7 +2,6 @@ package com.familywardrobe.app
 
 import android.content.ContextWrapper
 import android.util.AtomicFile
-import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
@@ -10,7 +9,7 @@ import java.io.FileOutputStream
 internal data class FamilyOutfitForm(val remote: String, val outfit: String, val base: Long, val payload: String = "")
 internal data class FamilyOutfitDraft(val publication: FamilyPublication, val change: FamilyOutfitChange, val submitted: Boolean = false)
 
-/** Account-private, crash-safe editor state and one immutable publication per shared wardrobe. */
+/** Account-private, crash-safe editor state and a bounded publication queue per shared wardrobe. */
 internal class FamilyOutfitStore(private val context: AccountContext, private val account: AuthIdentity) {
     init { require(context.location.key == account.key) }
     private val root = File(context.noBackupFilesDir, "family-outfits/${account.key}")
@@ -19,60 +18,54 @@ internal class FamilyOutfitStore(private val context: AccountContext, private va
     private fun journal(remote: String, suffix: String): AtomicFile {
         require(FamilyRules.validId(remote)); return AtomicFile(File(root, "$remote-$suffix.json"))
     }
-    private fun read(remote: String, suffix: String): JSONObject? {
+    private fun readJson(remote: String, suffix: String, limit: Long): JSONObject? {
         val f = journal(remote, suffix)
         if (!f.baseFile.exists() && !File(f.baseFile.path + ".bak").exists()) return null
         return f.openRead().use { input ->
-            val bytes = java.io.ByteArrayOutputStream().also { PhotoStore.copyLimited(input, it, 128L * 1024) }.toByteArray()
-            JSONObject(bytes.toString(Charsets.UTF_8)).also {
-                require(it.getInt("version") == 1 && it.getString("account") == account.key && it.getString("remote") == remote)
-            }
+            val bytes = java.io.ByteArrayOutputStream().also { PhotoStore.copyLimited(input, it, limit) }.toByteArray()
+            JSONObject(bytes.toString(Charsets.UTF_8))
         }
     }
-    private fun write(remote: String, suffix: String, value: JSONObject) {
-        val bytes = value.put("version", 1).put("account", account.key).put("remote", remote).toString().toByteArray(Charsets.UTF_8)
-        require(bytes.size <= 128 * 1024); check(root.mkdirs() || root.isDirectory)
-        val file = journal(remote, suffix); val out = file.startWrite()
+    private fun state(remote: String): FamilyOutfitJournal {
+        readJson(remote, "state", FamilyOutfitQueue.MAX_JOURNAL.toLong())?.let {
+            return FamilyOutfitQueue.decode(it, account.key, remote)
+        }
+        // Legacy publication took precedence over the form; it was already durably prepared.
+        val draft = readJson(remote, "draft", 128L * 1024)?.let {
+            FamilyOutfitQueue.checkEnvelope(it, 1, account.key, remote)
+            FamilyOutfitQueue.readDraft(it, remote)
+        }
+        val form = if (draft != null) null else readJson(remote, "form", 128L * 1024)?.let {
+            FamilyOutfitQueue.checkEnvelope(it, 1, account.key, remote)
+            FamilyOutfitQueue.readForm(it, remote)
+        }
+        return FamilyOutfitQueue.validate(FamilyOutfitJournal(form, listOfNotNull(draft)), remote)
+    }
+    private fun write(remote: String, state: FamilyOutfitJournal) {
+        val bytes = FamilyOutfitQueue.encode(state, account.key, remote).toString().toByteArray(Charsets.UTF_8)
+        require(bytes.size <= FamilyOutfitQueue.MAX_JOURNAL); check(root.mkdirs() || root.isDirectory)
+        val file = journal(remote, "state"); val out = file.startWrite()
         try { out.write(bytes); out.fd.sync(); file.finishWrite(out) }
         catch (e: Exception) { file.failWrite(out); throw e }
+        // v2 is authoritative even when cleanup is interrupted; never fall back from corrupt v2.
+        journal(remote, "form").delete(); journal(remote, "draft").delete()
     }
-    fun form(remote: String): FamilyOutfitForm? = synchronized(lock) {
-        read(remote, "form")?.let { j -> FamilyOutfitForm(remote, j.getString("outfit"), j.getLong("base"), j.getString("payload")).also {
-            require((it.outfit.isEmpty() || FamilyRules.validId(it.outfit)) && it.base > 0)
-            if (it.payload.isNotEmpty()) JSONObject(it.payload)
-        } }
-    }
+    fun form(remote: String): FamilyOutfitForm? = synchronized(lock) { state(remote).form }
     fun putForm(form: FamilyOutfitForm) = synchronized(lock) {
-        require(form.base > 0 && (form.outfit.isEmpty() || FamilyRules.validId(form.outfit)))
-        require(form.payload.length <= 40_000)
-        write(form.remote, "form", JSONObject().put("outfit", form.outfit).put("base", form.base).put("payload", form.payload))
+        write(form.remote, state(form.remote).copy(form = form))
     }
-    fun clearForm(remote: String) = synchronized(lock) { journal(remote, "form").delete() }
-    fun draft(remote: String): FamilyOutfitDraft? = synchronized(lock) {
-        read(remote, "draft")?.let { j ->
-            val p = FamilyPublication(FamilyArchiveIdentity(remote, j.getString("wardrobe"), j.getString("owner")),
-                j.getString("archive"), j.getLong("base"), j.getString("hash"), j.getLong("size"))
-            val c = j.getJSONObject("change"); val pieces = c.getJSONArray("pieces")
-            FamilyOutfitDraft(p, FamilyOutfitChange(c.getString("id"), c.getBoolean("creating"), c.getString("name"),
-                (0 until pieces.length()).map { pieces.getJSONObject(it).let { piece ->
-                    LookPiece(piece.getString("key"), piece.getString("category"), piece.getString("name"))
-                } }, c.getString("occasion"), c.getString("weather"), c.getString("source"), c.getString("layout"),
-                c.getString("background"), c.getLong("createdAt")), j.getBoolean("submitted"))
-        }
+    fun clearForm(remote: String, expected: FamilyOutfitForm? = null) = synchronized(lock) {
+        val state = state(remote)
+        require(expected == null || state.form == expected) { "Form changed" }
+        write(remote, state.copy(form = null))
     }
-    // Publication identity and submitted state form the journal CAS; display metadata is re-resolved.
-    fun put(draft: FamilyOutfitDraft, expected: FamilyOutfitDraft?) = synchronized(lock) {
-        val current = this.draft(draft.publication.identity.remoteId)
-        require(current?.publication == expected?.publication && current?.submitted == expected?.submitted)
-        val p = draft.publication; val c = draft.change
-        val change = JSONObject().put("id", c.id).put("creating", c.creating).put("name", c.name)
-            .put("occasion", c.occasion).put("weather", c.weather).put("source", c.source).put("layout", c.layout)
-            .put("background", c.background).put("createdAt", c.createdAt).put("pieces", JSONArray().apply {
-                c.pieces.forEach { put(JSONObject().put("key", it.key).put("category", it.category).put("name", it.name)) }
-            })
-        write(p.identity.remoteId, "draft", JSONObject().put("wardrobe", p.identity.wardrobeId).put("owner", p.identity.ownerUid)
-            .put("archive", p.archiveId).put("base", p.baseRevision).put("hash", p.hash).put("size", p.size)
-            .put("submitted", draft.submitted).put("change", change))
+    fun list(remote: String): List<FamilyOutfitDraft> = synchronized(lock) { state(remote).drafts }
+    fun draft(remote: String, outfit: String? = null): FamilyOutfitDraft? = synchronized(lock) {
+        list(remote).let { rows -> if (outfit == null) rows.firstOrNull() else rows.find { it.change.id == outfit } }
+    }
+    fun put(draft: FamilyOutfitDraft, expected: FamilyOutfitDraft?, preparedForm: FamilyOutfitForm? = null) = synchronized(lock) {
+        val remote = draft.publication.identity.remoteId
+        write(remote, FamilyOutfitQueue.put(state(remote), draft, expected, preparedForm))
     }
     fun directory(id: String): File { require(FamilyRules.validId(id)); return File(root, id) }
     private fun photos(id: String) = PhotoStore(object : ContextWrapper(context) {
@@ -84,8 +77,7 @@ internal class FamilyOutfitStore(private val context: AccountContext, private va
     }
     fun remove(draft: FamilyOutfitDraft) = synchronized(lock) {
         val remote = draft.publication.identity.remoteId
-        require(this.draft(remote)?.publication == draft.publication)
-        journal(remote, "draft").delete(); require(this.draft(remote) == null)
+        write(remote, FamilyOutfitQueue.remove(state(remote), draft))
         directory(draft.publication.archiveId).deleteRecursively(); Unit
     }
     fun stage(view: FamilyReadView, change: FamilyOutfitChange, repo: Repository, guard: () -> Unit): FamilyOutfitDraft {

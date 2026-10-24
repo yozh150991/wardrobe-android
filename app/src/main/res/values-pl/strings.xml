@@ -1205,4 +1205,7 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="family_media_add_hint">Przygotuj kilka nowych rzeczy i wysyłaj je po kolei. Do 10 szkiców i 512 MB archiwów do wysłania na garderobę. Po zmianie wersji na serwerze jawnie odśwież kolejny szkic; pozostałe dane zostaną zachowane.</string>
     <string name="family_media_photo_hint">Przygotuj zdjęcia kilku rzeczy, otwierając każdą we wspólnej garderobie. Jeden szkic na rzecz, do 10 szkiców i 512 MB archiwów na garderobę. Zdjęcia są wysyłane po kolei; zmiana wersji na serwerze wymaga jawnego odświeżenia szkicu.</string>
     <string name="family_media_queue_wait">Najpierw zakończ pierwszy szkic w tej kolejce. Wybierz go z listy powyżej.</string>
+    <string name="family_look_add_another">Przygotuj kolejną stylizację</string>
+    <string name="family_look_resume_form">Wznów niedokończoną stylizację</string>
+    <string name="family_look_queue_hint">Do 10 przygotowanych stylizacji i 512 MB archiwów na garderobę. Wysyłaj je po kolei; jawnie odśwież kolejny szkic po zmianie wersji na serwerze. Jeden niedokończony formularz edytora jest zachowywany osobno od kolejki.</string>
 </resources>

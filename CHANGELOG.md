@@ -1,3 +1,11 @@
+## 0.14.18-family-outfit-queue (code 48) — 2026-10-24
+
+- Черга до 10 спільних образів / 512 MiB ZIPs, вибір та FIFO send, явний rebase.
+- Незавершена форма зберігається поряд із чергою; підготовка образу атомарно
+  перетворює форму на публікацію. Міграція двох journals v1 в один state v2.
+- Expected-draft/generation guards, точний receipt retry, UA/EN/PL.
+- 18 JVM і 5 нових Android store tests; Room/backup 10 незмінні.
+
 ## 0.14.15-family-outfits — 23 October 2026 (code 45)
 
 ## 0.14.17-family-media-queue (code 47) — 2026-10-24
