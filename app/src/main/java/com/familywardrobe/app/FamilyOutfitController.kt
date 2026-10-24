@@ -10,7 +10,7 @@ import kotlin.coroutines.coroutineContext
 internal data class FamilyOutfitState(val remote: String = "", val form: FamilyOutfitForm? = null,
     val draft: FamilyOutfitDraft? = null, val view: FamilyReadView? = null, val generation: Long = 0,
     val running: Boolean = false, val problem: FamilyProblem? = null, val recoverable: Boolean = false,
-    val synced: Boolean = false)
+    val synced: Boolean = false, val queue: List<FamilyOutfitDraft> = emptyList(), val hasForm: Boolean = false)
 
 internal class FamilyOutfitController(private val app: WardrobeApplication, private val session: AccountSession,
     private val reader: FamilyReaderController, private val scope: CoroutineScope) {
@@ -50,18 +50,26 @@ internal class FamilyOutfitController(private val app: WardrobeApplication, priv
         return reader.state.value.view?.takeIf { it.remote.identity.remoteId == remote && reader.readable(it) && it.remote.role in setOf("owner", "editor") }
             ?: throw FamilyTransferException(reader.state.value.problem ?: FamilyProblem.RETRY)
     }
-    /** An existing form/publication is always resumed, never overwritten by another item selection. */
-    fun open(remote: String, outfit: String = "") = run { backend, _ ->
+    /** A queued look is selected explicitly; the single unfinished editor is preserved separately. */
+    fun open(remote: String, outfit: String = "", queued: String? = null, startNew: Boolean = false) = run { backend, _ ->
         val generation = mutable.value.generation + 1
         lease.clear()
         mutable.value = FamilyOutfitState(remote = remote, generation = generation, running = true)
         authorize(backend, remote)
-        val draft = store.draft(remote)
-        if (draft != null) mutable.value = mutable.value.copy(draft = draft)
-        else {
+        val rows = store.list(remote); val savedForm = store.form(remote)
+        val draft = when {
+            queued != null -> requireNotNull(rows.find { it.change.id == queued })
+            startNew -> null
+            outfit.isNotEmpty() -> rows.find { it.change.id == outfit }
+            savedForm != null -> null
+            else -> rows.firstOrNull()
+        }
+        mutable.value = mutable.value.copy(queue = rows, hasForm = savedForm != null, draft = draft)
+        if (draft == null) {
+            if (savedForm == null && rows.size >= FamilyOutfitQueue.LIMIT) throw FamilyTransferException(FamilyProblem.LIMIT)
             val view = fresh(backend, remote)
-            val form = store.form(remote) ?: FamilyOutfitForm(remote, outfit, view.remote.revision).also(store::putForm)
-            mutable.value = mutable.value.copy(form = form, view = view,
+            val form = savedForm ?: FamilyOutfitForm(remote, outfit, view.remote.revision).also(store::putForm)
+            mutable.value = mutable.value.copy(form = form, hasForm = true, view = view,
                 problem = if (form.base != view.remote.revision) FamilyProblem.CONFLICT else null)
         }
     }
@@ -79,39 +87,44 @@ internal class FamilyOutfitController(private val app: WardrobeApplication, priv
         source: String, target: String, layout: String, background: String) = run { backend, checkpoint ->
         val state = mutable.value; require(state.generation == generation && state.draft == null)
         val form = requireNotNull(state.form)
+        if (store.list(form.remote).size >= FamilyOutfitQueue.LIMIT) throw FamilyTransferException(FamilyProblem.LIMIT)
         val view = fresh(backend, form.remote)
         mutable.value = mutable.value.copy(view = view)
         if (view.remote.revision != form.base) throw FamilyTransferException(FamilyProblem.CONFLICT)
         val change = FamilyOutfitChange(target.ifEmpty { newId() }, target.isEmpty(), name, pieces, occasion, weather, source, layout, background)
         val draft = store.stage(view, change, session.repository, checkpoint)
         try {
-            authorize(backend, form.remote); store.put(draft, null)
-            // The publication is durable before the editing form is removed.
-            mutable.value = mutable.value.copy(draft = draft, form = null, view = null)
-            store.clearForm(form.remote)
+            authorize(backend, form.remote); store.put(draft, null, preparedForm = form)
+            // Publication and editor removal are one atomic journal update.
+            mutable.value = mutable.value.copy(draft = draft, form = null, hasForm = false, view = null,
+                queue = store.list(form.remote), generation = state.generation + 1)
         } catch (e: Exception) {
-            if (store.draft(form.remote)?.publication != draft.publication) store.directory(draft.publication.archiveId).deleteRecursively()
+            if (store.draft(form.remote, draft.change.id)?.publication != draft.publication) store.directory(draft.publication.archiveId).deleteRecursively()
             throw e
         }
     }
-    fun sync() = run { backend, checkpoint ->
-        var draft = requireNotNull(mutable.value.draft); val remote = draft.publication.identity.remoteId
+    fun sync(expected: FamilyOutfitDraft? = mutable.value.draft) = run { backend, checkpoint ->
+        var draft = requireNotNull(expected); require(FamilyOutfitQueue.same(mutable.value.draft, draft))
+        FamilyOutfitQueue.requireHead(store.list(draft.publication.identity.remoteId), draft)
+        val remote = draft.publication.identity.remoteId
         authorize(backend, remote)
         val previous = draft; draft = draft.copy(submitted = true); store.put(draft, previous)
-        mutable.value = mutable.value.copy(draft = draft, recoverable = false)
+        mutable.value = mutable.value.copy(draft = draft, recoverable = false, queue = store.list(remote))
         try { publishFamilyAddition(draft.publication, backend, { store.checked(draft, checkpoint) }, checkpoint) }
         catch (e: FamilyTransferException) {
             if (e.problem in setOf(FamilyProblem.CONFLICT, FamilyProblem.EXPIRED, FamilyProblem.ARCHIVE, FamilyProblem.LIMIT))
                 mutable.value = mutable.value.copy(recoverable = true)
             throw e
         }
-        checkpoint(); store.clearForm(remote); store.remove(draft)
-        mutable.value = mutable.value.copy(draft = null, form = null, view = null, synced = true, recoverable = false)
+        checkpoint(); store.remove(draft)
+        mutable.value = mutable.value.copy(draft = null, form = null, view = null, synced = true, recoverable = false,
+            queue = store.list(remote), hasForm = store.form(remote) != null, generation = mutable.value.generation + 1)
         reader.open(remote, refresh = true)
     }
     /** Explicit confirmation is required before replaying a look change over a newer shared revision. */
-    fun rebase() = run { backend, checkpoint ->
-        val state = mutable.value; val view = fresh(backend, state.remote)
+    fun rebase(generation: Long = mutable.value.generation) = run { backend, checkpoint ->
+        val state = mutable.value; require(state.generation == generation)
+        val view = fresh(backend, state.remote)
         val previous = state.draft
         if (previous == null) {
             val form = requireNotNull(state.form).copy(base = view.remote.revision)
@@ -125,18 +138,19 @@ internal class FamilyOutfitController(private val app: WardrobeApplication, priv
             try {
                 authorize(backend, state.remote); store.put(draft, previous)
                 store.directory(previous.publication.archiveId).deleteRecursively()
-                mutable.value = mutable.value.copy(draft = draft, recoverable = false)
+                mutable.value = mutable.value.copy(draft = draft, recoverable = false, queue = store.list(state.remote), generation = state.generation + 1)
             } catch (e: Exception) {
-                if (store.draft(state.remote)?.publication != draft.publication) store.directory(draft.publication.archiveId).deleteRecursively()
+                if (store.draft(state.remote, draft.change.id)?.publication != draft.publication) store.directory(draft.publication.archiveId).deleteRecursively()
                 throw e
             }
         }
     }
-    fun discard() = run { _, _ ->
-        val state = mutable.value
-        state.draft?.let { require(!it.submitted || state.recoverable); store.clearForm(state.remote); store.remove(it) }
-            ?: store.clearForm(state.remote)
-        mutable.value = FamilyOutfitState(remote = state.remote, generation = state.generation + 1, running = true)
+    fun discard(generation: Long = mutable.value.generation) = run { _, _ ->
+        val state = mutable.value; require(state.generation == generation)
+        state.draft?.let { require(!it.submitted || state.recoverable); store.remove(it) }
+            ?: store.clearForm(state.remote, requireNotNull(state.form))
+        mutable.value = FamilyOutfitState(remote = state.remote, generation = state.generation + 1, running = true,
+            queue = store.list(state.remote), hasForm = store.form(state.remote) != null)
     }
     fun invalidateSession() { lease.clear(); mutable.value = FamilyOutfitState(generation = mutable.value.generation + 1) }
 }

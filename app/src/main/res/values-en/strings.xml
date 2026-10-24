@@ -1205,4 +1205,7 @@ Your current wardrobe is unchanged.</string>
     <string name="family_media_add_hint">Prepare several new items and send them in order. Up to 10 drafts and 512 MB of upload archives per wardrobe. When the server version changes, explicitly refresh the next draft; other data is preserved.</string>
     <string name="family_media_photo_hint">Prepare photos for several items by opening each in the shared wardrobe. One draft per item, up to 10 drafts and 512 MB of archives per wardrobe. Photos are sent in order; a changed server version requires an explicit draft refresh.</string>
     <string name="family_media_queue_wait">Finish the first draft in this queue first. Select it from the list above.</string>
+    <string name="family_look_add_another">Prepare another outfit</string>
+    <string name="family_look_resume_form">Resume unfinished outfit</string>
+    <string name="family_look_queue_hint">Up to 10 prepared outfits and 512 MB of archives per wardrobe. Send them in order; explicitly refresh the next draft after the server version changes. One unfinished editor form is preserved separately from the queue.</string>
 </resources>
