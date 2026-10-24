@@ -43,9 +43,11 @@ class FamilyMediaQueueTest {
         assertEquals(10, FamilyMediaQueue.put(rows, rows[5].copy(submitted = true), rows[5]).size)
     }
     @Test fun archiveBudgetAllowsExactBoundaryButRejectsOneByteOver() {
-        val a = draft(FamilyMediaQueue.MAX_BYTES - 1); val b = draft(1)
-        assertEquals(listOf(a, b), FamilyMediaQueue.put(listOf(a), b, null))
-        val error = runCatching { FamilyMediaQueue.put(listOf(a, b), draft(1), null) }.exceptionOrNull()
+        // Each publication is independently capped at 128 MiB; the queue budget spans several archives.
+        val rows = (1..4).map { draft(FamilyWire.MAX_ARCHIVE) }
+        assertEquals(FamilyMediaQueue.MAX_BYTES, rows.sumOf { it.publication.size })
+        assertEquals(rows, FamilyMediaQueue.put(rows.dropLast(1), rows.last(), null))
+        val error = runCatching { FamilyMediaQueue.put(rows, draft(1), null) }.exceptionOrNull()
         assertEquals(FamilyProblem.LIMIT, (error as FamilyTransferException).problem)
     }
     @Test fun anotherWardrobeOrOwnerCannotBeCombined() {
