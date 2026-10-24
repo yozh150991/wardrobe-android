@@ -1112,8 +1112,8 @@ Your current wardrobe is unchanged.</string>
     <string name="family_members_retry">Could not receive confirmation or an updated list. Once connected, refresh first: the action may already have completed.</string>
     <string name="family_edit_title">Edit shared item</string>
     <string name="family_edit_open">Edit fields</string>
-    <string name="family_edit_resume">Open pending edit</string>
-    <string name="family_edit_hint">Name, size, location and description. Save draft keeps changes on this device; Send changes publishes them to the family. One pending edit per wardrobe.</string>
+    <string name="family_edit_resume">Item edit queue</string>
+    <string name="family_edit_hint">Save edits for several items, then send one at a time or the whole queue. One draft per item, up to 100 per account. Drafts are kept on this device only.</string>
     <string name="family_edit_name">Name</string>
     <string name="family_edit_size">Size</string>
     <string name="family_edit_location">Storage location</string>
@@ -1193,4 +1193,11 @@ Your current wardrobe is unchanged.</string>
     <string name="family_look_rebase_confirm">Load the current wardrobe and apply your draft? Sending it will replace the current version of this outfit. Other outfits are preserved.</string>
     <string name="family_look_missing">The outfit or a selected item was removed. Open the current wardrobe and review the outfit.</string>
     <string name="family_look_validation">Could not prepare the outfit. Check its name, item availability and compatible seasons. Your draft is kept.</string>
+    <string name="family_queue_count">Queued edits: %1$d</string>
+    <string name="family_queue_item">%1$d. %2$s</string>
+    <string name="family_queue_order">Edits are sent in the order they were saved. Save the current fields before selecting another draft.</string>
+    <string name="family_queue_send">Send whole queue</string>
+    <string name="family_queue_wait">Finish earlier edits first, or send the whole queue.</string>
+    <string name="family_queue_confirm">Send the saved edits for this wardrobe in order? Independent changes will be combined with the current version. A conflicting field, connection failure or access loss will stop the queue; remaining drafts stay on this device.</string>
+    <string name="family_queue_progress">Edits processed: %1$d of %2$d</string>
 </resources>

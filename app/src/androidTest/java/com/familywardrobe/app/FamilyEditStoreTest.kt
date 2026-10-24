@@ -41,4 +41,22 @@ class FamilyEditStoreTest {
         val d=draft();store.put(d);File(context.noBackupFilesDir,"family-edits/${identity.key}/outbox.json").writeText("broken")
         try { store.get(d.remoteId);fail("Corruption accepted") } catch (_: org.json.JSONException) {}
     }
+    @Test fun multipleItemsInSameWardrobeSurviveRestartAndIndependentRemoval() = scenario { context, identity, store ->
+        val first = draft(); val second = draft().copy(remoteId = first.remoteId)
+        store.put(first); store.put(second)
+        val restarted = FamilyEditStore(context, identity)
+        assertEquals(listOf(first, second), restarted.list(first.remoteId))
+        assertEquals(second, restarted.get(first.remoteId, second.garmentId))
+        restarted.remove(second)
+        assertEquals(listOf(first), store.list(first.remoteId))
+    }
+    @Test fun legacySubmittedDraftMigratesAtomicallyWhenAnotherItemIsAdded() = scenario { context, identity, store ->
+        val first = draft().copy(submitted = true); store.put(first)
+        val file = File(context.noBackupFilesDir, "family-edits/${identity.key}/outbox.json")
+        file.writeText(org.json.JSONObject(file.readText()).put("version", 1).toString())
+        val second = draft().copy(remoteId = first.remoteId)
+        FamilyEditStore(context, identity).put(second)
+        assertEquals(2, org.json.JSONObject(file.readText()).getInt("version"))
+        assertEquals(listOf(first, second), store.list(first.remoteId))
+    }
 }

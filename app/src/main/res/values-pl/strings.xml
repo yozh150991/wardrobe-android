@@ -1112,8 +1112,8 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="family_members_retry">Nie udało się otrzymać potwierdzenia lub aktualnej listy. Po odzyskaniu połączenia najpierw odśwież listę: czynność mogła już zostać wykonana.</string>
     <string name="family_edit_title">Edytuj wspólną rzecz</string>
     <string name="family_edit_open">Edytuj pola</string>
-    <string name="family_edit_resume">Otwórz niezakończoną edycję</string>
-    <string name="family_edit_hint">Nazwa, rozmiar, miejsce i opis. Zapisz szkic zachowuje zmiany na tym urządzeniu; Wyślij zmiany udostępnia je rodzinie. Jedna niezakończona edycja na garderobę.</string>
+    <string name="family_edit_resume">Kolejka zmian rzeczy</string>
+    <string name="family_edit_hint">Zapisuj zmiany kilku rzeczy, a następnie wysyłaj je pojedynczo lub całą kolejkę. Jeden szkic na rzecz, do 100 na konto. Szkice są przechowywane tylko na tym urządzeniu.</string>
     <string name="family_edit_name">Nazwa</string>
     <string name="family_edit_size">Rozmiar</string>
     <string name="family_edit_location">Miejsce przechowywania</string>
@@ -1193,4 +1193,11 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="family_look_rebase_confirm">Pobrać aktualną garderobę i zastosować szkic? Wysłanie zastąpi bieżącą wersję tej stylizacji. Inne stylizacje zostaną zachowane.</string>
     <string name="family_look_missing">Stylizacja lub wybrana rzecz została usunięta. Otwórz aktualną garderobę i sprawdź skład stylizacji.</string>
     <string name="family_look_validation">Nie udało się przygotować stylizacji. Sprawdź nazwę, dostępność rzeczy i zgodność sezonów. Szkic zachowano.</string>
+    <string name="family_queue_count">Zmiany w kolejce: %1$d</string>
+    <string name="family_queue_item">%1$d. %2$s</string>
+    <string name="family_queue_order">Zmiany są wysyłane w kolejności zapisu. Zapisz bieżące pola przed wybraniem innego szkicu.</string>
+    <string name="family_queue_send">Wyślij całą kolejkę</string>
+    <string name="family_queue_wait">Najpierw zakończ wcześniejsze zmiany lub wyślij całą kolejkę.</string>
+    <string name="family_queue_confirm">Wysłać zapisane zmiany tej garderoby po kolei? Niezależne zmiany zostaną połączone z bieżącą wersją. Konflikt pola, błąd połączenia lub utrata dostępu zatrzyma kolejkę; pozostałe szkice zostaną na urządzeniu.</string>
+    <string name="family_queue_progress">Przetworzono zmian: %1$d z %2$d</string>
 </resources>

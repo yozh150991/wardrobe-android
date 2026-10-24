@@ -1112,8 +1112,8 @@
     <string name="family_members_retry">Не вдалося отримати підтвердження або оновлений список. Після відновлення мережі спочатку онови список: дія могла вже виконатися.</string>
     <string name="family_edit_title">Редагування спільної речі</string>
     <string name="family_edit_open">Редагувати поля</string>
-    <string name="family_edit_resume">Відкрити незавершену правку</string>
-    <string name="family_edit_hint">Назва, розмір, місце й опис. «Зберегти чернетку» записує зміни лише на цьому пристрої; «Надіслати зміни» публікує їх для сім’ї. На один гардероб — одна незавершена правка.</string>
+    <string name="family_edit_resume">Черга правок речей</string>
+    <string name="family_edit_hint">Зберігай правки кількох речей, а потім надсилай по одній або всю чергу. Одна чернетка на річ, до 100 на акаунт. Чернетки зберігаються лише на цьому пристрої.</string>
     <string name="family_edit_name">Назва</string>
     <string name="family_edit_size">Розмір</string>
     <string name="family_edit_location">Місце зберігання</string>
@@ -1193,4 +1193,11 @@
     <string name="family_look_rebase_confirm">Завантажити актуальний гардероб і застосувати вашу чернетку? Під час надсилання вона замінить поточну версію цього образу. Інші образи збережуться.</string>
     <string name="family_look_missing">Образ або вибрану річ видалено. Відкрийте актуальний гардероб і перегляньте склад образу.</string>
     <string name="family_look_validation">Не вдалося підготувати образ. Перевірте назву, доступність речей і сумісність сезонів. Чернетку збережено.</string>
+    <string name="family_queue_count">Черга правок: %1$d</string>
+    <string name="family_queue_item">%1$d. %2$s</string>
+    <string name="family_queue_order">Правки надсилаються в порядку збереження. Щоб перейти до іншої, спочатку збережи введені поля.</string>
+    <string name="family_queue_send">Надіслати всю чергу</string>
+    <string name="family_queue_wait">Спершу заверши попередні правки або надішли всю чергу.</string>
+    <string name="family_queue_confirm">Надіслати збережені правки цього гардероба по черзі? Незалежні зміни об’єднаються з поточною версією. При зміні того самого поля, втраті зв’язку або доступу черга зупиниться; решта чернеток залишиться на пристрої.</string>
+    <string name="family_queue_progress">Оброблено правок: %1$d з %2$d</string>
 </resources>

@@ -1,6 +1,7 @@
 # Wardrobe Android
 
-Поточна база: **0.14.15-family-outfits**, code **45**, Room/backup **10**.
+Поточна база: **0.14.16-family-queue**, code **46**, Room/backup **10**.
+Черга правок кількох спільних речей, FIFO і явне пакетне надсилання — [FAMILY-QUEUE-0.14.16.md](FAMILY-QUEUE-0.14.16.md).
 Спільні образи: створення/редагування через наявний конструктор, чернетка та явне надсилання — [FAMILY-OUTFITS-0.14.15.md](FAMILY-OUTFITS-0.14.15.md).
 
 Попередньо виправлено 13 багів QA-регресії: [QA-FIXES-0.14.14.md](QA-FIXES-0.14.14.md) (звіт — [QA-REPORT-0.14.13.md](QA-REPORT-0.14.13.md)); потрібен деплой family functions.

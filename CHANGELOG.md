@@ -1,5 +1,15 @@
 ## 0.14.15-family-outfits — 23 October 2026 (code 45)
 
+## 0.14.16-family-queue (code 46) — 2026-10-23
+
+- Кілька metadata-чернеток спільного гардероба: одна на річ, до 100 на акаунт.
+- Список черги, вибір/видалення окремої правки, FIFO й підтверджене пакетне надсилання.
+- Refresh незавершених правок із об’єднанням незалежних полів, зупинка на конфлікті,
+  точний submitted retry після втрати відповіді, збереження решти черги.
+- Атомарний outbox v1 → v2, без змін Room/backup 10; 22 JVM і 2 instrumentation tests.
+- Новий backend deployment не потрібний; photo/add/outfit queues і background sync далі.
+
+
 FAM-03: show shared outfit collages and create/edit looks with the existing constructor,
 including owned/mixed/inspiration, pins, replacements and canvas controls. Account-private
 editor autosave and immutable publication; explicit send, receipt-first retry and confirmed
