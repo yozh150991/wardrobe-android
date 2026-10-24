@@ -1,3 +1,14 @@
+## Current handoff — FAM-03 media queues, 24 October 2026
+
+0.14.17-family-media-queue/code 47, Room/backup 10. Read FAMILY-MEDIA-QUEUE-0.14.17.md.
+FamilyAddStore v2 + FamilyMediaQueue keep separate FIFO lists for additions/photos,
+10 drafts / 512 MiB active ZIPs per remote/kind. Only selected exact head sends;
+rebase stays explicit and preserves position, submitted receipt-first retry unchanged.
+Item-specific photo selection, add-another flow, picker generation guards. v1 upgraded
+atomically on mutation. 14 JVM + 5 new store instrumentation tests; verify current CI.
+PR #14 already passed 177 JVM/unit/lint/APK. Next: outfit queue, scheduling/background
+sync, FAM-04. No new backend deployment; native acceptance and orphan GC pending.
+
 ## Current handoff — FAM-03 metadata queue, 23 October 2026
 
 0.14.16-family-queue/code 46, Room/backup 10. Read FAMILY-QUEUE-0.14.16.md.

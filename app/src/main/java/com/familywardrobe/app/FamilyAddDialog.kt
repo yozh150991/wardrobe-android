@@ -51,6 +51,7 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
     val sharedSnapshot = reader.view?.takeIf { reader.remoteId == remote }?.candidate?.snapshot
     val sharedWardrobe = sharedSnapshot?.wardrobes?.singleOrNull()
     var pendingCapture by rememberSaveable { mutableStateOf("") }
+    var pendingGeneration by rememberSaveable { mutableLongStateOf(-1L) }
     LaunchedEffect(state.synced) {
         if (state.synced) { creating = false; newName = ""; newSize = ""; newLocation = ""; newDescription = ""; newCustomCategory = ""; newCustomColor = "" }
     }
@@ -59,10 +60,10 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
     val customCategories = if (sharedSnapshot != null && sharedWardrobe != null) fields.categories(sharedSnapshot, sharedWardrobe) else emptyList()
     val customColors = if (sharedSnapshot != null && sharedWardrobe != null) fields.colors(sharedSnapshot, sharedWardrobe) else emptyList()
     val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null && fields.valid) vm.familyAdd.prepareNew(fields, uri)
+        if (uri != null && fields.valid) vm.familyAdd.prepareNew(fields, uri, pendingGeneration)
     }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success && pendingCapture.isNotEmpty() && fields.valid) vm.familyAdd.prepareNew(fields, Uri.parse(pendingCapture))
+        if (success && pendingCapture.isNotEmpty() && fields.valid) vm.familyAdd.prepareNew(fields, Uri.parse(pendingCapture), pendingGeneration)
         pendingCapture = ""
     }
     DisposableEffect(lifecycle) {
@@ -72,6 +73,7 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
     LaunchedEffect(foreground) { while (foreground) { tick = SystemClock.elapsedRealtime(); delay(500) } }
     val readable = tick >= 0 && foreground && vm.familyAdd.readable() && state.remoteId == remote
     val draft = state.draft?.takeIf { readable }
+    val canAdd = readable && !state.running && state.queue.size < FamilyMediaQueue.LIMIT
     Dialog(onDismissRequest = dismiss, properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -79,7 +81,19 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
                 TextButton(onClick = dismiss) { Text(stringResource(R.string.close)) }
                 if (state.running) LinearProgressIndicator(Modifier.fillMaxWidth())
                 LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    item { Text(stringResource(R.string.family_add_hint)) }
+                    item { Text(stringResource(R.string.family_media_add_hint)) }
+                    if (readable && state.queue.isNotEmpty()) item {
+                        FamilyMediaQueuePanel(state.queue, !state.running) { pending ->
+                            vm.familyAdd.open(remote, state.localWardrobe, pending.garmentId)
+                        }
+                    }
+                    if (readable && (draft != null || state.synced)) item {
+                        OutlinedButton(onClick = {
+                            creating = false; newName = ""; newSize = ""; newLocation = ""; newDescription = ""
+                            newCustomCategory = ""; newCustomColor = ""
+                            vm.familyAdd.open(remote, state.localWardrobe, startNew = true)
+                        }, enabled = canAdd, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_media_add_another)) }
+                    }
                     if (state.synced) item { Text(stringResource(R.string.family_add_synced)) }
                     state.problem?.let { problem -> item { Text(stringResource(when (problem) {
                         FamilyProblem.ACCESS -> R.string.family_access
@@ -120,10 +134,11 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
                             }
                         }
                         if (draft.submitted) item { Text(stringResource(R.string.family_edit_pending)) }
-                        item { Button(onClick = { confirm = "send" }, enabled = !state.running && !state.recoverable, modifier = Modifier.fillMaxWidth()) {
+                        item { Button(onClick = { confirm = "send" }, enabled = !state.running && !state.recoverable && state.queue.firstOrNull() == draft, modifier = Modifier.fillMaxWidth()) {
                             Text(stringResource(if (draft.submitted) R.string.family_edit_retry else R.string.family_add_send))
                         } }
-                        if (state.recoverable) item { OutlinedButton(onClick = { confirm = "rebase" }, enabled = !state.running, modifier = Modifier.fillMaxWidth()) {
+                        if (state.queue.firstOrNull() != draft) item { Text(stringResource(R.string.family_media_queue_wait)) }
+                        if (state.recoverable || (!draft.submitted && state.queue.firstOrNull() == draft)) item { OutlinedButton(onClick = { confirm = "rebase" }, enabled = !state.running, modifier = Modifier.fillMaxWidth()) {
                             Text(stringResource(R.string.family_add_rebase))
                         } }
                         item { TextButton(onClick = { confirm = "discard" }, enabled = !state.running && (!draft.submitted || state.recoverable), modifier = Modifier.fillMaxWidth()) {
@@ -152,14 +167,14 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
                                 Choice(newStyle, Matching.styles, { newStyle = it }, R.string.style, enabled = !state.running)
                                 if (!fields.valid) Text(stringResource(R.string.family_new_name_first), style = MaterialTheme.typography.bodySmall)
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    OutlinedButton(onClick = { gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                                        enabled = !state.running && fields.valid, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+                                    OutlinedButton(onClick = { pendingGeneration = state.generation; gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                                        enabled = canAdd && fields.valid, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
                                         Icon(Icons.Outlined.PhotoLibrary, null); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.gallery))
                                     }
                                     OutlinedButton(onClick = {
-                                        runCatching { vm.familyAdd.newCapture() }.onSuccess { pendingCapture = it.toString(); camera.launch(it) }
+                                        runCatching { vm.familyAdd.newCapture() }.onSuccess { pendingGeneration = state.generation; pendingCapture = it.toString(); camera.launch(it) }
                                             .onFailure { vm.reportFailure(OperationKind.PHOTO, it as? Exception ?: IllegalStateException()) }
-                                    }, enabled = !state.running && fields.valid, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+                                    }, enabled = canAdd && fields.valid, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
                                         Icon(Icons.Outlined.PhotoCamera, null); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.camera))
                                     }
                                 }
@@ -172,7 +187,7 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
                         val matches = state.choices.filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
                         if (matches.isEmpty()) item { Text(stringResource(R.string.family_add_empty)) }
                         items(matches, key = { it.id }) { garment ->
-                            OutlinedButton(onClick = { vm.familyAdd.prepare(garment.id) }, enabled = !state.running, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(garment.name) }
+                            OutlinedButton(onClick = { vm.familyAdd.prepare(garment.id) }, enabled = canAdd, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(garment.name) }
                         }
                     }
                 }

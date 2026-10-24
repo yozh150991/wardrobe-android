@@ -1200,4 +1200,9 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="family_queue_wait">Najpierw zakończ wcześniejsze zmiany lub wyślij całą kolejkę.</string>
     <string name="family_queue_confirm">Wysłać zapisane zmiany tej garderoby po kolei? Niezależne zmiany zostaną połączone z bieżącą wersją. Konflikt pola, błąd połączenia lub utrata dostępu zatrzyma kolejkę; pozostałe szkice zostaną na urządzeniu.</string>
     <string name="family_queue_progress">Przetworzono zmian: %1$d z %2$d</string>
+    <string name="family_media_queue_count">Szkice: %1$d z %2$d</string>
+    <string name="family_media_add_another">Przygotuj kolejną rzecz</string>
+    <string name="family_media_add_hint">Przygotuj kilka nowych rzeczy i wysyłaj je po kolei. Do 10 szkiców i 512 MB archiwów do wysłania na garderobę. Po zmianie wersji na serwerze jawnie odśwież kolejny szkic; pozostałe dane zostaną zachowane.</string>
+    <string name="family_media_photo_hint">Przygotuj zdjęcia kilku rzeczy, otwierając każdą we wspólnej garderobie. Jeden szkic na rzecz, do 10 szkiców i 512 MB archiwów na garderobę. Zdjęcia są wysyłane po kolei; zmiana wersji na serwerze wymaga jawnego odświeżenia szkicu.</string>
+    <string name="family_media_queue_wait">Najpierw zakończ pierwszy szkic w tej kolejce. Wybierz go z listy powyżej.</string>
 </resources>

@@ -1200,4 +1200,9 @@ Your current wardrobe is unchanged.</string>
     <string name="family_queue_wait">Finish earlier edits first, or send the whole queue.</string>
     <string name="family_queue_confirm">Send the saved edits for this wardrobe in order? Independent changes will be combined with the current version. A conflicting field, connection failure or access loss will stop the queue; remaining drafts stay on this device.</string>
     <string name="family_queue_progress">Edits processed: %1$d of %2$d</string>
+    <string name="family_media_queue_count">Drafts: %1$d of %2$d</string>
+    <string name="family_media_add_another">Prepare another item</string>
+    <string name="family_media_add_hint">Prepare several new items and send them in order. Up to 10 drafts and 512 MB of upload archives per wardrobe. When the server version changes, explicitly refresh the next draft; other data is preserved.</string>
+    <string name="family_media_photo_hint">Prepare photos for several items by opening each in the shared wardrobe. One draft per item, up to 10 drafts and 512 MB of archives per wardrobe. Photos are sent in order; a changed server version requires an explicit draft refresh.</string>
+    <string name="family_media_queue_wait">Finish the first draft in this queue first. Select it from the list above.</string>
 </resources>

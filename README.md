@@ -1,6 +1,7 @@
 # Wardrobe Android
 
-Поточна база: **0.14.16-family-queue**, code **46**, Room/backup **10**.
+Поточна база: **0.14.17-family-media-queue**, code **47**, Room/backup **10**.
+Черги додавання речей та заміни фото: кілька чернеток, FIFO, явний rebase — [FAMILY-MEDIA-QUEUE-0.14.17.md](FAMILY-MEDIA-QUEUE-0.14.17.md).
 Черга правок кількох спільних речей, FIFO і явне пакетне надсилання — [FAMILY-QUEUE-0.14.16.md](FAMILY-QUEUE-0.14.16.md).
 Спільні образи: створення/редагування через наявний конструктор, чернетка та явне надсилання — [FAMILY-OUTFITS-0.14.15.md](FAMILY-OUTFITS-0.14.15.md).
 
