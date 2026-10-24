@@ -1181,4 +1181,16 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="family_new_custom_category">Własna kategoria wspólnej garderoby</string>
     <string name="family_new_custom_color">Własny kolor wspólnej garderoby</string>
     <string name="family_new_custom_none">Brak</string>
+    <string name="family_look_title">Wspólna stylizacja</string>
+    <string name="family_look_open">Utwórz stylizację / wznów szkic</string>
+    <string name="family_look_edit">Edytuj stylizację</string>
+    <string name="family_look_hint">Stylizacja zostanie zapisana we wspólnej garderobie po potwierdzeniu wysłania.</string>
+    <string name="family_look_draft_hint">Jeden szkic stylizacji na wspólną garderobę. Niedokończony szkic otwiera się pierwszy. Zapis przygotowuje zmiany do wysłania.</string>
+    <string name="family_look_synced">Wspólna stylizacja została zapisana.</string>
+    <string name="family_look_send">Wyślij stylizację</string>
+    <string name="family_look_send_confirm">Zapisać tę stylizację we wspólnej garderobie? Zmiany będą widoczne dla jej uczestników.</string>
+    <string name="family_look_conflict">Wspólna garderoba zmieniła się lub taki zestaw już istnieje. Szkic zachowano. Odśwież dane i sprawdź zmiany.</string>
+    <string name="family_look_rebase_confirm">Pobrać aktualną garderobę i zastosować szkic? Wysłanie zastąpi bieżącą wersję tej stylizacji. Inne stylizacje zostaną zachowane.</string>
+    <string name="family_look_missing">Stylizacja lub wybrana rzecz została usunięta. Otwórz aktualną garderobę i sprawdź skład stylizacji.</string>
+    <string name="family_look_validation">Nie udało się przygotować stylizacji. Sprawdź nazwę, dostępność rzeczy i zgodność sezonów. Szkic zachowano.</string>
 </resources>

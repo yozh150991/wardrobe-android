@@ -22,12 +22,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.json.JSONArray
 import org.json.JSONObject
 
+internal data class LookEditorSave(val pieces: List<LookPiece>, val name: String, val occasion: String,
+    val weather: String, val source: String, val target: String, val layout: String, val background: String)
+internal class LookEditorPort(val restored: JSONObject?, val keep: (JSONObject) -> Unit,
+    val clear: () -> Unit, val save: (LookEditorSave) -> Unit)
+
 @Composable
-fun LookEditor(s: Snapshot, wardrobe: String, anchorId: String, outfitId: String, vm: WardrobeViewModel, onDirty: (Boolean) -> Unit,
-    onStage: (Boolean) -> Unit, done: (String) -> Unit) {
+internal fun LookEditor(s: Snapshot, wardrobe: String, anchorId: String, outfitId: String, vm: WardrobeViewModel, onDirty: (Boolean) -> Unit,
+    onStage: (Boolean) -> Unit, port: LookEditorPort? = null, saving: Boolean = false, done: (String) -> Unit) {
     val original = s.outfits.find { it.id == outfitId }
     val originalPieces = original?.let { LookRules.saved(s, it) }.orEmpty()
-    val restored = remember { vm.draftFor("look", wardrobe, outfitId) }
+    val restored = remember { if (port != null) port.restored else vm.draftFor("look", wardrobe, outfitId) }
     val anchor = s.garments.find { it.id == anchorId }?.let(LookRules::owned)
     var stage by rememberSaveable { mutableIntStateOf(restored?.optInt("stage", if (anchor == null && original == null) 0 else 1) ?: if (anchor == null && original == null) 0 else 1) }
     var occasion by rememberSaveable { mutableStateOf(restored?.optString("occasion", original?.occasion ?: "everyday") ?: original?.occasion ?: "everyday") }
@@ -54,7 +59,8 @@ fun LookEditor(s: Snapshot, wardrobe: String, anchorId: String, outfitId: String
     var nameError by remember { mutableStateOf(false) }
     val nameFocus = remember { FocusRequester() }
     var duplicateLookId by rememberSaveable { mutableStateOf("") }
-    val busy by vm.busy.collectAsStateWithLifecycle()
+    val privateBusy by vm.busy.collectAsStateWithLifecycle()
+    val busy = saving || privateBusy
     val ideas = inspirationPieces()
     val pool = LookRules.candidates(s, wardrobe, occasion, weather, source, ideas)
     val eligible = DailyOutfits.items(s, java.time.LocalDate.now().toString()).map { it.piece.id }.toSet()
@@ -67,8 +73,11 @@ fun LookEditor(s: Snapshot, wardrobe: String, anchorId: String, outfitId: String
     val payload = JSONObject().put("stage", stage).put("occasion", occasion).put("weather", weather).put("source", source)
         .put("manual", manual).put("name", name).put("keys", JSONArray(keys)).put("locks", JSONArray(locks)).put("layout", layout).put("background", background).toString()
     val baseline = remember { payload }
-    LaunchedEffect(payload) { onStage(stage == 0); onDirty(payload != baseline || restored != null || original == null && pieces.isNotEmpty()); vm.keepDraft("look", wardrobe, outfitId, JSONObject(payload)) }
-    fun submit(target: String) { vm.saveCanvasLook(wardrobe, pieces, name, occasion, weather, source, target, layout, background) { onDirty(false); done(it) } }
+    LaunchedEffect(payload) { onStage(stage == 0); onDirty(payload != baseline || restored != null || original == null && pieces.isNotEmpty()); if (port != null) port.keep(JSONObject(payload)) else vm.keepDraft("look", wardrobe, outfitId, JSONObject(payload)) }
+    fun submit(target: String) {
+        if (port != null) port.save(LookEditorSave(pieces, name, occasion, weather, source, target, layout, background))
+        else vm.saveCanvasLook(wardrobe, pieces, name, occasion, weather, source, target, layout, background) { onDirty(false); done(it) }
+    }
     fun save() {
         if (!TextLimits.hasVisibleText(name)) { nameError = true; nameFocus.requestFocus(); return }
         val signature = pieces.map { it.ownedId ?: it.key }.sorted().joinToString("|")
@@ -177,7 +186,7 @@ fun LookEditor(s: Snapshot, wardrobe: String, anchorId: String, outfitId: String
         AlertDialog(onDismissRequest = { if (!busy) duplicateLookId = "" }, title = { Text(stringResource(R.string.canvas_duplicate_title)) },
             text = { Text(stringResource(R.string.canvas_duplicate_hint, existing.name)) },
             confirmButton = { TextButton(onClick = { submit(existing.id); duplicateLookId = "" }, enabled = !busy) { Text(stringResource(R.string.canvas_update_existing)) } },
-            dismissButton = { TextButton(onClick = { vm.clearDraft(); onDirty(false); done(existing.id) }, enabled = !busy) { Text(stringResource(R.string.open_outfit)) } })
+            dismissButton = { TextButton(onClick = { if (port != null) port.clear() else vm.clearDraft(); onDirty(false); done(existing.id) }, enabled = !busy) { Text(stringResource(R.string.open_outfit)) } })
     }
     choosingCategory?.let { category ->
         val choices = alternatives(category).filter { it.key !in keys }

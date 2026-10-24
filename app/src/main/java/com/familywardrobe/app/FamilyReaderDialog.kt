@@ -26,6 +26,7 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
     val state by vm.familyReader.state.collectAsStateWithLifecycle()
     val access by vm.familyAccess.state.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
+    var outfit by rememberSaveable(remoteId) { mutableStateOf(false) }
     var adding by rememberSaveable(remoteId) { mutableStateOf(false) }
     var editing by rememberSaveable(remoteId) { mutableStateOf(false) }
     var photo by rememberSaveable(remoteId) { mutableStateOf(false) }
@@ -89,17 +90,39 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
                         "editor" -> R.string.family_read_editor
                         else -> R.string.family_read_viewer
                     }), style = MaterialTheme.typography.bodySmall)
-                    if (view.remote.role in setOf("owner", "editor")) OutlinedButton(onClick = { vm.familyEdit.open(remoteId); editing = true },
-                        enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_edit_resume)) }
-                    if (view.remote.role in setOf("owner", "editor")) OutlinedButton(onClick = {
-                        vm.familyAdd.open(remoteId, vm.active.value); adding = true
-                    }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_add_open)) }
-                    OutlinedTextField(value = query, onValueChange = { query = it }, singleLine = true,
-                        label = { Text(stringResource(R.string.family_read_search)) }, modifier = Modifier.fillMaxWidth())
                     val matches = snapshot.garments.filter { item ->
                         query.isBlank() || listOf(item.name, item.location, item.description).any { it.contains(query.trim(), ignoreCase = true) }
                     }
                     LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        item {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                if (view.remote.role in setOf("owner", "editor")) {
+                                    OutlinedButton(onClick = { vm.familyEdit.open(remoteId); editing = true }, enabled = !busy,
+                                        modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_edit_resume)) }
+                                    OutlinedButton(onClick = { vm.familyAdd.open(remoteId, vm.active.value); adding = true }, enabled = !busy,
+                                        modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_add_open)) }
+                                    OutlinedButton(onClick = { vm.familyOutfit.open(remoteId); outfit = true }, enabled = !busy,
+                                        modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_look_open)) }
+                                }
+                                OutlinedTextField(value = query, onValueChange = { query = it }, singleLine = true,
+                                    label = { Text(stringResource(R.string.family_read_search)) }, modifier = Modifier.fillMaxWidth())
+                            }
+                        }
+                        items(snapshot.outfits.filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }, key = { "outfit:${it.id}" }) { look ->
+                            OutlinedCard(Modifier.fillMaxWidth()) {
+                                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(look.name, style = MaterialTheme.typography.titleMedium)
+                                    Text(stringResource(label(look.source)), style = MaterialTheme.typography.bodySmall)
+                                    CompositionLocalProvider(LocalLookPhotos provides view.candidate.photos) {
+                                        OutfitComposition(LookRules.saved(snapshot, look), vm, enabled = false,
+                                            layout = look.layout, background = look.background) {}
+                                    }
+                                    if (view.remote.role in setOf("owner", "editor")) OutlinedButton(onClick = {
+                                        vm.familyOutfit.open(remoteId, look.id); outfit = true
+                                    }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_look_edit)) }
+                                }
+                            }
+                        }
                         if (matches.isEmpty()) item { Text(stringResource(R.string.family_read_no_items)) }
                         items(matches, key = { it.id }) { garment ->
                             Card(Modifier.fillMaxWidth()) {
@@ -128,6 +151,7 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
             }
         }
     }
+    if (outfit) FamilyOutfitDialog(vm, remoteId) { outfit = false }
     if (adding) FamilyAddDialog(vm, remoteId) { adding = false }
     if (editing) FamilyEditDialog(vm, remoteId) { editing = false }
     if (photo) FamilyPhotoDialog(vm, remoteId) { photo = false }

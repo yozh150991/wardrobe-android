@@ -921,9 +921,12 @@ fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEm
 
 }
 
+// Shared editors supply their isolated photo store to all reused canvas/picker/detail components.
+internal val LocalLookPhotos = staticCompositionLocalOf<PhotoStore?> { null }
+
 @Composable
 fun ItemPhoto(id: String, vm: WardrobeViewModel, modifier: Modifier = Modifier, description: String? = null, fit: Boolean = true, backgroundColor: androidx.compose.ui.graphics.Color? = null, garmentColour: String? = null) {
-    ItemPhoto(id, vm.photos, modifier, description, fit, backgroundColor, garmentColour)
+    ItemPhoto(id, LocalLookPhotos.current ?: vm.photos, modifier, description, fit, backgroundColor, garmentColour)
 }
 
 @Composable

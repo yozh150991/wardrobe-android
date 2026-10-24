@@ -1181,4 +1181,16 @@
     <string name="family_new_custom_category">Власна категорія спільного гардероба</string>
     <string name="family_new_custom_color">Власний колір спільного гардероба</string>
     <string name="family_new_custom_none">Без власної</string>
+    <string name="family_look_title">Спільний образ</string>
+    <string name="family_look_open">Створити образ / відкрити чернетку</string>
+    <string name="family_look_edit">Редагувати образ</string>
+    <string name="family_look_hint">Образ зберігається у спільному гардеробі після підтвердження надсилання.</string>
+    <string name="family_look_draft_hint">Одна чернетка образу на спільний гардероб. Незавершена чернетка відкривається першою. Збереження готує зміни до надсилання.</string>
+    <string name="family_look_synced">Спільний образ збережено.</string>
+    <string name="family_look_send">Надіслати образ</string>
+    <string name="family_look_send_confirm">Зберегти цей образ у спільному гардеробі? Зміни будуть доступні його учасникам.</string>
+    <string name="family_look_conflict">Спільний гардероб змінився або такий набір речей уже є. Чернетку збережено. Оновіть дані та перевірте зміни.</string>
+    <string name="family_look_rebase_confirm">Завантажити актуальний гардероб і застосувати вашу чернетку? Під час надсилання вона замінить поточну версію цього образу. Інші образи збережуться.</string>
+    <string name="family_look_missing">Образ або вибрану річ видалено. Відкрийте актуальний гардероб і перегляньте склад образу.</string>
+    <string name="family_look_validation">Не вдалося підготувати образ. Перевірте назву, доступність речей і сумісність сезонів. Чернетку збережено.</string>
 </resources>

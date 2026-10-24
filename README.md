@@ -1,7 +1,9 @@
 # Wardrobe Android
 
-Поточна база: **0.14.14-qa-fixes2**, code **44**, Room/backup **10**.
-Виправлено 13 багів QA-регресії: [QA-FIXES-0.14.14.md](QA-FIXES-0.14.14.md) (звіт — [QA-REPORT-0.14.13.md](QA-REPORT-0.14.13.md)); потрібен деплой family functions.
+Поточна база: **0.14.15-family-outfits**, code **45**, Room/backup **10**.
+Спільні образи: створення/редагування через наявний конструктор, чернетка та явне надсилання — [FAMILY-OUTFITS-0.14.15.md](FAMILY-OUTFITS-0.14.15.md).
+
+Попередньо виправлено 13 багів QA-регресії: [QA-FIXES-0.14.14.md](QA-FIXES-0.14.14.md) (звіт — [QA-REPORT-0.14.13.md](QA-REPORT-0.14.13.md)); потрібен деплой family functions.
 FAM-03: нова річ прямо в спільний гардероб із галереї/камери — [FAMILY-NEW-0.14.11.md](FAMILY-NEW-0.14.11.md).
 FAM-03: заміна фото спільної речі — [FAMILY-PHOTO-0.14.10.md](FAMILY-PHOTO-0.14.10.md).
 FAM-03: додавання копії власної речі з фото до спільного гардероба, чернетки/retry/CAS; попередній редактор полів збережено. Нового APK у пакеті немає.
@@ -20,7 +22,7 @@ FAM-03: додавання копії власної речі з фото до �
 ## GitHub і локальні білди
 
 [GITHUB-WORKFLOW-UK.md](GITHUB-WORKFLOW-UK.md) описує commit/push, гілки, теги, CI та звичайні локальні збірки.
-GitHub workflow підготовлено; віддалений запуск і Android-приймання ще не підтверджені.
+GitHub CI працює: main 797daad успішно пройшов unit/lint/preview APK. Для нового коду дивись CI відповідного PR; native-приймання окреме.
 
 ## Поточний стан
 
@@ -29,7 +31,7 @@ GitHub workflow підготовлено; віддалений запуск і A
 [callable hotfix1](FAMILY-CALLABLE-HOTFIX1.md), [progress hotfix2](FAMILY-PROGRESS-HOTFIX2.md).
 Ізольований перегляд серверної копії реалізований: [FAMILY-READER-0.14.5.md](FAMILY-READER-0.14.5.md).
 Запрошення, discovery, roles/revoke/leave реалізовані: [FAMILY-ACCESS-0.14.6.md](FAMILY-ACCESS-0.14.6.md).
-Перший shared metadata editor/outbox/CAS реалізовано: [FAMILY-EDIT-0.14.7.md](FAMILY-EDIT-0.14.7.md). Далі — фото/додавання/образи й постійна сімейна синхронізація. Листи та історія завершених запрошень ще потрібні. Багфікси відкладені користувачем.
+Перший shared metadata editor/outbox/CAS реалізовано: [FAMILY-EDIT-0.14.7.md](FAMILY-EDIT-0.14.7.md). Фото, додавання та образи реалізовані; далі — черга кількох операцій і постійна сімейна синхронізація. Листи та історія завершених запрошень ще потрібні.
 Фото на телефоні й повна Android-збірка потребують перевірки.
 Живі Storage rules користувач змінював окремо; не розгортати стару копію поверх них.
 
