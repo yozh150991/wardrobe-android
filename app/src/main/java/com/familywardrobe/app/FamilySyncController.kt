@@ -8,17 +8,25 @@ import kotlinx.coroutines.sync.withLock
 
 internal data class FamilySyncState(val remote: String = "", val operations: List<FamilySyncOperation> = emptyList(),
     val labels: Map<String, String> = emptyMap(), val plan: FamilySyncPlan? = null, val busy: Boolean = false, val problem: String = "")
-internal class FamilySyncController(private val app: WardrobeApplication, private val session: AccountSession, private val scope: CoroutineScope) {
+internal class FamilySyncController(private val app: WardrobeApplication, private val session: AccountSession, private val reader: FamilyReaderController, private val scope: CoroutineScope) {
     private val store = FamilySyncStore(session.context, session.identity)
     private val mutable = MutableStateFlow(FamilySyncState()); val state = mutable.asStateFlow()
     private var manual: Job? = null
     private var manualRemote = ""
+    private var lastDenied = ""
     private val intents = java.util.concurrent.ConcurrentHashMap<String, java.util.concurrent.atomic.AtomicLong>()
     private fun intent(remote: String) = intents.computeIfAbsent(remote) { java.util.concurrent.atomic.AtomicLong() }
     private fun guard() {
         if (!session.isOpen || app.authBackend.signedInIdentity()?.key != session.identity.key) throw CancellationException("Account changed")
     }
-    init { scope.launch(Dispatchers.IO) { store.changes.collect { if (mutable.value.remote.isNotEmpty()) refresh(mutable.value.remote) } } }
+    init { scope.launch(Dispatchers.IO) { store.changes.collect {
+        if (mutable.value.remote.isNotEmpty()) {
+            refresh(mutable.value.remote)
+            val denied = mutable.value.plan?.takeIf { it.problem == "ACCESS" }?.let { "${it.id}:${it.cursor}" }.orEmpty()
+            if (denied.isNotEmpty() && denied != lastDenied) reader.invalidate()
+            lastDenied = denied
+        }
+    } } }
     private fun refresh(remote: String) {
         try {
             guard(); val operations = FamilySyncOperations(session.context, session.identity, remote)
@@ -63,6 +71,7 @@ internal class FamilySyncController(private val app: WardrobeApplication, privat
             } catch (e: CancellationException) { created?.let { store.failure(remote, it, "STOPPED") }; throw e }
             catch (e: Exception) {
                 created?.let { store.failure(remote, it, "STOPPED") }
+                if (e is FamilyTransferException && e.problem == FamilyProblem.ACCESS) reader.invalidate()
                 mutable.value = mutable.value.copy(problem = when (e) {
                     is FamilySyncChanged -> "CHANGED"
                     is FamilyTransferException -> e.problem.name
