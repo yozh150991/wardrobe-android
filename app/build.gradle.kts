@@ -15,8 +15,8 @@ android {
         applicationId = "com.familywardrobe.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 48
-        versionName = "0.14.18-family-outfit-queue"
+        versionCode = 49
+        versionName = "0.14.19-family-background-sync"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {

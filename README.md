@@ -1,6 +1,7 @@
 # Wardrobe Android
 
-Поточна база: **0.14.18-family-outfit-queue**, code **48**, Room/backup **10**.
+Поточна база: **0.14.19-family-background-sync**, code **49**, Room/backup **10**.
+Підтверджені пакети всіх сімейних черг і opt-in фонове надсилання — [FAMILY-SYNC-0.14.19.md](FAMILY-SYNC-0.14.19.md).
 Черга спільних образів та атомарне збереження форми/публікації — [FAMILY-OUTFIT-QUEUE-0.14.18.md](FAMILY-OUTFIT-QUEUE-0.14.18.md).
 Черги додавання речей та заміни фото: кілька чернеток, FIFO, явний rebase — [FAMILY-MEDIA-QUEUE-0.14.17.md](FAMILY-MEDIA-QUEUE-0.14.17.md).
 Черга правок кількох спільних речей, FIFO і явне пакетне надсилання — [FAMILY-QUEUE-0.14.16.md](FAMILY-QUEUE-0.14.16.md).

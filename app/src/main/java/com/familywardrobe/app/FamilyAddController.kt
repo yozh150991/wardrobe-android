@@ -13,7 +13,7 @@ internal data class FamilyAddState(val remoteId: String = "", val localWardrobe:
     val unreadablePhoto: Boolean = false, val queue: List<FamilyAddDraft> = emptyList(), val generation: Long = 0)
 internal class FamilyAddController(private val app: WardrobeApplication, private val session: AccountSession,
     private val reader: FamilyReaderController, private val scope: CoroutineScope) {
-    private val lease = FamilyReadLease(); private val lock = Mutex()
+    private val lease = FamilyReadLease(); private val lock = FamilySyncLocks.account(session.identity.key)
     private val store = FamilyAddStore(session.context, session.identity)
     private val mutable = MutableStateFlow(FamilyAddState()); val state = mutable.asStateFlow()
     fun readable() = session.isOpen && app.authBackend.signedInIdentity()?.key == session.identity.key && lease.permits(session.id, android.os.SystemClock.elapsedRealtime())

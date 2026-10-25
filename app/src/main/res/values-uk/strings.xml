@@ -1208,4 +1208,21 @@
     <string name="family_look_add_another">Підготувати ще один образ</string>
     <string name="family_look_resume_form">Продовжити незавершений образ</string>
     <string name="family_look_queue_hint">До 10 підготовлених образів і 512 МБ архівів на гардероб. Надсилай їх по черзі; після зміни серверної версії явно онови наступну чернетку. Одна незавершена форма редактора зберігається окремо від черги.</string>
+    <string name="family_sync_title">Надсилання спільних змін</string>
+    <string name="family_sync_hint">Підтверди список уже збережених змін. Нові чернетки не додаються до цього пакета. Зміни надсилаються послідовно; конфлікт зупиняє пакет для перегляду. Незавершені форми не надсилаються.</string>
+    <string name="family_sync_progress">Завершено: %1$d із %2$d</string>
+    <string name="family_sync_done">Підтверджений пакет надіслано. Онови спільний гардероб, щоб побачити зміни.</string>
+    <string name="family_sync_paused">Надсилання зупинене. Збережені чернетки залишаються доступними.</string>
+    <string name="family_sync_retrying">Очікування повтору. Запит із невідомим результатом зберігає початкові дані.</string>
+    <string name="family_sync_queued">Пакет очікує або надсилається. Фоновий режим може чекати мережі та дозволу Android.</string>
+    <string name="family_sync_stop">Зупинити надсилання</string>
+    <string name="family_sync_review">Черга або серверна версія змінилася. Відкрий відповідну чернетку, перевір конфлікт або онови її, потім підтверди новий пакет. Автоматичного перезапису немає.</string>
+    <string name="family_sync_pending">Підготовлених змін: %1$d</string>
+    <string name="family_sync_background">Надіслати цей пакет у фоні через нетарифіковану мережу (зазвичай Wi-Fi), навіть після закриття застосунку. Вихід з акаунта зупиняє пакет.</string>
+    <string name="family_sync_send">Підтвердити надсилання списку</string>
+    <string name="family_sync_confirm">Надіслати %1$d підготовлених змін у вибраному режимі? Під час зупинки вже прийняті сервером зміни не скасовуються. Після втрати відповіді повтор перевіряє результат того самого запиту.</string>
+    <string name="family_sync_edit">Поля речі</string>
+    <string name="family_sync_add">Додавання речі</string>
+    <string name="family_sync_photo">Заміна фото</string>
+    <string name="family_sync_outfit">Образ</string>
 </resources>

@@ -34,6 +34,7 @@ class WardrobeViewModel internal constructor(application: Application, private v
         familyOutfit.invalidateSession()
         super.onCleared()
     }
+    internal val familySync = FamilySyncController(application as WardrobeApplication, session, viewModelScope)
     internal val familyReader = FamilyReaderController(application as WardrobeApplication, session, viewModelScope)
     internal val familyEdit = FamilyEditController(application as WardrobeApplication, session, familyReader, viewModelScope)
     internal val familyAdd = FamilyAddController(application as WardrobeApplication, session, familyReader, viewModelScope)

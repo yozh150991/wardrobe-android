@@ -1,11 +1,11 @@
 # Wardrobe — роадмап і передача роботи
 
-Оновлено: **2026-10-24, Europe/Warsaw**. Редакція документа: **34**.
-База вихідного коду: **0.14.18-family-outfit-queue**, `versionCode=48`, Room/backup **10**.
-Статус: FAM-03 outfit queue реалізована, verify. До 10 публікацій + одна незавершена
-форма, атомарний promotion, FIFO send і явний rebase. Див. FAMILY-OUTFIT-QUEUE-0.14.18.md.
-Add/photo queues — PR #15: CI 40128849612 pass (191 JVM, lint/schema/preview APK).
-FAM-01/02/03 загалом partial; планування/фонова синхронізація,
+Оновлено: **2026-10-25, Europe/Warsaw**. Редакція документа: **35**.
+База вихідного коду: **0.14.19-family-background-sync**, `versionCode=49`, Room/backup **10**.
+Статус: FAM-03 підтверджені пакети й opt-in фонове надсилання реалізовані, verify.
+Точний список metadata/add/photo/outfit; durable receipt checkpoint, stop-on-conflict.
+Див. FAMILY-SYNC-0.14.19.md. PR #16 злитий у базу; CI 40130329782 pass (209 JVM/lint/APK).
+FAM-01/02/03 загалом partial; automatic refresh/rebase та continuous sync,
 історія запрошень, FAM-04, GC і native-приймання залишаються відкритими.
 Live functions deploy попередніх 0.14.13–14 не підтверджений.
 
@@ -13,8 +13,8 @@ Live functions deploy попередніх 0.14.13–14 не підтвердж�
 Погоджений порядок: спрощення каталогу та імпорт → помічник покупки → сімейний доступ.
 Нова пряма вказівка користувача має перевагу над цим планом.
 
-**Актуальна контрольна точка:** 0.14.18/code48, Codex, 24.10.2026.
-18 нових JVM-тестів і 5 instrumented tests. Host runner: 23 suites pass; backend 148 pass; missing client config skipped.
+**Актуальна контрольна точка:** 0.14.19/code49, Codex, 25.10.2026.
+23 нових JVM-тести й 6 instrumented tests. Host runner: 23 suites pass, backend 148 pass; missing client config skipped.
 Android CI цієї гілки перевірити перед передачею.
 Спільне native-приймання відкладене користувачем; це не блокує погоджену розробку.
 
@@ -260,7 +260,7 @@ PHOTO-01–10 і PHOTO-12–14 реалізовані у джерелах; ст�
 
 ### FAM-03 — захист і синхронізація спільного гардероба
 
-**P0 для випуску R3 · partial · залежить від FAM-01–02.** У 0.14.1 реалізовані й перевірені серверні role/expiry/CAS guards та Storage rules. Android initial transfer є у 0.14.2, isolated read-only cache/lease у 0.14.5, roles/revoke у 0.14.6. У 0.14.7 є metadata editor для чотирьох полів, account-private durable outbox, явна синхронізація, stable UUID retry та CAS-conflict comparison/rebase. У 0.14.8 реалізовано додавання копії власної речі з готовим фото. У 0.14.10 — заміна фото наявної спільної речі (галерея/камера як є або готове фото власної речі). У 0.14.11 — нова річ прямо в спільний гардероб (поля + фото з галереї/камери), без приватної копії. У 0.14.12 — у цій формі доступні наявні власні категорії/кольори спільного гардероба. У 0.14.15 — shared outfits через чинний конструктор, ізольовані чернетки й явне надсилання/retry/rebase. У 0.14.16 — multi-item metadata queue/FIFO/batch send, outbox v2. У 0.14.17 — add/photo queues, FIFO і явний rebase. У 0.14.18 — outfit queue та атомарне збереження форми/публікації. Далі: спільне планування черг і continuous sync.
+**P0 для випуску R3 · partial · залежить від FAM-01–02.** У 0.14.1 реалізовані й перевірені серверні role/expiry/CAS guards та Storage rules. Android initial transfer є у 0.14.2, isolated read-only cache/lease у 0.14.5, roles/revoke у 0.14.6. У 0.14.7 є metadata editor для чотирьох полів, account-private durable outbox, явна синхронізація, stable UUID retry та CAS-conflict comparison/rebase. У 0.14.8 реалізовано додавання копії власної речі з готовим фото. У 0.14.10 — заміна фото наявної спільної речі (галерея/камера як є або готове фото власної речі). У 0.14.11 — нова річ прямо в спільний гардероб (поля + фото з галереї/камери), без приватної копії. У 0.14.12 — у цій формі доступні наявні власні категорії/кольори спільного гардероба. У 0.14.15 — shared outfits через чинний конструктор, ізольовані чернетки й явне надсилання/retry/rebase. У 0.14.16 — multi-item metadata queue/FIFO/batch send, outbox v2. У 0.14.17 — add/photo queues, FIFO і явний rebase. У 0.14.18 — outfit queue та атомарне збереження форми/публікації. У 0.14.19 — підтверджені пакети всіх типів і opt-in WorkManager. Далі: узгоджена політика автоматичного refresh/rebase та continuous sync.
 
 **Приймання:** viewer не записує дані навіть прямим SDK-запитом; editor змінює лише дозволений гардероб; сторонній UID не читає дані/фото; editor не видає права. Перевірити дві конкурентні правки, retry, видалення/архів, зміну ролі й відкликання під час upload. Прострочені офлайн-записи після відкликання відхиляються. При виявленні відкликання очистити/закрити кеш за обраною політикою. Не обіцяти миттєве стирання вже отриманих даних на відключеному пристрої.
 
@@ -540,3 +540,13 @@ and device acceptance remain pending; no live Firebase deployment is included.
   exact receipt retry, покоління вибору/підтвердження й autosave guards.
 - Перевірки і native-матриця: FAMILY-OUTFIT-QUEUE-0.14.18.md; CI перевірити перед передачею.
 - Далі: scheduling/background sync, потім FAM-04; GC/native/live fixes відкриті.
+
+### 2026-10-25 — FAM-03 підтверджені фонові пакети — Codex, verify
+
+- 0.14.19/code49 поверх main після PR #16; зміни 0.14.18 збережені.
+- FamilySyncPlan/Store/Engine/Schedule/Controller/Dialog, shared editor lock,
+  exact approved requests, durable receipt checkpoint, stop/sign-out handling.
+- One-time opt-in WorkManager на unmetered мережі. Без rebase/new-draft enrollment;
+  stale revision зупиняє пакет для ручного оновлення й нового підтвердження.
+- 23 JVM + 6 Android tests; докази й native-матриця: FAMILY-SYNC-0.14.19.md.
+- Далі: safe refresh/rebase policy і continuous sync; потім FAM-04. GC/native/live fixes відкриті.
