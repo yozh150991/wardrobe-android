@@ -1208,4 +1208,21 @@ Your current wardrobe is unchanged.</string>
     <string name="family_look_add_another">Prepare another outfit</string>
     <string name="family_look_resume_form">Resume unfinished outfit</string>
     <string name="family_look_queue_hint">Up to 10 prepared outfits and 512 MB of archives per wardrobe. Send them in order; explicitly refresh the next draft after the server version changes. One unfinished editor form is preserved separately from the queue.</string>
+    <string name="family_sync_title">Send shared changes</string>
+    <string name="family_sync_hint">Confirm the list of saved changes. New drafts are not added to this batch. Changes are sent in order; a conflict pauses the batch for review. Unfinished forms are not sent.</string>
+    <string name="family_sync_progress">Completed: %1$d of %2$d</string>
+    <string name="family_sync_done">The approved batch was sent. Refresh the shared wardrobe to see the changes.</string>
+    <string name="family_sync_paused">Sending is stopped. Saved drafts remain available.</string>
+    <string name="family_sync_retrying">Waiting to retry. A request with an unknown outcome keeps its original data.</string>
+    <string name="family_sync_queued">The batch is waiting or sending. Background mode may wait for a network and Android scheduling.</string>
+    <string name="family_sync_stop">Stop sending</string>
+    <string name="family_sync_review">The queue or server version changed. Open the relevant draft, review the conflict or refresh it, then approve a new batch. Changes are not overwritten automatically.</string>
+    <string name="family_sync_pending">Prepared changes: %1$d</string>
+    <string name="family_sync_background">Send this batch in the background over an unmetered network (usually Wi-Fi), even after closing the app. Signing out stops the batch.</string>
+    <string name="family_sync_send">Approve sending this list</string>
+    <string name="family_sync_confirm">Send %1$d prepared changes in the selected mode? Stopping does not undo changes already accepted by the server. After a lost response, retry checks the same request.</string>
+    <string name="family_sync_edit">Item details</string>
+    <string name="family_sync_add">Add item</string>
+    <string name="family_sync_photo">Replace photo</string>
+    <string name="family_sync_outfit">Outfit</string>
 </resources>

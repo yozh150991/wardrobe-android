@@ -16,7 +16,7 @@ internal class FamilyEditController(private val app: WardrobeApplication, privat
     private val lease = FamilyReadLease()
     fun readable() = session.isOpen && app.authBackend.signedInIdentity()?.key == session.identity.key && lease.permits(session.id, android.os.SystemClock.elapsedRealtime())
     private val store = FamilyEditStore(session.context, session.identity)
-    private val lock = Mutex(); private val mutable = MutableStateFlow(FamilyEditState()); val state = mutable.asStateFlow()
+    private val lock = FamilySyncLocks.account(session.identity.key); private val mutable = MutableStateFlow(FamilyEditState()); val state = mutable.asStateFlow()
     private fun guard() {
         if (!session.isOpen || app.authBackend.signedInIdentity()?.key != session.identity.key) throw CancellationException("Account changed")
     }

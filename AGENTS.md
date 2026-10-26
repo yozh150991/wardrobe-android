@@ -1,3 +1,15 @@
+## Current handoff — FAM-03 approved background batches, 25 October 2026
+
+0.14.19-family-background-sync/code 49, Room/backup 10. Read FAMILY-SYNC-0.14.19.md.
+Based on main after PR #16 (0576c48); outfit queue included. Shared account Mutex now
+serializes all four editors with FamilySyncEngine. Exact approved operations only;
+submitted receipt retry, durable ack -> outbox removal -> cursor. Opt-in one-time
+WorkManager, unmetered network, 10 operations/run, bounded network retries; sign-out
+cancels/pauses plans. No automatic rebase or enrolling new drafts. Stale base stops for
+manual review/new approval. 23 JVM + 6 instrumentation tests; verify current CI.
+PR #16 CI 40130329782 passed 209 JVM/lint/schema/APK. Next: safe refresh/rebase policy
+and continuous sync, then FAM-04. No live deployment; native/GC/live fixes pending.
+
 ## Current handoff — FAM-03 outfit queue, 24 October 2026
 
 0.14.18-family-outfit-queue/code 48, Room/backup 10. Read FAMILY-OUTFIT-QUEUE-0.14.18.md.

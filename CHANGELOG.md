@@ -1,3 +1,11 @@
+## 0.14.19-family-background-sync (code 49) — 2026-10-25
+
+- Підтверджений список metadata/add/photo/outfit операцій: foreground або opt-in
+  WorkManager на unmetered мережі; нові чернетки не включаються автоматично.
+- Спільний account lock, exact request fingerprints, durable receipt checkpoint,
+  stop-on-conflict і sign-out cancellation; без автоматичного rebase.
+- UA/EN/PL, 23 JVM і 6 Android storage tests; Room/backup 10 незмінні.
+
 ## 0.14.18-family-outfit-queue (code 48) — 2026-10-24
 
 - Черга до 10 спільних образів / 512 MiB ZIPs, вибір та FIFO send, явний rebase.

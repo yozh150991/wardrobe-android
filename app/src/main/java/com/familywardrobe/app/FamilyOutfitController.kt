@@ -15,7 +15,7 @@ internal data class FamilyOutfitState(val remote: String = "", val form: FamilyO
 internal class FamilyOutfitController(private val app: WardrobeApplication, private val session: AccountSession,
     private val reader: FamilyReaderController, private val scope: CoroutineScope) {
     private val store = FamilyOutfitStore(session.context, session.identity)
-    private val lock = Mutex(); private val lease = FamilyReadLease()
+    private val lock = FamilySyncLocks.account(session.identity.key); private val lease = FamilyReadLease()
     private val mutable = MutableStateFlow(FamilyOutfitState()); val state = mutable.asStateFlow()
     private fun guard() {
         if (!session.isOpen || app.authBackend.signedInIdentity()?.key != session.identity.key) throw CancellationException("Account changed")

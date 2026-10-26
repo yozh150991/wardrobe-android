@@ -91,7 +91,10 @@ internal class AccountSession(val identity: AuthIdentity, application: WardrobeA
     fun close(signedOut: Boolean = true) {
         if (closed) return
         closed = true
-        if (signedOut) CloudSchedule.enabled(context, identity.key, false)
+        if (signedOut) {
+            CloudSchedule.enabled(context, identity.key, false)
+            FamilySyncSchedule.signOut(context, identity)
+        }
         viewModelStore.clear()
         app.accountClosures[identity.key] = app.backgroundScope.launch(Dispatchers.IO) {
             privateJob?.join()

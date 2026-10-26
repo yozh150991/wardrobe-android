@@ -26,6 +26,7 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
     val state by vm.familyReader.state.collectAsStateWithLifecycle()
     val access by vm.familyAccess.state.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
+    var syncing by rememberSaveable(remoteId) { mutableStateOf(false) }
     var outfit by rememberSaveable(remoteId) { mutableStateOf(false) }
     var adding by rememberSaveable(remoteId) { mutableStateOf(false) }
     var editing by rememberSaveable(remoteId) { mutableStateOf(false) }
@@ -59,6 +60,7 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
                     TextButton(onClick = { if (state.running) vm.cancelOperation(); onDismiss() },
                         modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text(stringResource(R.string.close)) }
                 }
+                OutlinedButton(onClick = { syncing = true }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_sync_title)) }
                 if (state.remoteId == remoteId && state.running) {
                     Text(stringResource(R.string.family_read_loading), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                     val progress = familyUploadProgress(true, state.bytes, state.total)
@@ -151,6 +153,7 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
             }
         }
     }
+    if (syncing) FamilySyncDialog(vm, remoteId, view != null && view.remote.role in setOf("owner", "editor")) { syncing = false }
     if (outfit) FamilyOutfitDialog(vm, remoteId) { outfit = false }
     if (adding) FamilyAddDialog(vm, remoteId) { adding = false }
     if (editing) FamilyEditDialog(vm, remoteId) { editing = false }
