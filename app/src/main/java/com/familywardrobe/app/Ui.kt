@@ -583,7 +583,7 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
     var advanced by rememberSaveable { mutableStateOf(restored?.optBoolean("advanced", false) ?: false) }
     val editorPhotoKey = "$wardrobe:$id"
     val photoEditRevision by vm.photoEditRevision.collectAsStateWithLifecycle()
-    val hasPhotoSession = remember(photoEditRevision, editorPhotoKey, photo) { vm.photoSessionValue(editorPhotoKey, photo) != null }
+    val hasPhotoSession = remember(photoEditRevision, editorPhotoKey, photo) { vm.hasPhotoSession(editorPhotoKey, photo) }
     DisposableEffect(editorPhotoKey) { vm.activatePhotoEditor(editorPhotoKey); onDispose { vm.releasePhotoEditor(editorPhotoKey) } }
     val pendingPhoto by remember(vm, editorPhotoKey) { vm.editorPhoto(editorPhotoKey) }.collectAsStateWithLifecycle(initialValue = null)
     LaunchedEffect(pendingPhoto) { pendingPhoto?.let { photo = it } }
@@ -634,7 +634,7 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
         }
     }
     fun saveItem(addNext: Boolean, confirmedDuplicate: Boolean = false) {
-        if (vm.photoSessionValue(editorPhotoKey, photo) != null) { editingPhoto = true; return }
+        if (vm.hasPhotoSession(editorPhotoKey, photo)) { editingPhoto = true; return }
         val finalPhoto = vm.latestEditorPhoto(editorPhotoKey) ?: photo
         validation = !TextLimits.hasVisibleText(name) || finalPhoto.isBlank() || category !in Matching.categories || !moneyValid || (shopImported && !WishRules.validLink(shopLink))
         when {

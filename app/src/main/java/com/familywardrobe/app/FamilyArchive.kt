@@ -32,25 +32,33 @@ internal class FamilyArchive(private val context: AccountContext, private val re
             throw FamilyTransferException(FamilyProblem.ARCHIVE)
         return target
     }
-    override suspend fun stage(record: FamilyMigrationRecord): FamilyMigrationRecord = repo.writes.withLock {
+    override suspend fun stage(record: FamilyMigrationRecord): FamilyMigrationRecord {
         val work = coroutineContext; val checkpoint = { work.ensureActive(); guard() }; checkpoint()
         if (record.phase != FamilyMigrationPhase.PREPARED) {
             // Old foundation-only journals have no archive size. They need explicit Prepare again, never silent recreation.
             if (record.archiveSize == 0L) throw FamilyTransferException(FamilyProblem.ARCHIVE)
-            return@withLock record
+            return record
         }
         require(directory.mkdirs() || directory.isDirectory)
         val temporary = File(directory,"${record.remoteId}.tmp")
-        try {
+        // Only the consistent snapshot and photo pins need the private write lock. Writing every photo into the
+        // ZIP takes minutes for a large wardrobe and used to block all saves (audit A-05); confirm() still
+        // rejects the transfer when the local revision moved on meanwhile.
+        val (revision, state) = repo.writes.withLock {
+            checkpoint()
             val revision = revision(); val state = WardrobeSnapshots.select(repo.snapshot(),record.wardrobeId)
             BackupStateRules.validate(state)
+            photos.pin(state.photoIds())
+            revision to state
+        }
+        try {
             val manifest = FamilyEnvelope(Backup(context,repo,photos)).encode(state,record.identity,0).toByteArray(Charsets.UTF_8)
             FamilySnapshotZip.write(temporary, manifest, state, photos, checkpoint)
             val hash = digest(temporary,checkpoint)
             check(temporary.renameTo(file(record)))
             // The bytes are durable before the checkpoint. PREPARED may safely rebuild after a crash.
-            checkpoint(); store.staged(record,revision,hash,file(record).length())
-        } finally { temporary.delete() }
+            checkpoint(); return store.staged(record,revision,hash,file(record).length())
+        } finally { photos.unpin(state.photoIds()); temporary.delete() }
     }
     companion object {
         internal fun digest(file: File, checkpoint: () -> Unit = {}): String {

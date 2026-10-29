@@ -69,6 +69,7 @@ class WardrobeViewModel internal constructor(application: Application, private v
     // Account-private storage: reopening another UID cannot expose this draft.
     private val draftStore = EditorDraftStore(accountContext)
     private var editorDraft: JSONObject? = draftStore.read()
+    private var editorDraftKey: String? = PhotoSessionDraft.formKey(editorDraft)
     internal val photoEditRevision = MutableStateFlow(0)
     fun draft(): JSONObject? = editorDraft
     fun draftFor(kind: String, wardrobe: String, original: String): JSONObject? = editorDraft?.takeIf {
@@ -80,33 +81,35 @@ class WardrobeViewModel internal constructor(application: Application, private v
         writeEditorDraft(next)
     }
     private fun writeEditorDraft(next: JSONObject): Boolean {
-        if (next.toString() == editorDraft?.toString()) return true
-        // Small synchronous commit prevents an immediate process death from losing the last typed value.
+        // Compare without serializing the photo history: the form part is small, the session is shared by identity.
+        val key = PhotoSessionDraft.formKey(next)
+        val session = next.optJSONObject("fields")?.optJSONObject(PhotoSessionDraft.FIELD)
+        if (editorDraft != null && key == editorDraftKey && session === editorDraft?.optJSONObject("fields")?.optJSONObject(PhotoSessionDraft.FIELD)) return true
+        // The draft is persisted on a background thread; the ledger stays synchronous (EditorDraftStore, audit A-01).
         if (draftStore.write(next)) {
             draftPhotos.addAll(protectedDraftPhotos() + PhotoSessionDraft.referencedPhotos(next.optJSONObject("fields")))
-            editorDraft = next; photoEditRevision.value++; return true
+            editorDraft = next; editorDraftKey = key; photoEditRevision.value++; return true
         }
         else notice.value = R.string.draft_save_failed
         return false
     }
+    /** Presence check without copying the (possibly large) command history. */
+    internal fun hasPhotoSession(owner: String, photo: String): Boolean = editorDraft?.takeIf {
+        PhotoSessionDraft.owns(it, owner, photo)
+    }?.optJSONObject("fields")?.optJSONObject(PhotoSessionDraft.FIELD) != null
     internal fun photoSessionValue(owner: String, photo: String): JSONObject? = editorDraft?.takeIf {
         PhotoSessionDraft.owns(it, owner, photo)
     }?.optJSONObject("fields")?.optJSONObject(PhotoSessionDraft.FIELD)?.let { JSONObject(it.toString()) }
     internal fun keepPhotoSession(owner: String, session: PhotoSessionDraft): Boolean {
         if (photoOwner != owner || !PhotoSessionDraft.owns(editorDraft, owner, session.photoId)) return false
-        val next = JSONObject(requireNotNull(editorDraft).toString())
-        val fields = next.getJSONObject("fields")
-        if (session.history.steps.isEmpty()) fields.remove(PhotoSessionDraft.FIELD)
-        else fields.put(PhotoSessionDraft.FIELD, session.json())
+        val next = PhotoSessionDraft.withSession(requireNotNull(editorDraft), if (session.history.steps.isEmpty()) null else session.json())
         return writeEditorDraft(next)
     }
     internal fun discardPhotoSession(owner: String, photo: String): Boolean {
         if (photoOwner != owner || !PhotoSessionDraft.owns(editorDraft, owner, photo)) return false
-        val next = JSONObject(requireNotNull(editorDraft).toString())
-        next.getJSONObject("fields").remove(PhotoSessionDraft.FIELD)
-        return writeEditorDraft(next)
+        return writeEditorDraft(PhotoSessionDraft.withSession(requireNotNull(editorDraft), null))
     }
-    fun clearDraft() { cancelPhotoWork(); if (draftStore.clear()) { editorDraft = null; photoEditRevision.value++ } else notice.value = R.string.draft_save_failed }
+    fun clearDraft() { cancelPhotoWork(); if (draftStore.clear()) { editorDraft = null; editorDraftKey = null; photoEditRevision.value++ } else notice.value = R.string.draft_save_failed }
     internal fun beginShopImport(sharedId: String? = null): Boolean {
         if (busy.value) return false
         val existing = editorDraft
@@ -154,7 +157,8 @@ class WardrobeViewModel internal constructor(application: Application, private v
     private fun updateDraftPhoto(id: String) {
         val draft = editorDraft ?: return
         val fields = draft.optJSONObject("fields") ?: return
-        val fresh = JSONObject(fields.toString()).put("photo", id)
+        // keepDraft re-attaches the photo session only for the same photo; never copy the history here.
+        val fresh = JSONObject(fields, fields.keys().asSequence().filter { it != PhotoSessionDraft.FIELD }.toList().toTypedArray()).put("photo", id)
         keepDraft(draft.getString("kind"), draft.getString("wardrobe"), draft.getString("original"), fresh)
     }
     private fun protectedDraftPhotos(): Set<String> = PhotoSessionDraft.referencedPhotos(editorDraft?.optJSONObject("fields"))
@@ -179,7 +183,10 @@ class WardrobeViewModel internal constructor(application: Application, private v
     val imports = repo.dao.imports().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val batchImporter = BatchImporter(accountContext, repo, photos, analyzer, photoQueue, viewModelScope) { notice.value = it }
     internal val photoReprocessor = PhotoReprocessor(PhotoReprocessStore(accountContext), repo, photos, analyzer, photoQueue, viewModelScope) { notice.value = it }
-    init { repo.editorDraftPhotos = ::protectedDraftPhotos }
+    init {
+        repo.editorDraftPhotos = ::protectedDraftPhotos
+        viewModelScope.launch { draftStore.failures.drop(1).collect { notice.value = R.string.draft_save_failed } }
+    }
     internal fun reprocessPhotos(wardrobe: String, ids: List<String>, done: () -> Unit) = perform(OperationKind.PHOTO) {
         photoReprocessor.begin(wardrobe, ids); done()
     }

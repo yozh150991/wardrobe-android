@@ -48,7 +48,7 @@ internal fun FamilyOutfitDialog(vm: WardrobeViewModel, remote: String, dismiss: 
                     Text(stringResource(R.string.family_look_title), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
                     TextButton(onClick = dismiss) { Text(stringResource(R.string.close)) }
                 }
-                if (state.running) LinearProgressIndicator(Modifier.fillMaxWidth())
+                if (state.running) FamilyBusyRow(state.waiting) { vm.familyOutfit.cancel() }
                 if (readable) Column(Modifier.padding(horizontal = 16.dp)) {
                     FamilyOutfitQueuePanel(state.queue, !state.running) { vm.familyOutfit.open(remote, queued = it.change.id) }
                     if (form == null) TextButton(onClick = { vm.familyOutfit.open(remote, startNew = true) },

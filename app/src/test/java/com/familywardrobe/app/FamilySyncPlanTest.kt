@@ -17,22 +17,36 @@ class FamilySyncPlanTest {
         val published = mutableListOf<FamilySyncOperation>(); val receipts = mutableSetOf<String>()
         var failPublish = false; var failAck = false; var failRemove = false; var revoked = false
         var afterPublish: (() -> Unit)? = null
+        /** Simulated server: every op starts from [base]; [head] advances on each commit or foreign write. */
+        var head = 7L; val bases = mutableMapOf<String, Long>()
+        fun base(o: FamilySyncOperation) = bases[o.id] ?: 7L
         override fun plan() = stored
         override fun save(next: FamilySyncPlan, expected: FamilySyncPlan) {
             assertEquals(expected, stored); stored = next
             if (next.acknowledged && failAck) { failAck = false; error("Crash after durable ack") }
         }
         override fun pending(kind: FamilySyncKind) = rows.filter { it.kind == kind }
-        override suspend fun authorize(operation: FamilySyncOperation) {
+        override suspend fun authorize(operation: FamilySyncOperation, plan: FamilySyncPlan): FamilySyncDecision {
             if (revoked) throw FamilyTransferException(FamilyProblem.ACCESS)
+            val current = rows.first { it.id == operation.id }
+            val base = base(operation)
+            if (current.submitted || base == head) return FamilySyncDecision.Send(operation)
+            if (!plan.ownsAfter(base, head)) throw FamilyTransferException(FamilyProblem.CONFLICT)
+            if (operation.kind != FamilySyncKind.EDIT) return FamilySyncDecision.Defer
+            val rebased = operation.copy(fingerprint = "c".repeat(64))
+            rows[rows.indexOfFirst { it.id == operation.id }] = rebased; bases[operation.id] = head
+            return FamilySyncDecision.Send(rebased)
         }
         override fun submitted(operation: FamilySyncOperation) {
             val i = rows.indexOfFirst { operation.matches(it) }; require(i >= 0); rows[i] = rows[i].copy(submitted = true)
         }
-        override suspend fun publish(operation: FamilySyncOperation) {
+        override suspend fun publish(operation: FamilySyncOperation): Long {
+            val revision = base(operation) + 1
+            if (operation.id !in receipts) { require(revision == head + 1) { "CAS" }; head = revision }
             published += operation; receipts += operation.id
             afterPublish?.invoke()
             if (failPublish) { failPublish = false; error("Lost response") }
+            return revision
         }
         override fun remove(operation: FamilySyncOperation) {
             rows.removeAll { operation.matches(it) }
@@ -40,9 +54,10 @@ class FamilySyncPlanTest {
         }
         override fun checkpoint() { if (!stored.active || stored.id != id) throw CancellationException("Stopped") }
     }
-    @Test fun stablePriorityAcrossFourKinds() {
+    @Test fun wholeArchiveOperationsGoBeforeItemDetails() {
         val rows = FamilySyncKind.entries.reversed().map { op(it) }
-        assertEquals(FamilySyncKind.entries.toList(), FamilySyncPlanner.ordered(rows.groupBy { it.kind }).map { it.kind })
+        assertEquals(listOf(FamilySyncKind.ADD, FamilySyncKind.PHOTO, FamilySyncKind.OUTFIT, FamilySyncKind.EDIT),
+            FamilySyncPlanner.ordered(rows.groupBy { it.kind }).map { it.kind })
     }
     @Test fun submittedHeadRecoveredBeforeNewOperations() {
         val edit = op(); val photo = op(FamilySyncKind.PHOTO, true)
@@ -104,6 +119,39 @@ class FamilySyncPlanTest {
         assertFalse(FamilySyncRunner(port).run()); assertEquals(10, port.stored.cursor)
         assertTrue(FamilySyncRunner(port).run()); assertEquals(12, port.receipts.size)
     }
+    @Test fun editsPreparedOnOneRevisionChainAfterThisBatchsOwnCommits() = runBlocking {
+        val edits = (1..4).map { op() }; val port = Port(edits)
+        assertTrue(FamilySyncRunner(port).run()); assertEquals(4, port.receipts.size)
+        assertEquals(listOf(8L, 9L, 10L, 11L), port.stored.owned); assertEquals("", port.stored.problem)
+        assertTrue(port.rows.isEmpty())
+    }
+    @Test fun firstArchiveThenEditsAreSentAndStaleArchiveStaysQueued() = runBlocking {
+        val add1 = op(FamilySyncKind.ADD); val add2 = op(FamilySyncKind.ADD); val outfit = op(FamilySyncKind.OUTFIT); val edit = op()
+        val ordered = FamilySyncPlanner.ordered(listOf(add1, add2, outfit, edit).groupBy { it.kind })
+        val port = Port(ordered)
+        assertTrue(FamilySyncRunner(port).run())
+        assertEquals(listOf(add1.id, edit.id), port.published.map { it.id })
+        assertEquals(listOf(add2, outfit), port.rows); assertEquals(FamilySyncStatus.DONE, port.stored.status)
+        assertEquals("PARTIAL", port.stored.problem)
+        assertEquals(setOf(add2.key, outfit.key), port.stored.deferred.toSet())
+    }
+    @Test fun deferredHeadKeepsLaterOperationsOfItsKind() = runBlocking {
+        val a = op(FamilySyncKind.PHOTO); val b = op(FamilySyncKind.PHOTO); val port = Port(listOf(a, b))
+        port.head = 8; port.stored = port.stored.copy(owned = listOf(8)); port.bases[b.id] = 8
+        assertTrue(FamilySyncRunner(port).run())
+        assertTrue(port.published.isEmpty()); assertEquals(listOf(a, b), port.rows)
+    }
+    @Test fun foreignRevisionStopsTheBatchInsteadOfRebasing() = runBlocking {
+        val a = op(); val b = op(); val port = Port(listOf(a, b))
+        port.afterPublish = { if (port.published.size == 1) port.head += 1 }
+        rejects { runBlocking { FamilySyncRunner(port).run() } }
+        assertEquals(listOf(a.id), port.published.map { it.id }); assertEquals(listOf(b), port.rows)
+    }
+    @Test fun timeBudgetStopsBeforeStartingAnotherOperation() = runBlocking {
+        val port = Port((1..3).map { op() }); var calls = 0
+        assertFalse(FamilySyncRunner(port).run(10) { calls++ < 0 })
+        assertEquals(1, port.stored.cursor); assertEquals(1, port.receipts.size)
+    }
     @Test fun changedHeadStopsBeforeAnyPublication() = runBlocking {
         val port = Port(listOf(op())); port.rows[0] = port.rows[0].copy(fingerprint = "b".repeat(64))
         rejects { runBlocking { FamilySyncRunner(port).run() } }
@@ -148,14 +196,29 @@ class FamilySyncPlanTest {
         rejects { runBlocking { FamilySyncRunner(port).run() } }; assertEquals(1, port.rows.size)
     }
     @Test fun journalPreservesReceiptCheckpointAndBackgroundChoice() {
-        val p = plan(listOf(op(FamilySyncKind.OUTFIT, true), op())).copy(acknowledged = true, status = FamilySyncStatus.RUNNING)
+        val rows = listOf(op(FamilySyncKind.OUTFIT, true), op(FamilySyncKind.ADD), op())
+        val p = plan(rows).copy(acknowledged = true, status = FamilySyncStatus.RUNNING, owned = listOf(8, 9),
+            deferred = listOf(rows[1].key), attempts = 2, attemptCursor = 0)
         assertEquals(p, FamilySyncJournal.decode(FamilySyncJournal.encode(p, "account"), "account", remote))
+    }
+    @Test fun versionOneJournalStillOpensWithEmptyProgressFields() {
+        val p = plan(listOf(op()))
+        val v1 = JSONObject(FamilySyncJournal.encode(p, "account")).put("version", 1)
+        listOf("owned", "deferred", "attempts", "attemptCursor").forEach { v1.remove(it) }
+        assertEquals(p, FamilySyncJournal.decode(v1.toString(), "account", remote))
+    }
+    @Test fun invalidProgressFieldsRejected() {
+        val a = op(); val p = plan(listOf(a, op()))
+        rejects { p.copy(owned = listOf(0)) }; rejects { plan(listOf(a)).copy(owned = listOf(8, 9)) }; rejects { p.copy(owned = listOf(8, 8)) }
+        rejects { p.copy(deferred = listOf("EDIT:" + newId())) }; rejects { p.copy(attempts = 101) }
+        assertTrue(p.copy(owned = listOf(8, 9)).ownsAfter(7, 9)); assertFalse(p.copy(owned = listOf(9)).ownsAfter(7, 9))
+        assertFalse(p.ownsAfter(7, 7))
     }
     @Test fun journalRejectsWrongAccountRemoteUnknownVersionAndCorruption() {
         val text = FamilySyncJournal.encode(plan(listOf(op())), "account")
         rejects { FamilySyncJournal.decode(text, "other", remote) }
         rejects { FamilySyncJournal.decode(text, "account", newId()) }
-        rejects { FamilySyncJournal.decode(JSONObject(text).put("version", 2).toString(), "account", remote) }
+        rejects { FamilySyncJournal.decode(JSONObject(text).put("version", 3).toString(), "account", remote) }
         rejects { FamilySyncJournal.decode("broken", "account", remote) }
     }
 }

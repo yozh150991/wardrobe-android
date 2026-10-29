@@ -46,7 +46,7 @@ internal class FamilyAddStore(private val context: AccountContext, private val a
     fun put(draft: FamilyAddDraft, expected: FamilyAddDraft?) = synchronized(lock) {
         val rows = FamilyMediaQueue.put(read(draft.remoteId), draft, expected)
         write(draft.remoteId, rows)
-    }
+    }.also { FamilySyncLocks.touched(account.key) }
     private fun write(remote: String, rows: List<FamilyAddDraft>) {
         val bytes = FamilyMediaQueue.encode(rows, account.key, remote).toByteArray(Charsets.UTF_8)
         require(bytes.size <= 64 * 1024); check(root.mkdirs() || root.isDirectory)
@@ -62,7 +62,7 @@ internal class FamilyAddStore(private val context: AccountContext, private val a
         if (rows.isEmpty()) journal(expected.remoteId).delete() else write(expected.remoteId, rows)
         require(get(expected.remoteId, expected.garmentId) == null)
         directory(expected.publication.archiveId).deleteRecursively(); Unit
-    }
+    }.also { FamilySyncLocks.touched(account.key) }
     fun checked(draft: FamilyAddDraft, guard: () -> Unit): File = archive(draft).also {
         require(it.isFile && it.length() == draft.publication.size && FamilyArchive.digest(it, guard) == draft.publication.hash)
     }

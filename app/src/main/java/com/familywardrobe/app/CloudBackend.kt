@@ -25,7 +25,7 @@ internal interface CloudTransport {
 
 internal class CloudBackend(private val uid: String, private val app: FirebaseApp = FirebaseApp.getInstance(),
     private val firestore: FirebaseFirestore = FirestoreClient.instance) : CloudTransport {
-    private val storage=try { FirebaseStorage.getInstance(app) } catch(e: Exception) { throw CloudConfigurationException(e) }
+    private val storage=try { FirebaseStorage.getInstance(app).also(StorageLimits::configure) } catch(e: Exception) { throw CloudConfigurationException(e) }
     private val head=firestore.document("users/$uid/state/head")
     private fun parse(s: DocumentSnapshot): CloudHead? {
         if(!s.exists())return null

@@ -66,7 +66,7 @@ internal class FamilyOutfitStore(private val context: AccountContext, private va
     fun put(draft: FamilyOutfitDraft, expected: FamilyOutfitDraft?, preparedForm: FamilyOutfitForm? = null) = synchronized(lock) {
         val remote = draft.publication.identity.remoteId
         write(remote, FamilyOutfitQueue.put(state(remote), draft, expected, preparedForm))
-    }
+    }.also { FamilySyncLocks.touched(account.key) }
     fun directory(id: String): File { require(FamilyRules.validId(id)); return File(root, id) }
     private fun photos(id: String) = PhotoStore(object : ContextWrapper(context) {
         override fun getFilesDir() = directory(id)
@@ -79,7 +79,7 @@ internal class FamilyOutfitStore(private val context: AccountContext, private va
         val remote = draft.publication.identity.remoteId
         write(remote, FamilyOutfitQueue.remove(state(remote), draft))
         directory(draft.publication.archiveId).deleteRecursively(); Unit
-    }
+    }.also { FamilySyncLocks.touched(account.key) }
     fun stage(view: FamilyReadView, change: FamilyOutfitChange, repo: Repository, guard: () -> Unit): FamilyOutfitDraft {
         val changed = change.apply(view.candidate.snapshot, view.remote.identity.wardrobeId)
         val id = newId(); val directory = directory(id); check(directory.mkdirs())

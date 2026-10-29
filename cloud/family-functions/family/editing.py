@@ -4,7 +4,7 @@ import io
 import json
 import zipfile
 from .archive import validate_archive, MAX_ARCHIVE
-from .errors import require
+from .errors import FamilyError, require
 from .schema import valid_id, integer, text_length, visible_name
 
 EDIT_LIMITS = {'name': 120, 'size': 40, 'location': 200, 'description': 1000}
@@ -23,21 +23,31 @@ def validate_edit(data):
 
 def patch_archive(source, root, data):
     head = root['head']
-    validate_archive(source, root, head['baseRevision'], head['sha256'])
-    with zipfile.ZipFile(io.BytesIO(source)) as archive:
-        envelope = json.loads(archive.read('manifest.json').decode('utf-8'))
-        garment = next((g for g in envelope['snapshot']['garments'] if g['id'] == data['garmentId']), None)
-        require(garment is not None, 'Item no longer exists', 'failed-precondition', 'EDIT_ITEM_MISSING')
-        garment.update(data['changes']); envelope['baseRevision'] = data['baseRevision']
-        output = io.BytesIO()
-        # Deterministic bytes across retries, including timestamps and ZIP metadata.
-        with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=6) as dest:
-            for name in sorted(archive.namelist()):
-                content = (json.dumps(envelope, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode('utf-8')
-                           if name == 'manifest.json' else archive.read(name))
-                info = zipfile.ZipInfo(name, date_time=(1980,1,1,0,0,0)); info.compress_type = zipfile.ZIP_DEFLATED
-                info.external_attr = 0o100600 << 16
-                dest.writestr(info, content)
+    # The head is immutable and was fully validated when it was committed; its checksum proves these are the
+    # same bytes. The full validation (every photo decoded) runs once, on the result that gets published (B-01).
+    require(hashlib.sha256(source).hexdigest() == head['sha256'], 'Archive checksum mismatch')
+    try:
+        with zipfile.ZipFile(io.BytesIO(source)) as archive:
+            envelope = json.loads(archive.read('manifest.json').decode('utf-8'))
+            garment = next((g for g in envelope['snapshot']['garments'] if g['id'] == data['garmentId']), None)
+            require(garment is not None, 'Item no longer exists', 'failed-precondition', 'EDIT_ITEM_MISSING')
+            garment.update(data['changes']); envelope['baseRevision'] = data['baseRevision']
+            output = io.BytesIO()
+            # Deterministic bytes across retries, including timestamps and ZIP metadata. Photos are already
+            # compressed images: they are stored as is instead of being deflated again on every edit.
+            with zipfile.ZipFile(output, 'w') as dest:
+                for name in sorted(archive.namelist()):
+                    manifest = name == 'manifest.json'
+                    content = (json.dumps(envelope, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode('utf-8')
+                               if manifest else archive.read(name))
+                    info = zipfile.ZipInfo(name, date_time=(1980,1,1,0,0,0))
+                    info.compress_type = zipfile.ZIP_DEFLATED if manifest else zipfile.ZIP_STORED
+                    info.external_attr = 0o100600 << 16
+                    dest.writestr(info, content, compresslevel=6 if manifest else None)
+    except FamilyError:
+        raise
+    except (ValueError, KeyError, TypeError, AttributeError, OSError, zipfile.BadZipFile) as exc:
+        raise FamilyError('invalid-argument', 'Invalid family archive') from exc
     result = output.getvalue(); require(len(result) <= MAX_ARCHIVE, 'Archive size limit', 'resource-exhausted')
     checksum = hashlib.sha256(result).hexdigest()
     counts = validate_archive(result, root, data['baseRevision'], checksum)
@@ -46,7 +56,7 @@ def patch_archive(source, root, data):
 
 class EditingService:
     def edit_item(self, actor, data):
-        from .service import authenticate, fields, root_path, access, MAX_UPLOADS_PER_DAY
+        from .service import authenticate, fields, root_path, access, published_root, MAX_UPLOADS_PER_DAY
         authenticate(actor); fields(data, 'remoteId editId garmentId baseRevision changes'); validate_edit(data)
         path = root_path(data['remoteId']); edit_path = f"{path}/edits/{data['editId']}"
         # Copy request data; transaction retries must not observe mutable caller input.
@@ -85,7 +95,16 @@ class EditingService:
                         sha256=checksum, size=len(payload), generation=str(generation), authorUid=actor.uid,
                         committedAt=self.clock(), counts=counts)
             result = {'remoteId':data['remoteId'], 'editId':data['editId'], 'revision':revision, 'status':'committed'}
-            tx.set(path, current | {'head':head, 'revision':revision})
+            tx.set(path, published_root(current, head, revision))
             tx.set(edit_path, latest | {'status':'committed', 'result':result})
-            return result
-        return self.store.run(publish)
+            return result, current.get('previousArchive'), True
+        try:
+            outcome = self.store.run(publish)
+        except FamilyError:
+            self._drop_orphan(path, edit_path, final, data['baseRevision'])
+            raise
+        if isinstance(outcome, dict):
+            return outcome
+        result, retired, _ = outcome
+        self._retire(path, retired, final)
+        return result

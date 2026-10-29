@@ -31,7 +31,7 @@ internal class LookEditorPort(val restored: JSONObject?, val keep: (JSONObject) 
 internal fun LookEditor(s: Snapshot, wardrobe: String, anchorId: String, outfitId: String, vm: WardrobeViewModel, onDirty: (Boolean) -> Unit,
     onStage: (Boolean) -> Unit, port: LookEditorPort? = null, saving: Boolean = false, done: (String) -> Unit) {
     val original = s.outfits.find { it.id == outfitId }
-    val originalPieces = original?.let { LookRules.saved(s, it) }.orEmpty()
+    val originalPieces = remember(s, original) { original?.let { LookRules.saved(s, it) }.orEmpty() }
     val restored = remember { if (port != null) port.restored else vm.draftFor("look", wardrobe, outfitId) }
     val anchor = s.garments.find { it.id == anchorId }?.let(LookRules::owned)
     var stage by rememberSaveable { mutableIntStateOf(restored?.optInt("stage", if (anchor == null && original == null) 0 else 1) ?: if (anchor == null && original == null) 0 else 1) }
@@ -61,19 +61,27 @@ internal fun LookEditor(s: Snapshot, wardrobe: String, anchorId: String, outfitI
     var duplicateLookId by rememberSaveable { mutableStateOf("") }
     val privateBusy by vm.busy.collectAsStateWithLifecycle()
     val busy = saving || privateBusy
-    val ideas = inspirationPieces()
-    val pool = LookRules.candidates(s, wardrobe, occasion, weather, source, ideas)
-    val eligible = DailyOutfits.items(s, java.time.LocalDate.now().toString()).map { it.piece.id }.toSet()
+    // Collage gestures recompose this screen every frame: keep the derived lists out of that path (audit A-02).
+    val ideas = remember { inspirationPieces() }
+    val pool = remember(s, wardrobe, occasion, weather, source, ideas) { LookRules.candidates(s, wardrobe, occasion, weather, source, ideas) }
+    val today = java.time.LocalDate.now().toString()
+    val eligible = remember(s.garments, s.wears, s.wardrobes, today) { DailyOutfits.items(s, today).map { it.piece.id }.toSet() }
     val autoPool = pool.filter { it.ownedId == null || it.ownedId in eligible }
-    val all = s.garments.filter { it.wardrobeId == wardrobe }.map(LookRules::owned) +
-        s.wishes.filter { it.wardrobeId == wardrobe && it.ownedId.isBlank() }.map(LookRules::wanted) + ideas + originalPieces.filter { it.kind in listOf("missing", "idea") }
+    val all = remember(s.garments, s.wishes, wardrobe, ideas, originalPieces) {
+        s.garments.filter { it.wardrobeId == wardrobe }.map(LookRules::owned) +
+            s.wishes.filter { it.wardrobeId == wardrobe && it.ownedId.isBlank() }.map(LookRules::wanted) + ideas + originalPieces.filter { it.kind in listOf("missing", "idea") }
+    }
     val pieces = keys.mapNotNull { key -> all.find { it.key == key } }
     val current = pieces.find { it.key == selected }
     LaunchedEffect(keys.toList()) { undoLayout = null; undoBackground = null }
     val payload = JSONObject().put("stage", stage).put("occasion", occasion).put("weather", weather).put("source", source)
         .put("manual", manual).put("name", name).put("keys", JSONArray(keys)).put("locks", JSONArray(locks)).put("layout", layout).put("background", background).toString()
     val baseline = remember { payload }
-    LaunchedEffect(payload) { onStage(stage == 0); onDirty(payload != baseline || restored != null || original == null && pieces.isNotEmpty()); if (port != null) port.keep(JSONObject(payload)) else vm.keepDraft("look", wardrobe, outfitId, JSONObject(payload)) }
+    // A drag changes the layout on every pointer event; the draft is saved once the gesture ends (audit A-02).
+    LaunchedEffect(payload, gestureActive) {
+        onStage(stage == 0); onDirty(payload != baseline || restored != null || original == null && pieces.isNotEmpty())
+        if (!gestureActive) { if (port != null) port.keep(JSONObject(payload)) else vm.keepDraft("look", wardrobe, outfitId, JSONObject(payload)) }
+    }
     fun submit(target: String) {
         if (port != null) port.save(LookEditorSave(pieces, name, occasion, weather, source, target, layout, background))
         else vm.saveCanvasLook(wardrobe, pieces, name, occasion, weather, source, target, layout, background) { onDirty(false); done(it) }

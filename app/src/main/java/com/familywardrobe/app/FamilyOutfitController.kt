@@ -10,7 +10,7 @@ import kotlin.coroutines.coroutineContext
 internal data class FamilyOutfitState(val remote: String = "", val form: FamilyOutfitForm? = null,
     val draft: FamilyOutfitDraft? = null, val view: FamilyReadView? = null, val generation: Long = 0,
     val running: Boolean = false, val problem: FamilyProblem? = null, val recoverable: Boolean = false,
-    val synced: Boolean = false, val queue: List<FamilyOutfitDraft> = emptyList(), val hasForm: Boolean = false)
+    val synced: Boolean = false, val queue: List<FamilyOutfitDraft> = emptyList(), val hasForm: Boolean = false, val waiting: Boolean = false)
 
 internal class FamilyOutfitController(private val app: WardrobeApplication, private val session: AccountSession,
     private val reader: FamilyReaderController, private val scope: CoroutineScope) {
@@ -22,9 +22,20 @@ internal class FamilyOutfitController(private val app: WardrobeApplication, priv
     }
     fun readable(): Boolean = session.isOpen && app.authBackend.signedInIdentity()?.key == session.identity.key &&
         lease.permits(session.id, android.os.SystemClock.elapsedRealtime())
-    private fun run(block: suspend (FamilyBackend, () -> Unit) -> Unit) = scope.launch(Dispatchers.IO) { lock.withLock {
+    private val actions = FamilyActions()
+    fun cancel() = actions.cancel()
+    /**
+     * The unfinished form has its own lock (account lock → form lock order): autosave must not wait for a
+     * background batch, yet it must not race prepare/rebase/discard, which consume the exact form (audit A-04).
+     */
+    private val formLock = Mutex()
+    private val pendingKeep = java.util.concurrent.atomic.AtomicReference<Pair<Long, String>?>(null)
+    // Progress is visible while waiting for the account lock (audit A-04).
+    private fun run(block: suspend (FamilyBackend, () -> Unit) -> Unit) {
+      mutable.value = mutable.value.copy(running = true, waiting = lock.isLocked)
+      actions.track(scope.launch(Dispatchers.IO) { lock.withLock {
         try {
-            guard(); mutable.value = mutable.value.copy(running = true, problem = null)
+            guard(); mutable.value = mutable.value.copy(running = true, waiting = false, problem = null)
             val work = coroutineContext; val checkpoint = { work.ensureActive(); guard() }
             block(FamilyBackend(session.identity, checkpoint), checkpoint); checkpoint()
         } catch (e: CancellationException) { throw e }
@@ -36,8 +47,9 @@ internal class FamilyOutfitController(private val app: WardrobeApplication, priv
                 mutable.value = FamilyOutfitState(remote = mutable.value.remote, generation = mutable.value.generation + 1, running = true)
             }
             mutable.value = mutable.value.copy(problem = problem)
-        } finally { if (session.isOpen) mutable.value = mutable.value.copy(running = false) }
-    } }
+        }
+      } }) { if (session.isOpen) mutable.value = mutable.value.copy(running = false, waiting = false) }
+    }
     private suspend fun authorize(backend: FamilyBackend, remote: String): FamilyRemote {
         backend.authenticate(); val started = android.os.SystemClock.elapsedRealtime()
         return backend.readHead(remote).also {
@@ -68,23 +80,32 @@ internal class FamilyOutfitController(private val app: WardrobeApplication, priv
         if (draft == null) {
             if (savedForm == null && rows.size >= FamilyOutfitQueue.LIMIT) throw FamilyTransferException(FamilyProblem.LIMIT)
             val view = fresh(backend, remote)
-            val form = savedForm ?: FamilyOutfitForm(remote, outfit, view.remote.revision).also(store::putForm)
+            val form = savedForm ?: formLock.withLock { FamilyOutfitForm(remote, outfit, view.remote.revision).also(store::putForm) }
             mutable.value = mutable.value.copy(form = form, hasForm = true, view = view,
                 problem = if (form.base != view.remote.revision) FamilyProblem.CONFLICT else null)
         }
     }
-    /** Editor autosave is serialized with prepare/discard, and late effects from old editors are ignored. */
-    fun keep(generation: Long, payload: String) = scope.launch(Dispatchers.IO) { lock.withLock {
-        try {
-            guard(); val state = mutable.value
-            if (state.generation != generation || state.draft != null || state.form == null) return@withLock
-            val form = state.form.copy(payload = payload); store.putForm(form)
-            mutable.value = state.copy(form = form)
-        } catch (e: CancellationException) { throw e }
-        catch (e: Exception) { guard(); mutable.value = mutable.value.copy(problem = FamilyProblem.RETRY) }
-    } }
+    /**
+     * Editor autosave is serialized with prepare/rebase/discard by the form lock, and late effects from old editors
+     * are ignored. Only the newest payload is written; saves never queue behind shared network work.
+     */
+    fun keep(generation: Long, payload: String) {
+        if (pendingKeep.getAndSet(generation to payload) != null) return
+        scope.launch(Dispatchers.IO) { formLock.withLock {
+            while (true) {
+                val (expectedGeneration, text) = pendingKeep.getAndSet(null) ?: break
+                try {
+                    guard(); val state = mutable.value
+                    if (state.generation != expectedGeneration || state.draft != null || state.form == null) continue
+                    val form = state.form.copy(payload = text); store.putForm(form)
+                    mutable.value = mutable.value.copy(form = form)
+                } catch (e: CancellationException) { throw e }
+                catch (e: Exception) { guard(); mutable.value = mutable.value.copy(problem = FamilyProblem.RETRY) }
+            }
+        } }
+    }
     fun prepare(generation: Long, pieces: List<LookPiece>, name: String, occasion: String, weather: String,
-        source: String, target: String, layout: String, background: String) = run { backend, checkpoint ->
+        source: String, target: String, layout: String, background: String) = run { backend, checkpoint -> formLock.withLock {
         val state = mutable.value; require(state.generation == generation && state.draft == null)
         val form = requireNotNull(state.form)
         if (store.list(form.remote).size >= FamilyOutfitQueue.LIMIT) throw FamilyTransferException(FamilyProblem.LIMIT)
@@ -102,7 +123,7 @@ internal class FamilyOutfitController(private val app: WardrobeApplication, priv
             if (store.draft(form.remote, draft.change.id)?.publication != draft.publication) store.directory(draft.publication.archiveId).deleteRecursively()
             throw e
         }
-    }
+    } }
     fun sync(expected: FamilyOutfitDraft? = mutable.value.draft) = run { backend, checkpoint ->
         var draft = requireNotNull(expected); require(FamilyOutfitQueue.same(mutable.value.draft, draft))
         FamilyOutfitQueue.requireHead(store.list(draft.publication.identity.remoteId), draft)
@@ -122,7 +143,7 @@ internal class FamilyOutfitController(private val app: WardrobeApplication, priv
         reader.open(remote, refresh = true)
     }
     /** Explicit confirmation is required before replaying a look change over a newer shared revision. */
-    fun rebase(generation: Long = mutable.value.generation) = run { backend, checkpoint ->
+    fun rebase(generation: Long = mutable.value.generation) = run { backend, checkpoint -> formLock.withLock {
         val state = mutable.value; require(state.generation == generation)
         val view = fresh(backend, state.remote)
         val previous = state.draft
@@ -144,13 +165,13 @@ internal class FamilyOutfitController(private val app: WardrobeApplication, priv
                 throw e
             }
         }
-    }
-    fun discard(generation: Long = mutable.value.generation) = run { _, _ ->
+    } }
+    fun discard(generation: Long = mutable.value.generation) = run { _, _ -> formLock.withLock {
         val state = mutable.value; require(state.generation == generation)
         state.draft?.let { require(!it.submitted || state.recoverable); store.remove(it) }
             ?: store.clearForm(state.remote, requireNotNull(state.form))
         mutable.value = FamilyOutfitState(remote = state.remote, generation = state.generation + 1, running = true,
             queue = store.list(state.remote), hasForm = store.form(state.remote) != null)
-    }
+    } }
     fun invalidateSession() { lease.clear(); mutable.value = FamilyOutfitState(generation = mutable.value.generation + 1) }
 }

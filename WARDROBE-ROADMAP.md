@@ -1,8 +1,10 @@
 # Wardrobe — роадмап і передача роботи
 
-Оновлено: **2026-10-25, Europe/Warsaw**. Редакція документа: **35**.
-База вихідного коду: **0.14.19-family-background-sync**, `versionCode=49`, Room/backup **10**.
-Статус: FAM-03 підтверджені пакети й opt-in фонове надсилання реалізовані, verify.
+Оновлено: **2026-10-29, Europe/Warsaw**. Редакція документа: **36**.
+База вихідного коду: **0.14.20-audit-fixes**, `versionCode=50`, Room/backup **10**.
+Статус: виправлено 11 пунктів AUDIT-0.14.19.md (зависання, логіка пакетів, прибирання Storage, CI); verify.
+Див. AUDIT-FIXES-0.14.20.md. Потрібен деплой family functions (B-01 і 0.14.13–14).
+Попередній стан: FAM-03 підтверджені пакети й opt-in фонове надсилання реалізовані, verify.
 Точний список metadata/add/photo/outfit; durable receipt checkpoint, stop-on-conflict.
 Див. FAMILY-SYNC-0.14.19.md. PR #16 злитий у базу; CI 40130329782 pass (209 JVM/lint/APK).
 FAM-01/02/03 загалом partial; automatic refresh/rebase та continuous sync,
@@ -13,7 +15,8 @@ Live functions deploy попередніх 0.14.13–14 не підтвердж�
 Погоджений порядок: спрощення каталогу та імпорт → помічник покупки → сімейний доступ.
 Нова пряма вказівка користувача має перевагу над цим планом.
 
-**Актуальна контрольна точка:** 0.14.19/code49, Codex, 25.10.2026.
+**Актуальна контрольна точка:** 0.14.20/code50, Claude, 29.10.2026 (аудит-виправлення; CI PR перевірити).
+**Попередня контрольна точка:** 0.14.19/code49, Codex, 25.10.2026.
 23 нових JVM-тести й 6 instrumented tests. Host runner: 23 suites pass, backend 148 pass; missing client config skipped.
 Android CI цієї гілки перевірити перед передачею.
 Спільне native-приймання відкладене користувачем; це не блокує погоджену розробку.
@@ -89,7 +92,7 @@ Wardrobe допомагає пам’ятати про наявний одяг �
 | `/Wardrobe/wardrobe-scenario-coverage-0.11.1.md` | 52 стабільні ID приймання; також є в проєкті як `SCENARIO-COVERAGE-0.11.1.md`. |
 | `/Wardrobe/wardrobe-apk-0.11.1.zip` | Історичний APK 0.11.1; не видавати за APK 0.11.2 чи наступного релізу. |
 
-На ПК користувача проєкт був у `D:\Data\Downloads\Wardrobe\wardrobe-android`. Це довідковий шлях; агент не має автоматичного доступу до цього ПК. URL зовнішнього git-репозиторію для Wardrobe у перевірених матеріалах не встановлено. Не вигадувати його й не вважати тимчасовий workspace постійним сховищем.
+На ПК користувача проєкт був у `D:\Data\Downloads\Wardrobe\wardrobe-android`. Це довідковий шлях; агент не має автоматичного доступу до цього ПК. Git-репозиторій: `github.com/yozh150991/wardrobe-android` (зміни — через гілку й PR). Не вважати тимчасовий workspace постійним сховищем.
 
 ## 4. Статуси й порядок випусків
 
@@ -343,7 +346,7 @@ bash build-apk.sh testDebugUnitTest lintDebug assembleDebug
 bash build-apk.sh connectedDebugAndroidTest
 ```
 
-Запускати також релевантні host-набори `tools/check_*.py` для зміненої логіки. `tools/run_host_checks.py` містить 22 набори, бере повну версію з Gradle та записує результати в `release-evidence/host-runs/<version>-<UTC-time>.json`. Старі звіти не перезаписуються.
+Запускати також релевантні host-набори `tools/check_*.py` для зміненої логіки. `tools/run_host_checks.py` містить 24 набори, бере повну версію з Gradle та записує результати в `release-evidence/host-runs/<version>-<UTC-time>.json`. Старі звіти не перезаписуються.
 
 Firebase emulator-тести з папки `cloud`:
 
@@ -550,3 +553,12 @@ and device acceptance remain pending; no live Firebase deployment is included.
   stale revision зупиняє пакет для ручного оновлення й нового підтвердження.
 - 23 JVM + 6 Android tests; докази й native-матриця: FAMILY-SYNC-0.14.19.md.
 - Далі: safe refresh/rebase policy і continuous sync; потім FAM-04. GC/native/live fixes відкриті.
+
+### 2026-10-29 — аудит-виправлення 0.14.20 — Claude, verify
+
+- Вказівка користувача 29.10: «Виправ все з аудиту і з пушом в GitHub». Версія 0.14.20-audit-fixes/code50, Room/backup 10 без змін.
+- A-01…A-06: чернетка редактора — окремий файл із фоновим записом; колаж зберігає після жесту; «Образ дня» рахує у фоні (DailyRules: кеш підписів, ідентичні результати); спільні редактори показують очікування й мають «Скасувати», Storage-повтори ≤ 2 хв, автозбереження образу поза account lock; перенос у сім'ю будує ZIP поза `writes`; таймер читача лише з відкритим переглядом.
+- L-01…L-03: пакет запам'ятовує власні коміти — правки полів автоматично отримують новий base; додавання/фото/образ на старій версії лишаються в черзі (PARTIAL); durable ліміт спроб і продовження без backoff; список оновлюється від усіх outbox.
+- B-01: прибирання staging і знімків старших за попередній, purge прострочених staging, видалення сиріт після постійного конфлікту, `edit_item` без повторної валідації джерела й без перепакування фото. Потрібен деплой family functions.
+- Q-01: CI-job емуляторів Firebase і Android instrumentation. Перевірки тут: host 24 pass, backend 155 pass, FamilySyncPlanTest 30/30 (Kotlin 2.0.21). Android-компіляція — у CI PR; пристрій не перевірено.
+- Далі: деплой functions, native-перевірка за AUDIT-FIXES-0.14.20.md; потім дельта-модель спільних змін (замість повного ZIP), safe refresh/rebase для операцій з архівом, FAM-04.

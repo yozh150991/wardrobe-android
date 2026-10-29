@@ -1209,7 +1209,7 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="family_look_resume_form">Wznów niedokończoną stylizację</string>
     <string name="family_look_queue_hint">Do 10 przygotowanych stylizacji i 512 MB archiwów na garderobę. Wysyłaj je po kolei; jawnie odśwież kolejny szkic po zmianie wersji na serwerze. Jeden niedokończony formularz edytora jest zachowywany osobno od kolejki.</string>
     <string name="family_sync_title">Wysyłanie wspólnych zmian</string>
-    <string name="family_sync_hint">Potwierdź listę zapisanych zmian. Nowe szkice nie są dodawane do tej partii. Zmiany są wysyłane kolejno; konflikt wstrzymuje partię do sprawdzenia. Niedokończone formularze nie są wysyłane.</string>
+    <string name="family_sync_hint">Potwierdź listę zapisanych zmian. Nowe szkice nie są dodawane do tej partii. Zmiany są wysyłane kolejno. Dane rzeczy są aktualizowane automatycznie po własnych zmianach tej partii; dodanie, zdjęcie lub stylizacja na starszej wersji pozostają w kolejce do odświeżenia. Zmiana innej osoby na serwerze wstrzymuje partię do sprawdzenia. Niedokończone formularze nie są wysyłane.</string>
     <string name="family_sync_progress">Ukończono: %1$d z %2$d</string>
     <string name="family_sync_done">Potwierdzona partia została wysłana. Odśwież wspólną garderobę, aby zobaczyć zmiany.</string>
     <string name="family_sync_paused">Wysyłanie jest wstrzymane. Zapisane szkice pozostają dostępne.</string>
@@ -1225,4 +1225,6 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="family_sync_add">Dodanie rzeczy</string>
     <string name="family_sync_photo">Zmiana zdjęcia</string>
     <string name="family_sync_outfit">Stylizacja</string>
+    <string name="family_waiting">Oczekiwanie na zakończenie innej wspólnej operacji. Możesz anulować.</string>
+    <string name="family_sync_partial">Część zmian została wysłana. Dodania, zdjęcia lub stylizacje przygotowane na poprzedniej wersji pozostały w kolejce: odśwież je w ich edytorze i potwierdź nową partię.</string>
 </resources>

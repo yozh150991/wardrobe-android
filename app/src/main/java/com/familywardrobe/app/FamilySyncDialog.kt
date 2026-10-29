@@ -43,7 +43,9 @@ internal fun FamilySyncDialog(vm: WardrobeViewModel, remote: String, canSend: Bo
                     }
                 }
                 val problem = if (current && state.problem.isNotEmpty()) state.problem else plan?.problem.orEmpty()
-                if (problem.isNotEmpty()) Text(stringResource(when (problem) {
+                // A finished batch that left whole-archive drafts queued is not an error (audit L-01).
+                if (problem == "PARTIAL") Text(stringResource(R.string.family_sync_partial))
+                else if (problem.isNotEmpty()) Text(stringResource(when (problem) {
                     "CONFLICT", "CHANGED", "EXPIRED" -> R.string.family_sync_review
                     "ACCESS" -> R.string.family_access
                     "EMAIL" -> R.string.family_email

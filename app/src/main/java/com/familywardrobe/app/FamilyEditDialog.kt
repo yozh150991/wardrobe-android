@@ -54,7 +54,7 @@ internal fun FamilyEditDialog(vm: WardrobeViewModel, remote: String, dismiss: ()
                 Text(stringResource(R.string.family_edit_title), style = MaterialTheme.typography.titleLarge)
                 Text(stringResource(R.string.family_edit_hint), style = MaterialTheme.typography.bodySmall)
                 TextButton(onClick = close) { Text(stringResource(R.string.close)) }
-                if (state.running) LinearProgressIndicator(Modifier.fillMaxWidth())
+                if (state.running) FamilyBusyRow(state.waiting) { vm.familyEdit.cancel() }
                 if (state.completed > 0) Text(stringResource(R.string.family_queue_progress, state.completed, state.total))
                 if (state.synced) Text(stringResource(R.string.family_edit_synced))
                 if (readable && state.queue.isNotEmpty()) {

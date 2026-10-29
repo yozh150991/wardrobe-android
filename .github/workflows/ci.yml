@@ -113,3 +113,96 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+
+  # Audit Q-01: the Firebase rules and the family backend scenarios were documented but never run in CI.
+  firebase:
+    name: Firebase emulators (rules and family backend)
+    needs: source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: cloud
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install emulator and backend dependencies
+        run: |
+          node --version
+          npm ci
+          python -m venv family-functions/venv
+          family-functions/venv/bin/pip install -r family-functions/requirements.txt
+      - name: Private sync rules (Auth, Firestore, Storage emulators)
+        run: npm test
+      - name: Family rules and callable scenarios (with the Functions emulator)
+        env:
+          FAMILY_STORAGE_BUCKET: demo-wardrobe.appspot.com
+        run: >-
+          npx firebase emulators:exec --project demo-wardrobe --config firebase.family.example.json
+          --only auth,firestore,storage,functions
+          "family-functions/venv/bin/python family-functions/tests/emulator_family.py &&
+          family-functions/venv/bin/python family-functions/tests/emulator_membership.py &&
+          family-functions/venv/bin/python family-functions/tests/emulator_editing.py &&
+          node --test family.rules.test.mjs"
+
+  # Audit Q-01: the instrumentation suites (app/src/androidTest) were prepared but never executed.
+  instrumentation:
+    name: Android instrumentation (emulator)
+    needs: source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android SDK components
+        run: |
+          test -n "$ANDROID_HOME"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Instrumentation tests on an API 34 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash build-apk.sh -PciPreview=true connectedDebugAndroidTest
+      - name: Instrumentation summary
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          totals = dict(tests=0, failures=0, errors=0, skipped=0)
+          for path in glob.glob('app/build/outputs/androidTest-results/connected/**/*.xml', recursive=True):
+              suite = ET.parse(path).getroot()
+              for key in totals: totals[key] += int(suite.get(key, 0))
+          print(f"::notice title=Instrumentation tests::{totals['tests']} tests, {totals['failures']} failures, {totals['errors']} errors, {totals['skipped']} skipped")
+          PY
+      - name: Upload instrumentation reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: instrumentation-reports-${{ github.sha }}
+          path: |
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
+          if-no-files-found: warn
+          retention-days: 14

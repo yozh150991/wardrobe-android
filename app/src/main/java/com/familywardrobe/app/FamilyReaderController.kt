@@ -6,6 +6,9 @@ import com.google.firebase.storage.StorageException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.coroutineContext
@@ -34,13 +37,17 @@ internal class FamilyReaderController(private val app: WardrobeApplication, priv
         old?.let { cache.discard(it.candidate) }
     }
     init {
+        // Ticks only while a shared view is open: the session outlives the screen (Back keeps the task),
+        // and a permanent one-second loop woke the app all day in the background (audit A-06).
         scope.launch(Dispatchers.IO) {
-            while (isActive) {
-                delay(1000)
-                lock.withLock {
-                    guard()
-                    if (mutable.value.view?.readable() == false) {
-                        dropView(); mutable.value = mutable.value.copy(problem = FamilyProblem.EXPIRED)
+            mutable.map { it.view != null }.distinctUntilChanged().collectLatest { open ->
+                while (open && isActive) {
+                    delay(1000)
+                    lock.withLock {
+                        guard()
+                        if (mutable.value.view?.readable() == false) {
+                            dropView(); mutable.value = mutable.value.copy(problem = FamilyProblem.EXPIRED)
+                        }
                     }
                 }
             }

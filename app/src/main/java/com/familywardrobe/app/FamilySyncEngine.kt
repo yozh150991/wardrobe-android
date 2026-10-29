@@ -17,16 +17,21 @@ internal class FamilySyncOperations(context: AccountContext, identity: AuthIdent
         FamilySyncKind.OUTFIT -> outfits.list(remote).map(FamilySyncPlanner::outfit)
     }
     fun snapshot() = FamilySyncPlanner.ordered(FamilySyncKind.entries.associateWith(::pending))
-    fun label(o: FamilySyncOperation): String = when (o.kind) {
-        FamilySyncKind.EDIT -> edits.list(remote).find { it.editId == o.id }?.values?.get("name").orEmpty()
-        FamilySyncKind.OUTFIT -> outfits.list(remote).find { it.publication.archiveId == o.id }?.change?.name.orEmpty()
-        else -> mediaStore(o.kind).list(remote).find { it.publication.archiveId == o.id }?.name.orEmpty()
+    /** One read per outbox (the list used to re-read a journal for every row). */
+    fun labels(rows: List<FamilySyncOperation>): Map<String, String> {
+        val names = mutableMapOf<FamilySyncKind, Map<String, String>>()
+        fun of(kind: FamilySyncKind) = names.getOrPut(kind) { when (kind) {
+            FamilySyncKind.EDIT -> edits.list(remote).associate { it.editId to it.values["name"].orEmpty() }
+            FamilySyncKind.OUTFIT -> outfits.list(remote).associate { it.publication.archiveId to it.change.name }
+            else -> mediaStore(kind).list(remote).associate { it.publication.archiveId to it.name }
+        } }
+        return rows.associate { "${it.kind}:${it.id}" to of(it.kind)[it.id].orEmpty() }
     }
     private fun mediaStore(kind: FamilySyncKind) = if (kind == FamilySyncKind.ADD) adds else photos
     private fun checked(o: FamilySyncOperation) {
         if (!o.matches(pending(o.kind).firstOrNull())) throw FamilySyncChanged()
     }
-    suspend fun authorize(o: FamilySyncOperation, backend: FamilyBackend) {
+    suspend fun authorize(o: FamilySyncOperation, backend: FamilyBackend, plan: FamilySyncPlan): FamilySyncDecision {
         checked(o); backend.authenticate(); val head = backend.readHead(remote)
         if (head.role !in setOf("owner", "editor")) throw FamilyTransferException(FamilyProblem.ACCESS)
         val current = pending(o.kind).first(); checked(o)
@@ -36,10 +41,19 @@ internal class FamilySyncOperations(context: AccountContext, identity: AuthIdent
             else -> requireNotNull(mediaStore(o.kind).get(remote)).publication
         }
         if (publication != null && publication.identity != head.identity) throw FamilyTransferException(FamilyProblem.ACCESS)
-        val base = publication?.baseRevision ?: requireNotNull(edits.get(remote)).baseRevision
+        val edit = if (o.kind == FamilySyncKind.EDIT) requireNotNull(edits.get(remote)) else null
+        val base = publication?.baseRevision ?: requireNotNull(edit).baseRevision
         // A submitted request must probe its historical receipt even after the head advances.
-        if (!current.submitted && base != head.revision &&
-            !(o.kind == FamilySyncKind.EDIT && edits.get(remote)?.changes?.isEmpty() == true)) throw FamilyTransferException(FamilyProblem.CONFLICT)
+        if (current.submitted || base == head.revision || edit?.changes?.isEmpty() == true) return FamilySyncDecision.Send(o)
+        // Only this approved batch's own commits may separate a draft from the head; anything else is a real conflict.
+        if (!plan.ownsAfter(base, head.revision)) throw FamilyTransferException(FamilyProblem.CONFLICT)
+        // A whole-archive draft would undo those commits: it stays queued for the editor's explicit rebase.
+        if (edit == null) return FamilySyncDecision.Defer
+        // Item details: the outbox holds one draft per item and the other operation kinds never change these four
+        // fields, so the approved original values still describe the head. Only the CAS base moves (audit L-01).
+        val rebased = edit.copy(baseRevision = head.revision)
+        edits.put(rebased, edit)
+        return FamilySyncDecision.Send(FamilySyncPlanner.edit(rebased))
     }
     fun submitted(o: FamilySyncOperation) {
         checked(o)
@@ -49,29 +63,34 @@ internal class FamilySyncOperations(context: AccountContext, identity: AuthIdent
             else -> mediaStore(o.kind).let { store -> requireNotNull(store.get(remote)).let { store.put(it.copy(submitted = true), it) } }
         }
     }
-    suspend fun publish(o: FamilySyncOperation, backend: FamilyBackend, checkpoint: () -> Unit) {
+    /** Returns the committed revision; an edit without changes commits nothing and returns 0. */
+    suspend fun publish(o: FamilySyncOperation, backend: FamilyBackend, checkpoint: () -> Unit): Long {
         checked(o)
-        when (o.kind) {
+        val revision = when (o.kind) {
             FamilySyncKind.EDIT -> {
                 val d = requireNotNull(edits.get(remote))
-                if (!d.submitted && d.changes.isEmpty()) return
+                if (!d.submitted && d.changes.isEmpty()) return 0
                 require(d.submitted)
                 val result = backend.accessCall("edit_item", mapOf("remoteId" to remote, "editId" to d.editId,
                     "garmentId" to d.garmentId, "baseRevision" to d.baseRevision, "changes" to d.changes))
                 require(result["status"] == "committed" && result["editId"] == d.editId && result["remoteId"] == remote)
                 val revision = result["revision"] as? Number ?: error("Invalid edit receipt")
                 require(revision.toDouble() == (d.baseRevision + 1).toDouble())
+                d.baseRevision + 1
             }
             FamilySyncKind.OUTFIT -> {
                 val d = requireNotNull(outfits.draft(remote)); require(d.submitted)
                 publishFamilyAddition(d.publication, backend, { outfits.checked(d, checkpoint) }, checkpoint)
+                d.publication.baseRevision + 1
             }
             else -> {
                 val store = mediaStore(o.kind); val d = requireNotNull(store.get(remote)); require(d.submitted)
                 publishFamilyAddition(d.publication, backend, { store.checked(d, checkpoint) }, checkpoint)
+                d.publication.baseRevision + 1
             }
         }
         checkpoint()
+        return revision
     }
     fun remove(o: FamilySyncOperation) {
         checked(o)
@@ -82,6 +101,7 @@ internal class FamilySyncOperations(context: AccountContext, identity: AuthIdent
         }
     }
 }
+private const val BACKGROUND_BUDGET_MS = 6L * 60 * 1000
 internal class FamilySyncEngine(private val app: WardrobeApplication, private val context: AccountContext,
     private val identity: AuthIdentity, private val remote: String, private val planId: String,
     private val background: Boolean, private val sessionOpen: () -> Boolean = { true }) {
@@ -102,16 +122,18 @@ internal class FamilySyncEngine(private val app: WardrobeApplication, private va
             store.put(initial.copy(status = FamilySyncStatus.RUNNING, problem = ""), initial)
             val backend = FamilyBackend(identity, ::guard)
             val operations = FamilySyncOperations(context, identity, remote)
+            val started = android.os.SystemClock.elapsedRealtime()
             FamilySyncRunner(object : FamilySyncPort {
                 override fun plan() = requireNotNull(store.get(remote))
                 override fun save(next: FamilySyncPlan, expected: FamilySyncPlan) { guard(); store.put(next, expected) }
                 override fun pending(kind: FamilySyncKind) = operations.pending(kind)
-                override suspend fun authorize(operation: FamilySyncOperation) = operations.authorize(operation, backend)
+                override suspend fun authorize(operation: FamilySyncOperation, plan: FamilySyncPlan) = operations.authorize(operation, backend, plan)
                 override fun submitted(operation: FamilySyncOperation) { guard(); operations.submitted(operation) }
                 override suspend fun publish(operation: FamilySyncOperation) = operations.publish(operation, backend, ::guard)
                 override fun remove(operation: FamilySyncOperation) { guard(); operations.remove(operation) }
                 override fun checkpoint() = guard()
-            }).run(if (background) 10 else 130)
+            // A plain worker is stopped after about ten minutes: start no new operation late in a run (audit L-02).
+            }).run(if (background) 10 else 130) { !background || android.os.SystemClock.elapsedRealtime() - started < BACKGROUND_BUDGET_MS }
         } catch (e: CancellationException) {
             if (!background) store.failure(remote, planId, "STOPPED")
             throw e

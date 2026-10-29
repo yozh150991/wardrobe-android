@@ -7,21 +7,48 @@ internal enum class FamilySyncStatus { READY, RUNNING, RETRY, PAUSED, DONE, CANC
 internal data class FamilySyncOperation(val kind: FamilySyncKind, val id: String, val fingerprint: String, val submitted: Boolean = false) {
     init { require(FamilyRules.validId(id) && FamilyRules.validHash(fingerprint)) }
     fun matches(other: FamilySyncOperation?) = other != null && kind == other.kind && id == other.id && fingerprint == other.fingerprint
+    val key get() = "${kind.name}:$id"
 }
+/** Result of the pre-send check of one approved operation. */
+internal sealed interface FamilySyncDecision {
+    /** Send this exact operation; it differs from the approved one only by a safe metadata rebase. */
+    data class Send(val operation: FamilySyncOperation) : FamilySyncDecision
+    /** Leave it in its outbox: its full archive predates this batch's own commits and needs the editor's rebase. */
+    data object Defer : FamilySyncDecision
+}
+/**
+ * [owned] — server revisions committed by this approved batch (each is base + 1 of its receipt).
+ * [deferred] — "KIND:id" of operations left in their outbox because only this batch's own commits made
+ * their full archive stale; later operations of the same kind wait behind them (FIFO).
+ * [attempts]/[attemptCursor] — background runs started without progress, including runs Android stopped.
+ */
 internal data class FamilySyncPlan(val id: String, val remote: String, val operations: List<FamilySyncOperation>,
     val background: Boolean, val cursor: Int = 0, val acknowledged: Boolean = false,
-    val status: FamilySyncStatus = FamilySyncStatus.READY, val problem: String = "") {
+    val status: FamilySyncStatus = FamilySyncStatus.READY, val problem: String = "",
+    val owned: List<Long> = emptyList(), val deferred: List<String> = emptyList(),
+    val attempts: Int = 0, val attemptCursor: Int = -1) {
     init {
         require(FamilyRules.validId(id) && FamilyRules.validId(remote))
         require(operations.size in 1..130 && operations.map { it.kind to it.id }.distinct().size == operations.size)
         require(cursor in 0..operations.size && (!acknowledged || cursor < operations.size))
         require(status != FamilySyncStatus.DONE || cursor == operations.size)
         require(problem.length <= 32)
+        require(owned.size <= operations.size && owned.all { it > 0 } && owned.distinct().size == owned.size)
+        require(deferred.distinct().size == deferred.size && deferred.all { it in operations.map(FamilySyncOperation::key) })
+        require(attempts in 0..100 && attemptCursor in -1..operations.size)
     }
     val active get() = status in setOf(FamilySyncStatus.READY, FamilySyncStatus.RUNNING, FamilySyncStatus.RETRY)
+    val deferredKinds get() = operations.filter { it.key in deferred }.map { it.kind }.toSet()
+    /** True when every revision after [base] up to [head] was committed by this batch itself. */
+    fun ownsAfter(base: Long, head: Long): Boolean = head > base && head - base <= owned.size && (base + 1..head).all { it in owned }
 }
 internal class FamilySyncChanged : IllegalStateException("Approved queue changed")
 internal object FamilySyncPlanner {
+    /**
+     * Whole-archive operations go before item details: a metadata edit can follow this batch's own
+     * commits safely, while an archive built on the older revision cannot (audit L-01).
+     */
+    private val priority = listOf(FamilySyncKind.ADD, FamilySyncKind.PHOTO, FamilySyncKind.OUTFIT, FamilySyncKind.EDIT)
     /** Recover submitted heads first, then stable type priority; never reorder a type's FIFO. */
     fun ordered(queues: Map<FamilySyncKind, List<FamilySyncOperation>>): List<FamilySyncOperation> {
         require(queues.all { (kind, rows) -> rows.all { it.kind == kind } })
@@ -29,7 +56,7 @@ internal object FamilySyncPlanner {
         val result = mutableListOf<FamilySyncOperation>()
         while (pending.values.any { it.isNotEmpty() }) {
             val head = pending.values.mapNotNull { it.firstOrNull() }
-                .minWith(compareBy<FamilySyncOperation> { !it.submitted }.thenBy { it.kind.ordinal })
+                .minWith(compareBy<FamilySyncOperation> { !it.submitted }.thenBy { priority.indexOf(it.kind) })
             result += head; pending.getValue(head.kind).removeAt(0)
         }
         require(result.size <= 130 && result.map { it.kind to it.id }.distinct().size == result.size)
@@ -58,29 +85,43 @@ internal interface FamilySyncPort {
     fun plan(): FamilySyncPlan
     fun save(next: FamilySyncPlan, expected: FamilySyncPlan)
     fun pending(kind: FamilySyncKind): List<FamilySyncOperation>
-    suspend fun authorize(operation: FamilySyncOperation)
+    suspend fun authorize(operation: FamilySyncOperation, plan: FamilySyncPlan): FamilySyncDecision
     fun submitted(operation: FamilySyncOperation)
-    suspend fun publish(operation: FamilySyncOperation)
+    /** Returns the committed revision (base + 1 of the validated receipt). */
+    suspend fun publish(operation: FamilySyncOperation): Long
     fun remove(operation: FamilySyncOperation)
     fun checkpoint()
 }
 /** Durable receipt checkpoint bridges two AtomicFiles: acknowledge, remove outbox, advance cursor. */
 internal class FamilySyncRunner(private val port: FamilySyncPort) {
-    suspend fun run(limit: Int = 10): Boolean {
+    /** [keepGoing] is asked before starting each further operation (a background time budget). */
+    suspend fun run(limit: Int = 10, keepGoing: () -> Boolean = { true }): Boolean {
         require(limit in 1..130)
-        repeat(limit) {
+        repeat(limit) { step ->
             port.checkpoint(); var plan = port.plan()
             if (plan.cursor == plan.operations.size) {
-                port.save(plan.copy(status = FamilySyncStatus.DONE, problem = ""), plan); return true
+                port.save(plan.copy(status = FamilySyncStatus.DONE, problem = finished(plan)), plan); return true
             }
             require(plan.active)
-            val operation = plan.operations[plan.cursor]
+            var operation = plan.operations[plan.cursor]
             if (!plan.acknowledged) {
+                if (step > 0 && !keepGoing()) return false
+                // A deferred head keeps every later operation of its kind in place (per-kind FIFO).
+                if (operation.kind in plan.deferredKinds) { if (advance(plan, deferred = operation)) return true; return@repeat }
                 if (!operation.matches(port.pending(operation.kind).firstOrNull())) throw FamilySyncChanged()
-                port.authorize(operation); port.checkpoint()
+                when (val decision = port.authorize(operation, plan)) {
+                    FamilySyncDecision.Defer -> { if (advance(plan, deferred = operation)) return true; return@repeat }
+                    is FamilySyncDecision.Send -> if (decision.operation != operation) {
+                        val next = decision.operation
+                        require(next.kind == operation.kind && next.id == operation.id)
+                        val rebased = plan.copy(operations = plan.operations.toMutableList().also { it[plan.cursor] = next })
+                        port.save(rebased, plan); plan = rebased; operation = next
+                    }
+                }
+                port.checkpoint()
                 port.submitted(operation); port.checkpoint()
-                port.publish(operation); port.checkpoint()
-                val ack = plan.copy(acknowledged = true)
+                val revision = port.publish(operation); port.checkpoint()
+                val ack = plan.copy(acknowledged = true, owned = if (revision > 0) (plan.owned + revision).distinct() else plan.owned)
                 port.save(ack, plan); plan = ack
             }
             port.checkpoint()
@@ -91,11 +132,18 @@ internal class FamilySyncRunner(private val port: FamilySyncPort) {
                 port.remove(operation)
             }
             port.checkpoint()
-            val next = plan.copy(cursor = plan.cursor + 1, acknowledged = false,
-                status = if (plan.cursor + 1 == plan.operations.size) FamilySyncStatus.DONE else FamilySyncStatus.RUNNING, problem = "")
-            port.save(next, plan)
-            if (next.status == FamilySyncStatus.DONE) return true
+            if (advance(plan, deferred = null)) return true
         }
         return false
+    }
+    private fun finished(plan: FamilySyncPlan) = if (plan.deferred.isEmpty()) "" else "PARTIAL"
+    /** Moves the cursor; true when the batch is complete. */
+    private fun advance(plan: FamilySyncPlan, deferred: FamilySyncOperation?): Boolean {
+        val done = plan.cursor + 1 == plan.operations.size
+        val list = if (deferred == null) plan.deferred else plan.deferred + deferred.key
+        val next = plan.copy(cursor = plan.cursor + 1, acknowledged = false, deferred = list,
+            status = if (done) FamilySyncStatus.DONE else FamilySyncStatus.RUNNING, problem = "")
+        port.save(if (done) next.copy(problem = finished(next)) else next, plan)
+        return done
     }
 }

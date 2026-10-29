@@ -2,6 +2,7 @@ package com.familywardrobe.app
 
 import android.util.AtomicFile
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import org.json.JSONArray
 import org.json.JSONObject
@@ -15,21 +16,31 @@ internal object FamilySyncLocks {
     fun account(key: String) = locks.computeIfAbsent(key) { Mutex() }
     fun epoch(key: String) = epochs.computeIfAbsent(key) { AtomicLong() }.get()
     fun signOut(key: String) { epochs.computeIfAbsent(key) { AtomicLong() }.incrementAndGet() }
+    private val outboxes = ConcurrentHashMap<String, MutableStateFlow<Long>>()
+    /** Signals any change of the four account-private outboxes, so the send list never goes stale (audit L-03). */
+    fun outbox(key: String): MutableStateFlow<Long> = outboxes.computeIfAbsent(key) { MutableStateFlow(0L) }
+    fun touched(key: String) { outbox(key).update { it + 1 } }
 }
+/** v2 adds own commits, deferred operations and the background attempt counter; v1 is read with empty values. */
 internal object FamilySyncJournal {
-    fun encode(p: FamilySyncPlan, account: String): String = JSONObject().put("version", 1).put("account", account)
+    fun encode(p: FamilySyncPlan, account: String): String = JSONObject().put("version", 2).put("account", account)
         .put("id", p.id).put("remote", p.remote).put("background", p.background).put("cursor", p.cursor)
         .put("acknowledged", p.acknowledged).put("status", p.status.name).put("problem", p.problem)
         .put("operations", JSONArray().apply { p.operations.forEach { o -> put(JSONObject().put("kind", o.kind.name)
-            .put("id", o.id).put("fingerprint", o.fingerprint).put("submitted", o.submitted)) } }).toString()
+            .put("id", o.id).put("fingerprint", o.fingerprint).put("submitted", o.submitted)) } })
+        .put("owned", JSONArray(p.owned)).put("deferred", JSONArray(p.deferred))
+        .put("attempts", p.attempts).put("attemptCursor", p.attemptCursor).toString()
     fun decode(text: String, account: String, remote: String): FamilySyncPlan {
-        val j = JSONObject(text)
-        require(j.getInt("version") == 1 && j.getString("account") == account && j.getString("remote") == remote)
+        val j = JSONObject(text); val version = j.getInt("version")
+        require(version in 1..2 && j.getString("account") == account && j.getString("remote") == remote)
         val rows = j.getJSONArray("operations"); require(rows.length() in 1..130)
+        val owned = if (version == 1) emptyList() else j.getJSONArray("owned").let { a -> (0 until a.length()).map { a.getLong(it) } }
+        val deferred = if (version == 1) emptyList() else j.getJSONArray("deferred").let { a -> (0 until a.length()).map { a.getString(it) } }
         return FamilySyncPlan(j.getString("id"), remote, (0 until rows.length()).map { index -> rows.getJSONObject(index).let {
             FamilySyncOperation(FamilySyncKind.valueOf(it.getString("kind")), it.getString("id"), it.getString("fingerprint"), it.getBoolean("submitted"))
         } }, j.getBoolean("background"), j.getInt("cursor"), j.getBoolean("acknowledged"),
-            FamilySyncStatus.valueOf(j.getString("status")), j.getString("problem"))
+            FamilySyncStatus.valueOf(j.getString("status")), j.getString("problem"), owned, deferred,
+            if (version == 1) 0 else j.getInt("attempts"), if (version == 1) -1 else j.getInt("attemptCursor"))
     }
 }
 internal class FamilySyncStore(context: AccountContext, private val account: AuthIdentity) {
