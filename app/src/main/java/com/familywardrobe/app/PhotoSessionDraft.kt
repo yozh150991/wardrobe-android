@@ -75,7 +75,7 @@ internal data class PhotoSessionDraft(val photoId: String, val beforeId: String,
             val result = buildSet {
                 for (i in 0 until minOf(steps.length(), PhotoEditHistory.MAX_STEPS)) {
                     runCatching { JSONObject(steps.getString(i)).optString("source") }.getOrNull()
-                        ?.takeIf(PhotoStore.ID::matches)?.let(::add)
+                        ?.takeIf { PhotoStore.ID.matches(it) }?.let { add(it) }
                 }
             }
             cachedSession = value; cachedSteps = steps.length(); cachedSources = result

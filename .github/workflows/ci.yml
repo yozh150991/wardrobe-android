@@ -78,7 +78,12 @@ jobs:
           test -n "$ANDROID_HOME"
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
       - name: Unit tests, lint and preview APK
-        run: bash build-apk.sh -PciPreview=true testDebugUnitTest lintDebug assembleDebug
+        run: |
+          set -o pipefail
+          bash build-apk.sh -PciPreview=true testDebugUnitTest lintDebug assembleDebug 2>&1 | tee android-build.log
+      - name: Build errors as annotations
+        if: failure()
+        run: python3 tools/ci_annotations.py android-build.log
       - name: Exported Room schema matches the entities
         run: |
           # Room re-exports the current schema during the build; a diff means the entities
@@ -184,7 +189,10 @@ jobs:
           target: google_apis
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: bash build-apk.sh -PciPreview=true connectedDebugAndroidTest
+          script: bash -o pipefail -c "bash build-apk.sh -PciPreview=true connectedDebugAndroidTest 2>&1 | tee instrumentation.log"
+      - name: Build and test errors as annotations
+        if: failure()
+        run: python3 tools/ci_annotations.py instrumentation.log
       - name: Instrumentation summary
         if: always()
         run: |

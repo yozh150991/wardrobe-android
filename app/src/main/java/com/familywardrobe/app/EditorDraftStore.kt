@@ -27,8 +27,8 @@ class EditorDraftStore(context: Context) {
 
     fun read(): JSONObject? {
         val queued = synchronized(lock) { pending[path] }
-        val text = if (queued != null) queued.draft?.toString() ?: return null else stored() ?: return null
-        return runCatching { JSONObject(text).takeIf(::valid) }.getOrNull()
+        val text = (if (queued != null) queued.draft?.toString() else stored()) ?: return null
+        return runCatching { JSONObject(text).takeIf { valid(it) } }.getOrNull()
     }
     fun write(value: JSONObject): Boolean {
         // The source cleanup ledger is committed before the command draft can become durable.
