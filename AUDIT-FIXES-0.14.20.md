@@ -3,7 +3,7 @@
 29 жовтня 2026 · Claude · 0.14.20-audit-fixes / code 50 · Room/backup 10 (схема не змінена).
 Джерело: [AUDIT-0.14.19.md](AUDIT-0.14.19.md) — 11 проблем (2 високі, 5 середніх, 4 низькі).
 Статус: усі 11 виправлено в межах короткострокових рекомендацій аудиту. Довгострокова дельта-модель
-спільних змін (B-01) лишається в роадмапі. Android-збірка й instrumentation — у CI PR; пристрій не перевірено.
+спільних змін (B-01) лишається в роадмапі. CI PR #18 (run 40873619913): усі 4 jobs pass; пристрій не перевірено.
 
 ## Зависання та лаги (застосунок)
 
@@ -47,6 +47,13 @@
 - `FamilySyncStoreTest` (instrumentation): очікуваний порядок типів оновлено.
 - Backend: `tests/test_storage_cleanup.py` — 7 тестів (6 падають на 0.14.19).
 
+## CI (PR #18, run 40873619913, commit 880011d)
+
+- Source and Git safety — pass (24 host-набори, backend 155).
+- Android debug preview — pass: компіляція Kotlin, 239 JVM-тестів, lint, схема Room, preview APK.
+- Android instrumentation (API 34 emulator) — pass: 181 тест, 176 pass, 5 skipped (`CloudEmulatorTest` без host-аргументу).
+- Firebase emulators — pass: приватні rules/auth, family rules, `emulator_family/membership/editing.py`.
+
 ## Перевірки, виконані в цьому середовищі
 
 - `python3 tools/run_host_checks.py --allow-missing-client-config` — 24 набори pass.
@@ -56,6 +63,5 @@
 
 ## Не виконано / обмеження
 
-- Android/Compose компіляція, lint, instrumentation і rules-емулятори — у CI цього PR.
 - **Деплой Cloud Functions** потрібен для B-01, а також для ще не підтверджених виправлень 0.14.13–14 (QA-01, QA-04, QA-11). Правила Firestore/Storage не змінені.
 - Пристрій: введення в редакторі після фоторедагування (без лагів), перетягування в колажі, «Образ дня» з 200+ речами, спільні редактори під час фонового пакета (індикатор, «Скасувати»), пакет «додавання + кілька правок полів» (надсилаються всі правки й одна операція з архівом, решта — «PARTIAL»).
