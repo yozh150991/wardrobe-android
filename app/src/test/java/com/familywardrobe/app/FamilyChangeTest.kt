@@ -12,6 +12,9 @@ class FamilyChangeTest {
     private fun id(n: Int) = "00000000-0000-0000-0000-${n.toString().padStart(12, '0')}"
     private val identity = FamilyArchiveIdentity(id(1), id(2), "owner")
     private fun rejects(block: () -> Unit) { assertTrue(runCatching(block).isFailure) }
+    // Unit tests compile against Android's org.json API, which has neither keySet() nor similar().
+    private fun JSONObject.fieldNames(): Set<String> = keys().asSequence().toSet()
+    private fun JSONObject.map(): Map<String, Any?> = fieldNames().associateWith { key -> get(key).let { if (it is JSONObject) it.map() else it } }
     private fun garment(category: String? = null, color: String? = null) = JSONObject().put("id", id(10)).put("wardrobeId", id(2))
         .put("name", "Scarf").put("category", "accessories").put("color", "red").put("size", "").put("location", "")
         .put("description", "").put("photoId", id(11)).put("season", "all").put("style", "casual").put("availability", "available")
@@ -30,10 +33,10 @@ class FamilyChangeTest {
     @Test fun additionCarriesExactlyTheBackupRowsAndTheOnePhoto() {
         val text = FamilyChange.addition(encoded(garment(category = id(30)), JSONArray().put(label(30))))
         val change = JSONObject(text)
-        assertEquals(setOf("kind", "garment", "customCategory", "customColor", "photo"), change.keySet())
+        assertEquals(setOf("kind", "garment", "customCategory", "customColor", "photo"), change.fieldNames())
         assertEquals("add", change.getString("kind"))
-        assertEquals(garment(category = id(30)).similar(change.getJSONObject("garment")), true)
-        assertTrue(label(30).similar(change.getJSONObject("customCategory")))
+        assertEquals(garment(category = id(30)).map(), change.getJSONObject("garment").map())
+        assertEquals(label(30).map(), change.getJSONObject("customCategory").map())
         assertTrue(change.isNull("customColor"))
         assertEquals(id(11), change.getJSONObject("photo").getString("id")); assertEquals("jpg", change.getJSONObject("photo").getString("ext"))
         FamilyChange.check(draft(text), "add")
@@ -51,7 +54,7 @@ class FamilyChangeTest {
     @Test fun photoChangeIsSmallAndStrict() {
         val text = FamilyChange.photo(id(10), "b".repeat(64), id(11), "png")
         val change = JSONObject(text)
-        assertEquals(setOf("kind", "garmentId", "fingerprint", "photo"), change.keySet())
+        assertEquals(setOf("kind", "garmentId", "fingerprint", "photo"), change.fieldNames())
         FamilyChange.check(draft(text), "photo")
         FamilyChange.photo(id(10), "", id(11), "jpg")
         rejects { FamilyChange.photo(id(10), "B".repeat(64), id(11), "png") }
