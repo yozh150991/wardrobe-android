@@ -1233,4 +1233,7 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="family_sync_auto_hint">Dla tej wspólnej szafy: każda zapisana zmiana jest wysyłana w tle przez dowolną sieć, także po zamknięciu aplikacji. Konflikt lub inny problem wstrzymuje wysyłanie, dopóki nie rozwiążesz go w edytorze albo nie wyślesz ręcznie. Wylogowanie zatrzymuje wysyłanie.</string>
     <string name="family_sync_auto_waiting">Automatyczne wysyłanie czeka na Ciebie: otwórz zmianę, na której się zatrzymało (odśwież, odrzuć lub wyślij ponownie), albo wyślij listę ręcznie.</string>
     <string name="family_auto_queued">Automatyczne wysyłanie jest włączone: ta zmiana zostanie wysłana w tle. Stan — w oknie Wysyłanie.</string>
+    <string name="family_export">Zapisz kopię wspólnej szafy (ZIP)</string>
+    <string name="family_export_hint">Tylko dla właściciela. Bieżąca wersja z serwera wraz ze zmianami członków. Przywrócenie doda osobną lokalną szafę; członkowie i dostęp nie są przenoszeni.</string>
+    <string name="family_export_done">Kopia wspólnej szafy została zapisana i sprawdzona.</string>
 </resources>

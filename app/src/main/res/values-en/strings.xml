@@ -1233,4 +1233,7 @@ Your current wardrobe is unchanged.</string>
     <string name="family_sync_auto_hint">For this shared wardrobe: every saved change is sent in the background over any network, even after closing the app. A conflict or another problem pauses sending until you resolve it in the editor or send by hand. Signing out stops sending.</string>
     <string name="family_sync_auto_waiting">Automatic sending is waiting for you: open the change it stopped at (refresh, discard or send again) or send the list by hand.</string>
     <string name="family_auto_queued">Automatic sending is on: this change will be sent in the background. See its status in the Sending window.</string>
+    <string name="family_export">Save a copy of the shared wardrobe (ZIP)</string>
+    <string name="family_export_hint">Owner only. The current version from the server, members\' changes included. Restoring it adds a separate local wardrobe; members and access are not carried over.</string>
+    <string name="family_export_done">The copy of the shared wardrobe was saved and verified.</string>
 </resources>

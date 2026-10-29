@@ -49,26 +49,45 @@ class Backup(private val context: Context, private val repo: Repository, private
                 pinned = state.photoIds(); photos.pin(pinned)
                 Triple(state, json, revision)
             }
-            ZipOutputStream(archive.outputStream().buffered()).use { zip ->
-                zip.putNextEntry(ZipEntry("manifest.json")); zip.write(json); zip.closeEntry()
-                for (id in state.photoIds()) {
-                    checkpoint()
-                    val file = photos.currentFile(id)
-                    require(file.isFile && file.length() in 1..PhotoStore.MAX_PHOTO) { "Missing photo" }
-                    zip.putNextEntry(ZipEntry("photos/${file.name}"))
-                    file.inputStream().use { transfer(it, zip, checkpoint) }; zip.closeEntry()
-                }
-            }
-            photos.unpin(pinned); pinned = emptySet()
-            val expected = archive.inputStream().use { digest(it, checkpoint) }
-            requireNotNull(context.contentResolver.openOutputStream(uri, "wt")).use { output ->
-                archive.inputStream().use { transfer(it, output, checkpoint) }
-            }
-            val actual = requireNotNull(context.contentResolver.openInputStream(uri)).use { digest(it, checkpoint) }
-            require(MessageDigest.isEqual(expected, actual)) { "Backup verification failed" }
-            checkpoint()
+            write(archive, uri, state, json, checkpoint) { photos.unpin(pinned); pinned = emptySet() }
             revision
         } finally { photos.unpin(pinned); archive.delete() }
+    }
+    /**
+     * FAM-04: a portable copy of an isolated one-wardrobe snapshot that is not in Room — the owner's copy of a shared
+     * wardrobe as just read from the server ([photos] is that read view's store). Same format, limits and write
+     * verification as [export]. Restoring it adds an independent local wardrobe; no membership is carried.
+     */
+    suspend fun exportSnapshot(uri: Uri, source: Snapshot, guard: () -> Unit = {}) = withContext(Dispatchers.IO) {
+        val checkpoint = { coroutineContext.ensureActive(); guard() }
+        val state = WardrobeSnapshots.select(source, source.wardrobes.single().id)
+        BackupStateRules.validate(state)
+        val json = encode(state).toString().toByteArray(Charsets.UTF_8)
+        require(json.size <= 8 * 1024 * 1024 && state.photoIds().size <= 10_000 && state.wears.size <= 100_000)
+        val staging = File(context.filesDir, "backup-staging").apply { mkdirs() }
+        val archive = File(staging, "${newId()}.zip")
+        try { write(archive, uri, state, json, checkpoint) } finally { archive.delete() }
+    }
+    /** ZIP of [json] + photos into [archive], then a copy to [uri] verified byte for byte. [written] runs after the ZIP. */
+    private fun write(archive: File, uri: Uri, state: Snapshot, json: ByteArray, checkpoint: () -> Unit, written: () -> Unit = {}) {
+        ZipOutputStream(archive.outputStream().buffered()).use { zip ->
+            zip.putNextEntry(ZipEntry("manifest.json")); zip.write(json); zip.closeEntry()
+            for (id in state.photoIds()) {
+                checkpoint()
+                val file = photos.currentFile(id)
+                require(file.isFile && file.length() in 1..PhotoStore.MAX_PHOTO) { "Missing photo" }
+                zip.putNextEntry(ZipEntry("photos/${file.name}"))
+                file.inputStream().use { transfer(it, zip, checkpoint) }; zip.closeEntry()
+            }
+        }
+        written()
+        val expected = archive.inputStream().use { digest(it, checkpoint) }
+        requireNotNull(context.contentResolver.openOutputStream(uri, "wt")).use { output ->
+            archive.inputStream().use { transfer(it, output, checkpoint) }
+        }
+        val actual = requireNotNull(context.contentResolver.openInputStream(uri)).use { digest(it, checkpoint) }
+        require(MessageDigest.isEqual(expected, actual)) { "Backup verification failed" }
+        checkpoint()
     }
     private fun transfer(input: InputStream, output: OutputStream, checkpoint: () -> Unit) {
         val buffer = ByteArray(64 * 1024)

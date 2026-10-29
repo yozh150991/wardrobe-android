@@ -337,5 +337,58 @@ class OutfitChangeTests(Helpers, unittest.TestCase):
         self.assertIn('outfit1', self.service.resume(self.viewer, dict(remoteId=REMOTE))['features'])
 
 
+
+class CompatibilityTests(Helpers, unittest.TestCase):
+    """FAM-04: a client without the delta model (full archives, CAS) keeps working next to server-applied changes."""
+    setUp = ChangeTests.setUp
+    garment = ChangeTests.garment
+    add = ChangeTests.add
+
+    def full(self, number, base, state):
+        data = archive(envelope(base=base, state=state))
+        upload = self.service.begin_upload(self.owner, dict(remoteId=REMOTE, archiveId=uid(number), baseRevision=base,
+                                                            sha256=hashlib.sha256(data).hexdigest(), size=len(data)))
+        self.blobs.data[upload['stagingPath']] = data
+        return self.service.commit(self.owner, dict(remoteId=REMOTE, archiveId=uid(number)))
+
+    def test_old_client_commits_on_top_of_server_applied_changes_and_cas_still_holds(self):
+        self.stage(uid(500), uid(501))
+        self.apply(uid(500), self.add(502, uid(501)))
+        state, entries = self.head()
+        # An old client downloads this head, edits locally and uploads a full archive on base 2.
+        state = copy.deepcopy(state); next(g for g in state['garments'] if g['id'] == GARMENT)['size'] = 'XL'
+        photos = {name[len('photos/'):].split('.')[0] for name in entries if name.startswith('photos/')}
+        self.assertEqual({PHOTO, uid(501)}, photos)
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, 'w') as z:
+            z.writestr('manifest.json', json.dumps(envelope(base=2, state=state)))
+            for name in entries:
+                if name.startswith('photos/'):
+                    with zipfile.ZipFile(io.BytesIO(self.blobs.data[self.root()['head']['archive']])) as head:
+                        z.writestr(name, head.read(name))
+        payload = data.getvalue()
+        upload = self.service.begin_upload(self.owner, dict(remoteId=REMOTE, archiveId=uid(600), baseRevision=2,
+                                                            sha256=hashlib.sha256(payload).hexdigest(), size=len(payload)))
+        self.blobs.data[upload['stagingPath']] = payload
+        self.assertEqual(3, self.service.commit(self.owner, dict(remoteId=REMOTE, archiveId=uid(600)))['revision'])
+        # A stale full archive is still refused; a change after it still applies.
+        self.error('aborted', lambda: self.service.begin_upload(self.owner, dict(remoteId=REMOTE, archiveId=uid(601), baseRevision=2,
+                   sha256='a' * 64, size=10)))
+        self.stage(uid(510), uid(511))
+        self.assertEqual(4, self.apply(uid(510), self.add(512, uid(511)))['revision'])
+        state, _ = self.head()
+        self.assertEqual('XL', next(g for g in state['garments'] if g['id'] == GARMENT)['size'])
+        self.assertEqual({GARMENT, uid(502), uid(512)}, {g['id'] for g in state['garments']})
+
+    def test_head_answer_only_gains_the_features_list(self):
+        old_keys = {'remoteId', 'wardrobeId', 'ownerUid', 'revision', 'head', 'role'}
+        head = self.service.resume(self.viewer, dict(remoteId=REMOTE))
+        self.assertEqual(old_keys | {'features'}, set(head))
+        self.stage(uid(500), uid(501)); self.apply(uid(500), self.add(502, uid(501)))
+        head = self.service.resume(self.viewer, dict(remoteId=REMOTE))['head']
+        # Same head shape and rules an old reader checks: revision chain, author, archive path.
+        self.assertEqual((2, 1, 'editor'), (head['revision'], head['baseRevision'], head['authorUid']))
+        self.assertTrue(head['archive'].startswith(f'familyWardrobes/{REMOTE}/snapshots/'))
+
 if __name__ == '__main__':
     unittest.main()
