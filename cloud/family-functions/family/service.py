@@ -14,6 +14,7 @@ from .schema import HASH, integer, valid_id
 from .membership import MembershipService
 from .editing import EditingService
 from .applying import ApplyingService, FEATURES
+from .ownership import OwnershipService
 
 UPLOAD_TTL_MS = 30 * 60 * 1000
 # Abandoned staging objects of the same author are purged on the next upload. Every upload record expires
@@ -28,6 +29,7 @@ class Actor:
     uid: str
     email_verified: bool
     email: str = ""
+    auth_time: int = 0  # seconds since the epoch of the sign-in behind the ID token (account deletion needs a recent one)
 
 
 def authenticate(actor):
@@ -70,9 +72,9 @@ def published_root(current, head, revision):
     return current | {'head': head, 'revision': revision, 'previousArchive': previous}
 
 
-class FamilyService(MembershipService, EditingService, ApplyingService):
-    def __init__(self, store, archives, clock=None):
-        self.store, self.archives = store, archives
+class FamilyService(MembershipService, EditingService, ApplyingService, OwnershipService):
+    def __init__(self, store, archives, clock=None, accounts=None):
+        self.store, self.archives, self.accounts = store, archives, accounts
         self.clock = clock or (lambda: int(time.time() * 1000))
 
     def _discard(self, path):

@@ -29,7 +29,7 @@ def callable_integer(value):
 
 
 INTEGER_FIELDS = {'begin_upload': ('baseRevision', 'size'), 'edit_item': ('baseRevision',),
-                  'change_member': ('expectedVersion',), 'begin_change': ('size',)}
+                  'change_member': ('expectedVersion',), 'begin_change': ('size',), 'transfer_owner': ('expectedVersion',)}
 
 
 def decode_request(method, data):

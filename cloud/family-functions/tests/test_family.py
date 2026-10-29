@@ -28,12 +28,18 @@ class MemoryStore:
             return result
     def seed(self, path, value):
         self.run(lambda tx: tx.set(path, value))
+    def delete_tree(self, path):
+        with self.lock:
+            self.data = {k: v for k, v in self.data.items() if k != path and not k.startswith(path + '/')}
 
 
 class MemoryArchives:
     def __init__(self): self.data={}; self.created={}; self.after_put=None; self.lock=threading.Lock()
     def delete(self, path):
         with self.lock: self.data.pop(path, None)
+    def delete_prefix(self, prefix):
+        with self.lock:
+            for p in [p for p in self.data if p.startswith(prefix)]: self.data.pop(p, None)
     def purge(self, prefix, older_than_ms, keep=()):
         # Objects without a recorded creation time (written directly by tests) are never purged.
         with self.lock:

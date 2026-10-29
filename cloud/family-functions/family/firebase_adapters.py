@@ -29,6 +29,20 @@ class FirestoreStore:
             return callback(Tx(transaction))
         return execute(client.transaction(max_attempts=5))
 
+    def delete_tree(self, path):
+        """A document and every subcollection below it (account deletion, deleted shared wardrobes)."""
+        self.client.recursive_delete(self.client.document(path))
+
+
+class FirebaseAccounts:
+    """Deletes the Firebase Authentication user; an already deleted user is the desired state."""
+    def delete(self, uid):
+        from firebase_admin import auth
+        try:
+            auth.delete_user(uid)
+        except auth.UserNotFoundError:
+            pass
+
 
 class StorageArchives:
     def __init__(self, bucket):
@@ -75,6 +89,15 @@ class StorageArchives:
             self.bucket.blob(path).delete(timeout=30)
         except NotFound:
             pass
+
+    def delete_prefix(self, prefix):
+        """Every object under prefix, page by page (account deletion, deleted shared wardrobes)."""
+        require(prefix.endswith('/') and prefix.count('/') >= 2, 'Invalid prefix')
+        for blob in self.bucket.list_blobs(prefix=prefix, timeout=30):
+            try:
+                blob.delete(timeout=30)
+            except NotFound:
+                pass
 
     def purge(self, prefix, older_than_ms, keep=()):
         """Deletes objects under prefix created before older_than_ms (epoch ms); returns how many were removed."""
