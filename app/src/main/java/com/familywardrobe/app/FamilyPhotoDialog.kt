@@ -74,7 +74,7 @@ internal fun FamilyPhotoDialog(vm: WardrobeViewModel, remote: String, dismiss: (
                     if (state.synced) item { Text(stringResource(R.string.family_photo_synced)) }
                     state.problem?.let { problem -> item { Text(stringResource(when (problem) {
                         FamilyProblem.ACCESS -> R.string.family_access
-                        FamilyProblem.CONFLICT -> R.string.family_photo_conflict
+                        FamilyProblem.CONFLICT -> if (draft?.change != null) R.string.family_change_conflict else R.string.family_photo_conflict
                         FamilyProblem.EXPIRED -> R.string.family_add_expired
                         FamilyProblem.MISSING -> R.string.family_edit_missing
                         FamilyProblem.ARCHIVE -> if (state.unreadablePhoto) R.string.photo_error_unreadable else R.string.family_archive
@@ -97,7 +97,9 @@ internal fun FamilyPhotoDialog(vm: WardrobeViewModel, remote: String, dismiss: (
                         item {
                             Text(stringResource(R.string.family_photo_new), style = MaterialTheme.typography.labelLarge)
                             state.preview?.let { ZoomableItemPhoto(draft.photoId, it, Modifier.fillMaxWidth().height(240.dp), draft.name) }
-                            Text(stringResource(R.string.family_edit_base, draft.publication.baseRevision))
+                            // A change draft is applied by the server to its newest head; only a full archive has a fixed base.
+                            Text(if (draft.change != null) stringResource(R.string.family_change_latest)
+                                else stringResource(R.string.family_edit_base, draft.publication.baseRevision))
                             Text(stringResource(R.string.family_photo_saved))
                         }
                         if (draft.submitted) item { Text(stringResource(R.string.family_edit_pending)) }
@@ -105,7 +107,7 @@ internal fun FamilyPhotoDialog(vm: WardrobeViewModel, remote: String, dismiss: (
                             Text(stringResource(if (draft.submitted) R.string.family_edit_retry else R.string.family_photo_send))
                         } }
                         if (state.queue.firstOrNull() != draft) item { Text(stringResource(R.string.family_media_queue_wait)) }
-                        if (state.recoverable || (!draft.submitted && state.queue.firstOrNull() == draft)) item { OutlinedButton(onClick = { confirm = "rebase" }, enabled = !state.running, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                        if (draft.change == null && (state.recoverable || (!draft.submitted && state.queue.firstOrNull() == draft))) item { OutlinedButton(onClick = { confirm = "rebase" }, enabled = !state.running, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                             Text(stringResource(R.string.family_add_rebase))
                         } }
                         item { TextButton(onClick = { confirm = "discard" }, enabled = !state.running && (!draft.submitted || state.recoverable), modifier = Modifier.fillMaxWidth()) {

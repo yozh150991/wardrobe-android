@@ -45,10 +45,12 @@ internal data class FamilySyncPlan(val id: String, val remote: String, val opera
 internal class FamilySyncChanged : IllegalStateException("Approved queue changed")
 internal object FamilySyncPlanner {
     /**
-     * Whole-archive operations go before item details: a metadata edit can follow this batch's own
-     * commits safely, while an archive built on the older revision cannot (audit L-01).
+     * A whole-archive outfit goes first: it is the only kind that still needs the head it was built on.
+     * Additions and photos are server-applied changes (delta model) that fit any head, and item details
+     * follow this batch's own commits safely (audit L-01). A legacy full-archive addition or photo after
+     * the outfit is deferred like before; only one whole archive can succeed on a given head anyway.
      */
-    private val priority = listOf(FamilySyncKind.ADD, FamilySyncKind.PHOTO, FamilySyncKind.OUTFIT, FamilySyncKind.EDIT)
+    private val priority = listOf(FamilySyncKind.OUTFIT, FamilySyncKind.ADD, FamilySyncKind.PHOTO, FamilySyncKind.EDIT)
     /** Recover submitted heads first, then stable type priority; never reorder a type's FIFO. */
     fun ordered(queues: Map<FamilySyncKind, List<FamilySyncOperation>>): List<FamilySyncOperation> {
         require(queues.all { (kind, rows) -> rows.all { it.kind == kind } })
@@ -72,7 +74,9 @@ internal object FamilySyncPlanner {
         p.archiveId, p.baseRevision.toString(), p.hash, p.size.toString())
     fun media(kind: FamilySyncKind, d: FamilyAddDraft): FamilySyncOperation {
         require(kind in setOf(FamilySyncKind.ADD, FamilySyncKind.PHOTO))
-        return FamilySyncOperation(kind, d.publication.archiveId, fingerprint(publication(d.publication) + listOf(d.garmentId, d.photoId, d.name)), d.submitted)
+        // The change text is part of the approval; a full-archive draft keeps its earlier fingerprint.
+        return FamilySyncOperation(kind, d.publication.archiveId, fingerprint(publication(d.publication) + listOf(d.garmentId, d.photoId, d.name) +
+            listOfNotNull(d.change)), d.submitted)
     }
     fun outfit(d: FamilyOutfitDraft): FamilySyncOperation {
         val c = d.change

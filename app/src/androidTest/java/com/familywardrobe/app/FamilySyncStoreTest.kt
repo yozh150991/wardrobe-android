@@ -58,7 +58,7 @@ class FamilySyncStoreTest {
         val form = FamilyOutfitForm(remote, "", 4, "{}"); outfits.putForm(form)
         val operations = FamilySyncOperations(context, identity, remote)
         // Whole-archive operations first, item details last (audit L-01).
-        assertEquals(listOf(FamilySyncKind.ADD, FamilySyncKind.PHOTO, FamilySyncKind.OUTFIT, FamilySyncKind.EDIT), operations.snapshot().map { it.kind })
+        assertEquals(listOf(FamilySyncKind.OUTFIT, FamilySyncKind.ADD, FamilySyncKind.PHOTO, FamilySyncKind.EDIT), operations.snapshot().map { it.kind })
         val selected = operations.snapshot().first { it.kind == FamilySyncKind.OUTFIT }; operations.submitted(selected); operations.remove(selected)
         assertEquals(form, outfits.form(remote)); assertEquals(3, operations.snapshot().size)
     }

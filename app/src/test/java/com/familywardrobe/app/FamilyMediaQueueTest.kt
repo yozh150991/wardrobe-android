@@ -82,7 +82,7 @@ class FamilyMediaQueueTest {
         val text = FamilyMediaQueue.encode(listOf(draft()), "account", identity.remoteId)
         rejects { FamilyMediaQueue.decode(text, "other", identity.remoteId) }
         rejects { FamilyMediaQueue.decode(text, "account", newId()) }
-        rejects { FamilyMediaQueue.decode(JSONObject(text).put("version", 3).toString(), "account", identity.remoteId) }
+        rejects { FamilyMediaQueue.decode(JSONObject(text).put("version", 4).toString(), "account", identity.remoteId) }
         rejects { FamilyMediaQueue.decode("broken", "account", identity.remoteId) }
     }
     @Test fun submittedRecoveryKeepsExactPayloadBeforeAnyNewArchive() {
@@ -91,6 +91,22 @@ class FamilyMediaQueueTest {
         FamilyMediaQueue.requireHead(restarted, pending)
         assertEquals(a.publication, restarted.first().publication)
         assertEquals(listOf(b), FamilyMediaQueue.remove(restarted, pending))
+    }
+    @Test fun changeDraftsRoundTripNextToFullArchiveDrafts() {
+        val change = draft().let { it.copy(change = FamilyChange.photo(it.garmentId, "", it.photoId, "png")) }
+        val rows = listOf(draft(), change, change.copy(publication = change.publication.copy(archiveId = newId()), garmentId = newId(), submitted = true))
+        val text = FamilyMediaQueue.encode(rows, "account", identity.remoteId)
+        assertEquals(3, JSONObject(text).getInt("version"))
+        assertEquals(rows, FamilyMediaQueue.decode(text, "account", identity.remoteId))
+        // A version 2 journal never carries a change, even if a stray field is present.
+        val v2 = JSONObject(text).put("version", 2).toString()
+        assertEquals(rows.map { it.copy(change = null) }, FamilyMediaQueue.decode(v2, "account", identity.remoteId))
+    }
+    @Test fun changeDraftIsLimitedToOneSmallPhotoArchive() {
+        rejects { draft(FamilyChange.MAX_ARCHIVE + 1).copy(change = "{}") }
+        rejects { draft().copy(change = "") }
+        rejects { draft().copy(change = "x".repeat(FamilyChange.MAX_TEXT + 1)) }
+        assertEquals("{}", draft(FamilyChange.MAX_ARCHIVE).copy(change = "{}").change)
     }
     @Test fun newerSnapshotIsNotSilentlySubstitutedForQueuedRequest() {
         val a = draft(); val newer = a.copy(publication = a.publication.copy(baseRevision = 5, archiveId = newId()))

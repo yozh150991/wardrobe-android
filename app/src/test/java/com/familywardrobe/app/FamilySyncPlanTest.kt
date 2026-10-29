@@ -14,11 +14,13 @@ class FamilySyncPlanTest {
     private inner class Port(initial: List<FamilySyncOperation>) : FamilySyncPort {
         var stored = plan(initial); private val id = stored.id
         var rows = initial.toMutableList()
-        val published = mutableListOf<FamilySyncOperation>(); val receipts = mutableSetOf<String>()
+        val published = mutableListOf<FamilySyncOperation>(); val receipts = mutableSetOf<String>(); val receiptOf = mutableMapOf<String, Long>()
         var failPublish = false; var failAck = false; var failRemove = false; var revoked = false
         var afterPublish: (() -> Unit)? = null
         /** Simulated server: every op starts from [base]; [head] advances on each commit or foreign write. */
         var head = 7L; val bases = mutableMapOf<String, Long>()
+        /** Server-applied changes (delta model): never stale, committed on whatever head is current. */
+        val changes = mutableSetOf<String>()
         fun base(o: FamilySyncOperation) = bases[o.id] ?: 7L
         override fun plan() = stored
         override fun save(next: FamilySyncPlan, expected: FamilySyncPlan) {
@@ -30,7 +32,7 @@ class FamilySyncPlanTest {
             if (revoked) throw FamilyTransferException(FamilyProblem.ACCESS)
             val current = rows.first { it.id == operation.id }
             val base = base(operation)
-            if (current.submitted || base == head) return FamilySyncDecision.Send(operation)
+            if (current.submitted || base == head || operation.id in changes) return FamilySyncDecision.Send(operation)
             if (!plan.ownsAfter(base, head)) throw FamilyTransferException(FamilyProblem.CONFLICT)
             if (operation.kind != FamilySyncKind.EDIT) return FamilySyncDecision.Defer
             val rebased = operation.copy(fingerprint = "c".repeat(64))
@@ -41,8 +43,8 @@ class FamilySyncPlanTest {
             val i = rows.indexOfFirst { operation.matches(it) }; require(i >= 0); rows[i] = rows[i].copy(submitted = true)
         }
         override suspend fun publish(operation: FamilySyncOperation): Long {
-            val revision = base(operation) + 1
-            if (operation.id !in receipts) { require(revision == head + 1) { "CAS" }; head = revision }
+            val revision = if (operation.id in changes) receiptOf[operation.id] ?: (head + 1) else base(operation) + 1
+            if (operation.id !in receipts) { require(revision == head + 1) { "CAS" }; head = revision; receiptOf[operation.id] = revision }
             published += operation; receipts += operation.id
             afterPublish?.invoke()
             if (failPublish) { failPublish = false; error("Lost response") }
@@ -54,9 +56,9 @@ class FamilySyncPlanTest {
         }
         override fun checkpoint() { if (!stored.active || stored.id != id) throw CancellationException("Stopped") }
     }
-    @Test fun wholeArchiveOperationsGoBeforeItemDetails() {
+    @Test fun wholeArchiveOutfitGoesFirstThenChangesThenItemDetails() {
         val rows = FamilySyncKind.entries.reversed().map { op(it) }
-        assertEquals(listOf(FamilySyncKind.ADD, FamilySyncKind.PHOTO, FamilySyncKind.OUTFIT, FamilySyncKind.EDIT),
+        assertEquals(listOf(FamilySyncKind.OUTFIT, FamilySyncKind.ADD, FamilySyncKind.PHOTO, FamilySyncKind.EDIT),
             FamilySyncPlanner.ordered(rows.groupBy { it.kind }).map { it.kind })
     }
     @Test fun submittedHeadRecoveredBeforeNewOperations() {
@@ -108,6 +110,12 @@ class FamilySyncPlanTest {
         val a = FamilySyncPlanner.media(FamilySyncKind.ADD, d)
         assertFalse(a.matches(FamilySyncPlanner.media(FamilySyncKind.PHOTO, d)))
         assertFalse(a.matches(FamilySyncPlanner.media(FamilySyncKind.ADD, d.copy(publication = d.publication.copy(hash = "b".repeat(64))))))
+        // The change text is approved too; a full-archive draft's fingerprint is unchanged by the new field.
+        val change = d.copy(change = """{"kind":"photo"}""")
+        assertFalse(a.matches(FamilySyncPlanner.media(FamilySyncKind.ADD, change)))
+        assertFalse(FamilySyncPlanner.media(FamilySyncKind.ADD, change).matches(FamilySyncPlanner.media(FamilySyncKind.ADD, change.copy(change = """{"kind":"add"}"""))))
+        assertEquals(FamilySyncPlanner.fingerprint(listOf(remote, d.publication.identity.wardrobeId, "owner", d.publication.archiveId, "4",
+            "a".repeat(64), "100", d.garmentId, d.photoId, "Shirt")), a.fingerprint)
     }
     @Test fun onlyApprovedPrefixRunsAndNewDraftRemains() = runBlocking {
         val a = op(); val b = op(); val port = Port(listOf(a)); port.rows += b
@@ -126,14 +134,31 @@ class FamilySyncPlanTest {
         assertTrue(port.rows.isEmpty())
     }
     @Test fun firstArchiveThenEditsAreSentAndStaleArchiveStaysQueued() = runBlocking {
+        // Full-archive additions (prepared before the server supported changes) behave as before.
         val add1 = op(FamilySyncKind.ADD); val add2 = op(FamilySyncKind.ADD); val outfit = op(FamilySyncKind.OUTFIT); val edit = op()
         val ordered = FamilySyncPlanner.ordered(listOf(add1, add2, outfit, edit).groupBy { it.kind })
         val port = Port(ordered)
         assertTrue(FamilySyncRunner(port).run())
-        assertEquals(listOf(add1.id, edit.id), port.published.map { it.id })
-        assertEquals(listOf(add2, outfit), port.rows); assertEquals(FamilySyncStatus.DONE, port.stored.status)
+        assertEquals(listOf(outfit.id, edit.id), port.published.map { it.id })
+        assertEquals(listOf(add1, add2), port.rows); assertEquals(FamilySyncStatus.DONE, port.stored.status)
         assertEquals("PARTIAL", port.stored.problem)
-        assertEquals(setOf(add2.key, outfit.key), port.stored.deferred.toSet())
+        assertEquals(setOf(add1.key, add2.key), port.stored.deferred.toSet())
+    }
+    @Test fun serverAppliedChangesFollowTheOutfitAndEditsChainAfterThem() = runBlocking {
+        val outfit = op(FamilySyncKind.OUTFIT); val adds = (1..3).map { op(FamilySyncKind.ADD) }; val photo = op(FamilySyncKind.PHOTO)
+        val edits = (1..2).map { op() }
+        val port = Port(FamilySyncPlanner.ordered((listOf(outfit, photo) + adds + edits).groupBy { it.kind }))
+        port.changes += adds.map { it.id } + photo.id
+        assertTrue(FamilySyncRunner(port).run())
+        assertEquals((listOf(outfit) + adds + photo + edits).map { it.id }, port.published.map { it.id })
+        assertEquals((8L..14L).toList(), port.stored.owned)
+        assertEquals("", port.stored.problem); assertTrue(port.stored.deferred.isEmpty()); assertTrue(port.rows.isEmpty())
+    }
+    @Test fun changeAfterForeignCommitIsSentButFollowingEditStops() = runBlocking {
+        val add = op(FamilySyncKind.ADD); val edit = op(); val port = Port(listOf(add, edit)); port.changes += add.id
+        port.head = 9 // another member committed after these drafts were prepared on 7
+        rejects { runBlocking { FamilySyncRunner(port).run() } }
+        assertEquals(listOf(add), port.published); assertEquals(listOf(10L), port.stored.owned); assertEquals(listOf(edit), port.rows)
     }
     @Test fun deferredHeadKeepsLaterOperationsOfItsKind() = runBlocking {
         val a = op(FamilySyncKind.PHOTO); val b = op(FamilySyncKind.PHOTO); val port = Port(listOf(a, b))

@@ -95,7 +95,7 @@ internal class FamilyPhotoController(private val app: WardrobeApplication, priva
         if (store.list(remote).size >= FamilyMediaQueue.LIMIT) throw FamilyTransferException(FamilyProblem.LIMIT)
         val view = fresh(backend, remote)
         val archive = FamilyPhotoArchive(session.context, session.repository, store, checkpoint)
-        val draft = archive.stage(view.remote, view.candidate.snapshot, view.candidate.photos, garment, obtain)
+        val draft = archive.stage(view.remote, view.candidate.snapshot, view.candidate.photos, garment, FamilyChange.supported(view.remote), obtain)
         try { authorize(backend, draft.remoteId); store.put(draft, null); show(draft) }
         catch (e: Exception) { if (store.get(draft.remoteId, draft.garmentId) != draft) store.directory(draft.publication.archiveId).deleteRecursively(); throw e }
     }
@@ -123,11 +123,14 @@ internal class FamilyPhotoController(private val app: WardrobeApplication, priva
         val previous = draft; draft = draft.copy(submitted = true); store.put(draft, previous)
         mutable.value = mutable.value.copy(draft = draft, recoverable = false, queue = store.list(draft.remoteId))
         try {
-            publishFamilyAddition(draft.publication, backend, { store.checked(draft, checkpoint) }, checkpoint)
+            if (draft.change != null) publishFamilyChange(draft, backend, { store.checked(draft, checkpoint) }, checkpoint)
+            else publishFamilyAddition(draft.publication, backend, { store.checked(draft, checkpoint) }, checkpoint)
         } catch (e: FamilyTransferException) {
-            // Only a definite pending-upload rejection makes rebase/discard safe.
-            if (e.problem in setOf(FamilyProblem.CONFLICT, FamilyProblem.EXPIRED, FamilyProblem.ARCHIVE, FamilyProblem.LIMIT))
-                mutable.value = mutable.value.copy(recoverable = true)
+            // Only a definite pending-upload rejection makes rebase/discard safe. A change draft never needs a
+            // rebase: it is only discarded after a rejection that retrying cannot fix.
+            val definite = if (draft.change != null) FamilyChange.definite(e)
+                else e.problem in setOf(FamilyProblem.CONFLICT, FamilyProblem.EXPIRED, FamilyProblem.ARCHIVE, FamilyProblem.LIMIT)
+            if (definite) mutable.value = mutable.value.copy(recoverable = true)
             throw e
         }
         checkpoint(); store.remove(draft); mutable.value.preview?.clearMemoryCache()
@@ -136,6 +139,7 @@ internal class FamilyPhotoController(private val app: WardrobeApplication, priva
     }
     fun rebase(expected: FamilyAddDraft? = mutable.value.draft) = run { backend, checkpoint ->
         val previous = requireNotNull(expected); require(mutable.value.draft == previous); require(mutable.value.recoverable || !previous.submitted)
+        require(previous.change == null)
         val view = fresh(backend, previous.remoteId)
         val draft = FamilyPhotoArchive(session.context, session.repository, store, checkpoint)
             .rebase(previous, view.remote, view.candidate.snapshot, view.candidate.photos)
