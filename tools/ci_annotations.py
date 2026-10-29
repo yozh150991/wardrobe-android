@@ -11,6 +11,8 @@ import sys
 KOTLIN = re.compile(r'^e: (?:file://)?(?P<path>/\S+?\.kts?):(?P<line>\d+):(?P<col>\d+) (?P<msg>.*)$')
 JAVA = re.compile(r'^(?P<path>/\S+?\.java):(?P<line>\d+): error: (?P<msg>.*)$')
 LINT = re.compile(r'^(?P<path>/\S+?):(?P<line>\d+): Error: (?P<msg>.*)$')
+# Gradle test output: "com.example.SomeTest > name[device] FAILED" followed by the indented exception.
+TEST = re.compile(r'^(?P<test>[\w.$]+ > [^\n]+?) FAILED$')
 
 
 def escape(text):
@@ -18,7 +20,7 @@ def escape(text):
 
 
 def main(path):
-    root = os.getcwd(); found = []; gradle = []
+    root = os.getcwd(); found = []; gradle = []; tests = []
     lines = open(path, encoding='utf-8', errors='replace').read().splitlines()
     for index, raw in enumerate(lines):
         line = re.sub(r'^\S*Z ', '', raw).strip()  # tolerate timestamped logs
@@ -27,6 +29,9 @@ def main(path):
             relative = os.path.relpath(match['path'], root)
             column = f",col={match['col']}" if 'col' in match.groupdict() and match['col'] else ''
             found.append((relative, match['line'], column, match['msg']))
+        elif TEST.match(line):
+            detail = [l.strip() for l in lines[index + 1:index + 4] if l.strip() and not TEST.match(l.strip())]
+            tests.append(TEST.match(line)['test'] + ' — ' + ' | '.join(detail)[:600])
         elif line == '* What went wrong:':
             gradle.append(' '.join(l.strip() for l in lines[index + 1:index + 4] if l.strip()))
     for relative, number, column, message in found[:10]:
@@ -34,9 +39,13 @@ def main(path):
     if found:
         summary = '\n'.join(f'{r}:{n} {m}' for r, n, _, m in found[:60])
         print(f'::error title=Build errors ({len(found)})::{escape(summary)}')
+    for message in tests[:10]:
+        print(f'::error title=Test failed::{escape(message)}')
+    if len(tests) > 10:
+        print(f'::error title=Failed tests ({len(tests)})::{escape(chr(10).join(tests[:60]))}')
     for message in gradle[:3]:
         print(f'::error title=Gradle::{escape(message)}')
-    if not found and not gradle:
+    if not found and not gradle and not tests:
         tail = '\n'.join(lines[-40:])
         print(f'::error title=Build failed (log tail)::{escape(tail)}')
 
