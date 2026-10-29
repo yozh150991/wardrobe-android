@@ -86,7 +86,12 @@ Android: `FamilyOwnership.kt`, `AccountDeletion.kt`, `AccountDeletionDialog.kt`,
 
 - Backend unittest — 192 pass (+10). Host checks — pass (новий `check_account_erasure.py`, мутації ловляться).
 - Локальний Kotlin (продакшн-файли + заглушки): сімейні JVM-набори 108/108 (+14), мутації черг і стирання ловляться.
-- Android-компіляція, lint, instrumentation і емулятори Firebase — у CI цього PR.
+
+## CI (PR #23, run 40959526552)
+
+- Source and Git safety — pass. Android debug preview — pass: 278 JVM-тести (+14), lint, схема Room, preview APK.
+- Android instrumentation (API 34) — pass: 192 тести, 187 pass, 5 skipped (`CloudEmulatorTest` без host-аргументу), включно з `AccountErasureTest`.
+- Firebase emulators — pass, включно з `emulator_ownership.py` (передавання й видалення акаунта через callables, Auth/Firestore/Storage).
 
 ## Обмеження й наступне
 

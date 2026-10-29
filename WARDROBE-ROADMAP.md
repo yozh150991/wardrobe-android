@@ -16,7 +16,7 @@ Live functions deploy попередніх 0.14.13–14 не підтвердж�
 Погоджений порядок: спрощення каталогу та імпорт → помічник покупки → сімейний доступ.
 Нова пряма вказівка користувача має перевагу над цим планом.
 
-**Актуальна контрольна точка:** 0.14.25/code55, Claude, 29.10.2026 (FAM-04 ч.2, власність і видалення акаунта; PR поверх #22 → #21 → #20 → #19 → #18).
+**Актуальна контрольна точка:** 0.14.25/code55, Claude, 29.10.2026 (FAM-04 ч.2, власність і видалення акаунта; PR #23 поверх #22 → #21 → #20 → #19 → #18, CI — 4/4 jobs pass).
 **Попередня контрольна точка:** 0.14.24/code54, Claude, 29.10.2026 (FAM-04 ч.1; PR #22, CI — 4/4 jobs pass).
 23 нових JVM-тести й 6 instrumented tests. Host runner: 23 suites pass, backend 148 pass; missing client config skipped.
 Android CI цієї гілки перевірити перед передачею.
@@ -601,5 +601,5 @@ and device acceptance remain pending; no live Firebase deployment is included.
 - Вказівка користувача 29.10: «передавати власність одному з редакторів». Рішення користувача: власник обирає нового власника сам (єдиний редактор — автоматично); без редакторів — видалити гардероб для всіх; повне видалення акаунта + окрема дія «Передати власність». Версія 0.14.25-family-ownership/code55, Room/backup 10 без змін.
 - Backend: `family/ownership.py` (`transfer_owner`, `delete_account`, план до першої зміни, ідемпотентні кроки через `derived_id`, `REAUTH_REQUIRED` за `auth_time` > 5 хв), `FirestoreStore.delete_tree`, `StorageArchives.delete_prefix`, `FirebaseAccounts.delete`; callables `family_transfer_owner`/`family_delete_account` (540 с). Правила не змінено.
 - Android: «Передати власність» у керуванні учасниками; «Видалити акаунт» у Налаштуваннях (вибір нового власника, пароль, підтвердження); `FirebaseAuthBackend.reauthenticate`, `AccountDeletionController`, `AccountErasure` (маркер REQUESTED/DELETED) + `AccountFiles`; `AuthViewModel.accountDeleted`; `sameWardrobe` для черг і чернеток; UA/EN/PL.
-- Перевірки тут: backend 192 pass (+10, мутації ловляться), локальний Kotlin JVM 108/108 (+14), host pass (новий `check_account_erasure.py`). CI цього PR перевірити. Пристрій не перевірено. Деталі: FAMILY-OWNERSHIP-0.14.25.md.
+- Перевірки тут: backend 192 pass (+10, мутації ловляться), локальний Kotlin JVM 108/108 (+14), host pass (новий `check_account_erasure.py`). CI PR #23 run 40959526552: 4/4 jobs pass (278 JVM, lint, APK; instrumentation 187 pass + 5 skipped; Firebase emulators з emulator_ownership.py). Пристрій не перевірено. Деталі: FAMILY-OWNERSHIP-0.14.25.md.
 - Далі: деплой family functions 0.14.21–0.14.25 і спільне приймання на двох телефонах (передавання, видалення з кількома редакторами, повтор після втрати мережі).
