@@ -16,7 +16,7 @@ Live functions deploy попередніх 0.14.13–14 не підтвердж�
 Погоджений порядок: спрощення каталогу та імпорт → помічник покупки → сімейний доступ.
 Нова пряма вказівка користувача має перевагу над цим планом.
 
-**Актуальна контрольна точка:** 0.14.24/code54, Claude, 29.10.2026 (FAM-04 ч.1; PR поверх #21 → #20 → #19 → #18, CI PR перевірити).
+**Актуальна контрольна точка:** 0.14.24/code54, Claude, 29.10.2026 (FAM-04 ч.1; PR #22 поверх #21 → #20 → #19 → #18, CI — 4/4 jobs pass).
 **Попередня контрольна точка:** 0.14.23/code53, Claude, 29.10.2026 (автоматичне надсилання; PR #21, CI — 4/4 jobs pass).
 23 нових JVM-тести й 6 instrumented tests. Host runner: 23 suites pass, backend 148 pass; missing client config skipped.
 Android CI цієї гілки перевірити перед передачею.
@@ -593,5 +593,5 @@ and device acceptance remain pending; no live Firebase deployment is included.
 - Вказівка користувача 29.10: «Продовж». Правило експорту взято з ADR (лише власник). Версія 0.14.24-family-export/code54, Room/backup 10 без змін.
 - `Backup.exportSnapshot` (спільний запис і перевірка з `export`), `FamilyReaderController.exportCopy` (свіже читання, `mayExport`, під lock читача), кнопка власника у вікні спільного гардероба; UA/EN/PL.
 - Тести: `emulator_roles.py` (матриця ролей для всіх шляхів запису, підвищення/пониження, відкликання), `CompatibilityTests` (старий клієнт поряд зі змінами сервера), `FamilyExportTest` (формат, відновлення без сімейного стану).
-- Перевірки тут: backend 182 pass, host pass, JVM-набори 94/94. CI PR — Android compile/lint/instrumentation/емулятори. Пристрій не перевірено. Деталі: FAMILY-EXPORT-0.14.24.md.
+- Перевірки тут: backend 182 pass, host pass, JVM-набори 94/94. CI PR #22 run 40947746316: 4/4 jobs pass (264 JVM, lint, APK; instrumentation 183 pass + 5 skipped; Firebase emulators з emulator_roles.py). Пристрій не перевірено. Деталі: FAMILY-EXPORT-0.14.24.md.
 - Далі: рішення про видалення акаунта (доля спільного гардероба), деплой functions і спільне приймання на двох телефонах.

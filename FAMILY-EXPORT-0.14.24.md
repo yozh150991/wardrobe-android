@@ -45,7 +45,12 @@
 ## Перевірки в цьому середовищі
 
 - Backend unittest — 182 pass (+2). Host checks — pass. Локальний Kotlin: сімейні JVM-набори 94/94 (без змін).
-- Компіляція Android, lint, instrumentation і Firebase-емулятори (`emulator_roles.py`) — у CI PR.
+
+## CI (PR #22, run 40947746316)
+
+- Source and Git safety — pass. Android debug preview — pass: 264 JVM-тести, lint, схема Room, preview APK.
+- Android instrumentation (API 34) — pass: 188 тестів, 183 pass, 5 skipped (`CloudEmulatorTest` без host-аргументу), включно з `FamilyExportTest`.
+- Firebase emulators — pass, включно з матрицею ролей `emulator_roles.py`.
 
 ## Що лишається у FAM-04
 
