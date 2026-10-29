@@ -54,7 +54,14 @@
 ## Перевірки в цьому середовищі
 
 - Локальний Kotlin 2.0.21 + JUnit: 94/94 (сімейні JVM-набори на production-файлах). Host checks — pass. Backend без змін (180).
-- Компіляція Android, lint, instrumentation і Firebase-емулятори — у CI PR.
+
+## CI (PR #21, run 40940668428, commit 93daef0)
+
+- Source and Git safety — pass. Android debug preview — pass: 264 JVM-тести (261 + 3), lint, схема Room, preview APK.
+- Android instrumentation (API 34) — pass: 186 тестів, 181 pass, 5 skipped (`CloudEmulatorTest` без host-аргументу).
+- Firebase emulators — pass.
+- Перший запуск (40939312112) не скомпілювався: `getWorkInfosForUniqueWork` повертає Guava `ListenableFuture`, якого немає на
+  classpath. Замінено на `KEEP` + перечитування черги в самому worker.
 
 ## Не виконано / обмеження
 
