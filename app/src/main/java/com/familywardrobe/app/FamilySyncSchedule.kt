@@ -133,7 +133,7 @@ class FamilyAutoSyncWorker(context: Context, parameters: WorkerParameters) : Cor
                 when (runFamilyBackgroundPlan(app, context, identity, remote, plan.id)) {
                     FamilyBackgroundRun.DONE -> Unit
                     // A stopped batch: drafts saved meanwhile (or the change that stopped it as CHANGED) get one more look.
-                    FamilyBackgroundRun.STOP -> if (FamilySyncLocks.outbox(key).value == seen) return Result.success()
+                    FamilyBackgroundRun.STOP -> { if (FamilySyncLocks.outbox(key).value == seen) return Result.success() }
                     FamilyBackgroundRun.RETRY -> return Result.retry()
                     FamilyBackgroundRun.CONTINUE -> { FamilySyncSchedule.kick(applicationContext, key, remote, continuation = true); return Result.success() }
                 }
