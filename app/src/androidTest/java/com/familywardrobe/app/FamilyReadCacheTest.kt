@@ -48,7 +48,7 @@ class FamilyReadCacheTest {
     @Test fun matchingPhotoIdsStayIsolatedAndPrivateBackupNeverIncludesSharedBytes() = scenario { context, account, repo, photos, cache ->
         val wardrobe = repo.dao.allWardrobes().single()
         val photoId = newId(); png(photos.file(photoId, "png"), 0xff00ff00.toInt())
-        val garment = Garment(wardrobeId = wardrobe.id, name = "Private", category = "top", color = "green", photoId = photoId)
+        val garment = Garment(wardrobeId = wardrobe.id, name = "Private", category = "top", color = "olive", photoId = photoId)
         repo.save(garment, photos)
         val before = repo.snapshot(); val privateBytes = photos.currentFile(photoId).readBytes()
         val shared = before.copy(garments = listOf(garment.copy(name = "Shared", color = "red")))
@@ -74,7 +74,7 @@ class FamilyReadCacheTest {
     @Test fun malformedPhotoAndExtraFilesCannotInstallACandidate() = scenario { context, account, repo, photos, cache ->
         val wardrobe = repo.dao.allWardrobes().single(); val photoId = newId()
         png(photos.file(photoId, "png"), 0xff00ff00.toInt())
-        repo.save(Garment(wardrobeId = wardrobe.id, name = "Private", category = "top", color = "green", photoId = photoId), photos)
+        repo.save(Garment(wardrobeId = wardrobe.id, name = "Private", category = "top", color = "olive", photoId = photoId), photos)
         val before = repo.snapshot(); val identity = FamilyArchiveIdentity(newId(), wardrobe.id, account.uid)
         val envelope = FamilyEnvelope(Backup(context, repo, photos)); val text = envelope.encode(before, identity, 0)
         val broken = File(context.cacheDir, "bad.png").apply { writeText("not an image") }

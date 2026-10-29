@@ -31,7 +31,15 @@ class MemoryStore:
 
 
 class MemoryArchives:
-    def __init__(self): self.data={}; self.after_put=None; self.lock=threading.Lock()
+    def __init__(self): self.data={}; self.created={}; self.after_put=None; self.lock=threading.Lock()
+    def delete(self, path):
+        with self.lock: self.data.pop(path, None)
+    def purge(self, prefix, older_than_ms, keep=()):
+        # Objects without a recorded creation time (written directly by tests) are never purged.
+        with self.lock:
+            old=[p for p,t in self.created.items() if p.startswith(prefix) and p not in keep and t < older_than_ms and p in self.data]
+            for p in old: self.data.pop(p, None)
+        return len(old)
     def read(self, path, size):
         if path not in self.data: raise FamilyError('failed-precondition','Missing archive')
         if len(self.data[path]) != size: raise FamilyError('invalid-argument','Size mismatch')

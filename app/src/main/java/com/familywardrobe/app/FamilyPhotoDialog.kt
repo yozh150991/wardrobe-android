@@ -61,7 +61,7 @@ internal fun FamilyPhotoDialog(vm: WardrobeViewModel, remote: String, dismiss: (
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.family_photo_title), style = MaterialTheme.typography.titleLarge)
                 TextButton(onClick = dismiss) { Text(stringResource(R.string.close)) }
-                if (state.running) LinearProgressIndicator(Modifier.fillMaxWidth())
+                if (state.running) FamilyBusyRow(state.waiting) { vm.familyPhoto.cancel() }
                 LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     item { Text(stringResource(R.string.family_media_photo_hint)) }
                     if (readable && state.queue.isNotEmpty()) item {

@@ -102,12 +102,13 @@ class PhotoPersistenceTest {
         bitmap.recycle()
         assertTrue(photos.currentFile(candidate).exists()) // Still a draft, not committed.
     }
-    @Test fun versionEightBackupHasOnlyCurrentPhotoAndRestoresIt() = runBlocking {
+    @Test fun currentBackupHasOnlyCurrentPhotoAndRestoresIt() = runBlocking {
         val item = garment(); val candidate = cutout(item.photoId); repo.save(item.copy(photoId = candidate), photos)
         val zip = temporary("zip"); val backup = Backup(context, repo, photos); backup.export(Uri.fromFile(zip))
         val entries = readZip(zip)
         assertEquals(setOf("manifest.json", "photos/$candidate.png"), entries.keys)
-        assertEquals(8, JSONObject(String(entries.getValue("manifest.json"), Charsets.UTF_8)).getInt("version"))
+        // Current portable format (Room/backup 10); older versions are covered by the legacy restore tests.
+        assertEquals(10, JSONObject(String(entries.getValue("manifest.json"), Charsets.UTF_8)).getInt("version"))
         backup.restore(Uri.fromFile(zip))
         val imported = repo.dao.allGarments().single { it.id != item.id }
         assertArrayEquals(photos.currentFile(candidate).readBytes(), photos.currentFile(imported.photoId).readBytes())

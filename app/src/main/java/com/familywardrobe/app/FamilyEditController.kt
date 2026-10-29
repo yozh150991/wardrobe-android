@@ -10,7 +10,7 @@ import kotlin.coroutines.coroutineContext
 internal data class FamilyEditState(val remoteId: String = "", val draft: FamilyEditDraft? = null, val running: Boolean = false,
     val problem: FamilyProblem? = null, val saved: Boolean = false, val synced: Boolean = false,
     val conflict: Boolean = false, val latest: FamilyEditDraft? = null,
-    val queue: List<FamilyEditDraft> = emptyList(), val completed: Int = 0, val total: Int = 0)
+    val queue: List<FamilyEditDraft> = emptyList(), val completed: Int = 0, val total: Int = 0, val waiting: Boolean = false)
 internal class FamilyEditController(private val app: WardrobeApplication, private val session: AccountSession,
     private val reader: FamilyReaderController, private val scope: CoroutineScope) {
     private val lease = FamilyReadLease()
@@ -20,12 +20,16 @@ internal class FamilyEditController(private val app: WardrobeApplication, privat
     private fun guard() {
         if (!session.isOpen || app.authBackend.signedInIdentity()?.key != session.identity.key) throw CancellationException("Account changed")
     }
+    private val actions = FamilyActions()
+    fun cancel() = actions.cancel()
     private fun run(block: suspend (FamilyBackend) -> Unit) {
         // Queue instead of dropping: a tap during another call used to be ignored silently
         // and the dialog then showed the previous item's state (audit 0.14.6 №10 pattern).
-        scope.launch(Dispatchers.IO) { lock.withLock {
+        // Progress is visible while waiting for the account lock (audit A-04).
+        mutable.value = mutable.value.copy(running = true, waiting = lock.isLocked)
+        actions.track(scope.launch(Dispatchers.IO) { lock.withLock {
             try {
-                guard(); mutable.value = mutable.value.copy(running = true, problem = null, saved = false, synced = false, completed = 0, total = 0)
+                guard(); mutable.value = mutable.value.copy(running = true, waiting = false, problem = null, saved = false, synced = false, completed = 0, total = 0)
                 val work = coroutineContext
                 val backend = FamilyBackend(session.identity, { work.ensureActive(); guard() })
                 block(backend); work.ensureActive(); guard()
@@ -44,8 +48,8 @@ internal class FamilyEditController(private val app: WardrobeApplication, privat
                     lease.clear(); reader.invalidate(); mutable.value = FamilyEditState(remoteId = mutable.value.remoteId, running = true)
                 }
                 mutable.value = mutable.value.copy(problem = problem, conflict = mutable.value.conflict || problem == FamilyProblem.CONFLICT)
-            } finally { if (session.isOpen) mutable.value = mutable.value.copy(running = false) }
-        } }
+            }
+        } }) { if (session.isOpen) mutable.value = mutable.value.copy(running = false, waiting = false) }
     }
     private suspend fun authorize(backend: FamilyBackend, remoteId: String): FamilyRemote {
         backend.authenticate()

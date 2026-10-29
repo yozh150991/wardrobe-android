@@ -42,8 +42,9 @@ internal class FamilyEditStore(context: AccountContext, private val account: Aut
     }
     fun put(draft: FamilyEditDraft, expected: FamilyEditDraft? = null) = synchronized(lock) {
         write(FamilyEditQueue.put(read(), draft, expected))
-    }
+    }.also { FamilySyncLocks.touched(account.key) }
     fun remove(expected: FamilyEditDraft) = synchronized(lock) { write(FamilyEditQueue.remove(read(), expected)) }
+        .also { FamilySyncLocks.touched(account.key) }
     private fun read(): List<FamilyEditDraft> {
         if (!file.baseFile.exists() && !File(file.baseFile.path + ".bak").exists()) return emptyList()
         val bytes = file.openRead().use { input -> java.io.ByteArrayOutputStream().also { PhotoStore.copyLimited(input, it, 1024L * 1024) }.toByteArray() }

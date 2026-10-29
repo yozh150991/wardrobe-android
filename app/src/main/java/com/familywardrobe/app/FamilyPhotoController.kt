@@ -12,7 +12,7 @@ internal data class FamilyPhotoState(val remoteId: String = "", val garmentId: S
     val localWardrobe: String = "", val choices: List<Garment> = emptyList(), val draft: FamilyAddDraft? = null,
     val preview: PhotoStore? = null, val running: Boolean = false, val problem: FamilyProblem? = null,
     val recoverable: Boolean = false, val synced: Boolean = false, val unreadablePhoto: Boolean = false,
-    val queue: List<FamilyAddDraft> = emptyList(), val generation: Long = 0)
+    val queue: List<FamilyAddDraft> = emptyList(), val generation: Long = 0, val waiting: Boolean = false)
 
 /**
  * FAM-03 photo replacement for one existing shared item: same durable draft → explicit send →
@@ -31,9 +31,14 @@ internal class FamilyPhotoController(private val app: WardrobeApplication, priva
     fun newCapture(): Uri = session.photos.newCapture()
 
     // Actions are queued, never dropped (audit 0.14.6 №10).
-    private fun run(block: suspend (FamilyBackend, () -> Unit) -> Unit) = scope.launch(Dispatchers.IO) { lock.withLock {
+    private val actions = FamilyActions()
+    fun cancel() = actions.cancel()
+    // Progress is visible while waiting for the account lock (audit A-04).
+    private fun run(block: suspend (FamilyBackend, () -> Unit) -> Unit) {
+      mutable.value = mutable.value.copy(running = true, waiting = lock.isLocked)
+      actions.track(scope.launch(Dispatchers.IO) { lock.withLock {
         try {
-            guard(); mutable.value = mutable.value.copy(running = true, problem = null, synced = false, unreadablePhoto = false)
+            guard(); mutable.value = mutable.value.copy(running = true, waiting = false, problem = null, synced = false, unreadablePhoto = false)
             val work = coroutineContext; val checkpoint = { work.ensureActive(); guard() }
             block(FamilyBackend(session.identity, checkpoint), checkpoint); checkpoint()
         } catch (e: CancellationException) { throw e }
@@ -45,8 +50,9 @@ internal class FamilyPhotoController(private val app: WardrobeApplication, priva
                 mutable.value = FamilyPhotoState(remoteId = mutable.value.remoteId, localWardrobe = mutable.value.localWardrobe, running = true, generation = mutable.value.generation + 1)
             }
             mutable.value = mutable.value.copy(problem = problem, unreadablePhoto = e is UnreadablePhotoException)
-        } finally { if (session.isOpen) mutable.value = mutable.value.copy(running = false) }
-    } }
+        }
+      } }) { if (session.isOpen) mutable.value = mutable.value.copy(running = false, waiting = false) }
+    }
     private suspend fun authorize(backend: FamilyBackend, remote: String): FamilyRemote {
         backend.authenticate(); val started = android.os.SystemClock.elapsedRealtime()
         return backend.readHead(remote).also {

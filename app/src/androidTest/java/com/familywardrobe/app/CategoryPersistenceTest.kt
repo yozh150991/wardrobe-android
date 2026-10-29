@@ -118,7 +118,8 @@ class CategoryPersistenceTest {
                     for (i in 0 until entities.length()) {
                         val e = entities.getJSONObject(i); val table = e.getString("tableName")
                         db.execSQL(e.getString("createSql").replace("\${TABLE_NAME}", table))
-                        val indices = e.getJSONArray("indices")
+                        // Room omits "indices" for tables without an index.
+                        val indices = e.optJSONArray("indices") ?: org.json.JSONArray()
                         for (j in 0 until indices.length()) db.execSQL(indices.getJSONObject(j).getString("createSql").replace("\${TABLE_NAME}", table))
                     }
                     WardrobeDatabase.ALL_MIGRATIONS.filter { it.startVersion in 2..7 }.forEach { it.migrate(db) }

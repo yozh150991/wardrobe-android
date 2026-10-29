@@ -10,7 +10,7 @@ import kotlin.coroutines.coroutineContext
 internal data class FamilyAddState(val remoteId: String = "", val localWardrobe: String = "", val wardrobeName: String = "",
     val choices: List<Garment> = emptyList(), val draft: FamilyAddDraft? = null, val preview: PhotoStore? = null,
     val selection: Snapshot? = null, val running: Boolean = false, val problem: FamilyProblem? = null, val recoverable: Boolean = false, val synced: Boolean = false,
-    val unreadablePhoto: Boolean = false, val queue: List<FamilyAddDraft> = emptyList(), val generation: Long = 0)
+    val unreadablePhoto: Boolean = false, val queue: List<FamilyAddDraft> = emptyList(), val generation: Long = 0, val waiting: Boolean = false)
 internal class FamilyAddController(private val app: WardrobeApplication, private val session: AccountSession,
     private val reader: FamilyReaderController, private val scope: CoroutineScope) {
     private val lease = FamilyReadLease(); private val lock = FamilySyncLocks.account(session.identity.key)
@@ -22,9 +22,14 @@ internal class FamilyAddController(private val app: WardrobeApplication, private
     }
     // Queue instead of dropping: a tap during another call used to be ignored silently
     // and the dialog then showed stale state (audit 0.14.6 №10 pattern).
-    private fun run(block: suspend (FamilyBackend, () -> Unit) -> Unit) = scope.launch(Dispatchers.IO) { lock.withLock {
+    private val actions = FamilyActions()
+    fun cancel() = actions.cancel()
+    // Progress is visible while waiting for the account lock (audit A-04).
+    private fun run(block: suspend (FamilyBackend, () -> Unit) -> Unit) {
+      mutable.value = mutable.value.copy(running = true, waiting = lock.isLocked)
+      actions.track(scope.launch(Dispatchers.IO) { lock.withLock {
         try {
-            guard(); mutable.value = mutable.value.copy(running = true, problem = null, synced = false, unreadablePhoto = false)
+            guard(); mutable.value = mutable.value.copy(running = true, waiting = false, problem = null, synced = false, unreadablePhoto = false)
             val work = coroutineContext; val checkpoint = { work.ensureActive(); guard() }
             block(FamilyBackend(session.identity, checkpoint), checkpoint); checkpoint()
         } catch (e: CancellationException) { throw e }
@@ -35,8 +40,9 @@ internal class FamilyAddController(private val app: WardrobeApplication, private
                 mutable.value = FamilyAddState(remoteId = mutable.value.remoteId, localWardrobe = mutable.value.localWardrobe, running = true, generation = mutable.value.generation + 1)
             }
             mutable.value = mutable.value.copy(problem = problem, unreadablePhoto = e is UnreadablePhotoException)
-        } finally { if (session.isOpen) mutable.value = mutable.value.copy(running = false) }
-    } }
+        }
+      } }) { if (session.isOpen) mutable.value = mutable.value.copy(running = false, waiting = false) }
+    }
     private suspend fun authorize(backend: FamilyBackend, remote: String): FamilyRemote {
         backend.authenticate(); val started = android.os.SystemClock.elapsedRealtime()
         return backend.readHead(remote).also {

@@ -13,6 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -26,9 +30,10 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
     var manualWeather by rememberSaveable { mutableStateOf("any_weather") }
     var fixedIds by rememberSaveable(wardrobe, capsule?.id) { mutableStateOf(arrayListOf<String>()) }
     var packedOnly by rememberSaveable(capsule?.id) { mutableStateOf(false) }
-    val fullCapsule = capsule?.let { c -> s.capsuleItems.filter { it.capsuleId == c.id }.map { it.garmentId }.toSet() }
     val allowed = capsule?.let { c -> s.capsuleItems.filter { it.capsuleId == c.id && (!packedOnly || it.packed) }.map { it.garmentId }.toSet() }
-    val eligible = DailyOutfits.items(s, today, allowed).filter { it.piece.wardrobe == wardrobe && WardrobeRules.ready(it.piece) }.map { it.piece.id }.toSet()
+    val eligible = remember(s.garments, s.wears, s.wardrobes, today, allowed, wardrobe) {
+        DailyOutfits.items(s, today, allowed).filter { it.piece.wardrobe == wardrobe && WardrobeRules.ready(it.piece) }.map { it.piece.id }.toSet()
+    }
     LaunchedEffect(eligible) { fixedIds = ArrayList(fixedIds.filter { it in eligible }) }
     val fixed = fixedIds.mapNotNull { id -> s.garments.find { it.id == id } }.associate { it.category to it.id }
     var revision by rememberSaveable { mutableIntStateOf(0) }
@@ -40,14 +45,35 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
     // Both generated and manually replaced variants survive a detail/back transition.
     var generatedFor by rememberSaveable { mutableStateOf("") }
     var lookIds by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
-    val input = stateToken(listOf(wardrobe, occasion, weather, today, s.garments, s.wears, s.feedback, s.wardrobes, allowed?.sorted(), fixed.toSortedMap(), revision, refresh).toString())
+    val input = remember(wardrobe, occasion, weather, today, s.garments, s.wears, s.feedback, s.wardrobes, allowed, fixed, revision, refresh) {
+        stateToken(listOf(wardrobe, occasion, weather, today, s.garments, s.wears, s.feedback, s.wardrobes, allowed?.sorted(), fixed.toSortedMap(), revision, refresh).toString())
+    }
+    val fullCapsule = capsule?.let { c -> s.capsuleItems.filter { it.capsuleId == c.id }.map { it.garmentId }.toSet() }
+    val currentRules = s.wardrobes.find { it.id == wardrobe }?.noRepeatDays ?: 0
+    // The outfit search and the "why no outfit" diagnosis are CPU-bound: run them off the UI thread
+    // (audit A-03). A short delay absorbs the intermediate snapshots of a multi-table write.
+    var emptyReason by remember { mutableStateOf<DailyDiagnostics.Reason?>(null) }
+    var emptyReasonFor by remember { mutableStateOf("") }
     LaunchedEffect(input) {
+        delay(80)
+        var ids = lookIds
         if (generatedFor != input) {
-            lookIds = ArrayList(DailyOutfits.generate(s, wardrobe, occasion, weather, today, "$today:$revision", allowed = allowed, fixed = fixed).map { it.joinToString(",") { g -> g.id } })
-            generatedFor = input
+            ids = ArrayList(withContext(Dispatchers.Default) {
+                DailyOutfits.generate(s, wardrobe, occasion, weather, today, "$today:$revision", allowed = allowed, fixed = fixed)
+            }.map { it.joinToString(",") { g -> g.id } })
+            lookIds = ids; generatedFor = input
+        }
+        if (ids.none { row -> row.split(',').any { id -> s.garments.any { it.id == id } } }) {
+            emptyReason = withContext(Dispatchers.Default) {
+                DailyDiagnostics.explain(DailyOutfits.rawItems(s, today), wardrobe, occasion, weather, today, "$today:$revision",
+                    allowed, fullCapsule, packedOnly, s.garments.filter { it.wardrobeId == wardrobe && it.suggestionExcluded }.map { it.id }.toSet(),
+                    currentRules, DailyOutfits.rejected(s, wardrobe, occasion, weather), fixed)
+            }
+            emptyReasonFor = input
         }
     }
-    val looks = lookIds.map { ids -> ids.split(',').mapNotNull { id -> s.garments.find { it.id == id } } }.filter { it.isNotEmpty() }
+    val looks = remember(lookIds, s.garments) { lookIds.map { ids -> ids.split(',').mapNotNull { id -> s.garments.find { it.id == id } } }.filter { it.isNotEmpty() } }
+    val scope = rememberCoroutineScope()
     var configuring by rememberSaveable { mutableStateOf(false) }
     var actionItem by rememberSaveable { mutableStateOf("") }
     var actionIndex by rememberSaveable { mutableIntStateOf(-1) }
@@ -56,7 +82,6 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
     var proposedName by rememberSaveable { mutableStateOf("") }
     var noReplacement by remember { mutableStateOf(false) }
     val dateText = dateLabel(today)
-    val currentRules = s.wardrobes.find { it.id == wardrobe }?.noRepeatDays ?: 0
     fun beginSave(items: List<Garment>, plan: Boolean, autoName: String) {
         val existing = s.outfits.find { it.wardrobeId == wardrobe && it.signature == DailyRules.signature(items.map { g -> g.id }) }
         if (existing != null) {
@@ -78,10 +103,10 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                 TextButton(onClick = { configuring = true }, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.configure_conditions)) }
             }
         }
-        if (looks.isEmpty() && generatedFor == input) item {
-            val reason = DailyDiagnostics.explain(DailyOutfits.rawItems(s, today), wardrobe, occasion, weather, today, "$today:$revision",
-                allowed, fullCapsule, packedOnly, s.garments.filter { it.wardrobeId == wardrobe && it.suggestionExcluded }.map { it.id }.toSet(),
-                currentRules, DailyOutfits.rejected(s, wardrobe, occasion, weather), fixed)
+        if (generatedFor != input || looks.isEmpty() && emptyReasonFor != input) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+        val diagnosis = emptyReason.takeIf { emptyReasonFor == input }
+        if (looks.isEmpty() && generatedFor == input && diagnosis != null) item {
+            val reason = diagnosis
             OutlinedCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(stringResource(dailyReasonLabel(reason)), style = MaterialTheme.typography.titleMedium)
@@ -141,10 +166,15 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                 OutlinedButton(onClick = {
                     val items = looks.getOrNull(actionIndex).orEmpty()
                     val others = looks.filterIndexed { index, _ -> index != actionIndex }.map { DailyRules.signature(it.map { g -> g.id }) }.toSet()
-                    val replacement = DailyOutfits.replace(s, wardrobe, occasion, weather, today, items, item.category, others, allowed)
-                    if (replacement.isEmpty()) noReplacement = true
-                    else lookIds = ArrayList(lookIds.mapIndexed { index, old -> if (index == actionIndex) replacement.joinToString(",") { it.id } else old })
+                    val index = actionIndex; val before = lookIds; val category = item.category
                     actionItem = ""
+                    scope.launch {
+                        val replacement = withContext(Dispatchers.Default) { DailyOutfits.replace(s, wardrobe, occasion, weather, today, items, category, others, allowed) }
+                        // Apply only to the same variants the user acted on.
+                        if (lookIds != before) return@launch
+                        if (replacement.isEmpty()) noReplacement = true
+                        else lookIds = ArrayList(lookIds.mapIndexed { i, old -> if (i == index) replacement.joinToString(",") { it.id } else old })
+                    }
                 }, enabled = !busy && item.id !in fixedIds, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.replace)) }
                 OutlinedButton(onClick = { fixedIds = ArrayList(if (item.id in fixedIds) fixedIds - item.id else fixedIds.filter { id -> s.garments.find { it.id == id }?.category != item.category } + item.id); actionItem = "" },
                     enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(if (item.id in fixedIds) R.string.unlock_piece else R.string.lock_piece)) }

@@ -68,3 +68,23 @@ class StorageArchives:
             existing = self.read(path, len(data))
             require(hashlib.sha256(existing).hexdigest() == checksum, 'Archive ID collision', 'already-exists')
         return blob.generation
+
+    def delete(self, path):
+        """Best effort; a missing object is already the desired state."""
+        try:
+            self.bucket.blob(path).delete(timeout=30)
+        except NotFound:
+            pass
+
+    def purge(self, prefix, older_than_ms, keep=()):
+        """Deletes objects under prefix created before older_than_ms (epoch ms); returns how many were removed."""
+        removed = 0
+        for blob in self.bucket.list_blobs(prefix=prefix, max_results=50, timeout=30):
+            created = blob.time_created
+            if blob.name in keep or created is None or int(created.timestamp() * 1000) >= older_than_ms:
+                continue
+            try:
+                blob.delete(timeout=30); removed += 1
+            except NotFound:
+                pass
+        return removed

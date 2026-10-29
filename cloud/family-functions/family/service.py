@@ -5,15 +5,19 @@ transaction. The archive store implements immutable, generation-pinned reads
 and create-if-absent writes. Tests use the same service with both adapters.
 """
 from dataclasses import dataclass
+import logging
 import re
 import time
 from .archive import MAX_ARCHIVE, validate_archive
-from .errors import require
+from .errors import FamilyError, require
 from .schema import HASH, integer, valid_id
 from .membership import MembershipService
 from .editing import EditingService
 
 UPLOAD_TTL_MS = 30 * 60 * 1000
+# Abandoned staging objects of the same author are purged on the next upload. Every upload record expires
+# UPLOAD_TTL_MS after begin_upload, and its object is created later, so this age proves it can never commit.
+STAGING_PURGE_AGE_MS = UPLOAD_TTL_MS + 60 * 60 * 1000
 MAX_ROOTS = 50
 MAX_UPLOADS_PER_DAY = 120
 
@@ -58,10 +62,44 @@ def public_head(root, role):
     return {k: root[k] for k in ('remoteId','wardrobeId','ownerUid','revision','head')} | {'role':role}
 
 
+def published_root(current, head, revision):
+    """New head; the replaced head is remembered so it can be retired one commit later (audit B-01)."""
+    previous = current['head']['archive'] if current.get('head') else None
+    return current | {'head': head, 'revision': revision, 'previousArchive': previous}
+
+
 class FamilyService(MembershipService, EditingService):
     def __init__(self, store, archives, clock=None):
         self.store, self.archives = store, archives
         self.clock = clock or (lambda: int(time.time() * 1000))
+
+    def _discard(self, path):
+        """Storage cleanup never fails a committed request; a leftover object is only a cost."""
+        if not path:
+            return
+        try:
+            self.archives.delete(path)
+        except Exception:  # noqa: BLE001 - cleanup is best effort by design
+            logging.warning('family cleanup failed: %s', path.rsplit('/', 1)[-1])
+
+    def _retire(self, root_path_, retired, current_archive):
+        """Deletes the snapshot two commits back. Clients may read only the current head (Storage rules),
+        and replays use the receipt stored in Firestore, so older snapshots are never read again."""
+        if retired and retired != current_archive and retired.startswith(f'{root_path_}/snapshots/'):
+            self._discard(retired)
+
+    def _drop_orphan(self, root_path_, record_path, final_path, base_revision):
+        """A final object whose request can never commit (the head already moved past its base) is removed.
+        Revisions only grow, so a later retry of the same request fails the same way."""
+        def read(tx):
+            return tx.get(root_path_), tx.get(record_path)
+        try:
+            root, record = self.store.run(read)
+        except Exception:  # noqa: BLE001
+            return
+        if (root and record and record.get('status') != 'committed' and root['revision'] != base_revision and
+                (root.get('head') or {}).get('archive') != final_path and root.get('previousArchive') != final_path):
+            self._discard(final_path)
 
     def create(self, actor, data):
         authenticate(actor); fields(data, 'remoteId wardrobeId')
@@ -119,7 +157,14 @@ class FamilyService(MembershipService, EditingService):
             tx.set(upload_path, record)
             tx.set(quota_path, quota | {'day':day, 'uploads':count+1})
             return record
-        return self.store.run(operation)
+        record = self.store.run(operation)
+        if record.get('status') == 'pending':
+            try:
+                self.archives.purge(f"{path}/staging/{actor.uid}/", self.clock() - STAGING_PURGE_AGE_MS,
+                                    keep={record['stagingPath']})
+            except Exception:  # noqa: BLE001 - cleanup is best effort by design
+                logging.warning('family staging purge failed')
+        return record
 
     def commit(self, actor, data):
         authenticate(actor); fields(data, 'remoteId archiveId')
@@ -137,7 +182,15 @@ class FamilyService(MembershipService, EditingService):
         root, upload = self.store.run(check)
         if upload['status'] == 'committed':
             return upload['result']
-        data_bytes = self.archives.read(upload['stagingPath'], upload['size'])
+        try:
+            data_bytes = self.archives.read(upload['stagingPath'], upload['size'])
+        except FamilyError as exc:
+            # A concurrent retry of this request may have committed and removed the staged copy meanwhile.
+            if exc.reason == 'ARCHIVE_MISSING':
+                _, latest = self.store.run(check)
+                if latest['status'] == 'committed':
+                    return latest['result']
+            raise
         counts = validate_archive(data_bytes, root, upload['baseRevision'], upload['sha256'])
         final_path = f"{path}/snapshots/{data['archiveId']}.zip"
         generation = self.archives.put_once(final_path, data_bytes, upload['sha256'])
@@ -154,7 +207,19 @@ class FamilyService(MembershipService, EditingService):
                         archive=final_path, sha256=upload['sha256'], size=upload['size'], generation=str(generation),
                         authorUid=actor.uid, committedAt=self.clock(), counts=counts)
             result = {k:current[k] for k in ('remoteId','wardrobeId','ownerUid')} | {'head':head, 'revision':revision}
-            tx.set(path, current | {'head':head, 'revision':revision})
+            tx.set(path, published_root(current, head, revision))
             tx.set(upload_path, upload | {'status':'committed', 'result':result})
-            return result
-        return self.store.run(publish)
+            return result, current.get('previousArchive'), True
+        try:
+            outcome = self.store.run(publish)
+        except FamilyError:
+            self._drop_orphan(path, upload_path, final_path, upload['baseRevision'])
+            raise
+        if isinstance(outcome, dict):
+            return outcome
+        result, retired, fresh = outcome
+        if fresh:
+            # Both copies are no longer needed: the receipt lives in Firestore (audit B-01).
+            self._discard(upload['stagingPath'])
+            self._retire(path, retired, final_path)
+        return result

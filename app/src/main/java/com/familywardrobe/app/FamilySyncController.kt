@@ -4,6 +4,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.sync.withLock
 
 internal data class FamilySyncState(val remote: String = "", val operations: List<FamilySyncOperation> = emptyList(),
@@ -19,7 +20,8 @@ internal class FamilySyncController(private val app: WardrobeApplication, privat
     private fun guard() {
         if (!session.isOpen || app.authBackend.signedInIdentity()?.key != session.identity.key) throw CancellationException("Account changed")
     }
-    init { scope.launch(Dispatchers.IO) { store.changes.collect {
+    // Any outbox change refreshes the list too: a draft saved meanwhile must not leave a stale approval (audit L-03).
+    init { scope.launch(Dispatchers.IO) { combine(store.changes, FamilySyncLocks.outbox(session.identity.key)) { a, b -> a to b }.collect {
         if (mutable.value.remote.isNotEmpty()) {
             refresh(mutable.value.remote)
             val denied = mutable.value.plan?.takeIf { it.problem == "ACCESS" }?.let { "${it.id}:${it.cursor}" }.orEmpty()
@@ -32,7 +34,7 @@ internal class FamilySyncController(private val app: WardrobeApplication, privat
             guard(); val operations = FamilySyncOperations(session.context, session.identity, remote)
             val rows = operations.snapshot()
             if (mutable.value.remote == remote) mutable.value = mutable.value.copy(operations = rows,
-                labels = rows.associate { "${it.kind}:${it.id}" to operations.label(it) }, plan = store.get(remote), problem = "")
+                labels = operations.labels(rows), plan = store.get(remote), problem = "")
         } catch (e: CancellationException) { throw e }
         catch (e: Exception) { if (mutable.value.remote == remote) mutable.value = mutable.value.copy(problem = "ARCHIVE") }
     }

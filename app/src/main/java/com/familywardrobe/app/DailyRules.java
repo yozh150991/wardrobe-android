@@ -16,7 +16,16 @@ public final class DailyRules {
     private static final class Candidate {
         final List<Item> items;
         final int score;
+        // Sorting compares tied scores by signature; building it on every comparison dominated the run time.
+        private String key;
+        private int tie;
+        private boolean tied;
         Candidate(List<Item> items, int score) { this.items = items; this.score = score; }
+        String key() {
+            if (key == null) { List<String> ids = new ArrayList<>(); for (Item i : items) ids.add(i.piece.id); key = signature(ids); }
+            return key;
+        }
+        int tie(String seed) { if (!tied) { tie = Objects.hash(seed, key()); tied = true; } return tie; }
     }
     public static String signature(Collection<String> ids) {
         List<String> sorted = new ArrayList<>(new HashSet<>(ids)); Collections.sort(sorted); return String.join("|", sorted);
@@ -63,7 +72,7 @@ public final class DailyRules {
                 if (compatible) { List<Item> picked = new ArrayList<>(prior.items); picked.add(next); expanded.add(new Candidate(picked, score)); }
             }
             expanded.sort(Comparator.<Candidate>comparingInt(c -> c.score).reversed()
-                .thenComparingInt(c -> Objects.hash(seed, key(c))).thenComparing(DailyRules::key));
+                .thenComparingInt(c -> c.tie(seed)).thenComparing(DailyRules::key));
             // Keep a broad beam so rejected top looks do not eliminate every alternative.
             beam = new ArrayList<>(expanded.subList(0, Math.min(256, expanded.size())));
             if (beam.isEmpty()) break;
@@ -71,11 +80,11 @@ public final class DailyRules {
         all.addAll(beam);
         }
         all.sort(Comparator.<Candidate>comparingInt(c -> c.score * 1000 / Math.max(1, c.items.size())).reversed()
-            .thenComparingInt(c -> Objects.hash(seed, key(c))).thenComparing(DailyRules::key));
+            .thenComparingInt(c -> c.tie(seed)).thenComparing(DailyRules::key));
         List<List<String>> result = new ArrayList<>(); Set<String> seen = new HashSet<>();
         for (Candidate c : all) {
             List<String> ids = new ArrayList<>(); for (Item i : c.items) ids.add(i.piece.id);
-            String sig = signature(ids);
+            String sig = c.key();
             if (!rejected.contains(sig) && seen.add(sig)) { result.add(ids); if (result.size() == limit) break; }
         }
         return result;
@@ -93,7 +102,7 @@ public final class DailyRules {
         List<List<String>> result = generate(candidates, wardrobe, occasion, weather, date, "replace", rejected, fixed, 1);
         return result.isEmpty() ? Collections.emptyList() : result.get(0);
     }
-    private static String key(Candidate c) { List<String> ids = new ArrayList<>(); for (Item i : c.items) ids.add(i.piece.id); return signature(ids); }
+    private static String key(Candidate c) { return c.key(); }
     private static int itemScore(Item item, String style, String date) {
         return (item.piece.style.equals(style) ? 12 : 0) + (item.favorite ? 4 : 0) - Math.min(12, Math.max(0, item.wears))
             - (date.equals(item.lastWear) ? 15 : 0);

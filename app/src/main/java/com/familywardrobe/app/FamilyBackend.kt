@@ -19,15 +19,16 @@ internal class FamilyBackend(private val account: AuthIdentity, private val guar
     app: FirebaseApp = FirebaseApp.getInstance()) : FamilyTransport, FamilyReadTransport, FamilyPublicationTransport {
     private val auth = FirebaseAuth.getInstance(app)
     private val functions = FirebaseFunctions.getInstance(app,"europe-west1")
-    private val storage = FirebaseStorage.getInstance(app)
+    private val storage = FirebaseStorage.getInstance(app).also(StorageLimits::configure)
     init { require(app.options.projectId == account.project) }
     private fun check() { guard(); if (auth.currentUser?.uid != account.uid) throw CancellationException("Account changed") }
     override suspend fun authenticate() {
-        check(); val user = requireNotNull(auth.currentUser); user.reload().await(); check()
+        // Signed out meanwhile: stop like any account change instead of reporting a damaged archive.
+        check(); val user = auth.currentUser ?: throw CancellationException("Account changed"); user.reload().await(); check()
         if (!user.isEmailVerified) throw FamilyTransferException(FamilyProblem.EMAIL)
         user.getIdToken(true).await(); check()
     }
-    suspend fun sendVerification() { check(); requireNotNull(auth.currentUser).sendEmailVerification().await(); check() }
+    suspend fun sendVerification() { check(); (auth.currentUser ?: throw CancellationException("Account changed")).sendEmailVerification().await(); check() }
     private suspend fun call(name: String, data: Map<String, Any>): Map<*, *> {
         check()
         try {
@@ -108,5 +109,18 @@ internal class FamilyBackend(private val account: AuthIdentity, private val guar
     override suspend fun commit(record: FamilyMigrationRecord) {
         call("family_commit",mapOf("remoteId" to record.remoteId,"archiveId" to record.archiveId))
         // A replay may return a historical result. Only a fresh create/resume head is acknowledged.
+    }
+}
+
+/**
+ * Without limits the SDK keeps retrying a lost connection for about ten minutes while the family account lock is
+ * held, and every shared editor waits silently (audit A-04). A failed transfer is retried by the user or
+ * WorkManager; a committed upload is confirmed by its receipt, so a shorter window loses nothing.
+ */
+internal object StorageLimits {
+    fun configure(storage: FirebaseStorage) {
+        storage.maxUploadRetryTimeMillis = 120_000L
+        storage.maxDownloadRetryTimeMillis = 120_000L
+        storage.maxOperationRetryTimeMillis = 60_000L
     }
 }
