@@ -156,6 +156,7 @@ jobs:
           "family-functions/venv/bin/python family-functions/tests/emulator_family.py &&
           family-functions/venv/bin/python family-functions/tests/emulator_membership.py &&
           family-functions/venv/bin/python family-functions/tests/emulator_editing.py &&
+          family-functions/venv/bin/python family-functions/tests/emulator_changes.py &&
           node --test family.rules.test.mjs"
 
   # Audit Q-01: the instrumentation suites (app/src/androidTest) were prepared but never executed.

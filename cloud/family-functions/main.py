@@ -112,3 +112,14 @@ def family_leave(request: https_fn.CallableRequest):
 @https_fn.on_call(memory=options.MemoryOption.GB_1, timeout_sec=540)
 def family_edit_item(request: https_fn.CallableRequest):
     return dispatch(request, 'edit_item')
+
+
+@https_fn.on_call()
+def family_begin_change(request: https_fn.CallableRequest):
+    return dispatch(request, 'begin_change')
+
+
+# Applies a small change to the current head: reads, rewrites and validates the whole archive like edit_item.
+@https_fn.on_call(memory=options.MemoryOption.GB_1, timeout_sec=540)
+def family_apply_change(request: https_fn.CallableRequest):
+    return dispatch(request, 'apply_change')
