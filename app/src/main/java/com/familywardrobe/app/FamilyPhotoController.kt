@@ -4,6 +4,7 @@ import android.net.Uri
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.coroutineContext
@@ -23,6 +24,24 @@ internal class FamilyPhotoController(private val app: WardrobeApplication, priva
     private val lease = FamilyReadLease(); private val lock = FamilySyncLocks.account(session.identity.key)
     private val store = FamilyAddStore(session.context, session.identity, "family-photo-replacements")
     private val mutable = MutableStateFlow(FamilyPhotoState()); val state = mutable.asStateFlow()
+    /**
+     * Automatic sending (0.14.23) sends and removes drafts in the background: the shown queue and draft follow the
+     * outbox, so a sent draft disappears here instead of offering stale actions.
+     */
+    init { scope.launch(Dispatchers.IO) { FamilySyncLocks.outbox(session.identity.key).collect {
+        try {
+            guard(); val shown = mutable.value
+            if (shown.running || shown.remoteId.isEmpty()) return@collect
+            val rows = store.list(shown.remoteId)
+            val draft = shown.draft?.let { d -> rows.find { it.publication.archiveId == d.publication.archiveId } }
+            mutable.update { s -> if (s.running || s.generation != shown.generation || s.remoteId != shown.remoteId) s else {
+                val gone = s.draft != null && draft == null
+                if (gone) s.preview?.clearMemoryCache()
+                s.copy(queue = rows, draft = draft, preview = if (gone) null else s.preview, synced = s.synced || gone,
+                    recoverable = s.recoverable && !gone, generation = if (gone) s.generation + 1 else s.generation)
+            } }
+        } catch (e: CancellationException) { throw e } catch (_: Exception) {}
+    } } }
     fun readable() = session.isOpen && app.authBackend.signedInIdentity()?.key == session.identity.key && lease.permits(session.id, android.os.SystemClock.elapsedRealtime())
     private fun guard() {
         if (!session.isOpen || app.authBackend.signedInIdentity()?.key != session.identity.key) throw CancellationException("Account changed")

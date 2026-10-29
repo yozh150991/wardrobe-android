@@ -4,14 +4,18 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.sync.withLock
 
 internal data class FamilySyncState(val remote: String = "", val operations: List<FamilySyncOperation> = emptyList(),
-    val labels: Map<String, String> = emptyMap(), val plan: FamilySyncPlan? = null, val busy: Boolean = false, val problem: String = "")
+    val labels: Map<String, String> = emptyMap(), val plan: FamilySyncPlan? = null, val busy: Boolean = false, val problem: String = "",
+    val auto: Boolean = false, val autoWaiting: Boolean = false)
 internal class FamilySyncController(private val app: WardrobeApplication, private val session: AccountSession, private val reader: FamilyReaderController, private val scope: CoroutineScope) {
     private val store = FamilySyncStore(session.context, session.identity)
     private val mutable = MutableStateFlow(FamilySyncState()); val state = mutable.asStateFlow()
+    /** Wardrobes with automatic sending switched on (0.14.23). */
+    private val autoRemotes = MutableStateFlow<Set<String>>(emptySet()); val auto = autoRemotes.asStateFlow()
     private var manual: Job? = null
     private var manualRemote = ""
     private var lastDenied = ""
@@ -21,6 +25,29 @@ internal class FamilySyncController(private val app: WardrobeApplication, privat
         if (!session.isOpen || app.authBackend.signedInIdentity()?.key != session.identity.key) throw CancellationException("Account changed")
     }
     // Any outbox change refreshes the list too: a draft saved meanwhile must not leave a stale approval (audit L-03).
+    /**
+     * Every saved, sent or discarded draft wakes automatic sending, a moment later so that a burst of saves becomes one
+     * run; the first emission also catches up on drafts left from earlier sessions.
+     */
+    init { scope.launch(Dispatchers.IO) { FamilySyncLocks.outbox(session.identity.key).collectLatest {
+        delay(1_500)
+        try {
+            guard(); val enabled = store.autoRemotes().toSet(); autoRemotes.value = enabled
+            enabled.forEach { FamilySyncSchedule.kick(session.context, session.identity.key, it) }
+        } catch (e: CancellationException) { throw e } catch (_: Exception) {}
+    } } }
+    fun setAuto(remote: String, enabled: Boolean) { scope.launch(Dispatchers.IO) {
+        try {
+            guard()
+            // Turning the switch on is the user's go-ahead for a batch that stopped and waits for them.
+            val waiting = store.get(remote)?.takeIf { enabled && !it.active }?.id.orEmpty()
+            store.setAuto(remote, FamilyAutoSetting(enabled, waiting))
+            autoRemotes.value = store.autoRemotes().toSet()
+            if (enabled) FamilySyncSchedule.kick(session.context, session.identity.key, remote)
+            refresh(remote)
+        } catch (e: CancellationException) { throw e }
+        catch (e: Exception) { mutable.value = mutable.value.copy(problem = "ARCHIVE") }
+    } }
     init { scope.launch(Dispatchers.IO) { combine(store.changes, FamilySyncLocks.outbox(session.identity.key)) { a, b -> a to b }.collect {
         if (mutable.value.remote.isNotEmpty()) {
             refresh(mutable.value.remote)
@@ -33,8 +60,11 @@ internal class FamilySyncController(private val app: WardrobeApplication, privat
         try {
             guard(); val operations = FamilySyncOperations(session.context, session.identity, remote)
             val rows = operations.snapshot()
+            val plan = store.get(remote); val setting = store.auto(remote)
             if (mutable.value.remote == remote) mutable.value = mutable.value.copy(operations = rows,
-                labels = operations.labels(rows), plan = store.get(remote), problem = "")
+                labels = operations.labels(rows), plan = plan, problem = "", auto = setting.enabled,
+                autoWaiting = setting.enabled && FamilyAutoSync.decide(plan, rows, setting.released) == FamilyAutoSync.Step.Wait &&
+                    plan?.active != true)
         } catch (e: CancellationException) { throw e }
         catch (e: Exception) { if (mutable.value.remote == remote) mutable.value = mutable.value.copy(problem = "ARCHIVE") }
     }

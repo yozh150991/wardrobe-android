@@ -85,6 +85,38 @@ internal object FamilySyncPlanner {
             c.pieces.flatMap { listOf(it.key, it.category, it.name) } + listOfNotNull(d.delta)), d.submitted)
     }
 }
+/**
+ * Automatic sending (0.14.23): a per-wardrobe switch, off by default. When it is on, every prepared change is
+ * sent in the background as an automatically approved batch of the whole queue. A batch stopped by a problem
+ * that needs the user (conflict, access, damaged draft, explicit stop) waits: automatic sending resumes only
+ * after the operation it stopped at changed (rebased, discarded or sent by hand) or the user turned the switch
+ * on again ([released]). Network trouble, sign-out and quota are retried later on their own.
+ */
+internal object FamilyAutoSync {
+    private val transient = setOf("", "PARTIAL", "RETRY", "RETRY_LIMIT", "SIGNED_OUT", "CHANGED", "LIMIT")
+    sealed interface Step {
+        /** Nothing queued. */
+        data object Idle : Step
+        /** A foreground batch is running, or a stopped batch waits for the user. */
+        data object Wait : Step
+        /** An unfinished background batch (automatic or approved by hand) continues first. */
+        data class Continue(val plan: FamilySyncPlan) : Step
+        /** A new automatic batch of these operations, in send order. */
+        data class Start(val operations: List<FamilySyncOperation>) : Step
+    }
+    fun decide(plan: FamilySyncPlan?, queue: List<FamilySyncOperation>, released: String = ""): Step = when {
+        plan != null && plan.active -> if (plan.background) Step.Continue(plan) else Step.Wait
+        queue.isEmpty() -> Step.Idle
+        plan != null && plan.id != released && blocked(plan, queue) -> Step.Wait
+        else -> Step.Start(queue.take(130))
+    }
+    /** True while the operation a stopped batch ended at is still queued unchanged and the problem needs the user. */
+    fun blocked(plan: FamilySyncPlan, queue: List<FamilySyncOperation>): Boolean {
+        if (plan.active || plan.problem in transient) return false
+        val stopped = plan.operations.getOrNull(plan.cursor) ?: return false
+        return queue.any { stopped.matches(it) }
+    }
+}
 internal interface FamilySyncPort {
     fun plan(): FamilySyncPlan
     fun save(next: FamilySyncPlan, expected: FamilySyncPlan)

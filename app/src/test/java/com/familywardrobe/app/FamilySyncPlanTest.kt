@@ -105,6 +105,48 @@ class FamilySyncPlanTest {
         assertFalse(a.matches(FamilySyncPlanner.edit(d.copy(baseRevision = 5))))
         assertFalse(a.matches(FamilySyncPlanner.edit(d.copy(values = fields + ("size" to "S")))))
     }
+    @Test fun automaticSendingTakesTheWholeQueueAndFinishesBackgroundBatchesFirst() {
+        val rows = listOf(op(FamilySyncKind.ADD), op())
+        assertEquals(FamilyAutoSync.Step.Idle, FamilyAutoSync.decide(null, emptyList()))
+        assertEquals(FamilyAutoSync.Step.Start(rows), FamilyAutoSync.decide(null, rows))
+        val running = plan(rows).copy(status = FamilySyncStatus.RETRY, problem = "RETRY")
+        assertEquals(FamilyAutoSync.Step.Continue(running), FamilyAutoSync.decide(running, rows))
+        assertEquals(FamilyAutoSync.Step.Wait, FamilyAutoSync.decide(running.copy(background = false), rows))
+        val done = plan(rows).copy(cursor = 2, status = FamilySyncStatus.DONE, problem = "PARTIAL")
+        val later = listOf(op(FamilySyncKind.OUTFIT))
+        assertEquals(FamilyAutoSync.Step.Start(later), FamilyAutoSync.decide(done, later))
+        assertEquals(FamilyAutoSync.Step.Idle, FamilyAutoSync.decide(done, emptyList()))
+        val many = (1..140).map { op() }
+        assertEquals(130, (FamilyAutoSync.decide(null, many) as FamilyAutoSync.Step.Start).operations.size)
+    }
+    @Test fun stoppedBatchWaitsUntilItsOperationChangesOrTheUserReleasesIt() {
+        val a = op(); val b = op()
+        val stopped = plan(listOf(a, b)).copy(status = FamilySyncStatus.PAUSED, problem = "CONFLICT")
+        assertEquals(FamilyAutoSync.Step.Wait, FamilyAutoSync.decide(stopped, listOf(a, b, op())))
+        // Marking it submitted does not change what it is; rebasing, discarding or sending it does.
+        assertEquals(FamilyAutoSync.Step.Wait, FamilyAutoSync.decide(stopped, listOf(a.copy(submitted = true), b)))
+        assertEquals(FamilyAutoSync.Step.Start(listOf(b)), FamilyAutoSync.decide(stopped, listOf(b)))
+        val rebased = a.copy(fingerprint = "c".repeat(64))
+        assertEquals(FamilyAutoSync.Step.Start(listOf(rebased, b)), FamilyAutoSync.decide(stopped, listOf(rebased, b)))
+        assertEquals(FamilyAutoSync.Step.Start(listOf(a, b)), FamilyAutoSync.decide(stopped, listOf(a, b), released = stopped.id))
+        val cancelled = stopped.copy(status = FamilySyncStatus.CANCELLED, problem = "STOPPED", background = false)
+        assertEquals(FamilyAutoSync.Step.Wait, FamilyAutoSync.decide(cancelled, listOf(a)))
+        for (problem in listOf("ACCESS", "ARCHIVE", "MISSING", "EXPIRED", "EMAIL", "CONFIG", "CONFLICT"))
+            assertTrue(problem, FamilyAutoSync.blocked(stopped.copy(problem = problem), listOf(a)))
+        for (problem in listOf("", "PARTIAL", "RETRY_LIMIT", "SIGNED_OUT", "CHANGED", "LIMIT"))
+            assertFalse(problem, FamilyAutoSync.blocked(stopped.copy(problem = problem), listOf(a)))
+        assertFalse(FamilyAutoSync.blocked(stopped.copy(status = FamilySyncStatus.RETRY), listOf(a)))
+    }
+    @Test fun automaticSendingSettingRoundTripsAndFailsClosed() {
+        val setting = FamilyAutoSetting(true, newId())
+        val text = FamilyAutoJournal.encode(setting, "account", remote)
+        assertEquals(setting, FamilyAutoJournal.decode(text, "account", remote))
+        assertEquals(FamilyAutoSetting(), FamilyAutoJournal.decode(FamilyAutoJournal.encode(FamilyAutoSetting(), "account", remote), "account", remote))
+        rejects { FamilyAutoJournal.decode(text, "other", remote) }
+        rejects { FamilyAutoJournal.decode(text, "account", newId()) }
+        rejects { FamilyAutoJournal.decode(JSONObject(text).put("version", 2).toString(), "account", remote) }
+        rejects { FamilyAutoSetting(true, "not-an-id") }
+    }
     @Test fun outfitApprovalBindsTheOutfitChangeText() {
         val d = FamilyOutfitDraft(FamilyPublication(FamilyArchiveIdentity(remote, newId(), "owner"), newId(), 4, "a".repeat(64), 100),
             FamilyOutfitChange(newId(), true, "Look", listOf(LookPiece("idea:top", "top", "Top")), "everyday", "any_weather", "inspiration", "", "paper", 1))

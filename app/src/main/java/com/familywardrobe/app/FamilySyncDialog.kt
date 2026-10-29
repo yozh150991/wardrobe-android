@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -30,6 +31,15 @@ internal fun FamilySyncDialog(vm: WardrobeViewModel, remote: String, canSend: Bo
                 Text(stringResource(R.string.family_sync_hint))
                 TextButton(onClick = dismiss) { Text(stringResource(R.string.close)) }
                 if (current && state.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
+                // Automatic sending (0.14.23): per shared wardrobe, off by default; the switch is the approval.
+                if (canSend && current) {
+                    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.family_sync_auto), Modifier.weight(1f))
+                        Switch(checked = state.auto, onCheckedChange = { vm.familySync.setAuto(remote, it) }, enabled = !state.busy)
+                    }
+                    Text(stringResource(R.string.family_sync_auto_hint), style = MaterialTheme.typography.bodySmall)
+                    if (state.autoWaiting) Text(stringResource(R.string.family_sync_auto_waiting), color = MaterialTheme.colorScheme.error)
+                }
                 plan?.let {
                     Text(stringResource(R.string.family_sync_progress, it.cursor, it.operations.size))
                     Text(stringResource(when (it.status) {
@@ -58,11 +68,12 @@ internal fun FamilySyncDialog(vm: WardrobeViewModel, remote: String, canSend: Bo
                 if (canSend && current) {
                     Text(stringResource(R.string.family_sync_pending, operations.size))
                     if (plan?.active != true) {
-                        Row(Modifier.fillMaxWidth()) {
+                        // With automatic sending on, a hand-approved batch is only for sending right now.
+                        if (!state.auto) Row(Modifier.fillMaxWidth()) {
                             Checkbox(checked = background, onCheckedChange = { background = it }, enabled = !state.busy)
                             Text(stringResource(R.string.family_sync_background), Modifier.weight(1f).padding(top = 12.dp))
                         }
-                        Button(onClick = { approved = operations.toList(); approvedBackground = background },
+                        Button(onClick = { approved = operations.toList(); approvedBackground = background && !state.auto },
                             enabled = !state.busy && operations.isNotEmpty() && state.problem.isEmpty(), modifier = Modifier.fillMaxWidth()) {
                             Text(stringResource(R.string.family_sync_send))
                         }

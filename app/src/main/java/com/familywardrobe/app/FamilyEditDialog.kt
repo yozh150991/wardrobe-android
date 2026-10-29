@@ -29,6 +29,8 @@ private fun fieldLabel(field: String): String = stringResource(when (field) {
 @Composable
 internal fun FamilyEditDialog(vm: WardrobeViewModel, remote: String, dismiss: () -> Unit) {
     val state by vm.familyEdit.state.collectAsStateWithLifecycle()
+    // With automatic sending on, an unsent draft goes by itself; only a submitted one can be retried here (0.14.23).
+    val auto = remote in vm.familySync.auto.collectAsStateWithLifecycle().value
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var foreground by remember { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
     var tick by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
@@ -70,7 +72,7 @@ internal fun FamilyEditDialog(vm: WardrobeViewModel, remote: String, dismiss: ()
                             }
                         }
                     }
-                    if (state.queue.size > 1) Button(onClick = { confirmSend = true },
+                    if (state.queue.size > 1 && !auto) Button(onClick = { confirmSend = true },
                         enabled = !state.running && !dirty && !state.conflict, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.family_queue_send))
                     }
@@ -111,7 +113,8 @@ internal fun FamilyEditDialog(vm: WardrobeViewModel, remote: String, dismiss: ()
                         Text(stringResource(R.string.family_edit_save))
                     }
                     if (draft.submitted) Text(stringResource(R.string.family_edit_pending), style = MaterialTheme.typography.bodySmall)
-                    Button(onClick = { vm.familyEdit.sync() }, enabled = !state.running && !unsaved && !state.conflict && draft.changes.isNotEmpty() && state.queue.firstOrNull() == draft, modifier = Modifier.fillMaxWidth()) {
+                    if (auto && !draft.submitted) { if (draft.changes.isNotEmpty() && !unsaved) Text(stringResource(R.string.family_auto_queued), style = MaterialTheme.typography.bodySmall) }
+                    else Button(onClick = { vm.familyEdit.sync() }, enabled = !state.running && !unsaved && !state.conflict && draft.changes.isNotEmpty() && state.queue.firstOrNull() == draft, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(if (draft.submitted) R.string.family_edit_retry else R.string.family_edit_sync))
                     }
                     if (state.queue.isNotEmpty() && state.queue.firstOrNull()?.garmentId != draft.garmentId)

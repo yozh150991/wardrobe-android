@@ -1218,7 +1218,7 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="family_sync_stop">Zatrzymaj wysyłanie</string>
     <string name="family_sync_review">Kolejka lub wersja na serwerze uległa zmianie. Otwórz odpowiedni szkic, sprawdź konflikt lub odśwież go, a następnie potwierdź nową partię. Zmiany nie są automatycznie nadpisywane.</string>
     <string name="family_sync_pending">Przygotowane zmiany: %1$d</string>
-    <string name="family_sync_background">Wyślij tę partię w tle przez sieć bez limitu danych (zwykle Wi-Fi), także po zamknięciu aplikacji. Wylogowanie zatrzymuje partię.</string>
+    <string name="family_sync_background">Wyślij tę partię w tle przez dowolną sieć, także po zamknięciu aplikacji. Wylogowanie zatrzymuje partię.</string>
     <string name="family_sync_send">Potwierdź wysłanie listy</string>
     <string name="family_sync_confirm">Wysłać %1$d przygotowanych zmian w wybranym trybie? Zatrzymanie nie cofa zmian już przyjętych przez serwer. Po utracie odpowiedzi ponowienie sprawdza to samo żądanie.</string>
     <string name="family_sync_edit">Dane rzeczy</string>
@@ -1229,4 +1229,8 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="family_sync_partial">Część zmian została wysłana. Dodania, zdjęcia lub stylizacje przygotowane na poprzedniej wersji pozostały w kolejce: odśwież je w ich edytorze i potwierdź nową partię.</string>
     <string name="family_change_latest">Zostanie zastosowane do najnowszej wersji wspólnej szafy — odświeżanie szkicu nie jest potrzebne.</string>
     <string name="family_change_conflict">Tej zmiany nie można zastosować: wspólna szafa ma już własną kategorię lub kolor o tej nazwie, ale z inną bazą, albo taki wpis już istnieje. Odrzuć szkic i przygotuj go ponownie.</string>
+    <string name="family_sync_auto">Wysyłaj zmiany automatycznie</string>
+    <string name="family_sync_auto_hint">Dla tej wspólnej szafy: każda zapisana zmiana jest wysyłana w tle przez dowolną sieć, także po zamknięciu aplikacji. Konflikt lub inny problem wstrzymuje wysyłanie, dopóki nie rozwiążesz go w edytorze albo nie wyślesz ręcznie. Wylogowanie zatrzymuje wysyłanie.</string>
+    <string name="family_sync_auto_waiting">Automatyczne wysyłanie czeka na Ciebie: otwórz zmianę, na której się zatrzymało (odśwież, odrzuć lub wyślij ponownie), albo wyślij listę ręcznie.</string>
+    <string name="family_auto_queued">Automatyczne wysyłanie jest włączone: ta zmiana zostanie wysłana w tle. Stan — w oknie Wysyłanie.</string>
 </resources>

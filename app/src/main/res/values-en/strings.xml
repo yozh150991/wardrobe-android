@@ -1218,7 +1218,7 @@ Your current wardrobe is unchanged.</string>
     <string name="family_sync_stop">Stop sending</string>
     <string name="family_sync_review">The queue or server version changed. Open the relevant draft, review the conflict or refresh it, then approve a new batch. Changes are not overwritten automatically.</string>
     <string name="family_sync_pending">Prepared changes: %1$d</string>
-    <string name="family_sync_background">Send this batch in the background over an unmetered network (usually Wi-Fi), even after closing the app. Signing out stops the batch.</string>
+    <string name="family_sync_background">Send this batch in the background over any network, even after closing the app. Signing out stops the batch.</string>
     <string name="family_sync_send">Approve sending this list</string>
     <string name="family_sync_confirm">Send %1$d prepared changes in the selected mode? Stopping does not undo changes already accepted by the server. After a lost response, retry checks the same request.</string>
     <string name="family_sync_edit">Item details</string>
@@ -1229,4 +1229,8 @@ Your current wardrobe is unchanged.</string>
     <string name="family_sync_partial">Some changes were sent. Additions, photos or outfits prepared on the previous version stay queued: refresh them in their editor and approve a new batch.</string>
     <string name="family_change_latest">Will be applied to the newest version of the shared wardrobe — no refresh needed.</string>
     <string name="family_change_conflict">This change can\'t be applied: the shared wardrobe already has a custom category or colour with this name but a different base, or the record already exists. Discard the draft and prepare it again.</string>
+    <string name="family_sync_auto">Send changes automatically</string>
+    <string name="family_sync_auto_hint">For this shared wardrobe: every saved change is sent in the background over any network, even after closing the app. A conflict or another problem pauses sending until you resolve it in the editor or send by hand. Signing out stops sending.</string>
+    <string name="family_sync_auto_waiting">Automatic sending is waiting for you: open the change it stopped at (refresh, discard or send again) or send the list by hand.</string>
+    <string name="family_auto_queued">Automatic sending is on: this change will be sent in the background. See its status in the Sending window.</string>
 </resources>

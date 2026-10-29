@@ -3,6 +3,7 @@ package com.familywardrobe.app
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.coroutineContext
@@ -17,6 +18,20 @@ internal class FamilyOutfitController(private val app: WardrobeApplication, priv
     private val store = FamilyOutfitStore(session.context, session.identity)
     private val lock = FamilySyncLocks.account(session.identity.key); private val lease = FamilyReadLease()
     private val mutable = MutableStateFlow(FamilyOutfitState()); val state = mutable.asStateFlow()
+    /** Automatic sending (0.14.23) sends drafts in the background: the shown queue and draft follow the journal. */
+    init { scope.launch(Dispatchers.IO) { FamilySyncLocks.outbox(session.identity.key).collect {
+        try {
+            guard(); val shown = mutable.value
+            if (shown.running || shown.remote.isEmpty()) return@collect
+            val rows = store.list(shown.remote)
+            val draft = shown.draft?.let { d -> rows.find { it.publication.archiveId == d.publication.archiveId } }
+            mutable.update { s -> if (s.running || s.generation != shown.generation || s.remote != shown.remote) s else {
+                val gone = s.draft != null && draft == null
+                s.copy(queue = rows, draft = draft, synced = s.synced || gone, recoverable = s.recoverable && !gone,
+                    generation = if (gone) s.generation + 1 else s.generation)
+            } }
+        } catch (e: CancellationException) { throw e } catch (_: Exception) {}
+    } } }
     private fun guard() {
         if (!session.isOpen || app.authBackend.signedInIdentity()?.key != session.identity.key) throw CancellationException("Account changed")
     }

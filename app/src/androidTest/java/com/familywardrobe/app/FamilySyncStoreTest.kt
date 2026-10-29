@@ -15,6 +15,23 @@ class FamilySyncStoreTest {
     }
     private fun plan(remote: String = newId()) = FamilySyncPlan(newId(), remote,
         listOf(FamilySyncOperation(FamilySyncKind.EDIT, newId(), "a".repeat(64))), true)
+    @Test fun automaticSendingIsOffByDefaultPerWardrobeAndAccountPrivate() = scenario { context, identity, store ->
+        val a = newId(); val b = newId(); val released = newId()
+        assertEquals(FamilyAutoSetting(), store.auto(a)); assertTrue(store.autoRemotes().isEmpty())
+        store.setAuto(a, FamilyAutoSetting(true, released)); store.setAuto(b, FamilyAutoSetting(false))
+        val restarted = FamilySyncStore(context, identity)
+        assertEquals(FamilyAutoSetting(true, released), restarted.auto(a)); assertEquals(listOf(a), restarted.autoRemotes())
+        // Settings never count against or mix with the plans of the same folder.
+        val p = plan(a); restarted.put(p, null); restarted.pauseAll()
+        assertEquals(FamilyAutoSetting(true, released), restarted.auto(a)); assertEquals(FamilySyncStatus.PAUSED, restarted.get(a)?.status)
+        val other = AuthIdentity("family-sync-test", newId(), "other@example.test")
+        val isolated = FamilySyncStore(AccountContext(InstrumentationRegistry.getInstrumentation().targetContext, AccountLocation(other.key, false)), other)
+        try { assertEquals(FamilyAutoSetting(), isolated.auto(a)); assertTrue(isolated.autoRemotes().isEmpty()) }
+        finally { File(context.noBackupFilesDir, "family-sync/${other.key}").deleteRecursively() }
+        // A damaged setting reads as off in the list that wakes automatic sending.
+        File(context.noBackupFilesDir, "family-sync/${identity.key}/auto/$a.json").writeText("broken")
+        assertTrue(restarted.autoRemotes().isEmpty()); assertTrue(runCatching { restarted.auto(a) }.isFailure)
+    }
     @Test fun restartPreservesConsentAndAcknowledgedCursor() = scenario { context, identity, store ->
         val p = plan().copy(acknowledged = true, status = FamilySyncStatus.RUNNING); store.put(p, null)
         assertEquals(p, FamilySyncStore(context, identity).get(p.remote))

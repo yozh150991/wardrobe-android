@@ -28,6 +28,8 @@ import kotlinx.coroutines.delay
 @Composable
 internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () -> Unit) {
     val state by vm.familyAdd.state.collectAsStateWithLifecycle()
+    // With automatic sending on, an unsent draft goes by itself; only a submitted one can be retried here (0.14.23).
+    val auto = remote in vm.familySync.auto.collectAsStateWithLifecycle().value
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var foreground by remember { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
     var tick by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
@@ -136,7 +138,8 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
                             }
                         }
                         if (draft.submitted) item { Text(stringResource(R.string.family_edit_pending)) }
-                        item { Button(onClick = { confirm = "send" }, enabled = !state.running && !state.recoverable && state.queue.firstOrNull() == draft, modifier = Modifier.fillMaxWidth()) {
+                        if (auto && !draft.submitted) item { Text(stringResource(R.string.family_auto_queued)) }
+                        else item { Button(onClick = { confirm = "send" }, enabled = !state.running && !state.recoverable && state.queue.firstOrNull() == draft, modifier = Modifier.fillMaxWidth()) {
                             Text(stringResource(if (draft.submitted) R.string.family_edit_retry else R.string.family_add_send))
                         } }
                         if (state.queue.firstOrNull() != draft) item { Text(stringResource(R.string.family_media_queue_wait)) }

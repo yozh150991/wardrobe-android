@@ -29,6 +29,8 @@ import kotlinx.coroutines.delay
 @Composable
 internal fun FamilyPhotoDialog(vm: WardrobeViewModel, remote: String, dismiss: () -> Unit) {
     val state by vm.familyPhoto.state.collectAsStateWithLifecycle()
+    // With automatic sending on, an unsent draft goes by itself; only a submitted one can be retried here (0.14.23).
+    val auto = remote in vm.familySync.auto.collectAsStateWithLifecycle().value
     val reader by vm.familyReader.state.collectAsStateWithLifecycle()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var foreground by remember { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
@@ -103,7 +105,8 @@ internal fun FamilyPhotoDialog(vm: WardrobeViewModel, remote: String, dismiss: (
                             Text(stringResource(R.string.family_photo_saved))
                         }
                         if (draft.submitted) item { Text(stringResource(R.string.family_edit_pending)) }
-                        item { Button(onClick = { confirm = "send" }, enabled = !state.running && !state.recoverable && state.queue.firstOrNull() == draft, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                        if (auto && !draft.submitted) item { Text(stringResource(R.string.family_auto_queued)) }
+                        else item { Button(onClick = { confirm = "send" }, enabled = !state.running && !state.recoverable && state.queue.firstOrNull() == draft, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                             Text(stringResource(if (draft.submitted) R.string.family_edit_retry else R.string.family_photo_send))
                         } }
                         if (state.queue.firstOrNull() != draft) item { Text(stringResource(R.string.family_media_queue_wait)) }

@@ -3,6 +3,7 @@ package com.familywardrobe.app
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.coroutineContext
@@ -10,13 +11,31 @@ import kotlin.coroutines.coroutineContext
 internal data class FamilyEditState(val remoteId: String = "", val draft: FamilyEditDraft? = null, val running: Boolean = false,
     val problem: FamilyProblem? = null, val saved: Boolean = false, val synced: Boolean = false,
     val conflict: Boolean = false, val latest: FamilyEditDraft? = null,
-    val queue: List<FamilyEditDraft> = emptyList(), val completed: Int = 0, val total: Int = 0, val waiting: Boolean = false)
+    val queue: List<FamilyEditDraft> = emptyList(), val completed: Int = 0, val total: Int = 0, val waiting: Boolean = false,
+    val sentInBackground: Boolean = false)
 internal class FamilyEditController(private val app: WardrobeApplication, private val session: AccountSession,
     private val reader: FamilyReaderController, private val scope: CoroutineScope) {
     private val lease = FamilyReadLease()
     fun readable() = session.isOpen && app.authBackend.signedInIdentity()?.key == session.identity.key && lease.permits(session.id, android.os.SystemClock.elapsedRealtime())
     private val store = FamilyEditStore(session.context, session.identity)
     private val lock = FamilySyncLocks.account(session.identity.key); private val mutable = MutableStateFlow(FamilyEditState()); val state = mutable.asStateFlow()
+    /**
+     * Automatic sending (0.14.23) sends edits in the background. The queue follows the outbox; a shown draft that was
+     * sent stays on screen for further typing, and its next save starts from the shared item as it is then.
+     */
+    init { scope.launch(Dispatchers.IO) { FamilySyncLocks.outbox(session.identity.key).collect {
+        try {
+            guard(); val shown = mutable.value
+            if (shown.running || shown.remoteId.isEmpty()) return@collect
+            val rows = store.list(shown.remoteId)
+            mutable.update { s -> if (s.running || s.remoteId != shown.remoteId || s.draft != shown.draft) s else {
+                val stored = s.draft?.let { d -> rows.find { it.editId == d.editId } }
+                val shownId = s.draft?.editId
+                val sent = shownId != null && stored == null && s.queue.any { it.editId == shownId }
+                s.copy(queue = rows, draft = stored ?: s.draft, sentInBackground = s.sentInBackground || sent, synced = s.synced || sent)
+            } }
+        } catch (e: CancellationException) { throw e } catch (_: Exception) {}
+    } } }
     private fun guard() {
         if (!session.isOpen || app.authBackend.signedInIdentity()?.key != session.identity.key) throw CancellationException("Account changed")
     }
@@ -75,14 +94,20 @@ internal class FamilyEditController(private val app: WardrobeApplication, privat
         val draft = pending ?: garment?.let { fresh(backend, remote, it) }
         mutable.value = mutable.value.copy(draft = draft, saved = pending != null, queue = store.list(remote))
     }
-    fun save(values: Map<String, String>) = run {
+    fun save(values: Map<String, String>) = run { backend ->
         if (!readable()) throw FamilyTransferException(FamilyProblem.EXPIRED)
-        val current = requireNotNull(mutable.value.draft); require(!current.submitted)
+        val shown = requireNotNull(mutable.value.draft); require(!shown.submitted)
         require(TextLimits.hasVisibleText(values.getValue("name")))
+        // Sent in the background meanwhile: its edit ID is used up and its base is behind our own commit.
+        val current = if (mutable.value.sentInBackground && store.get(shown.remoteId, shown.garmentId) == null)
+            fresh(backend, shown.remoteId, shown.garmentId) else shown
         val updated = current.copy(values = values.toMap())
-        require(updated.changes.isNotEmpty())
+        if (updated.changes.isEmpty()) {
+            // The shared item already has these values; nothing is left to send.
+            mutable.value = mutable.value.copy(draft = updated, saved = true, sentInBackground = false, queue = store.list(current.remoteId)); return@run
+        }
         store.put(updated, store.get(current.remoteId, current.garmentId).also { require(it == null || it == current) }); guard()
-        mutable.value = mutable.value.copy(draft = updated, saved = true, queue = store.list(current.remoteId))
+        mutable.value = mutable.value.copy(draft = updated, saved = true, sentInBackground = false, queue = store.list(current.remoteId))
     }
     fun sync(all: Boolean = false) {
         // Capture the user's selection before enqueuing work: a double tap must not send the next item.
