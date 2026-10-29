@@ -38,7 +38,7 @@
 
 | ID | Виправлення |
 | --- | --- |
-| Q-01 | CI: job `firebase` (емулятори Auth/Firestore/Storage/Functions — приватні rules, family rules, сценарії `emulator_family/membership/editing.py`) і job `instrumentation` (API 34 emulator, `connectedDebugAndroidTest`) |
+| Q-01 | CI: job `firebase` (емулятори Auth/Firestore/Storage/Functions — приватні rules, family rules, сценарії `emulator_family/membership/editing.py`) і job `instrumentation` (API 34 emulator, `connectedDebugAndroidTest`). `tools/ci_annotations.py` публікує помилки компіляції, lint і впалі тести як анотації GitHub (сирий лог job не завжди можна завантажити). Перший запуск instrumentation: 181 тест, 171 pass, 5 skipped (Firebase-емулятор потребує host-аргумент), 5 застарілих тестів виправлено: версія backup 8 → 10, неіснуючий базовий колір `green` → `olive`, необов'язковий ключ `indices` у експортованій схемі Room |
 | Документи | `AGENTS.md`: застаріла база в «Почати тут»; роадмап: URL репозиторію й кількість наборів runner |
 
 ## Тести
