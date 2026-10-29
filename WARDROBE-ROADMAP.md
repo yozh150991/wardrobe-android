@@ -16,7 +16,7 @@ Live functions deploy попередніх 0.14.13–14 не підтвердж�
 Погоджений порядок: спрощення каталогу та імпорт → помічник покупки → сімейний доступ.
 Нова пряма вказівка користувача має перевагу над цим планом.
 
-**Актуальна контрольна точка:** 0.14.22/code52, Claude, 29.10.2026 (образи як зміни сервера; PR поверх #19 → #18, CI PR перевірити).
+**Актуальна контрольна точка:** 0.14.22/code52, Claude, 29.10.2026 (образи як зміни сервера; PR #20 поверх #19 → #18, CI — 4/4 jobs pass).
 **Попередня контрольна точка:** 0.14.21/code51, Claude, 29.10.2026 (дельта-модель v1; PR #19, CI — 4/4 jobs pass).
 23 нових JVM-тести й 6 instrumented tests. Host runner: 23 suites pass, backend 148 pass; missing client config skipped.
 Android CI цієї гілки перевірити перед передачею.
@@ -577,5 +577,5 @@ and device acceptance remain pending; no live Firebase deployment is included.
 - Вказівка користувача 29.10: «Продовж роадмап». Версія 0.14.22-family-outfit-changes/code52, Room/backup 10 без змін.
 - Сервер: `apply_change` з kind `outfit` — рядки образу + `previous`, без begin/upload; конфлікт `CHANGE_OUTFIT_CHANGED` лише для того самого образу, `CHANGE_OUTFIT_DUPLICATE`, `CHANGE_ITEM_MISSING`; узгодження капсул як на телефоні; `features: ['change1','outfit1']`. Rules не змінені.
 - Телефон: `FamilyOutfitDraft.delta`, `FamilyOutfitForm.origin`, журнал образів v3; форма тихо переходить на нову ревізію, якщо її образ не змінився; `publishFamilyOutfitChange`; пакети надсилають образ-зміну без deferral.
-- Перевірки тут: backend 180 pass (+10, 5 мутацій спіймано), JVM-набори через локальний Kotlin 91/91, host pass. Android compile/lint/instrumentation/емулятори — CI PR. Пристрій не перевірено. Деталі: FAMILY-OUTFIT-CHANGES-0.14.22.md.
+- Перевірки тут: backend 180 pass (+10, 5 мутацій спіймано), JVM-набори через локальний Kotlin 91/91, host pass. CI PR #20 run 40916251304: 4/4 jobs pass (261 JVM, lint, APK; instrumentation 180 pass + 5 skipped; Firebase emulators). Пристрій не перевірено. Деталі: FAMILY-OUTFIT-CHANGES-0.14.22.md.
 - Далі: деплой functions, native-перевірка 0.14.20–0.14.22; потім continuous sync (автоматичне надсилання черги) і FAM-04.

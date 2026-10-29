@@ -56,7 +56,15 @@
 - Backend unittest — 180 pass (170 + 10).
 - Локальний Kotlin 2.0.21 + JUnit: `FamilySyncPlanTest`, `FamilyMediaQueueTest`, `FamilyChangeTest`, `FamilyPublicationTest`,
   `FamilyOutfitQueueTest` — 91/91 pass на production-файлах (заглушки лише для Android-класів і `FamilyOutfitChange`).
-- Host checks — pass. Компіляція Android, lint, instrumentation і Firebase-емулятори — у CI PR.
+- Host checks — pass.
+
+## CI (PR #20, run 40916251304)
+
+- Source and Git safety — pass (host-набори, backend 180).
+- Android debug preview — pass: компіляція Kotlin, 261 JVM-тест (255 + 6), lint, схема Room, preview APK.
+- Android instrumentation (API 34) — pass: 185 тестів, 180 pass, 5 skipped (`CloudEmulatorTest` без host-аргументу), включно з
+  `FamilyOutfitChangeStageTest`.
+- Firebase emulators — pass, включно з образом через `emulator_changes.py`.
 
 ## Не виконано / обмеження
 
