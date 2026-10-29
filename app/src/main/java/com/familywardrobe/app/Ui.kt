@@ -72,7 +72,8 @@ fun label(code: String): Int = when (code) {
 }
 
 @Composable
-fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountEmail: String, onSignOut: () -> Unit, retryConnection: () -> Unit) {
+fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountEmail: String, onSignOut: () -> Unit, retryConnection: () -> Unit,
+    onAccountDeleted: () -> Unit = {}) {
     val snapshot by vm.state.collectAsStateWithLifecycle()
     val active by vm.active.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
@@ -406,7 +407,8 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                     if (wish.ownedId.isBlank()) { wishId = wish.id; navigate("wishdetail") }
                     else { selected = wish.ownedId; navigate("detail") }
                 })
-                "settings" -> Settings(vm, appearance, accountEmail, onSignOut, onNewWardrobe = { newWardrobe = true }, onManageWardrobes = { go("manage") }, onAppearance = { go("appearance") })
+                "settings" -> Settings(vm, appearance, accountEmail, onSignOut, onNewWardrobe = { newWardrobe = true }, onManageWardrobes = { go("manage") }, onAppearance = { go("appearance") },
+                    onAccountDeleted = onAccountDeleted)
                 "appearance" -> AppearanceScreen(appearance, onBrowse = { go("catalog") })
                 "manage" -> ManageWardrobes(snapshot, current.id, vm) { id ->
                     vm.select(id); go("catalog"); requestedCategory = ""
@@ -856,7 +858,8 @@ fun SavedOutfit(outfit: Outfit, s: Snapshot, vm: WardrobeViewModel, today: Strin
 }
 
 @Composable
-fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEmail: String, onSignOut: () -> Unit, onNewWardrobe: () -> Unit, onManageWardrobes: () -> Unit, onAppearance: () -> Unit) {
+fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEmail: String, onSignOut: () -> Unit, onNewWardrobe: () -> Unit, onManageWardrobes: () -> Unit, onAppearance: () -> Unit,
+    onAccountDeleted: () -> Unit = {}) {
     val busy by vm.busy.collectAsStateWithLifecycle()
     val appearance by appearanceVm.appearance.collectAsStateWithLifecycle()
     var signOutDialog by remember { mutableStateOf(false) }
@@ -912,6 +915,8 @@ fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEm
         Text(stringResource(R.string.local_version), style = MaterialTheme.typography.titleMedium)
         Text(stringResource(R.string.local_notice), style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
+        HorizontalDivider()
+        AccountDeletionControl(vm, accountEmail, onAccountDeleted)
     }
     if (signOutDialog) AlertDialog(onDismissRequest = { signOutDialog = false },
         title = { Text(stringResource(R.string.auth_logout_title)) },

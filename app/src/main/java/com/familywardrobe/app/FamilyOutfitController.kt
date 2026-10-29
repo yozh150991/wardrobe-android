@@ -194,7 +194,7 @@ internal class FamilyOutfitController(private val app: WardrobeApplication, priv
             mutable.value = state.copy(form = form, view = view, generation = state.generation + 1, problem = null, running = true)
         } else {
             require(!previous.submitted || state.recoverable)
-            require(previous.publication.identity == view.remote.identity)
+            require(previous.publication.identity.sameWardrobe(view.remote.identity))
             val draft = store.stage(view, previous.change, session.repository, checkpoint, FamilyChange.outfits(view.remote))
             try {
                 authorize(backend, state.remote); store.put(draft, previous)

@@ -21,7 +21,8 @@ internal object FamilyOutfitQueue {
         val rows = it.drafts
         require(rows.size <= LIMIT && rows.sumOf { d -> d.publication.size } <= MAX_BYTES)
         require(rows.all { d -> d.publication.identity.remoteId == remote && FamilyRules.validId(d.change.id) })
-        require(rows.map { d -> d.publication.identity }.distinct().size <= 1)
+        // One wardrobe per queue; drafts from before an ownership transfer keep the former owner (sameWardrobe).
+        require(rows.map { d -> d.publication.identity.remoteId to d.publication.identity.wardrobeId }.distinct().size <= 1)
         require(rows.map { d -> d.change.id }.distinct().size == rows.size)
         require(rows.map { d -> d.publication.archiveId }.distinct().size == rows.size)
         rows.forEach { d -> d.delta?.let { text -> FamilyChange.checkOutfit(text, d.change.id, d.change.creating) } }

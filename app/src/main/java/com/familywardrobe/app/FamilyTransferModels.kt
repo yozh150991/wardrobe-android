@@ -2,6 +2,11 @@ package com.familywardrobe.app
 
 internal data class FamilyArchiveIdentity(val remoteId: String, val wardrobeId: String, val ownerUid: String) {
     init { require(FamilyRules.validId(remoteId) && FamilyRules.validId(wardrobeId) && FamilyRules.validUid(ownerUid)) }
+    /**
+     * The owner changes only through an ownership transfer (FAM-04, 0.14.25). Queued drafts prepared before it stay
+     * valid: a change draft carries no owner, and a full-archive draft keeps its own envelope until it is rebased.
+     */
+    fun sameWardrobe(other: FamilyArchiveIdentity) = remoteId == other.remoteId && wardrobeId == other.wardrobeId
 }
 
 internal enum class FamilyMigrationPhase { PREPARED, STAGED, UPLOADED, VERIFIED }

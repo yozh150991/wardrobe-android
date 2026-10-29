@@ -11,7 +11,8 @@ internal object FamilyMediaQueue {
     const val MAX_JOURNAL = 1024 * 1024
     fun validate(rows: List<FamilyAddDraft>): List<FamilyAddDraft> = rows.also {
         require(it.size <= LIMIT && it.sumOf { d -> d.publication.size } <= MAX_BYTES)
-        require(it.map { d -> d.publication.identity }.distinct().size <= 1)
+        // One wardrobe per queue; drafts from before an ownership transfer keep the former owner (sameWardrobe).
+        require(it.map { d -> d.publication.identity.remoteId to d.publication.identity.wardrobeId }.distinct().size <= 1)
         require(it.map { d -> d.garmentId }.distinct().size == it.size)
         require(it.map { d -> d.publication.archiveId }.distinct().size == it.size)
     }

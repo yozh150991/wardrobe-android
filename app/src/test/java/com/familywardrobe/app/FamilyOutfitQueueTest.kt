@@ -64,11 +64,19 @@ class FamilyOutfitQueueTest {
         rejects { FamilyOutfitQueue.put(state(a), b.copy(change = b.change.copy(id = a.change.id)), null) }
         rejects { FamilyOutfitQueue.put(state(a), b.copy(publication = a.publication), null) }
     }
-    @Test fun differentOwnerOrWardrobeCannotJoinQueue() {
+    @Test fun differentWardrobeCannotJoinQueue() {
         val a = draft(); val b = draft()
-        for (other in listOf(identity.copy(ownerUid = "other"), identity.copy(wardrobeId = newId()), identity.copy(remoteId = newId()))) {
+        for (other in listOf(identity.copy(wardrobeId = newId()), identity.copy(remoteId = newId()))) {
             rejects { FamilyOutfitQueue.put(state(a), b.copy(publication = b.publication.copy(identity = other)), null) }
         }
+    }
+    /** FAM-04 (0.14.25): an ownership transfer changes only the owner; queued outfits stay valid and readable. */
+    @Test fun outfitsFromBeforeAnOwnershipTransferStayQueued() {
+        val a = draft(); val b = draft().let { it.copy(publication = it.publication.copy(identity = identity.copy(ownerUid = "new-owner"))) }
+        val joined = FamilyOutfitQueue.put(state(a), b, null)
+        assertEquals(listOf(a, b), joined.drafts)
+        val decoded = FamilyOutfitQueue.decode(FamilyOutfitQueue.encode(joined, "account", remote), "account", remote)
+        assertTrue(decoded.drafts.zip(joined.drafts).all { (x, y) -> FamilyOutfitQueue.same(x, y) })
     }
     @Test fun staleRebaseRemoveAndSubmittedStateRejected() {
         val a = draft(); val sent = a.copy(submitted = true)

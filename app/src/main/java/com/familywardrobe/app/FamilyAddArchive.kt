@@ -76,7 +76,8 @@ internal class FamilyAddArchive(private val context: AccountContext, private val
     }
     /** A full-archive draft only; with the server's delta support it becomes a change draft that never goes stale. */
     fun rebase(draft: FamilyAddDraft, remote: FamilyRemote, latest: Snapshot, latestPhotos: PhotoStore): FamilyAddDraft {
-        require(draft.publication.identity == remote.identity && draft.change == null)
+        // Decoded with its own identity (the envelope it was built with), re-staged with the current one.
+        require(draft.publication.identity.sameWardrobe(remote.identity) && draft.change == null)
         val temporaryId = newId(); val temporary = store.directory(temporaryId)
         var photos: PhotoStore? = null
         try {

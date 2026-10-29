@@ -3,6 +3,8 @@ package com.familywardrobe.app
 import android.content.Context
 import androidx.work.*
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.TimeUnit
 
@@ -50,6 +52,13 @@ internal object FamilySyncSchedule {
         // A damaged journal already fails closed. Cancellation and the epoch also stop an in-flight worker.
         runCatching { FamilySyncStore(context, identity).pauseAll() }
     }
+    /** Account deletion: every shared-sync job of [key] stops; the journals are erased with the account's data. */
+    fun cancelAll(context: Context, key: String) {
+        FamilySyncLocks.signOut(key)
+        WorkManager.getInstance(context.applicationContext).cancelAllWorkByTag(tag(key))
+    }
+    fun running(context: Context, key: String): Flow<Boolean> =
+        WorkManager.getInstance(context.applicationContext).getWorkInfosByTagFlow(tag(key)).map { rows -> rows.any { it.state == WorkInfo.State.RUNNING } }
 }
 private const val MAX_ATTEMPTS = 5
 internal enum class FamilyBackgroundRun { DONE, CONTINUE, RETRY, STOP }

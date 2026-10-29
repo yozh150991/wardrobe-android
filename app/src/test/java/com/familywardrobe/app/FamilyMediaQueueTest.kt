@@ -50,11 +50,20 @@ class FamilyMediaQueueTest {
         val error = runCatching { FamilyMediaQueue.put(rows, draft(1), null) }.exceptionOrNull()
         assertEquals(FamilyProblem.LIMIT, (error as FamilyTransferException).problem)
     }
-    @Test fun anotherWardrobeOrOwnerCannotBeCombined() {
+    @Test fun anotherWardrobeCannotBeCombined() {
         val a = draft()
-        for (foreign in listOf(identity.copy(remoteId = newId()), identity.copy(wardrobeId = newId()), identity.copy(ownerUid = "other"))) {
+        for (foreign in listOf(identity.copy(remoteId = newId()), identity.copy(wardrobeId = newId()))) {
             rejects { FamilyMediaQueue.put(listOf(a), draft().let { it.copy(publication = it.publication.copy(identity = foreign)) }, null) }
         }
+    }
+    /** FAM-04 (0.14.25): drafts queued before an ownership transfer keep the former owner and stay in the queue. */
+    @Test fun draftsFromBeforeAnOwnershipTransferStayQueuedWithNewOnes() {
+        val before = draft(); val after = draft().let { it.copy(publication = it.publication.copy(identity = identity.copy(ownerUid = "new-owner"))) }
+        val rows = FamilyMediaQueue.put(listOf(before), after, null)
+        assertEquals(listOf(before, after), rows)
+        val text = FamilyMediaQueue.encode(rows, "account", identity.remoteId)
+        assertEquals(rows, FamilyMediaQueue.decode(text, "account", identity.remoteId))
+        assertEquals(listOf(after), FamilyMediaQueue.remove(rows, before))
     }
     @Test fun onlyExactHeadCanBeSentAndRepeatedTapCannotAdvanceTail() {
         val a = draft(); val b = draft(); val rows = listOf(a, b)

@@ -150,8 +150,10 @@ for path in sorted(main.glob('*.kt')):
         failures.append(f'{path.name}: text field uses it.take(N) instead of TextLimits.input (BUG-05 regression)')
 # QA-04 (fixed in 0.14.14): the phone waits as long as the server may work on commit and edit (540 s).
 # 0.14.21: family_apply_change builds a new snapshot too and has the same server timeout.
-long_calls = re.search(r'setOf\(([^)]*)\)\) 540', source('FamilyBackend.kt'))
-missing = {'family_commit', 'family_edit_item', 'family_apply_change'} - set(re.findall(r'"(\w+)"', long_calls.group(1) if long_calls else ''))
+# 0.14.25: the ownership transfer rewrites the head; account deletion may handle up to 100 wardrobes.
+backend_source = source('FamilyBackend.kt')
+long_calls = re.search(r'LONG_CALLS = setOf\(([^)]*)\)', backend_source) if 'name in LONG_CALLS) 540' in backend_source else None
+missing = {'family_commit', 'family_edit_item', 'family_apply_change', 'family_transfer_owner', 'family_delete_account'} - set(re.findall(r'"(\w+)"', long_calls.group(1) if long_calls else ''))
 if missing:
     failures.append(f'FamilyBackend callable timeout is shorter than the server timeout for {sorted(missing)} (QA-04 regression)')
 # QA-06 (fixed in 0.14.14): a shared message used as the product name is cleaned like page metadata.

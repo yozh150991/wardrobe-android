@@ -32,7 +32,7 @@ internal class FamilyBackend(private val account: AuthIdentity, private val guar
     private suspend fun call(name: String, data: Map<String, Any>): Map<*, *> {
         check()
         try {
-            val result = functions.getHttpsCallable(name).apply { setTimeout(if (name in setOf("family_commit", "family_edit_item", "family_apply_change")) 540 else 180,TimeUnit.SECONDS) }
+            val result = functions.getHttpsCallable(name).apply { setTimeout(if (name in LONG_CALLS) 540 else 180,TimeUnit.SECONDS) }
                 .call(data + ("expectedActorUid" to account.uid)).await().data
             check(); return result as? Map<*, *> ?: throw FamilyTransferException(FamilyProblem.RETRY)
         } catch (e: FirebaseFunctionsException) {
@@ -46,6 +46,9 @@ internal class FamilyBackend(private val account: AuthIdentity, private val guar
                 reason in setOf(FamilyChange.LABEL_CONFLICT, FamilyChange.OUTFIT_CHANGED, FamilyChange.OUTFIT_DUPLICATE) -> FamilyProblem.CONFLICT
                 // Another member's commit won the race several times in a row: nothing is wrong with the change.
                 reason == FamilyChange.BUSY -> FamilyProblem.RETRY
+                // Membership changed meanwhile: refresh and choose again. The caller reads [reason] for the details.
+                reason in setOf(FamilyOwnership.OWNER_NOT_EDITOR, FamilyOwnership.OWNER_CHOICE_REQUIRED) -> FamilyProblem.CONFLICT
+                reason == FamilyOwnership.REAUTH_REQUIRED -> FamilyProblem.ACCESS
                 e.code in setOf(FirebaseFunctionsException.Code.UNAUTHENTICATED,FirebaseFunctionsException.Code.PERMISSION_DENIED) -> FamilyProblem.ACCESS
                 e.code in setOf(FirebaseFunctionsException.Code.NOT_FOUND,FirebaseFunctionsException.Code.FAILED_PRECONDITION) -> FamilyProblem.CONFIG
                 e.code in setOf(FirebaseFunctionsException.Code.ABORTED,FirebaseFunctionsException.Code.ALREADY_EXISTS) -> FamilyProblem.CONFLICT
@@ -56,8 +59,13 @@ internal class FamilyBackend(private val account: AuthIdentity, private val guar
             throw FamilyTransferException(problem, e, reason as? String)
         }
     }
+    private companion object {
+        /** A transfer rewrites the whole head archive; a deletion may transfer or delete up to 100 wardrobes. */
+        val LONG_CALLS = setOf("family_commit", "family_edit_item", "family_apply_change", "family_transfer_owner", "family_delete_account")
+    }
     suspend fun accessCall(operation: String, data: Map<String, Any>): Map<*, *> {
-        require(operation in setOf("directory", "invitations", "members", "invite", "respond_invite", "cancel_invite", "change_member", "leave", "edit_item"))
+        require(operation in setOf("directory", "invitations", "members", "invite", "respond_invite", "cancel_invite", "change_member", "leave",
+            "edit_item", "transfer_owner", "delete_account"))
         return call("family_$operation", data)
     }
     override suspend fun beginChange(draft: FamilyAddDraft): FamilyTicket =

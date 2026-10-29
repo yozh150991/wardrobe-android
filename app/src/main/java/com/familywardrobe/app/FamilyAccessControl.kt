@@ -73,6 +73,7 @@ private fun FamilyAccessDialog(vm: WardrobeViewModel, dismiss: () -> Unit) {
                                 FamilyAccessNotice.UPDATED -> R.string.family_member_updated
                                 FamilyAccessNotice.REVOKED -> R.string.family_member_revoked
                                 FamilyAccessNotice.LEFT -> R.string.family_member_left
+                                FamilyAccessNotice.TRANSFERRED -> R.string.family_owner_transferred
                             }), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                         }
                         state.problem?.let { problem ->
@@ -135,6 +136,7 @@ private fun FamilyAccessDialog(vm: WardrobeViewModel, dismiss: () -> Unit) {
                             FamilyInviteForm(vm, managed, familyDirectoryName(managed, content.wardrobes), state.completedRequest, enabled)
                         }
                         if (state.members.isEmpty()) item { Text(stringResource(R.string.family_no_members)) }
+                        else item { Text(stringResource(R.string.family_transfer_hint), style = MaterialTheme.typography.bodySmall) }
                         items(state.members, key = { "member:${it.uid}" }) { member ->
                             FamilyAccessCard {
                                 Text(member.email); Text(accessRole(member.role))
@@ -142,6 +144,13 @@ private fun FamilyAccessDialog(vm: WardrobeViewModel, dismiss: () -> Unit) {
                                 val changeText = stringResource(R.string.family_role_confirm, member.email, accessRole(nextRole))
                                 OutlinedButton(onClick = { val request = UUID.randomUUID().toString(); confirmation = FamilyAccessConfirmation(changeText) { vm.familyAccess.change(managed.remoteId, member, nextRole, request) } }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
                                     Text(stringResource(R.string.family_change_role, accessRole(nextRole)))
+                                }
+                                if (member.role == "editor") {
+                                    val transferText = stringResource(R.string.family_transfer_confirm,
+                                        familyDirectoryName(managed, content.wardrobes).ifBlank { stringResource(R.string.family_unnamed) }, member.email)
+                                    OutlinedButton(onClick = { val request = UUID.randomUUID().toString(); confirmation = FamilyAccessConfirmation(transferText) { vm.familyAccess.transfer(managed.remoteId, member, request) } }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
+                                        Text(stringResource(R.string.family_transfer))
+                                    }
                                 }
                                 val revokeText = stringResource(R.string.family_revoke_confirm, member.email)
                                 TextButton(onClick = { val request = UUID.randomUUID().toString(); confirmation = FamilyAccessConfirmation(revokeText) { vm.familyAccess.change(managed.remoteId, member, "revoked", request) } }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {

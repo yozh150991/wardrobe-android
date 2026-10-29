@@ -41,7 +41,7 @@ internal class FamilySyncOperations(context: AccountContext, identity: AuthIdent
             FamilySyncKind.OUTFIT -> requireNotNull(outfits.draft(remote)).publication
             else -> requireNotNull(media).publication
         }
-        if (publication != null && publication.identity != head.identity) throw FamilyTransferException(FamilyProblem.ACCESS)
+        if (publication != null && !publication.identity.sameWardrobe(head.identity)) throw FamilyTransferException(FamilyProblem.ACCESS)
         // Delta model: the server applies a change to whatever head is current, so it is never stale. An outfit
         // change can still be refused when someone else changed that outfit; that stops the batch like a conflict.
         if (media?.change != null) return FamilySyncDecision.Send(o)

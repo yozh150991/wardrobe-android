@@ -65,7 +65,7 @@ internal class FamilyPhotoArchive(private val context: AccountContext, private v
      * full-archive draft needs this; with the server's delta support it becomes a change draft.
      */
     suspend fun rebase(draft: FamilyAddDraft, remote: FamilyRemote, latest: Snapshot, latestPhotos: PhotoStore): FamilyAddDraft {
-        require(draft.publication.identity == remote.identity && draft.change == null)
+        require(draft.publication.identity.sameWardrobe(remote.identity) && draft.change == null)
         val kept = store.photos(draft.publication.archiveId)
         return stage(remote, latest, latestPhotos, draft.garmentId, FamilyChange.supported(remote)) { photos ->
             copier.copyPhoto(kept, draft.photoId, photos, draft.photoId); draft.photoId

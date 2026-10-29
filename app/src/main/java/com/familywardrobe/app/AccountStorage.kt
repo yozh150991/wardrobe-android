@@ -55,6 +55,19 @@ internal class AccountRegistry(private val context: Context) {
         }
         return AccountLocation(key, record.legacyOwner == key)
     }
+    /** Where [key]'s data lives, without registering it. Null when this device never opened the account. */
+    @Synchronized fun known(key: String): AccountLocation? {
+        require(AuthRules.validAccountKey(key))
+        val record = read()
+        return if (record.legacyOwner == key || key in record.separate) AccountLocation(key, record.legacyOwner == key) else null
+    }
+    /** After an account deletion erased its data. The old global storage is unclaimed again (and is empty). */
+    @Synchronized fun forget(key: String) {
+        require(AuthRules.validAccountKey(key))
+        val record = read()
+        if (record.legacyOwner != key && key !in record.separate) return
+        write(Record(record.legacyOwner.takeIf { it != key }, record.separate - key))
+    }
 }
 
 internal data class AccountLocation(val key: String, val legacy: Boolean) {

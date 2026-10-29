@@ -8,7 +8,7 @@ import kotlinx.coroutines.sync.withLock
 import java.util.UUID
 import kotlin.coroutines.coroutineContext
 
-internal enum class FamilyAccessNotice { INVITED, ACCEPTED, DECLINED, UPDATED, REVOKED, LEFT }
+internal enum class FamilyAccessNotice { INVITED, ACCEPTED, DECLINED, UPDATED, REVOKED, LEFT, TRANSFERRED }
 internal data class FamilyAccessState(val running: Boolean = false, val loaded: Boolean = false,
     val wardrobes: List<FamilyDirectoryEntry> = emptyList(), val invitations: List<FamilyInvitation> = emptyList(),
     val managedRemote: String = "", val members: List<FamilyMember> = emptyList(),
@@ -85,6 +85,16 @@ internal class FamilyAccessController(private val app: WardrobeApplication, priv
             "expectedVersion" to member.version, "requestId" to request))
         mutable.value = mutable.value.copy(notice = if (role == "revoked") FamilyAccessNotice.REVOKED else FamilyAccessNotice.UPDATED)
         reload(backend)
+    }
+    /**
+     * FAM-04: [member] (an active editor) becomes the owner; this account stays as an editor. A lost response is
+     * harmless: the server replays the same [request], and any other request finds that this account no longer owns it.
+     */
+    fun transfer(remote: String, member: FamilyMember, request: String) = run { backend ->
+        // The owner's read lease and export permission end with the role.
+        reader.invalidate()
+        FamilyOwnership.transferResult(backend.accessCall("transfer_owner", FamilyOwnership.transferRequest(remote, member, request)), remote, member.uid)
+        mutable.value = mutable.value.copy(notice = FamilyAccessNotice.TRANSFERRED); reload(backend)
     }
     fun leave(remote: String, request: String = UUID.randomUUID().toString()) = run { backend ->
         // Hide cached photos before a potentially ambiguous network response.
