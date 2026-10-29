@@ -8,6 +8,11 @@ commit between read and publish only makes the server apply the change again to 
 Change JSON (bound to the change ID on first apply; a replay must send the identical text):
   {"kind":"add","garment":{row},"customCategory":{row}|null,"customColor":{row}|null,"photo":{"id":ID,"ext":"jpg"|"png"}}
   {"kind":"photo","garmentId":ID,"fingerprint":""|HASH,"photo":{"id":ID,"ext":"jpg"|"png"}}
+  {"kind":"outfit","outfit":{row},"parts":[rows],"ideas":[rows],"previous":null|{"outfit":{row},"parts":[rows],"ideas":[rows]}}
+
+An outfit change uploads nothing: apply_change creates its request record itself. It carries the outfit's own rows as
+the phone resolved them, and for an edit the rows the editor started from. Only a change to that same outfit by someone
+else in the meantime is a conflict (CHANGE_OUTFIT_CHANGED); commits to other outfits or items are not.
 """
 import copy
 import hashlib
@@ -19,7 +24,7 @@ from .archive import MAX_ARCHIVE, MAX_PHOTO, validate_archive
 from .errors import FamilyError, require
 from .schema import HASH, integer, label_key, row_shape, strict_json, valid_id
 
-FEATURES = ['change1']
+FEATURES = ['change1', 'outfit1']
 MAX_CHANGE_ARCHIVE = MAX_PHOTO + 64 * 1024
 MAX_CHANGE_JSON = 64 * 1024
 APPLY_ATTEMPTS = 3
@@ -42,13 +47,53 @@ def referenced_photos(snapshot):
     return photos
 
 
+def outfit_rows(rows):
+    """{"outfit","parts","ideas"} of one outfit, shaped exactly like manifest rows."""
+    require(type(rows) is dict and set(rows) == {'outfit', 'parts', 'ideas'}, 'Invalid outfit change')
+    row_shape('outfits', rows['outfit']); oid = rows['outfit']['id']
+    require(type(rows['parts']) is list and type(rows['ideas']) is list and 1 <= len(rows['parts']) + len(rows['ideas']) <= 12,
+            'Invalid outfit change')
+    for kind in ('parts', 'ideas'):
+        for row in rows[kind]:
+            row_shape(kind, row); require(row['outfitId'] == oid, 'Invalid outfit change')
+    require(len({p['garmentId'] for p in rows['parts']}) == len(rows['parts']) and
+            len({i['partId'] for i in rows['ideas']}) == len(rows['ideas']), 'Invalid outfit change')
+    signature = '|'.join(sorted([p['garmentId'] for p in rows['parts']] + [i['partId'] for i in rows['ideas']]))
+    require(rows['outfit']['signature'] == signature, 'Invalid outfit change')
+    return oid
+
+
+def same_outfit(a, b):
+    """Row-for-row equality; the order of parts and ideas carries no meaning."""
+    def key(rows):
+        return (rows['outfit'], sorted(p['garmentId'] for p in rows['parts']),
+                sorted(json.dumps(i, sort_keys=True) for i in rows['ideas']))
+    return key(a) == key(b)
+
+
+def current_outfit(snapshot, oid):
+    outfit = next((o for o in snapshot['outfits'] if o['id'] == oid), None)
+    if outfit is None:
+        return None
+    return {'outfit': outfit, 'parts': [p for p in snapshot['parts'] if p['outfitId'] == oid],
+            'ideas': [i for i in snapshot['ideas'] if i['outfitId'] == oid]}
+
+
 def parse_change(text):
     require(type(text) is str and 0 < len(text) <= MAX_CHANGE_JSON, 'Invalid change')
     change = strict_json(text)
-    require(type(change) is dict and change.get('kind') in ('add', 'photo'), 'Invalid change')
+    require(type(change) is dict and change.get('kind') in ('add', 'photo', 'outfit'), 'Invalid change')
     keys = {'add': {'kind', 'garment', 'customCategory', 'customColor', 'photo'},
-            'photo': {'kind', 'garmentId', 'fingerprint', 'photo'}}[change['kind']]
+            'photo': {'kind', 'garmentId', 'fingerprint', 'photo'},
+            'outfit': {'kind', 'outfit', 'parts', 'ideas', 'previous'}}[change['kind']]
     require(set(change) == keys, 'Unexpected change fields')
+    if change['kind'] == 'outfit':
+        oid = outfit_rows({k: change[k] for k in ('outfit', 'parts', 'ideas')})
+        previous = change['previous']
+        if previous is not None:
+            require(outfit_rows(previous) == oid, 'Invalid outfit change')
+            require(previous['outfit']['createdAt'] == change['outfit']['createdAt'], 'Invalid outfit change')
+        return change
     photo = change['photo']
     require(type(photo) is dict and set(photo) == {'id', 'ext'} and valid_id(photo['id']) and photo['ext'] in ('jpg', 'png'),
             'Invalid change photo')
@@ -81,9 +126,60 @@ def change_photo(data, photo):
         raise FamilyError('invalid-argument', 'Invalid change archive') from exc
 
 
+def apply_outfit(s, change, wardrobe_id):
+    outfit = copy.deepcopy(change['outfit']); oid = outfit['id']
+    parts = copy.deepcopy(change['parts']); ideas = copy.deepcopy(change['ideas'])
+    require(outfit['wardrobeId'] == wardrobe_id, 'Cross-wardrobe record')
+    current = current_outfit(s, oid)
+    if change['previous'] is None:
+        require(current is None, 'Outfit ID collision', 'already-exists')
+    elif current is None:
+        raise FamilyError('failed-precondition', 'Outfit no longer exists', 'CHANGE_ITEM_MISSING')
+    elif not same_outfit(current, change['previous']):
+        raise FamilyError('failed-precondition', 'Outfit changed by someone else', 'CHANGE_OUTFIT_CHANGED')
+    garments = {g['id'] for g in s['garments'] if g['wardrobeId'] == wardrobe_id}
+    wishes = {w['id']: w for w in s['wishes'] if w['wardrobeId'] == wardrobe_id}
+    for p in parts:
+        if p['garmentId'] not in garments:
+            raise FamilyError('failed-precondition', 'Item no longer exists', 'CHANGE_ITEM_MISSING')
+    for i in ideas:
+        if i['wishId'] is not None:
+            wish = wishes.get(i['wishId'])
+            if wish is None or wish['ownedId'] or wish['photoId'] != i['photoId']:
+                raise FamilyError('failed-precondition', 'Wish changed or no longer exists', 'CHANGE_ITEM_MISSING')
+        else:
+            require(i['photoId'] == '', 'Invalid outfit change')
+    signature = outfit['signature']  # checked against the rows by parse_change
+    # Same rule as the phone: one outfit per combination in a wardrobe.
+    if any(o['id'] != oid and o['wardrobeId'] == wardrobe_id and o['signature'] == signature for o in s['outfits']):
+        raise FamilyError('failed-precondition', 'The same outfit exists', 'CHANGE_OUTFIT_DUPLICATE')
+    s['outfits'] = [o for o in s['outfits'] if o['id'] != oid] + [outfit]
+    s['parts'] = [p for p in s['parts'] if p['outfitId'] != oid] + parts
+    s['ideas'] = [i for i in s['ideas'] if i['outfitId'] != oid] + ideas
+    # Same as FamilyOutfitChange.apply: only capsules linked to this outfit are reconciled; manual extras
+    # and packed flags of items that stay are kept. Wears and plans describe the past and are never touched.
+    affected = {c['capsuleId'] for c in s['capsuleOutfits'] if c['outfitId'] == oid}
+    packing = [r for r in s['capsuleItems'] if r['capsuleId'] not in affected]
+    for capsule in sorted(affected):
+        old = [r for r in s['capsuleItems'] if r['capsuleId'] == capsule]
+        links = {c['outfitId'] for c in s['capsuleOutfits'] if c['capsuleId'] == capsule}
+        needed = [p['garmentId'] for p in s['parts'] if p['outfitId'] in links] + [r['garmentId'] for r in old if r['manual']]
+        for garment in dict.fromkeys(needed):
+            packing.append(next((r for r in old if r['garmentId'] == garment),
+                                {'capsuleId': capsule, 'garmentId': garment, 'manual': False, 'packed': False}))
+    s['capsuleItems'] = packing
+    referenced = referenced_photos(s)
+    dropped = {f"photos/{p}.{s['photoFiles'][p]}" for p in s['photoFiles'] if p not in referenced}
+    s['photoFiles'] = {p: e for p, e in s['photoFiles'].items() if p in referenced}
+    return s, dropped
+
+
 def apply_to_snapshot(snapshot, change, wardrobe_id):
     """Returns (changed snapshot, ZIP entries no longer referenced). Never mutates the input."""
-    s = copy.deepcopy(snapshot); photo = change['photo']
+    s = copy.deepcopy(snapshot)
+    if change['kind'] == 'outfit':
+        return apply_outfit(s, change, wardrobe_id)
+    photo = change['photo']
     require(photo['id'] not in s['photoFiles'], 'Photo ID collision', 'already-exists')
     if change['kind'] == 'add':
         garment = copy.deepcopy(change['garment'])
@@ -126,7 +222,7 @@ def changed_archive(source, root, change, photo_name, photo_bytes):
             envelope = envelope | {'snapshot': snapshot, 'baseRevision': root['revision']}
             output = io.BytesIO()
             with zipfile.ZipFile(output, 'w') as dest:
-                for name in sorted((set(archive.namelist()) - dropped) | {photo_name}):
+                for name in sorted((set(archive.namelist()) - dropped) | ({photo_name} if photo_name else set())):
                     manifest = name == 'manifest.json'
                     content = (json.dumps(envelope, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode('utf-8')
                                if manifest else photo_bytes if name == photo_name else archive.read(name))
@@ -190,21 +286,37 @@ class ApplyingService:
         return ticket(record)
 
     def apply_change(self, actor, data):
-        from .service import authenticate, fields, root_path, access, published_root
+        from .service import authenticate, fields, root_path, access, published_root, MAX_UPLOADS_PER_DAY
         authenticate(actor); fields(data, 'remoteId changeId change')
         path = root_path(data['remoteId']); require(valid_id(data['changeId']))
         text = data['change']; change = parse_change(text)
+        # Only additions and photo replacements stage a file (begin_change); an outfit change is just its JSON.
+        staged = change['kind'] != 'outfit'
         upload_path = f"{path}/uploads/{data['changeId']}"
         def check(tx, bind):
             now = self.clock()
             root, _ = access(tx, path, actor, now, edit=True)
             record = tx.get(upload_path)
+            if record is None and not staged and bind:
+                require(root['head'] is not None, 'Shared wardrobe has no snapshot', 'failed-precondition')
+                quota_path = f'familyQuotas/{actor.uid}'
+                quota = tx.get(quota_path) or {'roots': 0, 'day': 0, 'uploads': 0}
+                day = now // 86400000
+                count = quota['uploads'] if quota['day'] == day else 0
+                require(count < MAX_UPLOADS_PER_DAY, 'Daily upload limit', 'resource-exhausted')
+                record = {'archiveId': data['changeId'], 'kind': 'change', 'authorUid': actor.uid, 'status': 'pending',
+                          'request': text, 'createdAt': now}
+                tx.set(upload_path, record); tx.set(quota_path, quota | {'day': day, 'uploads': count + 1})
+                return root, record
             require(record and record.get('kind') == 'change' and record['authorUid'] == actor.uid, 'Upload access denied', 'permission-denied')
             if record.get('request') is not None:
                 require(record['request'] == text, 'Change ID conflict', 'already-exists')
+            # A staged reservation is only for a change with a photo, and an outfit request never has one.
+            require(('stagingPath' in record) == staged, 'Change ID conflict', 'already-exists')
             if record['status'] == 'committed':
                 return root, record
-            require(record['expiresAt'] > now, 'Upload expired', 'failed-precondition', 'UPLOAD_EXPIRED')
+            if staged:
+                require(record['expiresAt'] > now, 'Upload expired', 'failed-precondition', 'UPLOAD_EXPIRED')
             require(root['head'] is not None, 'Shared wardrobe has no snapshot', 'failed-precondition')
             if bind and record.get('request') is None:
                 record = record | {'request': text}
@@ -213,16 +325,18 @@ class ApplyingService:
         root, record = self.store.run(lambda tx: check(tx, True))
         if record['status'] == 'committed':
             return record['result']
-        try:
-            delta = self.archives.read(record['stagingPath'], record['size'])
-        except FamilyError as exc:
-            if exc.reason == 'ARCHIVE_MISSING':
-                _, latest = self.store.run(lambda tx: check(tx, False))
-                if latest['status'] == 'committed':
-                    return latest['result']
-            raise
-        require(hashlib.sha256(delta).hexdigest() == record['sha256'], 'Archive checksum mismatch')
-        photo_name, photo_bytes = change_photo(delta, change['photo'])
+        photo_name = photo_bytes = None
+        if staged:
+            try:
+                delta = self.archives.read(record['stagingPath'], record['size'])
+            except FamilyError as exc:
+                if exc.reason == 'ARCHIVE_MISSING':
+                    _, latest = self.store.run(lambda tx: check(tx, False))
+                    if latest['status'] == 'committed':
+                        return latest['result']
+                raise
+            require(hashlib.sha256(delta).hexdigest() == record['sha256'], 'Archive checksum mismatch')
+            photo_name, photo_bytes = change_photo(delta, change['photo'])
         for _ in range(APPLY_ATTEMPTS):
             head = root['head']
             source = self.archives.read(head['archive'], head['size'])
@@ -255,7 +369,9 @@ class ApplyingService:
                 raise
             if state == 'committed':
                 result, retired = value
-                self._discard(record['stagingPath']); self._retire(path, retired, final)
+                if staged:
+                    self._discard(record['stagingPath'])
+                self._retire(path, retired, final)
                 return result
             self._discard(final)
             if state == 'replayed':

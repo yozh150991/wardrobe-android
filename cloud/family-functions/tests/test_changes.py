@@ -10,7 +10,7 @@ from family.errors import FamilyError
 from family.service import Actor, FamilyService, MAX_UPLOADS_PER_DAY, UPLOAD_TTL_MS
 from test_family import MemoryArchives
 from test_membership import TransactionStore
-from fixtures import REMOTE, WARDROBE, GARMENT, PHOTO, CATEGORY, uid, archive, envelope, snapshot
+from fixtures import REMOTE, WARDROBE, GARMENT, PHOTO, CATEGORY, OUTFIT, WISH, CAPSULE, uid, archive, envelope, snapshot
 
 
 def png(color=(10, 120, 200, 255)):
@@ -25,7 +25,26 @@ def change_zip(photo_id, ext='png', extras=None, data=None):
     return target.getvalue()
 
 
-class ChangeTests(unittest.TestCase):
+class Helpers:
+    def root(self): return self.store.data[f'familyWardrobes/{REMOTE}']
+    def head(self):
+        with zipfile.ZipFile(io.BytesIO(self.blobs.data[self.root()['head']['archive']])) as z:
+            return json.loads(z.read('manifest.json'))['snapshot'], {i.filename: i for i in z.infolist()}
+    def error(self, code, call, reason=None):
+        with self.assertRaises(FamilyError) as caught: call()
+        self.assertEqual(code, caught.exception.code)
+        if reason: self.assertEqual(reason, caught.exception.reason)
+    def stage(self, change_id, photo, actor=None, payload=None):
+        payload = payload or change_zip(photo)
+        ticket = self.service.begin_change(actor or self.editor, dict(remoteId=REMOTE, changeId=change_id,
+                                                                     sha256=hashlib.sha256(payload).hexdigest(), size=len(payload)))
+        self.blobs.data[ticket['stagingPath']] = payload
+        return ticket
+    def apply(self, change_id, change, actor=None):
+        return self.service.apply_change(actor or self.editor, dict(remoteId=REMOTE, changeId=change_id, change=json.dumps(change)))
+
+
+class ChangeTests(Helpers, unittest.TestCase):
     def setUp(self):
         self.store = TransactionStore(); self.blobs = MemoryArchives(); self.now = 1800000000000
         self.service = FamilyService(self.store, self.blobs, lambda: self.now)
@@ -39,15 +58,6 @@ class ChangeTests(unittest.TestCase):
         self.blobs.data[upload['stagingPath']] = data
         self.service.commit(self.owner, dict(remoteId=REMOTE, archiveId=uid(700)))
 
-    def root(self): return self.store.data[f'familyWardrobes/{REMOTE}']
-    def head(self):
-        with zipfile.ZipFile(io.BytesIO(self.blobs.data[self.root()['head']['archive']])) as z:
-            return json.loads(z.read('manifest.json'))['snapshot'], {i.filename: i for i in z.infolist()}
-    def error(self, code, call, reason=None):
-        with self.assertRaises(FamilyError) as caught: call()
-        self.assertEqual(code, caught.exception.code)
-        if reason: self.assertEqual(reason, caught.exception.reason)
-
     def garment(self, number, photo, **fields):
         g = copy.deepcopy(snapshot()['garments'][0])
         g.update(id=uid(number), photoId=photo, name=f'Item {number}', customCategoryId=None, customColorId=None, photoFingerprint='')
@@ -57,16 +67,6 @@ class ChangeTests(unittest.TestCase):
         if category_field: fields['category'] = category_field
         return dict(kind='add', garment=self.garment(number, photo, **fields), customCategory=category, customColor=color,
                     photo=dict(id=photo, ext='png'))
-
-    def stage(self, change_id, photo, actor=None, payload=None):
-        payload = payload or change_zip(photo)
-        ticket = self.service.begin_change(actor or self.editor, dict(remoteId=REMOTE, changeId=change_id,
-                                                                     sha256=hashlib.sha256(payload).hexdigest(), size=len(payload)))
-        self.blobs.data[ticket['stagingPath']] = payload
-        return ticket
-
-    def apply(self, change_id, change, actor=None):
-        return self.service.apply_change(actor or self.editor, dict(remoteId=REMOTE, changeId=change_id, change=json.dumps(change)))
 
     def test_head_advertises_server_side_changes(self):
         self.assertIn('change1', self.service.resume(self.viewer, dict(remoteId=REMOTE))['features'])
@@ -194,6 +194,147 @@ class ChangeTests(unittest.TestCase):
         payload = change_zip(uid(501))
         self.error('failed-precondition', lambda: self.service.begin_change(self.owner, dict(remoteId=other, changeId=uid(500),
                    sha256=hashlib.sha256(payload).hexdigest(), size=len(payload))))
+
+
+
+G2 = uid(30)
+
+
+class OutfitChangeTests(Helpers, unittest.TestCase):
+    """kind 'outfit': no staged file; only the same outfit changed by someone else conflicts."""
+    def setUp(self):
+        self.store = TransactionStore(); self.blobs = MemoryArchives(); self.now = 1800000000000
+        self.service = FamilyService(self.store, self.blobs, lambda: self.now)
+        self.owner = Actor('owner', True); self.editor = Actor('editor', True); self.viewer = Actor('viewer', True)
+        self.service.create(self.owner, dict(remoteId=REMOTE, wardrobeId=WARDROBE))
+        for actor, role in [(self.editor, 'editor'), (self.viewer, 'viewer')]:
+            self.store.seed(f'familyWardrobes/{REMOTE}/members/{actor.uid}', dict(active=True, role=role, expiresAt=self.now + 10**9))
+        state = snapshot()
+        state['garments'].append(dict(state['garments'][0], id=G2, name='Jeans', category='bottom', customCategoryId=None, customColorId=None))
+        data = archive(envelope(state=state))
+        upload = self.service.begin_upload(self.owner, dict(remoteId=REMOTE, archiveId=uid(700), baseRevision=0,
+                                                            sha256=hashlib.sha256(data).hexdigest(), size=len(data)))
+        self.blobs.data[upload['stagingPath']] = data
+        self.service.commit(self.owner, dict(remoteId=REMOTE, archiveId=uid(700)))
+
+    def rows(self, oid=OUTFIT, garments=(GARMENT,), ideas=(), name='Look', created=0, layout=''):
+        parts = [dict(outfitId=oid, garmentId=g) for g in garments]
+        idea_rows = [dict(outfitId=oid, partId='idea:' + c, wishId=None, category=c, name='Idea', color='', photoId='') for c in ideas]
+        signature = '|'.join(sorted(list(garments) + ['idea:' + c for c in ideas]))
+        outfit = dict(id=oid, wardrobeId=WARDROBE, name=name, signature=signature, createdAt=created, occasion='everyday',
+                      weather='any_weather', source='owned' if not ideas else 'inspiration', layout=layout, background='paper')
+        return dict(outfit=outfit, parts=parts, ideas=idea_rows)
+
+    def outfit(self, rows, previous=None):
+        return dict(kind='outfit', previous=previous, **rows)
+
+    def current(self, oid=OUTFIT):
+        state, _ = self.head()
+        return state, next((o for o in state['outfits'] if o['id'] == oid), None)
+
+    def test_new_outfit_after_another_members_commit(self):
+        self.service.edit_item(self.owner, dict(remoteId=REMOTE, editId=uid(600), garmentId=GARMENT, baseRevision=1, changes={'size': 'M'}))
+        layout = json.dumps([dict(key='owned:' + G2, x=0.5, y=0.5, scale=1, z=0)])
+        receipt = self.apply(uid(800), self.outfit(self.rows(uid(801), garments=(G2,), name='Weekend', created=5, layout=layout)))
+        self.assertEqual((3, 'committed'), (receipt['revision'], receipt['status']))
+        state, outfit = self.current(uid(801))
+        self.assertEqual(('Weekend', G2, layout), (outfit['name'], outfit['signature'], outfit['layout']))
+        self.assertEqual([G2], [p['garmentId'] for p in state['parts'] if p['outfitId'] == uid(801)])
+        self.assertEqual('M', next(g for g in state['garments'] if g['id'] == GARMENT)['size'])
+        record = self.store.data[f'familyWardrobes/{REMOTE}/uploads/{uid(800)}']
+        self.assertNotIn('stagingPath', record)
+        self.assertEqual(receipt, self.apply(uid(800), self.outfit(self.rows(uid(801), garments=(G2,), name='Weekend', created=5, layout=layout))))
+        self.assertEqual(3, self.root()['revision'])
+
+    def test_edit_reconciles_linked_capsule_and_keeps_history(self):
+        before, _ = self.current()
+        changed = self.rows(garments=(G2,), ideas=('top',), name='Look 2')
+        self.apply(uid(800), self.outfit(changed, previous=self.rows()))
+        state, outfit = self.current()
+        self.assertEqual(('Look 2', 0, 'inspiration'), (outfit['name'], outfit['createdAt'], outfit['source']))
+        self.assertEqual([dict(capsuleId=CAPSULE, garmentId=G2, manual=False, packed=False)], state['capsuleItems'])
+        for kind in ('plans', 'wears', 'wishes', 'wishEvents', 'purchaseUndos'):
+            self.assertEqual(before[kind], state[kind])
+        self.assertEqual(['idea:top'], [i['partId'] for i in state['ideas'] if i['outfitId'] == OUTFIT])
+
+    def test_manual_and_packed_capsule_items_survive(self):
+        state, _ = self.head()
+        # Owner packs the item and adds the second one by hand (full archive, as before the delta model).
+        state['capsuleItems'] = [dict(capsuleId=CAPSULE, garmentId=GARMENT, manual=False, packed=True),
+                                 dict(capsuleId=CAPSULE, garmentId=G2, manual=True, packed=False)]
+        data = archive(envelope(base=1, state=state))
+        upload = self.service.begin_upload(self.owner, dict(remoteId=REMOTE, archiveId=uid(701), baseRevision=1,
+                                                            sha256=hashlib.sha256(data).hexdigest(), size=len(data)))
+        self.blobs.data[upload['stagingPath']] = data
+        self.service.commit(self.owner, dict(remoteId=REMOTE, archiveId=uid(701)))
+        self.apply(uid(800), self.outfit(self.rows(garments=(GARMENT, G2)), previous=self.rows()))
+        state, _ = self.head()
+        self.assertEqual({(GARMENT, False, True), (G2, True, False)},
+                         {(r['garmentId'], r['manual'], r['packed']) for r in state['capsuleItems']})
+
+    def test_only_the_same_outfit_changed_by_someone_else_conflicts(self):
+        self.apply(uid(800), self.outfit(self.rows(name='Theirs'), previous=self.rows()), actor=self.owner)
+        self.error('failed-precondition', lambda: self.apply(uid(810), self.outfit(self.rows(name='Mine'), previous=self.rows())),
+                   'CHANGE_OUTFIT_CHANGED')
+        self.assertEqual('Theirs', self.current()[1]['name'])
+        # Order of parts/ideas in "previous" carries no meaning.
+        self.apply(uid(820), self.outfit(self.rows(garments=(G2, GARMENT), name='Mine'), previous=self.rows(name='Theirs')))
+        self.assertEqual('Mine', self.current()[1]['name'])
+
+    def test_concurrent_edit_of_the_same_outfit_is_detected_on_retry(self):
+        def competitor():
+            self.blobs.after_put = None
+            self.apply(uid(900), self.outfit(self.rows(name='Theirs'), previous=self.rows()), actor=self.owner)
+        self.blobs.after_put = competitor
+        self.error('failed-precondition', lambda: self.apply(uid(800), self.outfit(self.rows(name='Mine'), previous=self.rows())),
+                   'CHANGE_OUTFIT_CHANGED')
+        self.assertEqual((2, 'Theirs'), (self.root()['revision'], self.current()[1]['name']))
+        self.assertEqual(sorted([self.root()['head']['archive'], self.root()['previousArchive']]),
+                         sorted(p for p in self.blobs.data if '/snapshots/' in p))
+
+    def test_missing_outfit_item_or_owned_wish_and_duplicate_combination(self):
+        self.error('failed-precondition', lambda: self.apply(uid(800), self.outfit(self.rows(uid(801)), previous=self.rows(uid(801)))),
+                   'CHANGE_ITEM_MISSING')
+        self.error('failed-precondition', lambda: self.apply(uid(810), self.outfit(self.rows(uid(811), garments=(uid(999),)))),
+                   'CHANGE_ITEM_MISSING')
+        wish = self.rows(uid(821), garments=(G2,))
+        wish['ideas'] = [dict(outfitId=uid(821), partId='wish:' + WISH, wishId=WISH, category='top', name='Shirt', color='', photoId=PHOTO)]
+        wish['outfit'].update(signature='|'.join(sorted([G2, 'wish:' + WISH])), source='mixed')
+        self.error('failed-precondition', lambda: self.apply(uid(820), self.outfit(wish)), 'CHANGE_ITEM_MISSING')  # WISH is owned
+        self.error('failed-precondition', lambda: self.apply(uid(830), self.outfit(self.rows(uid(831)))), 'CHANGE_OUTFIT_DUPLICATE')
+        self.error('already-exists', lambda: self.apply(uid(840), self.outfit(self.rows())))
+        self.assertEqual(1, self.root()['revision'])
+
+    def test_malformed_outfit_changes_are_rejected_before_any_write(self):
+        good = self.rows(uid(801), garments=(G2,))
+        bad = [dict(good, parts=[dict(outfitId=uid(802), garmentId=G2)]),
+               dict(good, outfit=dict(good['outfit'], signature=GARMENT)),
+               dict(good, parts=[dict(outfitId=uid(801), garmentId=G2)] * 2),
+               dict(good, parts=[]),
+               dict(good, outfit=dict(good['outfit'], extra=1))]
+        for rows in bad:
+            with self.subTest(rows=rows):
+                self.error('invalid-argument', lambda: self.apply(uid(800), self.outfit(rows)))
+        self.error('invalid-argument', lambda: self.apply(uid(800), self.outfit(self.rows(created=9), previous=self.rows())))
+        self.error('invalid-argument', lambda: self.apply(uid(800), dict(self.outfit(good), photo=dict(id=uid(5), ext='png'))))
+        self.assertNotIn(f'familyWardrobes/{REMOTE}/uploads/{uid(800)}', self.store.data)
+
+    def test_outfit_request_id_cannot_become_a_photo_upload_or_another_change(self):
+        self.apply(uid(800), self.outfit(self.rows(uid(801), garments=(G2,))))
+        payload = change_zip(uid(811))
+        self.error('already-exists', lambda: self.service.begin_change(self.editor, dict(remoteId=REMOTE, changeId=uid(800),
+                   sha256=hashlib.sha256(payload).hexdigest(), size=len(payload))))
+        self.error('already-exists', lambda: self.apply(uid(800), self.outfit(self.rows(uid(801), garments=(G2,), name='Other'))))
+        self.stage(uid(810), uid(811))
+        self.error('already-exists', lambda: self.apply(uid(810), self.outfit(self.rows(uid(812), garments=(G2,), ideas=('top',)))))
+        self.error('permission-denied', lambda: self.apply(uid(820), self.outfit(self.rows(uid(821), garments=(G2,))), actor=self.viewer))
+
+    def test_outfit_changes_share_the_daily_quota(self):
+        self.store.seed('familyQuotas/editor', dict(roots=0, day=self.now // 86400000, uploads=MAX_UPLOADS_PER_DAY))
+        self.error('resource-exhausted', lambda: self.apply(uid(800), self.outfit(self.rows(uid(801), garments=(G2,)))))
+
+    def test_head_advertises_outfit_changes(self):
+        self.assertIn('outfit1', self.service.resume(self.viewer, dict(remoteId=REMOTE))['features'])
 
 
 if __name__ == '__main__':
