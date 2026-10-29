@@ -16,7 +16,7 @@ Live functions deploy попередніх 0.14.13–14 не підтвердж�
 Погоджений порядок: спрощення каталогу та імпорт → помічник покупки → сімейний доступ.
 Нова пряма вказівка користувача має перевагу над цим планом.
 
-**Актуальна контрольна точка:** 0.14.21/code51, Claude, 29.10.2026 (дельта-модель v1; гілка поверх PR #18, CI PR перевірити).
+**Актуальна контрольна точка:** 0.14.21/code51, Claude, 29.10.2026 (дельта-модель v1; PR #19 поверх PR #18, CI — 4/4 jobs pass).
 **Попередня контрольна точка:** 0.14.20/code50, Claude, 29.10.2026 (аудит-виправлення; CI PR #18 — 4/4 jobs pass).
 23 нових JVM-тести й 6 instrumented tests. Host runner: 23 suites pass, backend 148 pass; missing client config skipped.
 Android CI цієї гілки перевірити перед передачею.
@@ -569,5 +569,5 @@ and device acceptance remain pending; no live Firebase deployment is included.
 - Вказівка користувача 29.10: «Продовж» (наступний пункт роадмапу після аудит-виправлень). Версія 0.14.21-family-changes/code51, Room/backup 10 без змін.
 - Сервер: `family_begin_change`/`family_apply_change` (`family/applying.py`) — одне фото в staging + JSON зміни; застосування до поточного head, повна валідація, транзакційна публікація з повтором на новішому head, replay receipt; `features: ['change1']`. Storage/Firestore rules не змінені.
 - Телефон: `FamilyChange.kt`; чернетки додавання/фото з `change`, журнал черг v3; шлях обирається за `features`; без rebase для нових чернеток; стара чернетка при rebase стає новою. Пакети: OUTFIT → ADD → PHOTO → EDIT, зміни завжди надсилаються.
-- Перевірки тут: backend 170 pass (+15, 4 мутації спіймано), JVM-набори через локальний Kotlin 67/67, host pass. Android compile/lint/instrumentation/емулятори — CI PR. Пристрій не перевірено. Деталі: FAMILY-CHANGES-0.14.21.md.
+- Перевірки тут: backend 170 pass (+15, 4 мутації спіймано), JVM-набори через локальний Kotlin 67/67, host pass. CI PR #19 run 40908451923: 4/4 jobs pass (255 JVM, lint, APK; instrumentation 178 pass + 5 skipped; Firebase emulators з emulator_changes.py). Пристрій не перевірено. Деталі: FAMILY-CHANGES-0.14.21.md.
 - Далі: деплой functions (без нього клієнт лишається на повному архіві), native-перевірка; потім дельта для образів, continuous sync, FAM-04.

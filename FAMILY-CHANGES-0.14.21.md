@@ -64,7 +64,17 @@ family functions не задеплоєно, усе працює як у 0.14.20 
 - Локальний Kotlin 2.0.21 (з Gradle) + JUnit: `FamilySyncPlanTest`, `FamilyMediaQueueTest`, `FamilyChangeTest`, `FamilyPublicationTest` —
   67/67 pass на production-файлах `FamilySyncPlan/EditQueue/Transfer/TransferModels/Publication/MediaQueue/Change.kt` (заглушки лише для
   Android-класів).
-- Host checks — pass. Компіляція Android, lint, instrumentation і Firebase-емулятори — у CI PR.
+- Host checks — pass.
+
+## CI (PR #19, run 40908451923, commit 854e603)
+
+- Source and Git safety — pass (host-набори, backend 170).
+- Android debug preview — pass: компіляція Kotlin, 255 JVM-тестів (239 + 16), lint, схема Room, preview APK.
+- Android instrumentation (API 34) — pass: 183 тести, 178 pass, 5 skipped (`CloudEmulatorTest` без host-аргументу), включно з
+  `FamilyChangeStageTest`.
+- Firebase emulators — pass, включно з `emulator_changes.py`.
+- Перший запуск (40906890122) виявив дві проблеми тестів: `keySet()`/`similar()` немає в Android org.json і застарілу перевірку версії журналу
+  (2 → 3). Обидві виправлено.
 
 ## Не виконано / обмеження
 
