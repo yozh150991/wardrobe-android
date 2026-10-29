@@ -45,10 +45,10 @@ internal data class FamilySyncPlan(val id: String, val remote: String, val opera
 internal class FamilySyncChanged : IllegalStateException("Approved queue changed")
 internal object FamilySyncPlanner {
     /**
-     * A whole-archive outfit goes first: it is the only kind that still needs the head it was built on.
-     * Additions and photos are server-applied changes (delta model) that fit any head, and item details
-     * follow this batch's own commits safely (audit L-01). A legacy full-archive addition or photo after
-     * the outfit is deferred like before; only one whole archive can succeed on a given head anyway.
+     * Outfits go first: a full-archive outfit (prepared before the server applied outfit changes) still needs the
+     * head it was built on. Additions, photos and outfit changes are server-applied (delta model) and fit any head,
+     * and item details follow this batch's own commits safely (audit L-01). A legacy full-archive operation after
+     * another commit is deferred like before; only one whole archive can succeed on a given head anyway.
      */
     private val priority = listOf(FamilySyncKind.OUTFIT, FamilySyncKind.ADD, FamilySyncKind.PHOTO, FamilySyncKind.EDIT)
     /** Recover submitted heads first, then stable type priority; never reorder a type's FIFO. */
@@ -82,7 +82,7 @@ internal object FamilySyncPlanner {
         val c = d.change
         return FamilySyncOperation(FamilySyncKind.OUTFIT, d.publication.archiveId, fingerprint(publication(d.publication) +
             listOf(c.id, c.creating.toString(), c.name, c.occasion, c.weather, c.source, c.layout, c.background, c.createdAt.toString()) +
-            c.pieces.flatMap { listOf(it.key, it.category, it.name) }), d.submitted)
+            c.pieces.flatMap { listOf(it.key, it.category, it.name) } + listOfNotNull(d.delta)), d.submitted)
     }
 }
 internal interface FamilySyncPort {

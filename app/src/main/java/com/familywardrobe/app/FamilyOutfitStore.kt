@@ -6,8 +6,20 @@ import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 
-internal data class FamilyOutfitForm(val remote: String, val outfit: String, val base: Long, val payload: String = "")
-internal data class FamilyOutfitDraft(val publication: FamilyPublication, val change: FamilyOutfitChange, val submitted: Boolean = false)
+/**
+ * [origin] — the edited outfit's rows when the editor opened ([FamilyChange.outfitRows]); empty for a new outfit or a
+ * form saved before 0.14.22. With the server's outfit changes only a change to these rows makes the form stale.
+ */
+internal data class FamilyOutfitForm(val remote: String, val outfit: String, val base: Long, val payload: String = "",
+    val origin: String = "")
+/**
+ * [delta] — an outfit change the server applies to its newest head ([FamilyChange.outfit]); then the publication
+ * describes those UTF-8 bytes and no archive file exists. Without it the publication is a full snapshot archive.
+ */
+internal data class FamilyOutfitDraft(val publication: FamilyPublication, val change: FamilyOutfitChange, val submitted: Boolean = false,
+    val delta: String? = null) {
+    init { require(delta == null || delta.length in 1..FamilyChange.MAX_TEXT) }
+}
 
 /** Account-private, crash-safe editor state and a bounded publication queue per shared wardrobe. */
 internal class FamilyOutfitStore(private val context: AccountContext, private val account: AuthIdentity) {
@@ -80,8 +92,28 @@ internal class FamilyOutfitStore(private val context: AccountContext, private va
         write(remote, FamilyOutfitQueue.remove(state(remote), draft))
         directory(draft.publication.archiveId).deleteRecursively(); Unit
     }.also { FamilySyncLocks.touched(account.key) }
-    fun stage(view: FamilyReadView, change: FamilyOutfitChange, repo: Repository, guard: () -> Unit): FamilyOutfitDraft {
+    /** Rows of outfit [id] in [state] encoded like the manifest; the shared photos only provide file extensions. */
+    fun rows(view: FamilyReadView, state: Snapshot, id: String, repo: Repository): org.json.JSONObject? {
+        val outfit = state.outfits.find { it.id == id } ?: return null
+        val single = Snapshot(wardrobes = state.wardrobes, outfits = listOf(outfit), parts = state.parts.filter { it.outfitId == id },
+            ideas = state.ideas.filter { it.outfitId == id })
+        return FamilyChange.outfitRows(Backup(context, repo, view.candidate.photos).encode(single), id)
+    }
+    /**
+     * [delta]: the server applies the outfit's rows to its newest head, so nothing is uploaded; an edit carries the rows
+     * it started from (the shared outfit as of [view]). Otherwise a full snapshot archive is built as before.
+     */
+    fun stage(view: FamilyReadView, change: FamilyOutfitChange, repo: Repository, guard: () -> Unit, delta: Boolean = false): FamilyOutfitDraft {
         val changed = change.apply(view.candidate.snapshot, view.remote.identity.wardrobeId)
+        if (delta) {
+            val updated = requireNotNull(rows(view, changed, change.id, repo))
+            val previous = if (change.creating) null else requireNotNull(rows(view, view.candidate.snapshot, change.id, repo))
+            val text = FamilyChange.outfit(updated, previous); val bytes = text.toByteArray(Charsets.UTF_8)
+            val hash = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+            guard()
+            return FamilyOutfitDraft(FamilyPublication(view.remote.identity, newId(), view.remote.revision, hash, bytes.size.toLong()),
+                change, delta = text).also { FamilyChange.checkOutfit(text, change.id, change.creating) }
+        }
         val id = newId(); val directory = directory(id); check(directory.mkdirs())
         val photos = photos(id)
         try {

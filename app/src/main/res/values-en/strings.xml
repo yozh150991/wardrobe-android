@@ -1209,7 +1209,7 @@ Your current wardrobe is unchanged.</string>
     <string name="family_look_resume_form">Resume unfinished outfit</string>
     <string name="family_look_queue_hint">Up to 10 prepared outfits and 512 MB of archives per wardrobe. Send them in order; explicitly refresh the next draft after the server version changes. One unfinished editor form is preserved separately from the queue.</string>
     <string name="family_sync_title">Send shared changes</string>
-    <string name="family_sync_hint">Confirm the list of saved changes. New drafts are not added to this batch. Changes are sent in order. New items and photos are applied to the newest version; item details are updated automatically after this batch\'s own changes. An outfit (or an addition or photo prepared before the server update) built on an older version stays queued for refresh. Someone else\'s change on the server pauses the batch for review. Unfinished forms are not sent.</string>
+    <string name="family_sync_hint">Confirm the list of saved changes. New drafts are not added to this batch. Changes are sent in order. New items, photos and outfits are applied to the newest version; item details are updated automatically after this batch\'s own changes. A draft prepared before the server update that is built on an older version stays queued for refresh. Someone else\'s change to the same outfit, or before an item-detail edit, pauses the batch for review. Unfinished forms are not sent.</string>
     <string name="family_sync_progress">Completed: %1$d of %2$d</string>
     <string name="family_sync_done">The approved batch was sent. Refresh the shared wardrobe to see the changes.</string>
     <string name="family_sync_paused">Sending is stopped. Saved drafts remain available.</string>

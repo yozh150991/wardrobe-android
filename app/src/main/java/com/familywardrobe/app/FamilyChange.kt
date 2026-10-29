@@ -14,10 +14,14 @@ import java.io.File
  */
 internal object FamilyChange {
     const val FEATURE = "change1"
+    /** Outfit changes applied by the server (0.14.22): no upload at all, only the outfit's own rows. */
+    const val OUTFIT_FEATURE = "outfit1"
     const val ARCHIVE_MISSING = "ARCHIVE_MISSING"
     const val ITEM_MISSING = "CHANGE_ITEM_MISSING"
     const val LABEL_CONFLICT = "CHANGE_LABEL_CONFLICT"
     const val BUSY = "CHANGE_BUSY"
+    const val OUTFIT_CHANGED = "CHANGE_OUTFIT_CHANGED"
+    const val OUTFIT_DUPLICATE = "CHANGE_OUTFIT_DUPLICATE"
     /** Server limits: MAX_CHANGE_JSON (code points; a Kotlin length is never smaller) and MAX_CHANGE_ARCHIVE. */
     const val MAX_TEXT = 64 * 1024
     const val MAX_ARCHIVE = 12L * 1024 * 1024 + 64 * 1024
@@ -26,6 +30,42 @@ internal object FamilyChange {
         "capsuleItems", "capsuleOutfits", "purchaseUndos", "wishEvents")
 
     fun supported(remote: FamilyRemote) = FEATURE in remote.features
+    fun outfits(remote: FamilyRemote) = OUTFIT_FEATURE in remote.features
+
+    /**
+     * {"outfit","parts","ideas"} of outfit [id], taken from Backup.encode of a snapshot so the rows are exactly the
+     * manifest's; null when the snapshot has no such outfit.
+     */
+    fun outfitRows(state: JSONObject, id: String): JSONObject? {
+        fun rows(key: String) = state.getJSONArray(key).let { a -> (0 until a.length()).map { a.getJSONObject(it) } }
+        val outfit = rows("outfits").singleOrNull { it.getString("id") == id } ?: return null
+        return JSONObject().put("outfit", outfit)
+            .put("parts", JSONArray().apply { rows("parts").filter { it.getString("outfitId") == id }.forEach { put(it) } })
+            .put("ideas", JSONArray().apply { rows("ideas").filter { it.getString("outfitId") == id }.forEach { put(it) } })
+    }
+    /** [previous]: the rows the edit started from; null creates the outfit. */
+    fun outfit(rows: JSONObject, previous: JSONObject?): String {
+        val id = rows.getJSONObject("outfit").getString("id")
+        require(previous == null || previous.getJSONObject("outfit").getString("id") == id)
+        return JSONObject().put("kind", "outfit").put("outfit", rows.getJSONObject("outfit"))
+            .put("parts", rows.getJSONArray("parts")).put("ideas", rows.getJSONArray("ideas"))
+            .put("previous", previous ?: JSONObject.NULL).toString().also { require(it.length <= MAX_TEXT) }
+    }
+    /** Same rows regardless of the order of parts and ideas (the server compares them the same way). */
+    fun sameOutfit(a: String, b: String): Boolean {
+        fun flat(row: JSONObject) = row.keys().asSequence().sorted().joinToString("\u0000") { "$it=${row.get(it)}" }
+        fun key(text: String) = JSONObject(text).let { rows ->
+            fun list(name: String) = rows.getJSONArray(name).let { a -> (0 until a.length()).map { flat(a.getJSONObject(it)) }.sorted() }
+            Triple(flat(rows.getJSONObject("outfit")), list("parts"), list("ideas"))
+        }
+        return key(a) == key(b)
+    }
+    /** The outfit an outfit change describes, and the rows it started from (null when it creates the outfit). */
+    fun checkOutfit(text: String, outfitId: String, creating: Boolean) {
+        val change = JSONObject(text)
+        require(change.getString("kind") == "outfit" && change.getJSONObject("outfit").getString("id") == outfitId)
+        require(change.isNull("previous") == creating)
+    }
 
     /** [state] is Backup.encode of the one-item selection (FamilyAddition.select / FamilyNewItem.selection). */
     fun addition(state: JSONObject): String {
@@ -82,8 +122,8 @@ internal object FamilyChange {
         requireNotNull(draft.change); val p = draft.publication
         return mapOf("remoteId" to p.identity.remoteId, "changeId" to p.archiveId, "sha256" to p.hash, "size" to p.size)
     }
-    fun applyRequest(draft: FamilyAddDraft): Map<String, Any> =
-        mapOf("remoteId" to draft.remoteId, "changeId" to draft.publication.archiveId, "change" to requireNotNull(draft.change))
+    fun applyRequest(remoteId: String, changeId: String, text: String): Map<String, Any> =
+        mapOf("remoteId" to remoteId, "changeId" to changeId, "change" to text)
 
     /** Unlike a full archive, the ticket's baseRevision is just the current head (it lets Storage rules accept the upload). */
     fun ticket(value: Map<*, *>, draft: FamilyAddDraft, actor: String): FamilyTicket {
@@ -95,8 +135,8 @@ internal object FamilyChange {
         return FamilyTicket(path, value["status"] == "committed")
     }
     /** The committed revision; a replay returns the original receipt even after later commits. */
-    fun receipt(value: Map<*, *>, draft: FamilyAddDraft): Long {
-        require(value["status"] == "committed" && value["remoteId"] == draft.remoteId && value["changeId"] == draft.publication.archiveId)
+    fun receipt(value: Map<*, *>, remoteId: String, changeId: String): Long {
+        require(value["status"] == "committed" && value["remoteId"] == remoteId && value["changeId"] == changeId)
         require(FamilyRules.validId(value["archiveId"] as? String ?: ""))
         return number(value["revision"]).also { require(it >= 1) }
     }
@@ -116,7 +156,7 @@ internal object FamilyChange {
 
 internal interface FamilyChangeTransport {
     suspend fun beginChange(draft: FamilyAddDraft): FamilyTicket
-    suspend fun applyChange(draft: FamilyAddDraft): Long
+    suspend fun applyChange(remoteId: String, changeId: String, text: String): Long
     suspend fun upload(file: File, path: String, progress: (Long, Long) -> Unit)
 }
 
@@ -126,13 +166,20 @@ internal interface FamilyChangeTransport {
  */
 internal suspend fun publishFamilyChange(draft: FamilyAddDraft, backend: FamilyChangeTransport,
     checkedFile: () -> File, checkpoint: () -> Unit): Long {
-    requireNotNull(draft.change)
+    val text = requireNotNull(draft.change)
     val ticket = backend.beginChange(draft); checkpoint()
-    val revision = try { backend.applyChange(draft) }
+    val revision = try { backend.applyChange(draft.remoteId, draft.publication.archiveId, text) }
     catch (e: FamilyTransferException) {
         if (ticket.committed || e.reason != FamilyChange.ARCHIVE_MISSING) throw e
         checkpoint(); backend.upload(checkedFile(), ticket.path) { _, _ -> checkpoint() }
-        checkpoint(); backend.applyChange(draft)
+        checkpoint(); backend.applyChange(draft.remoteId, draft.publication.archiveId, text)
     }
+    checkpoint(); return revision
+}
+
+/** An outfit change uploads nothing: one idempotent call, retried with the same change ID and text. */
+internal suspend fun publishFamilyOutfitChange(draft: FamilyOutfitDraft, backend: FamilyChangeTransport, checkpoint: () -> Unit): Long {
+    val text = requireNotNull(draft.delta)
+    checkpoint(); val revision = backend.applyChange(draft.publication.identity.remoteId, draft.publication.archiveId, text)
     checkpoint(); return revision
 }

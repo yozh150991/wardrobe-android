@@ -105,13 +105,37 @@ class FamilyOutfitQueueTest {
         val json = FamilyOutfitQueue.encode(state(draft()), "account", remote)
         rejects { FamilyOutfitQueue.decode(json, "other", remote) }
         rejects { FamilyOutfitQueue.decode(json, "account", newId()) }
-        rejects { FamilyOutfitQueue.decode(JSONObject(json.toString()).put("version", 3), "account", remote) }
+        rejects { FamilyOutfitQueue.decode(JSONObject(json.toString()).put("version", 4), "account", remote) }
     }
     @Test fun invalidOrOversizedEditorPayloadRejected() {
         for (payload in listOf("broken", "{\"name\":\"" + "a".repeat(40_000) + "\"}")) {
             rejects { FamilyOutfitQueue.validate(FamilyOutfitJournal(FamilyOutfitForm(remote, "", 5, payload)), remote) }
         }
     }
+    private fun rows(id: String, name: String = "Look") = JSONObject().put("outfit", JSONObject().put("id", id).put("name", name))
+        .put("parts", org.json.JSONArray()).put("ideas", org.json.JSONArray())
+    @Test fun outfitChangeAndEditorOriginSurviveJournalV3() {
+        val created = draft().let { it.copy(delta = FamilyOutfitChangeText(it.change.id, null)) }
+        val edited = draft().let { d -> d.copy(change = d.change.copy(creating = false), delta = FamilyOutfitChangeText(d.change.id, rows(d.change.id))) }
+        val outfit = newId(); val form = FamilyOutfitForm(remote, outfit, 5, "{}", rows(outfit).toString())
+        val journal = FamilyOutfitJournal(form, listOf(created, edited, draft()))
+        val json = FamilyOutfitQueue.encode(journal, "account", remote)
+        assertEquals(3, json.getInt("version"))
+        assertEquals(journal, FamilyOutfitQueue.decode(json, "account", remote))
+        // A version 2 journal (no delta/origin fields) still opens.
+        val v2 = FamilyOutfitQueue.encode(FamilyOutfitJournal(form.copy(origin = ""), listOf(draft())), "account", remote).put("version", 2)
+        v2.getJSONObject("form").remove("origin"); v2.getJSONArray("drafts").getJSONObject(0).remove("delta")
+        assertEquals("", FamilyOutfitQueue.decode(v2, "account", remote).form?.origin)
+    }
+    @Test fun outfitChangeMustDescribeItsOwnLookAndOriginNeedsAnEditedLook() {
+        val a = draft()
+        rejects { FamilyOutfitQueue.validate(state(a.copy(delta = FamilyOutfitChangeText(newId(), null))), remote) }
+        rejects { FamilyOutfitQueue.validate(state(a.copy(delta = FamilyOutfitChangeText(a.change.id, rows(a.change.id)))), remote) }
+        rejects { FamilyOutfitQueue.validate(FamilyOutfitJournal(FamilyOutfitForm(remote, "", 5, "{}", "{}")), remote) }
+        rejects { a.copy(delta = "") }
+    }
+    /** A minimal change text: the queue checks only kind, outfit ID and whether it creates or edits. */
+    private fun FamilyOutfitChangeText(id: String, previous: JSONObject?) = FamilyChange.outfit(rows(id), previous)
     @Test fun formCannotCompeteWithAlreadyQueuedLook() {
         val a = draft()
         rejects { FamilyOutfitQueue.validate(state(a).copy(form = FamilyOutfitForm(remote, a.change.id, 5)), remote) }

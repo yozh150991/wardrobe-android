@@ -42,8 +42,10 @@ internal class FamilySyncOperations(context: AccountContext, identity: AuthIdent
             else -> requireNotNull(media).publication
         }
         if (publication != null && publication.identity != head.identity) throw FamilyTransferException(FamilyProblem.ACCESS)
-        // Delta model: the server applies a change to whatever head is current, so it is never stale.
+        // Delta model: the server applies a change to whatever head is current, so it is never stale. An outfit
+        // change can still be refused when someone else changed that outfit; that stops the batch like a conflict.
         if (media?.change != null) return FamilySyncDecision.Send(o)
+        if (o.kind == FamilySyncKind.OUTFIT && requireNotNull(outfits.draft(remote)).delta != null) return FamilySyncDecision.Send(o)
         val edit = if (o.kind == FamilySyncKind.EDIT) requireNotNull(edits.get(remote)) else null
         val base = publication?.baseRevision ?: requireNotNull(edit).baseRevision
         // A submitted request must probe its historical receipt even after the head advances.
@@ -83,8 +85,11 @@ internal class FamilySyncOperations(context: AccountContext, identity: AuthIdent
             }
             FamilySyncKind.OUTFIT -> {
                 val d = requireNotNull(outfits.draft(remote)); require(d.submitted)
-                publishFamilyAddition(d.publication, backend, { outfits.checked(d, checkpoint) }, checkpoint)
-                d.publication.baseRevision + 1
+                if (d.delta != null) publishFamilyOutfitChange(d, backend, checkpoint)
+                else {
+                    publishFamilyAddition(d.publication, backend, { outfits.checked(d, checkpoint) }, checkpoint)
+                    d.publication.baseRevision + 1
+                }
             }
             else -> {
                 val store = mediaStore(o.kind); val d = requireNotNull(store.get(remote)); require(d.submitted)

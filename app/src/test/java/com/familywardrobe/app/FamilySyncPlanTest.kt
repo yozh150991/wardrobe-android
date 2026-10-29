@@ -105,6 +105,15 @@ class FamilySyncPlanTest {
         assertFalse(a.matches(FamilySyncPlanner.edit(d.copy(baseRevision = 5))))
         assertFalse(a.matches(FamilySyncPlanner.edit(d.copy(values = fields + ("size" to "S")))))
     }
+    @Test fun outfitApprovalBindsTheOutfitChangeText() {
+        val d = FamilyOutfitDraft(FamilyPublication(FamilyArchiveIdentity(remote, newId(), "owner"), newId(), 4, "a".repeat(64), 100),
+            FamilyOutfitChange(newId(), true, "Look", listOf(LookPiece("idea:top", "top", "Top")), "everyday", "any_weather", "inspiration", "", "paper", 1))
+        val legacy = FamilySyncPlanner.outfit(d)
+        val change = FamilySyncPlanner.outfit(d.copy(delta = "{\"kind\":\"outfit\"}"))
+        assertFalse(legacy.matches(change))
+        assertFalse(change.matches(FamilySyncPlanner.outfit(d.copy(delta = "{\"kind\":\"outfit\",\"x\":1}"))))
+        assertTrue(legacy.matches(FamilySyncPlanner.outfit(d.copy(submitted = true))))
+    }
     @Test fun mediaApprovalBindsExactArchiveAndOperationType() {
         val d = FamilyAddDraft(FamilyPublication(FamilyArchiveIdentity(remote, newId(), "owner"), newId(), 4, "a".repeat(64), 100), newId(), newId(), "Shirt")
         val a = FamilySyncPlanner.media(FamilySyncKind.ADD, d)

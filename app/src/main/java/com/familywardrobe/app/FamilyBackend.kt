@@ -43,7 +43,7 @@ internal class FamilyBackend(private val account: AuthIdentity, private val guar
                 reason == "EDIT_ITEM_MISSING" -> FamilyProblem.MISSING
                 reason == "ARCHIVE_MISSING" -> FamilyProblem.MISSING
                 reason == FamilyChange.ITEM_MISSING -> FamilyProblem.MISSING
-                reason == FamilyChange.LABEL_CONFLICT -> FamilyProblem.CONFLICT
+                reason in setOf(FamilyChange.LABEL_CONFLICT, FamilyChange.OUTFIT_CHANGED, FamilyChange.OUTFIT_DUPLICATE) -> FamilyProblem.CONFLICT
                 // Another member's commit won the race several times in a row: nothing is wrong with the change.
                 reason == FamilyChange.BUSY -> FamilyProblem.RETRY
                 e.code in setOf(FirebaseFunctionsException.Code.UNAUTHENTICATED,FirebaseFunctionsException.Code.PERMISSION_DENIED) -> FamilyProblem.ACCESS
@@ -62,8 +62,8 @@ internal class FamilyBackend(private val account: AuthIdentity, private val guar
     }
     override suspend fun beginChange(draft: FamilyAddDraft): FamilyTicket =
         FamilyChange.ticket(call("family_begin_change", FamilyChange.beginRequest(draft)), draft, account.uid)
-    override suspend fun applyChange(draft: FamilyAddDraft): Long =
-        FamilyChange.receipt(call("family_apply_change", FamilyChange.applyRequest(draft)), draft)
+    override suspend fun applyChange(remoteId: String, changeId: String, text: String): Long =
+        FamilyChange.receipt(call("family_apply_change", FamilyChange.applyRequest(remoteId, changeId, text)), remoteId, changeId)
     override suspend fun create(record: FamilyMigrationRecord) = FamilyWire.remote(call("family_create",mapOf("remoteId" to record.remoteId,"wardrobeId" to record.wardrobeId)))
     override suspend fun resume(record: FamilyMigrationRecord) = FamilyWire.remote(call("family_resume",mapOf("remoteId" to record.remoteId)))
     override suspend fun readHead(remoteId: String): FamilyRemote {
