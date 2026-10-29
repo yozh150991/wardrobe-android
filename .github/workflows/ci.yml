@@ -192,7 +192,7 @@ jobs:
           script: bash -o pipefail -c "bash build-apk.sh -PciPreview=true connectedDebugAndroidTest 2>&1 | tee instrumentation.log"
       - name: Build and test errors as annotations
         if: failure()
-        run: python3 tools/ci_annotations.py instrumentation.log
+        run: python3 tools/ci_annotations.py instrumentation.log --junit app/build/outputs/androidTest-results
       - name: Instrumentation summary
         if: always()
         run: |
