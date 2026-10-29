@@ -13,6 +13,8 @@ from .errors import FamilyError, require
 from .schema import HASH, integer, valid_id
 from .membership import MembershipService
 from .editing import EditingService
+from .applying import ApplyingService, FEATURES
+from .ownership import OwnershipService
 
 UPLOAD_TTL_MS = 30 * 60 * 1000
 # Abandoned staging objects of the same author are purged on the next upload. Every upload record expires
@@ -27,6 +29,7 @@ class Actor:
     uid: str
     email_verified: bool
     email: str = ""
+    auth_time: int = 0  # seconds since the epoch of the sign-in behind the ID token (account deletion needs a recent one)
 
 
 def authenticate(actor):
@@ -59,7 +62,8 @@ def access(tx, path, actor, now, edit=False, owner=False):
 
 
 def public_head(root, role):
-    return {k: root[k] for k in ('remoteId','wardrobeId','ownerUid','revision','head')} | {'role':role}
+    # "features" lets new clients use server-side changes only once this backend is deployed.
+    return {k: root[k] for k in ('remoteId','wardrobeId','ownerUid','revision','head')} | {'role':role, 'features':FEATURES}
 
 
 def published_root(current, head, revision):
@@ -68,9 +72,9 @@ def published_root(current, head, revision):
     return current | {'head': head, 'revision': revision, 'previousArchive': previous}
 
 
-class FamilyService(MembershipService, EditingService):
-    def __init__(self, store, archives, clock=None):
-        self.store, self.archives = store, archives
+class FamilyService(MembershipService, EditingService, ApplyingService, OwnershipService):
+    def __init__(self, store, archives, clock=None, accounts=None):
+        self.store, self.archives, self.accounts = store, archives, accounts
         self.clock = clock or (lambda: int(time.time() * 1000))
 
     def _discard(self, path):
@@ -140,7 +144,8 @@ class FamilyService(MembershipService, EditingService):
             existing = tx.get(upload_path)
             expected = {k:data[k] for k in ('archiveId','baseRevision','sha256','size')} | {'authorUid':actor.uid}
             if existing:
-                require(all(existing[k] == v for k,v in expected.items()), 'Upload ID conflict', 'already-exists')
+                require(existing.get('kind', 'archive') == 'archive' and all(existing[k] == v for k,v in expected.items()),
+                        'Upload ID conflict', 'already-exists')
                 if existing['status'] == 'committed':
                     return existing
                 require(root['revision'] == data['baseRevision'], 'Revision conflict', 'aborted')
@@ -173,7 +178,8 @@ class FamilyService(MembershipService, EditingService):
         def check(tx):
             root, _ = access(tx, path, actor, self.clock(), edit=True)
             upload = tx.get(upload_path)
-            require(upload and upload['authorUid'] == actor.uid, 'Upload access denied', 'permission-denied')
+            require(upload and upload['authorUid'] == actor.uid and upload.get('kind', 'archive') == 'archive',
+                    'Upload access denied', 'permission-denied')
             if upload['status'] == 'committed':
                 return root, upload
             require(upload['expiresAt'] > self.clock(), 'Upload expired', 'failed-precondition', 'UPLOAD_EXPIRED')

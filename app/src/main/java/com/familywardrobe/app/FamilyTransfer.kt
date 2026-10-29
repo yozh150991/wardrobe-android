@@ -5,11 +5,14 @@ import kotlin.coroutines.coroutineContext
 import java.io.File
 
 internal enum class FamilyProblem { EMAIL, ACCESS, CONFIG, CONFLICT, EXPIRED, MISSING, CHANGED, OLDER, ARCHIVE, LIMIT, RETRY }
-internal class FamilyTransferException(val problem: FamilyProblem, cause: Throwable? = null) : Exception(problem.name, cause)
+/** [reason] is the server's structured reason (for example ARCHIVE_MISSING), when it sent one. */
+internal class FamilyTransferException(val problem: FamilyProblem, cause: Throwable? = null, val reason: String? = null) : Exception(problem.name, cause)
 internal enum class FamilyStep { CHECKING, PREPARING, UPLOADING, COMMITTING, VERIFYING, DONE }
 internal data class FamilyHead(val revision: Long, val base: Long, val archiveId: String, val path: String,
     val hash: String, val size: Long, val author: String)
-internal data class FamilyRemote(val identity: FamilyArchiveIdentity, val revision: Long, val head: FamilyHead?, val role: String)
+/** [features]: optional server capabilities, for example [FamilyChange.FEATURE]; an older server sends none. */
+internal data class FamilyRemote(val identity: FamilyArchiveIdentity, val revision: Long, val head: FamilyHead?, val role: String,
+    val features: Set<String> = emptySet())
 internal data class FamilyTicket(val path: String, val committed: Boolean)
 internal interface FamilyTransport {
     suspend fun authenticate()
@@ -114,7 +117,14 @@ internal object FamilyWire {
                 str(h,"authorUid").also { require(FamilyRules.validUid(it)) })
                 .also { require(it.revision == revision && it.base == revision - 1) }
         }
-        require((head == null) == (revision == 0L)); return FamilyRemote(identity,revision,head,role)
+        require((head == null) == (revision == 0L)); return FamilyRemote(identity,revision,head,role,features(m["features"]))
+    }
+    /** Unknown names are kept but ignored; anything but a short list of short strings is rejected. */
+    private fun features(value: Any?): Set<String> {
+        if (value == null) return emptySet()
+        val list = value as? List<*> ?: error("Invalid features")
+        require(list.size <= 32)
+        return list.map { (it as? String)?.takeIf { name -> name.length in 1..40 } ?: error("Invalid feature") }.toSet()
     }
     fun ticket(m: Map<*, *>, r: FamilyMigrationRecord): FamilyTicket {
         require(str(m,"archiveId") == r.archiveId && number(m,"baseRevision") == 0L && str(m,"sha256") == r.fingerprint &&

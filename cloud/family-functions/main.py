@@ -7,7 +7,7 @@ from firebase_functions import https_fn, options
 from family.errors import FamilyError
 from family.callable_wire import decode_request
 from family.service import Actor, FamilyService
-from family.firebase_adapters import FirestoreStore, StorageArchives
+from family.firebase_adapters import FirebaseAccounts, FirestoreStore, StorageArchives
 
 initialize()
 options.set_global_options(region='europe-west1', max_instances=2, concurrency=1,
@@ -25,7 +25,7 @@ def dispatch(request, method):
         decoded = auth.verify_id_token(token[7:], check_revoked=True)
     except (ValueError, auth.InvalidIdTokenError, auth.RevokedIdTokenError, auth.UserDisabledError):
         raise https_fn.HttpsError(https_fn.FunctionsErrorCode.UNAUTHENTICATED, 'Verified sign-in required')
-    actor = Actor(decoded['uid'], decoded.get('email_verified') is True, decoded.get('email', ''))
+    actor = Actor(decoded['uid'], decoded.get('email_verified') is True, decoded.get('email', ''), int(decoded.get('auth_time', 0)))
     data = request.data
     # New clients bind SDK token retrieval to the account that started the request.
     if type(data) is dict and 'expectedActorUid' in data:
@@ -35,7 +35,7 @@ def dispatch(request, method):
     bucket_name = os.environ.get('FAMILY_STORAGE_BUCKET')
     if not bucket_name:
         raise https_fn.HttpsError(https_fn.FunctionsErrorCode.FAILED_PRECONDITION, 'Family backend is not configured')
-    service = FamilyService(FirestoreStore(firestore.client()), StorageArchives(storage.bucket(bucket_name)))
+    service = FamilyService(FirestoreStore(firestore.client()), StorageArchives(storage.bucket(bucket_name)), accounts=FirebaseAccounts())
     try:
         return getattr(service, method)(actor, decode_request(method, data))
     except FamilyError as exc:
@@ -112,3 +112,26 @@ def family_leave(request: https_fn.CallableRequest):
 @https_fn.on_call(memory=options.MemoryOption.GB_1, timeout_sec=540)
 def family_edit_item(request: https_fn.CallableRequest):
     return dispatch(request, 'edit_item')
+
+
+@https_fn.on_call()
+def family_begin_change(request: https_fn.CallableRequest):
+    return dispatch(request, 'begin_change')
+
+
+# Applies a small change to the current head: reads, rewrites and validates the whole archive like edit_item.
+@https_fn.on_call(memory=options.MemoryOption.GB_1, timeout_sec=540)
+def family_apply_change(request: https_fn.CallableRequest):
+    return dispatch(request, 'apply_change')
+
+
+# Rewrites the head archive with the new owner in its envelope (like edit_item), so it gets the same resources.
+@https_fn.on_call(memory=options.MemoryOption.GB_1, timeout_sec=540)
+def family_transfer_owner(request: https_fn.CallableRequest):
+    return dispatch(request, 'transfer_owner')
+
+
+# Transfers or deletes every owned shared wardrobe, then removes the account's records, private cloud copy and user.
+@https_fn.on_call(memory=options.MemoryOption.GB_1, timeout_sec=540)
+def family_delete_account(request: https_fn.CallableRequest):
+    return dispatch(request, 'delete_account')

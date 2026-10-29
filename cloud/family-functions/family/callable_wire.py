@@ -28,11 +28,15 @@ def callable_integer(value):
     return number
 
 
+INTEGER_FIELDS = {'begin_upload': ('baseRevision', 'size'), 'edit_item': ('baseRevision',),
+                  'change_member': ('expectedVersion',), 'begin_change': ('size',), 'transfer_owner': ('expectedVersion',)}
+
+
 def decode_request(method, data):
-    if method not in ('begin_upload', 'change_member', 'edit_item') or type(data) is not dict:
+    if method not in INTEGER_FIELDS or type(data) is not dict:
         return data
     result = dict(data)
-    for key in (('baseRevision', 'size') if method == 'begin_upload' else ('baseRevision',) if method == 'edit_item' else ('expectedVersion',)):
+    for key in INTEGER_FIELDS[method]:
         if key in result:
             result[key] = callable_integer(result[key])
     return result

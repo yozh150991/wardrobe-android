@@ -106,6 +106,26 @@ internal class FamilyReaderController(private val app: WardrobeApplication, priv
             } finally { mutable.value = mutable.value.copy(running = false) }
         }
     }
+    /**
+     * FAM-04 (ADR-FAMILY-WARDROBES: owner only): a portable copy of the shared wardrobe as it is on the server now,
+     * members' changes included. It is taken from a fresh read under the reader lock, so no refresh can remove the
+     * view's files midway. Restoring it adds an independent local wardrobe; membership never travels with it.
+     */
+    suspend fun exportCopy(remoteId: String, uri: android.net.Uri) {
+        open(remoteId, refresh = true)
+        withContext(Dispatchers.IO) {
+            lock.withLock {
+                guard()
+                val view = mutable.value.view?.takeIf { it.remote.identity.remoteId == remoteId && readable(it) }
+                    ?: throw FamilyTransferException(mutable.value.problem ?: FamilyProblem.RETRY)
+                val role = FamilyRules.role(session.identity.uid, view.remote.identity.ownerUid, view.remote.role, true)
+                if (!FamilyRules.mayExport(role)) throw FamilyTransferException(FamilyProblem.ACCESS)
+                val work = coroutineContext
+                Backup(session.context, session.repository, view.candidate.photos)
+                    .exportSnapshot(uri, view.candidate.snapshot) { work.ensureActive(); guard() }
+            }
+        }
+    }
     suspend fun invalidate() = withContext(Dispatchers.IO) {
         lock.withLock { guard(); dropView(); mutable.value = FamilyReaderState() }
     }

@@ -62,7 +62,8 @@ class FamilyAddStoreTest {
         file.writeText(legacy.toString())
         val second = draft().let { it.copy(publication = it.publication.copy(identity = first.publication.identity)) }
         FamilyAddStore(context, identity).put(second, null)
-        assertEquals(2, org.json.JSONObject(file.readText()).getInt("version"))
+        // 0.14.21: the media journal is written as v3 (optional change text); v1/v2 are still read.
+        assertEquals(3, org.json.JSONObject(file.readText()).getInt("version"))
         assertEquals(listOf(first, second), store.list(first.remoteId))
     }
     @Test fun photoQueueAndAdditionQueueStayIsolated() = scenario { context, identity, additions ->

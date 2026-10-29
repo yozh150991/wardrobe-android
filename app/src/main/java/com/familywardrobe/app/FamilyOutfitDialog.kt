@@ -21,6 +21,8 @@ import org.json.JSONObject
 @Composable
 internal fun FamilyOutfitDialog(vm: WardrobeViewModel, remote: String, dismiss: () -> Unit) {
     val state by vm.familyOutfit.state.collectAsStateWithLifecycle()
+    // With automatic sending on, an unsent draft goes by itself; only a submitted one can be retried here (0.14.23).
+    val auto = remote in vm.familySync.auto.collectAsStateWithLifecycle().value
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var foreground by remember { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
     var tick by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
@@ -102,14 +104,17 @@ internal fun FamilyOutfitDialog(vm: WardrobeViewModel, remote: String, dismiss: 
                     if (draft != null) {
                         Text(draft.change.name, style = MaterialTheme.typography.titleMedium)
                         Text(stringResource(R.string.picker_parts, draft.change.pieces.size))
-                        Text(stringResource(R.string.family_edit_base, draft.publication.baseRevision))
+                        // An outfit change applies to the newest version; only a full archive is tied to its base.
+                        Text(if (draft.delta != null) stringResource(R.string.family_change_latest)
+                            else stringResource(R.string.family_edit_base, draft.publication.baseRevision))
                         if (draft.submitted) Text(stringResource(R.string.family_edit_pending))
                         val isHead = FamilyOutfitQueue.same(state.queue.firstOrNull(), draft)
                         if (!isHead) Text(stringResource(R.string.family_media_queue_wait))
-                        Button(onClick = { ask("send") }, enabled = !state.running && !state.recoverable && isHead, modifier = Modifier.fillMaxWidth()) {
+                        if (auto && !draft.submitted) Text(stringResource(R.string.family_auto_queued))
+                        else Button(onClick = { ask("send") }, enabled = !state.running && !state.recoverable && isHead, modifier = Modifier.fillMaxWidth()) {
                             Text(stringResource(if (draft.submitted) R.string.family_edit_retry else R.string.family_look_send))
                         }
-                        if (state.recoverable || !draft.submitted) OutlinedButton(onClick = { ask("rebase") }, enabled = !state.running, modifier = Modifier.fillMaxWidth()) {
+                        if (state.recoverable || (draft.delta == null && !draft.submitted)) OutlinedButton(onClick = { ask("rebase") }, enabled = !state.running, modifier = Modifier.fillMaxWidth()) {
                             Text(stringResource(R.string.family_add_rebase))
                         }
                         TextButton(onClick = { ask("discard") }, enabled = !state.running && (!draft.submitted || state.recoverable)) {

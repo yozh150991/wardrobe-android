@@ -3,6 +3,7 @@ package com.familywardrobe.app
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.coroutineContext
@@ -17,6 +18,20 @@ internal class FamilyOutfitController(private val app: WardrobeApplication, priv
     private val store = FamilyOutfitStore(session.context, session.identity)
     private val lock = FamilySyncLocks.account(session.identity.key); private val lease = FamilyReadLease()
     private val mutable = MutableStateFlow(FamilyOutfitState()); val state = mutable.asStateFlow()
+    /** Automatic sending (0.14.23) sends drafts in the background: the shown queue and draft follow the journal. */
+    init { scope.launch(Dispatchers.IO) { FamilySyncLocks.outbox(session.identity.key).collect {
+        try {
+            guard(); val shown = mutable.value
+            if (shown.running || shown.remote.isEmpty()) return@collect
+            val rows = store.list(shown.remote)
+            val draft = shown.draft?.let { d -> rows.find { it.publication.archiveId == d.publication.archiveId } }
+            mutable.update { s -> if (s.running || s.generation != shown.generation || s.remote != shown.remote) s else {
+                val gone = s.draft != null && draft == null
+                s.copy(queue = rows, draft = draft, synced = s.synced || gone, recoverable = s.recoverable && !gone,
+                    generation = if (gone) s.generation + 1 else s.generation)
+            } }
+        } catch (e: CancellationException) { throw e } catch (_: Exception) {}
+    } } }
     private fun guard() {
         if (!session.isOpen || app.authBackend.signedInIdentity()?.key != session.identity.key) throw CancellationException("Account changed")
     }
@@ -57,6 +72,20 @@ internal class FamilyOutfitController(private val app: WardrobeApplication, priv
             lease.grant(session.id, FamilyRules.role(session.identity.uid, it.identity.ownerUid, it.role, true), started, android.os.SystemClock.elapsedRealtime())
         }
     }
+    /** The edited outfit's rows in [view], or "" for a new outfit (or one that no longer exists). */
+    private fun origin(view: FamilyReadView, outfit: String) =
+        if (outfit.isEmpty()) "" else store.rows(view, view.candidate.snapshot, outfit, session.repository)?.toString().orEmpty()
+    /**
+     * With the server's outfit changes a form only goes stale when its own outfit changed: unrelated commits move the
+     * form to the newest revision silently. A form without [FamilyOutfitForm.origin] (saved before 0.14.22) and any
+     * form on an older server keep the exact-revision rule. Called under [formLock].
+     */
+    private fun current(form: FamilyOutfitForm, view: FamilyReadView): FamilyOutfitForm {
+        if (form.base == view.remote.revision || !FamilyChange.outfits(view.remote)) return form
+        val unchanged = if (form.outfit.isEmpty()) true
+            else form.origin.isNotEmpty() && origin(view, form.outfit).let { it.isNotEmpty() && FamilyChange.sameOutfit(form.origin, it) }
+        return if (unchanged) form.copy(base = view.remote.revision).also(store::putForm) else form
+    }
     private suspend fun fresh(backend: FamilyBackend, remote: String): FamilyReadView {
         authorize(backend, remote); reader.open(remote, refresh = true); guard()
         return reader.state.value.view?.takeIf { it.remote.identity.remoteId == remote && reader.readable(it) && it.remote.role in setOf("owner", "editor") }
@@ -80,7 +109,10 @@ internal class FamilyOutfitController(private val app: WardrobeApplication, priv
         if (draft == null) {
             if (savedForm == null && rows.size >= FamilyOutfitQueue.LIMIT) throw FamilyTransferException(FamilyProblem.LIMIT)
             val view = fresh(backend, remote)
-            val form = savedForm ?: formLock.withLock { FamilyOutfitForm(remote, outfit, view.remote.revision).also(store::putForm) }
+            val form = formLock.withLock {
+                savedForm?.let { current(it, view) }
+                    ?: FamilyOutfitForm(remote, outfit, view.remote.revision, origin = origin(view, outfit)).also(store::putForm)
+            }
             mutable.value = mutable.value.copy(form = form, hasForm = true, view = view,
                 problem = if (form.base != view.remote.revision) FamilyProblem.CONFLICT else null)
         }
@@ -107,13 +139,14 @@ internal class FamilyOutfitController(private val app: WardrobeApplication, priv
     fun prepare(generation: Long, pieces: List<LookPiece>, name: String, occasion: String, weather: String,
         source: String, target: String, layout: String, background: String) = run { backend, checkpoint -> formLock.withLock {
         val state = mutable.value; require(state.generation == generation && state.draft == null)
-        val form = requireNotNull(state.form)
-        if (store.list(form.remote).size >= FamilyOutfitQueue.LIMIT) throw FamilyTransferException(FamilyProblem.LIMIT)
-        val view = fresh(backend, form.remote)
-        mutable.value = mutable.value.copy(view = view)
+        val saved = requireNotNull(state.form)
+        if (store.list(saved.remote).size >= FamilyOutfitQueue.LIMIT) throw FamilyTransferException(FamilyProblem.LIMIT)
+        val view = fresh(backend, saved.remote)
+        val form = current(saved, view)
+        mutable.value = mutable.value.copy(view = view, form = form)
         if (view.remote.revision != form.base) throw FamilyTransferException(FamilyProblem.CONFLICT)
         val change = FamilyOutfitChange(target.ifEmpty { newId() }, target.isEmpty(), name, pieces, occasion, weather, source, layout, background)
-        val draft = store.stage(view, change, session.repository, checkpoint)
+        val draft = store.stage(view, change, session.repository, checkpoint, FamilyChange.outfits(view.remote))
         try {
             authorize(backend, form.remote); store.put(draft, null, preparedForm = form)
             // Publication and editor removal are one atomic journal update.
@@ -131,10 +164,15 @@ internal class FamilyOutfitController(private val app: WardrobeApplication, priv
         authorize(backend, remote)
         val previous = draft; draft = draft.copy(submitted = true); store.put(draft, previous)
         mutable.value = mutable.value.copy(draft = draft, recoverable = false, queue = store.list(remote))
-        try { publishFamilyAddition(draft.publication, backend, { store.checked(draft, checkpoint) }, checkpoint) }
-        catch (e: FamilyTransferException) {
-            if (e.problem in setOf(FamilyProblem.CONFLICT, FamilyProblem.EXPIRED, FamilyProblem.ARCHIVE, FamilyProblem.LIMIT))
-                mutable.value = mutable.value.copy(recoverable = true)
+        try {
+            if (draft.delta != null) publishFamilyOutfitChange(draft, backend, checkpoint)
+            else publishFamilyAddition(draft.publication, backend, { store.checked(draft, checkpoint) }, checkpoint)
+        } catch (e: FamilyTransferException) {
+            // An outfit change is only refused for good when its outfit changed meanwhile (then an explicit rebase
+            // applies it over the newest version), a selected item is gone or the request is invalid.
+            val definite = if (draft.delta != null) FamilyChange.definite(e)
+                else e.problem in setOf(FamilyProblem.CONFLICT, FamilyProblem.EXPIRED, FamilyProblem.ARCHIVE, FamilyProblem.LIMIT)
+            if (definite) mutable.value = mutable.value.copy(recoverable = true)
             throw e
         }
         checkpoint(); store.remove(draft)
@@ -148,14 +186,16 @@ internal class FamilyOutfitController(private val app: WardrobeApplication, priv
         val view = fresh(backend, state.remote)
         val previous = state.draft
         if (previous == null) {
-            val form = requireNotNull(state.form).copy(base = view.remote.revision)
+            // The user confirmed the newest version: it becomes the form's base and origin.
+            val saved = requireNotNull(state.form)
+            val form = saved.copy(base = view.remote.revision, origin = origin(view, saved.outfit))
             require(form.outfit.isEmpty() || view.candidate.snapshot.outfits.any { it.id == form.outfit })
             store.putForm(form)
             mutable.value = state.copy(form = form, view = view, generation = state.generation + 1, problem = null, running = true)
         } else {
             require(!previous.submitted || state.recoverable)
-            require(previous.publication.identity == view.remote.identity)
-            val draft = store.stage(view, previous.change, session.repository, checkpoint)
+            require(previous.publication.identity.sameWardrobe(view.remote.identity))
+            val draft = store.stage(view, previous.change, session.repository, checkpoint, FamilyChange.outfits(view.remote))
             try {
                 authorize(backend, state.remote); store.put(draft, previous)
                 store.directory(previous.publication.archiveId).deleteRecursively()

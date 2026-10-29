@@ -45,10 +45,12 @@ internal data class FamilySyncPlan(val id: String, val remote: String, val opera
 internal class FamilySyncChanged : IllegalStateException("Approved queue changed")
 internal object FamilySyncPlanner {
     /**
-     * Whole-archive operations go before item details: a metadata edit can follow this batch's own
-     * commits safely, while an archive built on the older revision cannot (audit L-01).
+     * Outfits go first: a full-archive outfit (prepared before the server applied outfit changes) still needs the
+     * head it was built on. Additions, photos and outfit changes are server-applied (delta model) and fit any head,
+     * and item details follow this batch's own commits safely (audit L-01). A legacy full-archive operation after
+     * another commit is deferred like before; only one whole archive can succeed on a given head anyway.
      */
-    private val priority = listOf(FamilySyncKind.ADD, FamilySyncKind.PHOTO, FamilySyncKind.OUTFIT, FamilySyncKind.EDIT)
+    private val priority = listOf(FamilySyncKind.OUTFIT, FamilySyncKind.ADD, FamilySyncKind.PHOTO, FamilySyncKind.EDIT)
     /** Recover submitted heads first, then stable type priority; never reorder a type's FIFO. */
     fun ordered(queues: Map<FamilySyncKind, List<FamilySyncOperation>>): List<FamilySyncOperation> {
         require(queues.all { (kind, rows) -> rows.all { it.kind == kind } })
@@ -72,13 +74,47 @@ internal object FamilySyncPlanner {
         p.archiveId, p.baseRevision.toString(), p.hash, p.size.toString())
     fun media(kind: FamilySyncKind, d: FamilyAddDraft): FamilySyncOperation {
         require(kind in setOf(FamilySyncKind.ADD, FamilySyncKind.PHOTO))
-        return FamilySyncOperation(kind, d.publication.archiveId, fingerprint(publication(d.publication) + listOf(d.garmentId, d.photoId, d.name)), d.submitted)
+        // The change text is part of the approval; a full-archive draft keeps its earlier fingerprint.
+        return FamilySyncOperation(kind, d.publication.archiveId, fingerprint(publication(d.publication) + listOf(d.garmentId, d.photoId, d.name) +
+            listOfNotNull(d.change)), d.submitted)
     }
     fun outfit(d: FamilyOutfitDraft): FamilySyncOperation {
         val c = d.change
         return FamilySyncOperation(FamilySyncKind.OUTFIT, d.publication.archiveId, fingerprint(publication(d.publication) +
             listOf(c.id, c.creating.toString(), c.name, c.occasion, c.weather, c.source, c.layout, c.background, c.createdAt.toString()) +
-            c.pieces.flatMap { listOf(it.key, it.category, it.name) }), d.submitted)
+            c.pieces.flatMap { listOf(it.key, it.category, it.name) } + listOfNotNull(d.delta)), d.submitted)
+    }
+}
+/**
+ * Automatic sending (0.14.23): a per-wardrobe switch, off by default. When it is on, every prepared change is
+ * sent in the background as an automatically approved batch of the whole queue. A batch stopped by a problem
+ * that needs the user (conflict, access, damaged draft, explicit stop) waits: automatic sending resumes only
+ * after the operation it stopped at changed (rebased, discarded or sent by hand) or the user turned the switch
+ * on again ([released]). Network trouble, sign-out and quota are retried later on their own.
+ */
+internal object FamilyAutoSync {
+    private val transient = setOf("", "PARTIAL", "RETRY", "RETRY_LIMIT", "SIGNED_OUT", "CHANGED", "LIMIT")
+    sealed interface Step {
+        /** Nothing queued. */
+        data object Idle : Step
+        /** A foreground batch is running, or a stopped batch waits for the user. */
+        data object Wait : Step
+        /** An unfinished background batch (automatic or approved by hand) continues first. */
+        data class Continue(val plan: FamilySyncPlan) : Step
+        /** A new automatic batch of these operations, in send order. */
+        data class Start(val operations: List<FamilySyncOperation>) : Step
+    }
+    fun decide(plan: FamilySyncPlan?, queue: List<FamilySyncOperation>, released: String = ""): Step = when {
+        plan != null && plan.active -> if (plan.background) Step.Continue(plan) else Step.Wait
+        queue.isEmpty() -> Step.Idle
+        plan != null && plan.id != released && blocked(plan, queue) -> Step.Wait
+        else -> Step.Start(queue.take(130))
+    }
+    /** True while the operation a stopped batch ended at is still queued unchanged and the problem needs the user. */
+    fun blocked(plan: FamilySyncPlan, queue: List<FamilySyncOperation>): Boolean {
+        if (plan.active || plan.problem in transient) return false
+        val stopped = plan.operations.getOrNull(plan.cursor) ?: return false
+        return queue.any { stopped.matches(it) }
     }
 }
 internal interface FamilySyncPort {

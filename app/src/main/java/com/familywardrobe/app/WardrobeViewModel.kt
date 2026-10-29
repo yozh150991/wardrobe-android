@@ -41,7 +41,22 @@ class WardrobeViewModel internal constructor(application: Application, private v
     internal val familyPhoto = FamilyPhotoController(application as WardrobeApplication, session, familyReader, viewModelScope)
     internal val familyOutfit = FamilyOutfitController(application as WardrobeApplication, session, familyReader, viewModelScope)
     internal val familyAccess = FamilyAccessController(application as WardrobeApplication, session, familyReader, viewModelScope)
+    internal val accountDeletion = AccountDeletionController(application as WardrobeApplication, session, viewModelScope)
     fun readFamily(remoteId: String, refresh: Boolean = false) = perform(OperationKind.CLOUD, cancellable = true) { familyReader.open(remoteId, refresh) }
+    /** FAM-04: the owner's portable copy of a shared wardrobe (fresh server read; no membership in the file). */
+    fun exportFamilyCopy(remoteId: String, uri: Uri) {
+        if (busy.value) return
+        perform(OperationKind.EXPORT, cancellable = true) {
+            try { familyReader.exportCopy(remoteId, uri); notice.value = R.string.family_export_done }
+            catch (e: CancellationException) {
+                withContext(NonCancellable + Dispatchers.IO) {
+                    val removed = runCatching { androidx.documentfile.provider.DocumentFile.fromSingleUri(accountContext, uri)?.delete() == true }.getOrDefault(false)
+                    notice.value = if (removed) R.string.operation_cancelled else R.string.operation_cancelled_file
+                }
+                throw e
+            }
+        }
+    }
     internal val family = FamilyTransferController(application as WardrobeApplication, session, viewModelScope)
     fun transferFamily(id: String, restart: Boolean = false) = perform(OperationKind.CLOUD, cancellable = true) { family.transfer(id, restart) }
     fun sendFamilyVerification() = perform(OperationKind.CLOUD) { family.sendVerification() }

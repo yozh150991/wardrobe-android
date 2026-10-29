@@ -66,7 +66,7 @@ internal fun AuthRoot(vm: AuthViewModel, appearance: AppearanceViewModel) {
                 }
             } }
             val wardrobe: WardrobeViewModel = viewModel(viewModelStoreOwner = session, factory = factory)
-            WardrobeApp(wardrobe, appearance, session.identity.email, vm::signOut, vm::checkSession)
+            WardrobeApp(wardrobe, appearance, session.identity.email, vm::signOut, vm::checkSession) { vm.accountDeleted(session.id) }
         }
     } else AuthScreen(vm, state)
 }
@@ -198,6 +198,7 @@ private fun AuthScreen(vm: AuthViewModel, state: AuthUiState) {
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = { submit() }),
                             supportingText = if (state.confirmationError) {{ Text(stringResource(R.string.auth_password_mismatch)) }} else null)
+                        state.notice?.let { AuthMessage(it) }
                         state.error?.let { AuthMessage(it, error = true) }
                         if (busy) {
                             LinearProgressIndicator(Modifier.fillMaxWidth())

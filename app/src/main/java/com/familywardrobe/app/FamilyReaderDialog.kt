@@ -1,6 +1,8 @@
 package com.familywardrobe.app
 
 import android.os.SystemClock
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,6 +22,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
+import java.time.LocalDate
 
 @Composable
 internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismiss: () -> Unit) {
@@ -32,6 +35,10 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
     var editing by rememberSaveable(remoteId) { mutableStateOf(false) }
     var photo by rememberSaveable(remoteId) { mutableStateOf(false) }
     var query by rememberSaveable(remoteId) { mutableStateOf("") }
+    // FAM-04: the owner's portable copy of the shared wardrobe (ADR: viewers and editors do not export).
+    val exportCopy = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        if (uri != null) vm.exportFamilyCopy(remoteId, uri)
+    }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var foreground by remember(lifecycle) { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
     var now by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
@@ -105,6 +112,13 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
                                         modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_add_open)) }
                                     OutlinedButton(onClick = { vm.familyOutfit.open(remoteId); outfit = true }, enabled = !busy,
                                         modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.family_look_open)) }
+                                }
+                                if (view.remote.role == "owner") {
+                                    OutlinedButton(onClick = { exportCopy.launch("family-wardrobe-${remoteId.take(8)}-${LocalDate.now()}.zip") },
+                                        enabled = !busy && !state.running, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                                        Text(stringResource(R.string.family_export))
+                                    }
+                                    Text(stringResource(R.string.family_export_hint), style = MaterialTheme.typography.bodySmall)
                                 }
                                 OutlinedTextField(value = query, onValueChange = { query = it }, singleLine = true,
                                     label = { Text(stringResource(R.string.family_read_search)) }, modifier = Modifier.fillMaxWidth())

@@ -3,6 +3,7 @@ package com.familywardrobe.app
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.coroutineContext
@@ -16,6 +17,25 @@ internal class FamilyAddController(private val app: WardrobeApplication, private
     private val lease = FamilyReadLease(); private val lock = FamilySyncLocks.account(session.identity.key)
     private val store = FamilyAddStore(session.context, session.identity)
     private val mutable = MutableStateFlow(FamilyAddState()); val state = mutable.asStateFlow()
+    /**
+     * Automatic sending (0.14.23) sends and removes drafts in the background: the shown queue and draft follow the
+     * outbox, so a sent draft disappears here instead of offering stale actions.
+     */
+    init { scope.launch(Dispatchers.IO) { FamilySyncLocks.outbox(session.identity.key).collect {
+        try {
+            guard(); val shown = mutable.value
+            if (shown.running || shown.remoteId.isEmpty()) return@collect
+            val rows = store.list(shown.remoteId)
+            val draft = shown.draft?.let { d -> rows.find { it.publication.archiveId == d.publication.archiveId } }
+            mutable.update { s -> if (s.running || s.generation != shown.generation || s.remoteId != shown.remoteId) s else {
+                val gone = s.draft != null && draft == null
+                if (gone) s.preview?.clearMemoryCache()
+                s.copy(queue = rows, draft = draft, preview = if (gone) null else s.preview, synced = s.synced || gone,
+                    recoverable = s.recoverable && !gone, generation = if (gone) s.generation + 1 else s.generation).let {
+                    if (gone) it.copy(selection = null) else it }
+            } }
+        } catch (e: CancellationException) { throw e } catch (_: Exception) {}
+    } } }
     fun readable() = session.isOpen && app.authBackend.signedInIdentity()?.key == session.identity.key && lease.permits(session.id, android.os.SystemClock.elapsedRealtime())
     private fun guard() {
         if (!session.isOpen || app.authBackend.signedInIdentity()?.key != session.identity.key) throw CancellationException("Account changed")
@@ -104,7 +124,8 @@ internal class FamilyAddController(private val app: WardrobeApplication, private
             FamilyAddition.select(source, item.id, view.candidate.snapshot.wardrobes.single()) to item.photoId
         }
         val draft = try {
-            archive.stage(view.remote, view.candidate.snapshot, selected, view.candidate.photos, session.photos, photoId)
+            if (FamilyChange.supported(view.remote)) archive.stageChange(view.remote, view.candidate.snapshot, selected, session.photos, photoId)
+            else archive.stage(view.remote, view.candidate.snapshot, selected, view.candidate.photos, session.photos, photoId)
         } finally { session.photos.unpin(setOf(photoId)) }
         try { authorize(backend, draft.remoteId); install(draft, null, checkpoint) }
         catch (e: Exception) { if (store.get(draft.remoteId, draft.garmentId) != draft) store.directory(draft.publication.archiveId).deleteRecursively(); throw e }
@@ -122,7 +143,8 @@ internal class FamilyAddController(private val app: WardrobeApplication, private
         try {
             val photoId = isolated.import(uri); checkpoint()
             val selected = fields.selection(view.candidate.snapshot.wardrobes.single(), isolated.fingerprint(photoId), view.candidate.snapshot)
-            val draft = archive.stage(view.remote, view.candidate.snapshot, selected, view.candidate.photos, isolated, photoId)
+            val draft = if (FamilyChange.supported(view.remote)) archive.stageChange(view.remote, view.candidate.snapshot, selected, isolated, photoId)
+                else archive.stage(view.remote, view.candidate.snapshot, selected, view.candidate.photos, isolated, photoId)
             try { authorize(backend, draft.remoteId); install(draft, null, checkpoint) }
             catch (e: Exception) { if (store.get(draft.remoteId, draft.garmentId) != draft) store.directory(draft.publication.archiveId).deleteRecursively(); throw e }
         } finally { isolated.clearMemoryCache(); temporary.deleteRecursively() }
@@ -134,11 +156,14 @@ internal class FamilyAddController(private val app: WardrobeApplication, private
         val previous = draft; draft = draft.copy(submitted = true); store.put(draft, previous)
         mutable.value = mutable.value.copy(draft = draft, recoverable = false, queue = store.list(draft.remoteId))
         try {
-            publishFamilyAddition(draft.publication, backend, { store.checked(draft, checkpoint) }, checkpoint)
+            if (draft.change != null) publishFamilyChange(draft, backend, { store.checked(draft, checkpoint) }, checkpoint)
+            else publishFamilyAddition(draft.publication, backend, { store.checked(draft, checkpoint) }, checkpoint)
         } catch (e: FamilyTransferException) {
-            // Only a definite pending-upload rejection makes rebase/discard safe.
-            if (e.problem in setOf(FamilyProblem.CONFLICT, FamilyProblem.EXPIRED, FamilyProblem.ARCHIVE, FamilyProblem.LIMIT))
-                mutable.value = mutable.value.copy(recoverable = true)
+            // Only a definite pending-upload rejection makes rebase/discard safe. A change draft never needs a
+            // rebase: it is only discarded after a rejection that retrying cannot fix.
+            val definite = if (draft.change != null) FamilyChange.definite(e)
+                else e.problem in setOf(FamilyProblem.CONFLICT, FamilyProblem.EXPIRED, FamilyProblem.ARCHIVE, FamilyProblem.LIMIT)
+            if (definite) mutable.value = mutable.value.copy(recoverable = true)
             throw e
         }
         checkpoint(); store.remove(draft); mutable.value.preview?.clearMemoryCache()
@@ -147,6 +172,7 @@ internal class FamilyAddController(private val app: WardrobeApplication, private
     }
     fun rebase(expected: FamilyAddDraft? = mutable.value.draft) = run { backend, checkpoint ->
         val previous = requireNotNull(expected); require(mutable.value.draft == previous); require(mutable.value.recoverable || !previous.submitted)
+        require(previous.change == null)
         val view = fresh(backend)
         val draft = FamilyAddArchive(session.context, session.repository, store, checkpoint)
             .rebase(previous, view.remote, view.candidate.snapshot, view.candidate.photos)

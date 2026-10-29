@@ -4,6 +4,7 @@ import android.net.Uri
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.coroutineContext
@@ -23,6 +24,24 @@ internal class FamilyPhotoController(private val app: WardrobeApplication, priva
     private val lease = FamilyReadLease(); private val lock = FamilySyncLocks.account(session.identity.key)
     private val store = FamilyAddStore(session.context, session.identity, "family-photo-replacements")
     private val mutable = MutableStateFlow(FamilyPhotoState()); val state = mutable.asStateFlow()
+    /**
+     * Automatic sending (0.14.23) sends and removes drafts in the background: the shown queue and draft follow the
+     * outbox, so a sent draft disappears here instead of offering stale actions.
+     */
+    init { scope.launch(Dispatchers.IO) { FamilySyncLocks.outbox(session.identity.key).collect {
+        try {
+            guard(); val shown = mutable.value
+            if (shown.running || shown.remoteId.isEmpty()) return@collect
+            val rows = store.list(shown.remoteId)
+            val draft = shown.draft?.let { d -> rows.find { it.publication.archiveId == d.publication.archiveId } }
+            mutable.update { s -> if (s.running || s.generation != shown.generation || s.remoteId != shown.remoteId) s else {
+                val gone = s.draft != null && draft == null
+                if (gone) s.preview?.clearMemoryCache()
+                s.copy(queue = rows, draft = draft, preview = if (gone) null else s.preview, synced = s.synced || gone,
+                    recoverable = s.recoverable && !gone, generation = if (gone) s.generation + 1 else s.generation)
+            } }
+        } catch (e: CancellationException) { throw e } catch (_: Exception) {}
+    } } }
     fun readable() = session.isOpen && app.authBackend.signedInIdentity()?.key == session.identity.key && lease.permits(session.id, android.os.SystemClock.elapsedRealtime())
     private fun guard() {
         if (!session.isOpen || app.authBackend.signedInIdentity()?.key != session.identity.key) throw CancellationException("Account changed")
@@ -95,7 +114,7 @@ internal class FamilyPhotoController(private val app: WardrobeApplication, priva
         if (store.list(remote).size >= FamilyMediaQueue.LIMIT) throw FamilyTransferException(FamilyProblem.LIMIT)
         val view = fresh(backend, remote)
         val archive = FamilyPhotoArchive(session.context, session.repository, store, checkpoint)
-        val draft = archive.stage(view.remote, view.candidate.snapshot, view.candidate.photos, garment, obtain)
+        val draft = archive.stage(view.remote, view.candidate.snapshot, view.candidate.photos, garment, FamilyChange.supported(view.remote), obtain)
         try { authorize(backend, draft.remoteId); store.put(draft, null); show(draft) }
         catch (e: Exception) { if (store.get(draft.remoteId, draft.garmentId) != draft) store.directory(draft.publication.archiveId).deleteRecursively(); throw e }
     }
@@ -123,11 +142,14 @@ internal class FamilyPhotoController(private val app: WardrobeApplication, priva
         val previous = draft; draft = draft.copy(submitted = true); store.put(draft, previous)
         mutable.value = mutable.value.copy(draft = draft, recoverable = false, queue = store.list(draft.remoteId))
         try {
-            publishFamilyAddition(draft.publication, backend, { store.checked(draft, checkpoint) }, checkpoint)
+            if (draft.change != null) publishFamilyChange(draft, backend, { store.checked(draft, checkpoint) }, checkpoint)
+            else publishFamilyAddition(draft.publication, backend, { store.checked(draft, checkpoint) }, checkpoint)
         } catch (e: FamilyTransferException) {
-            // Only a definite pending-upload rejection makes rebase/discard safe.
-            if (e.problem in setOf(FamilyProblem.CONFLICT, FamilyProblem.EXPIRED, FamilyProblem.ARCHIVE, FamilyProblem.LIMIT))
-                mutable.value = mutable.value.copy(recoverable = true)
+            // Only a definite pending-upload rejection makes rebase/discard safe. A change draft never needs a
+            // rebase: it is only discarded after a rejection that retrying cannot fix.
+            val definite = if (draft.change != null) FamilyChange.definite(e)
+                else e.problem in setOf(FamilyProblem.CONFLICT, FamilyProblem.EXPIRED, FamilyProblem.ARCHIVE, FamilyProblem.LIMIT)
+            if (definite) mutable.value = mutable.value.copy(recoverable = true)
             throw e
         }
         checkpoint(); store.remove(draft); mutable.value.preview?.clearMemoryCache()
@@ -136,6 +158,7 @@ internal class FamilyPhotoController(private val app: WardrobeApplication, priva
     }
     fun rebase(expected: FamilyAddDraft? = mutable.value.draft) = run { backend, checkpoint ->
         val previous = requireNotNull(expected); require(mutable.value.draft == previous); require(mutable.value.recoverable || !previous.submitted)
+        require(previous.change == null)
         val view = fresh(backend, previous.remoteId)
         val draft = FamilyPhotoArchive(session.context, session.repository, store, checkpoint)
             .rebase(previous, view.remote, view.candidate.snapshot, view.candidate.photos)

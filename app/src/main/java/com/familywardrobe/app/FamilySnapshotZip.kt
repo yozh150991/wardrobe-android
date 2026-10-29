@@ -13,12 +13,7 @@ internal object FamilySnapshotZip {
         FileOutputStream(target).use { output -> ZipOutputStream(output.buffered()).use { zip ->
             zip.putNextEntry(ZipEntry("manifest.json")); zip.write(manifest); zip.closeEntry()
             for (id in ids) {
-                guard(); val photo = photos.currentFile(id)
-                require(photo.isFile && photo.extension in setOf("jpg", "png") && photo.length() in 1..12L*1024*1024)
-                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                BitmapFactory.decodeFile(photo.path, bounds)
-                require(bounds.outWidth in 1..8192 && bounds.outHeight in 1..8192 && bounds.outWidth.toLong() * bounds.outHeight <= 16L*1024*1024)
-                require(bounds.outMimeType == if (photo.extension == "png") "image/png" else "image/jpeg")
+                guard(); val photo = checked(photos, id)
                 expanded += photo.length(); require(expanded <= 256L*1024*1024)
                 zip.putNextEntry(ZipEntry("photos/${photo.name}"))
                 photo.inputStream().use { PhotoStore.copyLimited(it, zip, 12L*1024*1024, guard) }; zip.closeEntry()
@@ -27,5 +22,30 @@ internal object FamilySnapshotZip {
             zip.finish(); zip.flush(); output.fd.sync()
         } }
         guard(); require(target.length() in 1..FamilyWire.MAX_ARCHIVE)
+    }
+    /** Same limits as the server's archive validation, checked before anything is uploaded. */
+    private fun checked(photos: PhotoStore, id: String): File {
+        val photo = photos.currentFile(id)
+        require(photo.isFile && photo.extension in setOf("jpg", "png") && photo.length() in 1..12L*1024*1024)
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(photo.path, bounds)
+        require(bounds.outWidth in 1..8192 && bounds.outHeight in 1..8192 && bounds.outWidth.toLong() * bounds.outHeight <= 16L*1024*1024)
+        require(bounds.outMimeType == if (photo.extension == "png") "image/png" else "image/jpeg")
+        return photo
+    }
+    /**
+     * Delta model: a ZIP with exactly one entry, photos/{id}.{ext}, stored (photos are already compressed).
+     * The server copies it into the new head byte for byte.
+     */
+    fun writeChange(target: File, photos: PhotoStore, photoId: String, guard: () -> Unit) {
+        guard(); val photo = checked(photos, photoId); val bytes = photo.readBytes(); guard()
+        val crc = java.util.zip.CRC32().apply { update(bytes) }
+        FileOutputStream(target).use { output -> ZipOutputStream(output.buffered()).use { zip ->
+            zip.putNextEntry(ZipEntry("photos/${photo.name}").apply {
+                method = ZipEntry.STORED; size = bytes.size.toLong(); compressedSize = size; this.crc = crc.value
+            })
+            zip.write(bytes); zip.closeEntry(); zip.finish(); zip.flush(); output.fd.sync()
+        } }
+        guard(); require(target.length() in 1..FamilyChange.MAX_ARCHIVE)
     }
 }

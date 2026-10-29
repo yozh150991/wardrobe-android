@@ -28,6 +28,8 @@ import kotlinx.coroutines.delay
 @Composable
 internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () -> Unit) {
     val state by vm.familyAdd.state.collectAsStateWithLifecycle()
+    // With automatic sending on, an unsent draft goes by itself; only a submitted one can be retried here (0.14.23).
+    val auto = remote in vm.familySync.auto.collectAsStateWithLifecycle().value
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var foreground by remember { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
     var tick by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
@@ -97,7 +99,7 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
                     if (state.synced) item { Text(stringResource(R.string.family_add_synced)) }
                     state.problem?.let { problem -> item { Text(stringResource(when (problem) {
                         FamilyProblem.ACCESS -> R.string.family_access
-                        FamilyProblem.CONFLICT -> R.string.family_add_conflict
+                        FamilyProblem.CONFLICT -> if (draft?.change != null) R.string.family_change_conflict else R.string.family_add_conflict
                         FamilyProblem.EXPIRED -> R.string.family_add_expired
                         FamilyProblem.ARCHIVE -> if (state.unreadablePhoto) R.string.photo_error_unreadable else R.string.family_archive
                         FamilyProblem.CONFIG -> R.string.family_members_config
@@ -113,7 +115,9 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
                         item {
                             Text(draft.name, style = MaterialTheme.typography.titleMedium)
                             state.preview?.let { ZoomableItemPhoto(draft.photoId, it, Modifier.fillMaxWidth().height(240.dp), draft.name) }
-                            Text(stringResource(R.string.family_edit_base, draft.publication.baseRevision))
+                            // A change draft is applied by the server to its newest head; only a full archive has a fixed base.
+                            Text(if (draft.change != null) stringResource(R.string.family_change_latest)
+                                else stringResource(R.string.family_edit_base, draft.publication.baseRevision))
                             Text(stringResource(R.string.family_add_saved))
                         }
                         state.selection?.let { selection ->
@@ -134,11 +138,12 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
                             }
                         }
                         if (draft.submitted) item { Text(stringResource(R.string.family_edit_pending)) }
-                        item { Button(onClick = { confirm = "send" }, enabled = !state.running && !state.recoverable && state.queue.firstOrNull() == draft, modifier = Modifier.fillMaxWidth()) {
+                        if (auto && !draft.submitted) item { Text(stringResource(R.string.family_auto_queued)) }
+                        else item { Button(onClick = { confirm = "send" }, enabled = !state.running && !state.recoverable && state.queue.firstOrNull() == draft, modifier = Modifier.fillMaxWidth()) {
                             Text(stringResource(if (draft.submitted) R.string.family_edit_retry else R.string.family_add_send))
                         } }
                         if (state.queue.firstOrNull() != draft) item { Text(stringResource(R.string.family_media_queue_wait)) }
-                        if (state.recoverable || (!draft.submitted && state.queue.firstOrNull() == draft)) item { OutlinedButton(onClick = { confirm = "rebase" }, enabled = !state.running, modifier = Modifier.fillMaxWidth()) {
+                        if (draft.change == null && (state.recoverable || (!draft.submitted && state.queue.firstOrNull() == draft))) item { OutlinedButton(onClick = { confirm = "rebase" }, enabled = !state.running, modifier = Modifier.fillMaxWidth()) {
                             Text(stringResource(R.string.family_add_rebase))
                         } }
                         item { TextButton(onClick = { confirm = "discard" }, enabled = !state.running && (!draft.submitted || state.recoverable), modifier = Modifier.fillMaxWidth()) {

@@ -4,9 +4,17 @@ import android.content.ContextWrapper
 import android.util.AtomicFile
 import java.io.File
 
+/**
+ * [change] — the delta model's change JSON ([FamilyChange]); then the publication describes the one-photo ZIP,
+ * its archive ID is the change ID and its base revision is only the head the draft was prepared on.
+ * Without [change] the publication is a full snapshot archive tied to that base revision.
+ */
 internal data class FamilyAddDraft(val publication: FamilyPublication, val garmentId: String, val photoId: String,
-    val name: String, val submitted: Boolean = false) {
-    init { require(FamilyRules.validId(garmentId) && FamilyRules.validId(photoId) && name.isNotBlank() && name.length <= 120) }
+    val name: String, val submitted: Boolean = false, val change: String? = null) {
+    init {
+        require(FamilyRules.validId(garmentId) && FamilyRules.validId(photoId) && name.isNotBlank() && name.length <= 120)
+        require(change == null || change.length in 1..FamilyChange.MAX_TEXT && publication.size <= FamilyChange.MAX_ARCHIVE)
+    }
     val remoteId get() = publication.identity.remoteId
 }
 
@@ -40,7 +48,7 @@ internal class FamilyAddStore(private val context: AccountContext, private val a
     private fun read(remote: String): List<FamilyAddDraft> {
         val file = journal(remote)
         if (!file.baseFile.exists() && !File(file.baseFile.path + ".bak").exists()) return emptyList()
-        val bytes = file.openRead().use { input -> java.io.ByteArrayOutputStream().also { PhotoStore.copyLimited(input, it, 64L * 1024) }.toByteArray() }
+        val bytes = file.openRead().use { input -> java.io.ByteArrayOutputStream().also { PhotoStore.copyLimited(input, it, FamilyMediaQueue.MAX_JOURNAL.toLong()) }.toByteArray() }
         return FamilyMediaQueue.decode(bytes.toString(Charsets.UTF_8), account.key, remote)
     }
     fun put(draft: FamilyAddDraft, expected: FamilyAddDraft?) = synchronized(lock) {
@@ -49,7 +57,7 @@ internal class FamilyAddStore(private val context: AccountContext, private val a
     }.also { FamilySyncLocks.touched(account.key) }
     private fun write(remote: String, rows: List<FamilyAddDraft>) {
         val bytes = FamilyMediaQueue.encode(rows, account.key, remote).toByteArray(Charsets.UTF_8)
-        require(bytes.size <= 64 * 1024); check(root.mkdirs() || root.isDirectory)
+        require(bytes.size <= FamilyMediaQueue.MAX_JOURNAL); check(root.mkdirs() || root.isDirectory)
         val file = journal(remote)
         if (!file.baseFile.exists() && !File(file.baseFile.path + ".bak").exists() &&
             root.listFiles().orEmpty().count { it.extension == "json" } >= 100) throw FamilyTransferException(FamilyProblem.LIMIT)

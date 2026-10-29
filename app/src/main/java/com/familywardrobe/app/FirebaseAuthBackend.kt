@@ -6,8 +6,10 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.tasks.await
 
 internal data class AuthIdentity(val project: String, val uid: String, val email: String) {
     val key: String get() = AuthRules.accountKey(project, uid)
@@ -15,6 +17,9 @@ internal data class AuthIdentity(val project: String, val uid: String, val email
 internal enum class AuthAction { LOGIN, SIGNUP, RESET }
 internal data class AuthReply(val identity: AuthIdentity? = null, val error: Int? = null)
 internal data class AuthRequestState(val busy: Boolean = false, val cancelling: Boolean = false)
+/** [GONE]: the server no longer knows this user (the account was deleted). */
+internal enum class AuthCheck { VALID, INVALID, GONE }
+internal enum class AuthReauth { OK, WRONG_PASSWORD, RATE_LIMITED, NETWORK, GONE, FAILED }
 
 /** The SDK manages credentials/tokens. No Activity-bound listener: every late result is settled. */
 internal class FirebaseAuthBackend(context: Context) {
@@ -76,16 +81,39 @@ internal class FirebaseAuthBackend(context: Context) {
     }
     fun signOut() = cancel()
 
-    fun checkSession(identity: AuthIdentity, result: (Boolean) -> Unit) {
+    fun checkSession(identity: AuthIdentity, result: (Boolean) -> Unit) = checkAccount(identity) { result(it == AuthCheck.VALID) }
+    fun checkAccount(identity: AuthIdentity, result: (AuthCheck) -> Unit) {
         val user = firebase?.currentUser
-        if (user == null || signedInIdentity()?.key != identity.key) { result(false); return }
+        if (user == null || signedInIdentity()?.key != identity.key) { result(AuthCheck.INVALID); return }
         user.getIdToken(true).addOnCompleteListener { task ->
             // Keep an authenticated local session during network failure. Never use this path for new login.
             val code = (task.exception as? FirebaseAuthException)?.errorCode
             val invalid = task.exception is FirebaseAuthInvalidUserException ||
                 code in setOf("ERROR_USER_TOKEN_EXPIRED", "ERROR_INVALID_USER_TOKEN", "ERROR_USER_DISABLED", "ERROR_USER_NOT_FOUND")
-            result(!invalid)
+            result(if (code == "ERROR_USER_NOT_FOUND") AuthCheck.GONE else if (invalid) AuthCheck.INVALID else AuthCheck.VALID)
         }
+    }
+
+    /**
+     * Confirms the password of the signed-in [identity] right before an irreversible action (account deletion needs a
+     * sign-in from the last minutes). The password stays in this call; nothing is stored.
+     */
+    suspend fun reauthenticate(identity: AuthIdentity, password: String): AuthReauth {
+        val auth = firebase ?: return AuthReauth.FAILED
+        val user = auth.currentUser?.takeIf { signedInIdentity()?.key == identity.key } ?: throw CancellationException("Account changed")
+        return try {
+            user.reauthenticate(EmailAuthProvider.getCredential(identity.email, password)).await()
+            if (signedInIdentity()?.key != identity.key) throw CancellationException("Account changed")
+            AuthReauth.OK
+        } catch (e: CancellationException) { throw e }
+        catch (e: Exception) { reauthProblem(e) }
+    }
+    private fun reauthProblem(e: Exception): AuthReauth = when {
+        e is FirebaseAuthInvalidUserException && e.errorCode == "ERROR_USER_NOT_FOUND" -> AuthReauth.GONE
+        e is FirebaseAuthInvalidCredentialsException -> AuthReauth.WRONG_PASSWORD
+        e is FirebaseTooManyRequestsException -> AuthReauth.RATE_LIMITED
+        e is FirebaseNetworkException -> AuthReauth.NETWORK
+        else -> AuthReauth.FAILED
     }
 
     private fun errorMessage(action: AuthAction, error: Exception?): Int = when (error) {

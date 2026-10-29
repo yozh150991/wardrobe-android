@@ -43,6 +43,19 @@ internal object FamilySyncJournal {
             if (version == 1) 0 else j.getInt("attempts"), if (version == 1) -1 else j.getInt("attemptCursor"))
     }
 }
+/** [released]: a stopped batch the user let automatic sending pass by turning the switch on again. */
+internal data class FamilyAutoSetting(val enabled: Boolean = false, val released: String = "") {
+    init { require(released.isEmpty() || FamilyRules.validId(released)) }
+}
+internal object FamilyAutoJournal {
+    fun encode(s: FamilyAutoSetting, account: String, remote: String): String = JSONObject().put("version", 1).put("account", account)
+        .put("remote", remote).put("enabled", s.enabled).put("released", s.released).toString()
+    fun decode(text: String, account: String, remote: String): FamilyAutoSetting {
+        val j = JSONObject(text)
+        require(j.getInt("version") == 1 && j.getString("account") == account && j.getString("remote") == remote)
+        return FamilyAutoSetting(j.getBoolean("enabled"), j.getString("released"))
+    }
+}
 internal class FamilySyncStore(context: AccountContext, private val account: AuthIdentity) {
     init { require(context.location.key == account.key) }
     private val root = File(context.noBackupFilesDir, "family-sync/${account.key}")
@@ -79,6 +92,31 @@ internal class FamilySyncStore(context: AccountContext, private val account: Aut
         get(remote)?.takeIf { it.id == id && it.active }?.let {
             put(it.copy(status = if (problem == "RETRY") FamilySyncStatus.RETRY else FamilySyncStatus.PAUSED, problem = problem), it)
         }
+    }
+    /** Per-wardrobe automatic sending; account-private like the plans, never part of a backup. */
+    private fun autoFile(remote: String): AtomicFile {
+        require(FamilyRules.validId(remote)); return AtomicFile(File(File(root, "auto"), "$remote.json"))
+    }
+    fun auto(remote: String): FamilyAutoSetting = synchronized(lock) {
+        val f = autoFile(remote)
+        if (!f.baseFile.exists() && !File(f.baseFile.path + ".bak").exists()) FamilyAutoSetting() else f.openRead().use { input ->
+            val bytes = java.io.ByteArrayOutputStream().also { PhotoStore.copyLimited(input, it, 4L * 1024) }.toByteArray()
+            FamilyAutoJournal.decode(bytes.toString(Charsets.UTF_8), account.key, remote)
+        }
+    }
+    fun setAuto(remote: String, setting: FamilyAutoSetting) = synchronized(lock) {
+        val directory = File(root, "auto"); check(directory.mkdirs() || directory.isDirectory)
+        val f = autoFile(remote)
+        if (!f.baseFile.exists() && directory.listFiles().orEmpty().count { it.extension == "json" } >= 100) throw FamilyTransferException(FamilyProblem.LIMIT)
+        val out = f.startWrite()
+        try { out.write(FamilyAutoJournal.encode(setting, account.key, remote).toByteArray(Charsets.UTF_8)); out.fd.sync(); f.finishWrite(out) }
+        catch (e: Exception) { f.failWrite(out); throw e }
+        changes.value += 1
+    }
+    /** Wardrobes with automatic sending switched on; a damaged setting reads as off. */
+    fun autoRemotes(): List<String> = synchronized(lock) {
+        File(root, "auto").listFiles().orEmpty().map { it.name.removeSuffix(".bak").removeSuffix(".json") }
+            .filter(FamilyRules::validId).distinct().filter { runCatching { auto(it).enabled }.getOrDefault(false) }
     }
     fun pauseAll() = synchronized(lock) {
         root.listFiles().orEmpty().map { it.name.removeSuffix(".bak").removeSuffix(".json") }
