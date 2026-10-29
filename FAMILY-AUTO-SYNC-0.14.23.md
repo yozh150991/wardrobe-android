@@ -36,7 +36,7 @@
 | --- | --- |
 | `FamilyAutoSync.decide/blocked` — чиста логіка: продовжити фоновий пакет, почати новий з усієї черги, чекати, нічого | `FamilySyncPlan.kt` |
 | `FamilyAutoSetting`/`FamilyAutoJournal`; `FamilySyncStore.auto/setAuto/autoRemotes` (`family-sync/<акаунт>/auto/<гардероб>.json`) | `FamilySyncStore.kt` |
-| `FamilyAutoSyncWorker`, `FamilySyncSchedule.kick` (unique work на гардероб; запуск, що ще не почався, не дублюється), спільний `runFamilyBackgroundPlan`; мережа `CONNECTED` | `FamilySyncSchedule.kt` |
+| `FamilyAutoSyncWorker`, `FamilySyncSchedule.kick` (unique work на гардероб, `KEEP`; запущений worker сам перечитує чергу, якщо вона змінилася за коло, і додає продовження), спільний `runFamilyBackgroundPlan`; мережа `CONNECTED` | `FamilySyncSchedule.kt` |
 | Контролер: стан перемикача, будження після змін черги, `autoWaiting` | `FamilySyncController.kt`, `FamilySyncDialog.kt` |
 | Редактори стежать за чергою; кнопка надсилання ховається для ненадісланої чернетки; збереження правки після фонового надсилання | `Family{Add,Photo,Outfit,Edit}Controller.kt`, `Family{Add,Photo,Outfit,Edit}Dialog.kt` |
 | Рядки UA/EN/PL: `family_sync_auto`, `family_sync_auto_hint`, `family_sync_auto_waiting`, `family_auto_queued`; `family_sync_background` (будь-яка мережа) | `tools/family_auto_strings.py` |

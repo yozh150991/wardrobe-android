@@ -26,19 +26,17 @@ internal object FamilySyncSchedule {
             if (continuation) ExistingWorkPolicy.APPEND_OR_REPLACE else ExistingWorkPolicy.REPLACE, request)
     }
     /**
-     * Wakes automatic sending for one wardrobe. A run that has not started yet will see the newest queue, so it is
-     * kept; a running one gets one follow-up, so a draft saved during its last check is never left behind.
+     * Wakes automatic sending for one wardrobe. An unfinished run is kept: one that has not started will read the
+     * newest queue, and a running one rereads the queue whenever the outbox changed during its round. Only the
+     * worker itself appends its [continuation].
      */
-    fun kick(context: Context, key: String, remote: String) {
-        val manager = WorkManager.getInstance(context.applicationContext)
-        val states = runCatching { manager.getWorkInfosForUniqueWork(autoName(key, remote)).get().map { it.state } }.getOrDefault(emptyList())
-        if (states.count { it == WorkInfo.State.ENQUEUED || it == WorkInfo.State.BLOCKED } > 0) return
+    fun kick(context: Context, key: String, remote: String, continuation: Boolean = false) {
         val request = OneTimeWorkRequestBuilder<FamilyAutoSyncWorker>()
             .setInputData(workDataOf("account" to key, "remote" to remote))
             .setConstraints(constraints())
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS).addTag(tag(key)).build()
-        manager.enqueueUniqueWork(autoName(key, remote),
-            if (WorkInfo.State.RUNNING in states) ExistingWorkPolicy.APPEND_OR_REPLACE else ExistingWorkPolicy.REPLACE, request)
+        WorkManager.getInstance(context.applicationContext).enqueueUniqueWork(autoName(key, remote),
+            if (continuation) ExistingWorkPolicy.APPEND_OR_REPLACE else ExistingWorkPolicy.KEEP, request)
     }
     fun cancel(context: Context, key: String, remote: String) {
         WorkManager.getInstance(context.applicationContext).cancelUniqueWork(name(key, remote))
@@ -113,6 +111,8 @@ class FamilyAutoSyncWorker(context: Context, parameters: WorkerParameters) : Cor
             val context = AccountContext(app, app.accountRegistry.location(key))
             val store = FamilySyncStore(context, identity)
             repeat(ROUNDS) {
+                // Outbox writes in this process bump this counter; a change during the round means another look.
+                val seen = FamilySyncLocks.outbox(key).value
                 val plan = FamilySyncLocks.account(key).withLock {
                     val setting = store.auto(remote); val current = store.get(remote)
                     if (!setting.enabled) {
@@ -121,19 +121,24 @@ class FamilyAutoSyncWorker(context: Context, parameters: WorkerParameters) : Cor
                         return Result.success()
                     }
                     when (val step = FamilyAutoSync.decide(current, FamilySyncOperations(context, identity, remote).snapshot(), setting.released)) {
-                        FamilyAutoSync.Step.Idle, FamilyAutoSync.Step.Wait -> return Result.success()
+                        FamilyAutoSync.Step.Idle, FamilyAutoSync.Step.Wait -> null
                         is FamilyAutoSync.Step.Continue -> step.plan
                         is FamilyAutoSync.Step.Start -> FamilySyncPlan(newId(), remote, step.operations, background = true).also { store.put(it, current) }
                     }
                 }
+                if (plan == null) {
+                    if (FamilySyncLocks.outbox(key).value == seen) return Result.success()
+                    return@repeat
+                }
                 when (runFamilyBackgroundPlan(app, context, identity, remote, plan.id)) {
                     FamilyBackgroundRun.DONE -> Unit
-                    FamilyBackgroundRun.STOP -> return Result.success()
+                    // A stopped batch: drafts saved meanwhile (or the change that stopped it as CHANGED) get one more look.
+                    FamilyBackgroundRun.STOP -> if (FamilySyncLocks.outbox(key).value == seen) return Result.success()
                     FamilyBackgroundRun.RETRY -> return Result.retry()
-                    FamilyBackgroundRun.CONTINUE -> { FamilySyncSchedule.kick(applicationContext, key, remote); return Result.success() }
+                    FamilyBackgroundRun.CONTINUE -> { FamilySyncSchedule.kick(applicationContext, key, remote, continuation = true); return Result.success() }
                 }
             }
-            FamilySyncSchedule.kick(applicationContext, key, remote)
+            FamilySyncSchedule.kick(applicationContext, key, remote, continuation = true)
             return Result.success()
         } catch (e: CancellationException) { throw e }
         catch (e: Exception) { return Result.failure() }
