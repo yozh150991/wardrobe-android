@@ -62,7 +62,7 @@ internal fun LookEditor(s: Snapshot, wardrobe: String, anchorId: String, outfitI
     val privateBusy by vm.busy.collectAsStateWithLifecycle()
     val busy = saving || privateBusy
     // Collage gestures recompose this screen every frame: keep the derived lists out of that path (audit A-02).
-    val ideas = remember { inspirationPieces() }
+    val ideas = inspirationPieces() // composable (localized names); remember keys below compare it by value
     val pool = remember(s, wardrobe, occasion, weather, source, ideas) { LookRules.candidates(s, wardrobe, occasion, weather, source, ideas) }
     val today = java.time.LocalDate.now().toString()
     val eligible = remember(s.garments, s.wears, s.wardrobes, today) { DailyOutfits.items(s, today).map { it.piece.id }.toSet() }
