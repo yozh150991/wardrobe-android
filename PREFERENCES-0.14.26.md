@@ -49,6 +49,8 @@
 - Instrumentation `PreferencePersistenceTest`: запис із контекстом, повтор нічого не додає, перезапуск бази,
   точне скасування, дійсність для backup і сімейного знімка.
 - Host checks — pass (26 наборів, client config пропущено як завжди).
+- CI PR #25 (run 40979799968) — 4/4 jobs pass: 279 JVM-тестів, lint, preview APK; instrumentation 193 (188 pass,
+  5 skipped `CloudEmulatorTest`), включно з `PreferencePersistenceTest`; Firebase emulators.
 - На телефоні не перевірено.
 
 ## Що далі
