@@ -55,4 +55,6 @@
 - Instrumentation: `PreferencePersistenceTest` (вибір прив'язаний до акаунта й гардероба, переживає новий store,
   скидання), `FamilyFoundationTest` (оболонка спільного гардероба без відгуків).
 - Host checks — pass (26 наборів).
+- CI PR #26 (run 41016401457) — 4/4 jobs pass: 286 JVM-тестів (+7), lint, preview APK; instrumentation 194
+  (189 pass, 5 skipped `CloudEmulatorTest`), включно з `PreferencePersistenceTest` і `FamilyFoundationTest`; Firebase emulators.
 - На телефоні не перевірено.
