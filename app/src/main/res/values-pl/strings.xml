@@ -437,10 +437,10 @@
     <string name="daily_rotation">Ten zestaw zawiera rzecz bez zapisanych użyć. Daj jej szansę.</string>
     <string name="daily_replace">Wymień: %1$s</string>
     <string name="daily_no_replacement">Nie ma innej dostępnej rzeczy pasującej do tego elementu. Sprawdź pranie, sezon lub inny zestaw.</string>
-    <string name="daily_dislike">Nie mój styl</string>
+    <string name="daily_dislike">Nie podoba mi się zestawienie</string>
     <string name="daily_hot">Za ciepło</string>
     <string name="daily_refresh">Odśwież warianty</string>
-    <string name="daily_reset_feedback">Przywróć ukryte zestawy</string>
+    <string name="daily_reset_feedback">Zresetuj opinie o zestawach</string>
     <string name="daily_empty">Brak pełnego zestawu dla obecnych warunków. Sprawdź dostępność, sezony, wybrane rzeczy i zasady ponownego noszenia.</string>
     <string name="daily_rain_hint">Sprawdź odporność butów i okrycia na deszcz; katalog nie zapisuje tych cech.</string>
     <string name="weather_no_city">Pogoda — ręcznie lub według miasta</string>
@@ -1261,4 +1261,19 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="account_delete_config">Serwer nie obsługuje jeszcze usuwania konta. Potrzebna jest aktualizacja części serwerowej.</string>
     <string name="account_delete_network">Brak odpowiedzi serwera. Usuwanie mogło się już rozpocząć: spróbuj ponownie, gdy wróci sieć.</string>
     <string name="account_delete_retry">Nie udało się usunąć konta. Spróbuj ponownie.</string>
+    <string name="feedback_open">Nie pasuje…</string>
+    <string name="feedback_title">Dlaczego nie pasuje?</string>
+    <string name="feedback_uncomfortable">Niewygodne</string>
+    <string name="feedback_formal">Zbyt oficjalne</string>
+    <string name="feedback_combination_scope">Ten zestaw rzeczy nie będzie już proponowany w żadnych warunkach. Same rzeczy — jak dotąd.</string>
+    <string name="feedback_uncomfortable_scope">Wybrana rzecz będzie proponowana rzadziej we wszystkich warunkach, ale nie zniknie. Aby ją całkiem usunąć — „%1$s” w menu rzeczy.</string>
+    <string name="feedback_formal_scope">Na okazję „%1$s” ten zestaw nie będzie już proponowany, a jego rzeczy — rzadziej. Inne okazje się nie zmienią.</string>
+    <string name="feedback_warm_scope">Przy pogodzie „%1$s” ten zestaw nie będzie już proponowany, a jego rzeczy — rzadziej.</string>
+    <string name="feedback_warm_step">Warunki zmienią się na „%1$s”.</string>
+    <string name="feedback_which">Co dokładnie jest niewygodne?</string>
+    <string name="feedback_done">Uwzględniono: %1$s</string>
+    <string name="feedback_already">To zostało już wcześniej uwzględnione.</string>
+    <string name="feedback_ok">Rozumiem</string>
+    <string name="feedback_count">Zapisane opinie o zestawach: %1$d</string>
+    <string name="feedback_reset_confirm">Zresetować wszystkie opinie o zestawach tej szafy? Ukryte zestawy wrócą, a niewygodne rzeczy będą proponowane jak dawniej.</string>
 </resources>
