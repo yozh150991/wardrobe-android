@@ -122,7 +122,8 @@ internal class FamilyReaderController(private val app: WardrobeApplication, priv
                 if (!FamilyRules.mayExport(role)) throw FamilyTransferException(FamilyProblem.ACCESS)
                 val work = coroutineContext
                 Backup(session.context, session.repository, view.candidate.photos)
-                    .exportSnapshot(uri, view.candidate.snapshot) { work.ensureActive(); guard() }
+                    // PERS-02: a shared copy may still hold an earlier owner's reasons; they are not this person's.
+                    .exportSnapshot(uri, view.candidate.snapshot.copy(feedback = emptyList())) { work.ensureActive(); guard() }
             }
         }
     }

@@ -512,6 +512,15 @@ class WardrobeViewModel internal constructor(application: Application, private v
     }
     fun excludeFromRecommendations(id: String, excluded: Boolean) = perform { repo.update(id) { it.copy(suggestionExcluded = excluded) } }
     fun resetFeedback(wardrobe: String) = perform { repo.writes.withLock { repo.dao.clearFeedback(wardrobe) } }
+    /** PERS-02: this account's own choices; never part of a shared wardrobe or a family copy. */
+    internal val personalChoices = PersonalChoiceStore(accountContext)
+    fun setStyleChoice(wardrobe: String, occasion: String, value: String) = personalChoices.setStyle(wardrobe, occasion, value)
+    fun setWarmthChoice(wardrobe: String, value: String) = personalChoices.setWarmth(wardrobe, value)
+    /** Everything the preferences screen shows for [wardrobe]: reasons and choices. */
+    fun resetPreferences(wardrobe: String) = perform {
+        repo.writes.withLock { repo.dao.clearFeedback(wardrobe) }
+        personalChoices.clear(wardrobe)
+    }
     fun saveCanvasLook(wardrobe: String, pieces: List<LookPiece>, name: String, occasion: String, weather: String,
         source: String, outfitId: String, layout: String, background: String, done: (String) -> Unit) = perform {
         val id = repo.saveLook(wardrobe, pieces, name, occasion, weather, source, outfitId, photos, layout, background)
