@@ -7,7 +7,7 @@ source = root / 'app/src/main/java/com/familywardrobe/app'
 java = shutil.which('java')
 if not java: raise SystemExit('Java 17 with jdk.compiler required')
 with tempfile.TemporaryDirectory(prefix='wardrobe-roadmap-') as output:
-    files = [source / name for name in ('WardrobeRules.java', 'WishRules.java', 'DailyRules.java', 'RoadmapRules.java')]
+    files = [source / name for name in ('WardrobeRules.java', 'WishRules.java', 'DailyRules.java', 'PreferenceRules.java', 'PreferenceProfile.java', 'RoadmapRules.java')]
     files.append(root / 'app/src/test/java/com/familywardrobe/app/RoadmapRulesCases.java')
     subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, *map(str, files)], check=True)
     subprocess.run([java, '-cp', output, 'com.familywardrobe.app.RoadmapRulesCases'], check=True)

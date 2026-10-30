@@ -500,15 +500,27 @@ class WardrobeViewModel internal constructor(application: Application, private v
     fun movePlan(id: String, date: String, done: () -> Unit) = perform { repo.movePlan(id, date); done() }
     fun removePlan(id: String) = perform { repo.removePlan(id) }
     fun wearPlan(id: String) = perform { repo.togglePlanWorn(id) }
-    fun feedback(wardrobe: String, ids: List<String>, occasion: String, weather: String, reason: String) = perform {
-        repo.recordFeedback(wardrobe, ids, occasion, weather, reason)
+    /** PERS-01: [done] receives the rows created, for the undo offered right after. */
+    fun feedback(wardrobe: String, outfit: List<String>, items: List<String>, occasion: String, weather: String,
+        reason: FeedbackReason, done: (List<String>) -> Unit) = perform {
+        done(repo.recordReason(wardrobe, outfit, items, occasion, weather, reason))
     }
+    fun undoFeedback(wardrobe: String, ids: List<String>) = perform { repo.forgetFeedback(wardrobe, ids) }
     fun setNoRepeatDays(wardrobe: String, days: Int) = perform {
         require(days in 0..30)
         repo.writes.withLock { require(repo.dao.setNoRepeatDays(wardrobe, days) == 1) }
     }
     fun excludeFromRecommendations(id: String, excluded: Boolean) = perform { repo.update(id) { it.copy(suggestionExcluded = excluded) } }
     fun resetFeedback(wardrobe: String) = perform { repo.writes.withLock { repo.dao.clearFeedback(wardrobe) } }
+    /** PERS-02: this account's own choices; never part of a shared wardrobe or a family copy. */
+    internal val personalChoices = PersonalChoiceStore(accountContext)
+    fun setStyleChoice(wardrobe: String, occasion: String, value: String) = personalChoices.setStyle(wardrobe, occasion, value)
+    fun setWarmthChoice(wardrobe: String, value: String) = personalChoices.setWarmth(wardrobe, value)
+    /** Everything the preferences screen shows for [wardrobe]: reasons and choices. */
+    fun resetPreferences(wardrobe: String) = perform {
+        repo.writes.withLock { repo.dao.clearFeedback(wardrobe) }
+        personalChoices.clear(wardrobe)
+    }
     fun saveCanvasLook(wardrobe: String, pieces: List<LookPiece>, name: String, occasion: String, weather: String,
         source: String, outfitId: String, layout: String, background: String, done: (String) -> Unit) = perform {
         val id = repo.saveLook(wardrobe, pieces, name, occasion, weather, source, outfitId, photos, layout, background)

@@ -5,7 +5,7 @@ import json, re, shutil, sqlite3, subprocess, tempfile
 root = Path(__file__).resolve().parents[1]
 source = root/'app/src/main/java/com/familywardrobe/app'
 with tempfile.TemporaryDirectory(prefix='wardrobe-experience-') as output:
-    names = ['WardrobeRules', 'DailyRules', 'LookSelection', 'RecommendationRules', 'PhotoMaskRules', 'CanvasRules', 'InspirationCatalog']
+    names = ['WardrobeRules', 'DailyRules', 'PreferenceRules', 'PreferenceProfile', 'LookSelection', 'RecommendationRules', 'PhotoMaskRules', 'CanvasRules', 'InspirationCatalog']
     sources = [source/(name+'.java') for name in names]
     sources.append(root/'app/src/test/java/com/familywardrobe/app/ExperienceRulesCases.java')
     subprocess.run([shutil.which('java'), '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, *map(str,sources)], check=True)
