@@ -53,13 +53,45 @@ suspend fun Repository.reconcilePlanWear(date: String) {
         dao.savePlan(plan.copy(worn = ids.isNotEmpty(), wornItemIds = DailyRules.signature(ids)))
     }
 }
-suspend fun Repository.recordFeedback(wardrobe: String, ids: List<String>, occasion: String, weather: String, reason: String) = writes.withLock {
+/** Returns the new row's ID, or null when the same row already existed (so an undo never removes an older one). */
+suspend fun Repository.recordFeedback(wardrobe: String, ids: List<String>, occasion: String, weather: String, reason: String): String? = writes.withLock {
+    db.withTransaction { insertFeedback(wardrobe, ids, occasion, weather, reason) }
+}
+private suspend fun Repository.insertFeedback(wardrobe: String, ids: List<String>, occasion: String, weather: String, reason: String): String? {
     require(occasion in LookRules.OCCASIONS && weather in LookRules.WEATHERS && reason in setOf("dislike", "hot", "occasion"))
     require(ids.isNotEmpty() && ids.size <= WardrobeRules.MAX_PARTS && ids.distinct().size == ids.size)
+    require(ids.all { dao.garment(it)?.wardrobeId == wardrobe })
+    val signature = DailyRules.signature(ids)
+    val rows = dao.allFeedback().filter { it.wardrobeId == wardrobe && it.signature == signature && it.reason == reason }
+    // An item is uncomfortable once, whatever the context it was noticed in (PreferenceRules counts it once).
+    val old = if (ids.size == 1 && reason == PreferenceRules.DISLIKE) rows.firstOrNull()
+        else rows.find { it.weather == weather && it.occasion == occasion }
+    if (old != null) return null
+    return OutfitFeedback(wardrobeId = wardrobe, signature = signature, weather = weather, occasion = occasion, reason = reason)
+        .also { dao.saveFeedback(it) }.id
+}
+
+/** PERS-01: the reasons offered for a suggested outfit; scope and effect are in [PreferenceRules]. */
+enum class FeedbackReason { COMBINATION, UNCOMFORTABLE, FORMAL, TOO_WARM }
+
+/** Records one reason for [outfit] (all its item IDs); [items] are the uncomfortable ones. Returns the new rows for undo. */
+suspend fun Repository.recordReason(wardrobe: String, outfit: List<String>, items: List<String>, occasion: String, weather: String,
+    reason: FeedbackReason): List<String> = writes.withLock {
+    require(reason != FeedbackReason.UNCOMFORTABLE || items.isNotEmpty() && items.distinct().size == items.size && outfit.containsAll(items))
     db.withTransaction {
-        require(ids.all { dao.garment(it)?.wardrobeId == wardrobe })
-        val signature = DailyRules.signature(ids)
-        val old = dao.allFeedback().find { it.wardrobeId == wardrobe && it.signature == signature && it.weather == weather && it.occasion == occasion && it.reason == reason }
-        if (old == null) dao.saveFeedback(OutfitFeedback(wardrobeId = wardrobe, signature = signature, weather = weather, occasion = occasion, reason = reason))
+        when (reason) {
+            FeedbackReason.COMBINATION -> listOfNotNull(insertFeedback(wardrobe, outfit, occasion, weather, PreferenceRules.DISLIKE))
+            FeedbackReason.UNCOMFORTABLE -> items.mapNotNull { insertFeedback(wardrobe, listOf(it), occasion, weather, PreferenceRules.DISLIKE) }
+            FeedbackReason.FORMAL -> listOfNotNull(insertFeedback(wardrobe, outfit, occasion, weather, PreferenceRules.OCCASION))
+            FeedbackReason.TOO_WARM -> listOfNotNull(insertFeedback(wardrobe, outfit, occasion, weather, PreferenceRules.HOT))
+        }
+    }
+}
+
+/** Undo of [recordReason]: removes exactly those rows of this wardrobe; a row already gone is not an error. */
+suspend fun Repository.forgetFeedback(wardrobe: String, ids: List<String>) = writes.withLock {
+    db.withTransaction {
+        val owned = dao.allFeedback().filter { it.wardrobeId == wardrobe }.map { it.id }.toSet()
+        ids.filter { it in owned }.forEach { dao.deleteFeedback(it) }
     }
 }
