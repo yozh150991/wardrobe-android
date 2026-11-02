@@ -131,7 +131,10 @@ class FamilyFoundationTest {
         val before = seed(repo, photos); val backup = Backup(context, repo, photos); val envelope = FamilyEnvelope(backup)
         val identity = FamilyArchiveIdentity(newId(), id(before), account.uid)
         val wire = envelope.encode(before, identity, 7)
-        assertEquals(WardrobeSnapshots.select(before, id(before)), envelope.decode(wire, identity, 7))
+        // PERS-02: everything but the publisher's own reasons for turning down outfits.
+        val selected = WardrobeSnapshots.select(before, id(before))
+        assertEquals(1, selected.feedback.size)
+        assertEquals(selected.copy(feedback = emptyList()), envelope.decode(wire, identity, 7))
         denied { backup.decode(JSONObject(wire)) }
         denied { envelope.decode(backup.encode(before).toString(), identity, 7) }
         denied { envelope.decode(wire, identity.copy(ownerUid = "other"), 7) }

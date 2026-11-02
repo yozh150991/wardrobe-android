@@ -37,11 +37,16 @@ public final class DailyRules {
     /** [penalty]: score subtracted per item ID (PERS-01 reasons, see PreferenceRules); never excludes an item. */
     public static List<List<String>> generate(List<Item> items, String wardrobe, String occasion, String weather,
             String date, String seed, Set<String> rejected, Map<String, String> fixed, int limit, Map<String, Integer> penalty) {
+        return generate(items, wardrobe, occasion, weather, date, seed, rejected, fixed, limit, penalty, null);
+    }
+    /** [targetStyle]: the style favoured for this occasion (PERS-02, see PreferenceProfile); null = the occasion's usual one. */
+    public static List<List<String>> generate(List<Item> items, String wardrobe, String occasion, String weather,
+            String date, String seed, Set<String> rejected, Map<String, String> fixed, int limit, Map<String, Integer> penalty,
+            String targetStyle) {
         if (limit < 1 || limit > 20) throw new IllegalArgumentException();
         String season = weather.equals("warm") ? "summer" : weather.equals("cold") ? "winter" :
             weather.equals("cool") || weather.equals("rain") ? "midseason" : "all";
-        String style = occasion.equals("work") || occasion.equals("occasion") ? "formal" :
-            occasion.equals("active_day") ? "sport" : "casual";
+        String style = targetStyle != null ? targetStyle : PreferenceProfile.defaultStyle(occasion);
         List<Candidate> all = new ArrayList<>();
         for (List<String> layout : WardrobeRules.baseLayouts(fixed.keySet())) {
         List<String> categories = new ArrayList<>(layout);
@@ -100,6 +105,10 @@ public final class DailyRules {
     }
     public static List<String> replace(List<Item> items, String wardrobe, String occasion, String weather,
             String date, List<String> selected, String category, Set<String> rejected, Map<String, Integer> penalty) {
+        return replace(items, wardrobe, occasion, weather, date, selected, category, rejected, penalty, null);
+    }
+    public static List<String> replace(List<Item> items, String wardrobe, String occasion, String weather,
+            String date, List<String> selected, String category, Set<String> rejected, Map<String, Integer> penalty, String targetStyle) {
         Map<String, String> fixed = new HashMap<>(); String old = "";
         for (String id : selected) {
             Item item = null; for (Item candidate : items) if (candidate.piece.id.equals(id)) { item = candidate; break; }
@@ -108,7 +117,7 @@ public final class DailyRules {
         }
         final String excluded = old;
         List<Item> candidates = new ArrayList<>(); for (Item i : items) if (!i.piece.id.equals(excluded)) candidates.add(i);
-        List<List<String>> result = generate(candidates, wardrobe, occasion, weather, date, "replace", rejected, fixed, 1, penalty);
+        List<List<String>> result = generate(candidates, wardrobe, occasion, weather, date, "replace", rejected, fixed, 1, penalty, targetStyle);
         return result.isEmpty() ? Collections.emptyList() : result.get(0);
     }
     private static String key(Candidate c) { return c.key(); }

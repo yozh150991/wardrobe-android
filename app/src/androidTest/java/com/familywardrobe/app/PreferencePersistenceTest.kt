@@ -58,4 +58,29 @@ class PreferencePersistenceTest {
             assertEquals(1, WardrobeSnapshots.select(repo.snapshot(), home).feedback.size)
         } finally { db.close(); context.deleteDatabase(name) }
     }
+
+    /** PERS-02: choices belong to one account and one wardrobe, survive a new store and reset cleanly. */
+    @Test fun personalChoicesAreAccountAndWardrobeScoped() {
+        val first = AccountContext(context, AccountLocation(AuthRules.accountKey("tests", "first-${newId()}"), false))
+        val second = AccountContext(context, AccountLocation(AuthRules.accountKey("tests", "second-${newId()}"), false))
+        try {
+            val store = PersonalChoiceStore(first)
+            assertEquals(PersonalChoices(), store.read("home"))
+            store.setStyle("home", "work", "casual"); store.setWarmth("home", "lighter")
+            val before = store.revision.value
+            store.setStyle("home", "everyday", "formal")
+            assertTrue(store.revision.value > before)
+            // A new store (as after a restart) reads the same choices.
+            assertEquals(PersonalChoices(mapOf("work" to "casual", "everyday" to "formal"), "lighter"), PersonalChoiceStore(first).read("home"))
+            assertEquals(PersonalChoices(), PersonalChoiceStore(first).read("child"))
+            assertEquals(PersonalChoices(), PersonalChoiceStore(second).read("home"))
+            store.setStyle("home", "work", PreferenceProfile.AUTO)
+            assertEquals(PreferenceProfile.AUTO, store.read("home").style("work"))
+            try { store.setStyle("home", "work", "pyjamas"); fail("Unknown style") } catch (_: IllegalArgumentException) { }
+            store.clear("home")
+            assertEquals(PersonalChoices(), PersonalChoiceStore(first).read("home"))
+        } finally {
+            listOf(first, second).forEach { context.deleteSharedPreferences("account-${it.location.key}-preferences") }
+        }
+    }
 }

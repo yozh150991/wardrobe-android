@@ -46,13 +46,19 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
     val refresh by vm.recommendationRefresh.collectAsStateWithLifecycle()
     val weatherEnabled by vm.weather.enabled.collectAsStateWithLifecycle()
     val forecast by vm.weather.forecast.collectAsStateWithLifecycle()
-    val weather = if (weatherEnabled) forecast?.mode(today) ?: manualWeather else manualWeather
+    // PERS-02: the person's choices for this wardrobe; the forecast is shifted to how they feel it (never a manual choice).
+    val choiceRevision by vm.personalChoices.revision.collectAsStateWithLifecycle()
+    val choices = remember(wardrobe, choiceRevision) { vm.personalChoices.read(wardrobe) }
+    val warmth = remember(wardrobe, s.feedback, choices) { DailyOutfits.warmth(s, wardrobe, choices) }
+    val forecastWeather = if (weatherEnabled) forecast?.mode(today) else null
+    val weather = forecastWeather?.let { PreferenceProfile.apply(it, warmth.shift) } ?: manualWeather
     val busy by vm.busy.collectAsStateWithLifecycle()
     // Both generated and manually replaced variants survive a detail/back transition.
     var generatedFor by rememberSaveable { mutableStateOf("") }
     var lookIds by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
-    val input = remember(wardrobe, occasion, weather, today, s.garments, s.wears, s.feedback, s.wardrobes, allowed, fixed, revision, refresh) {
-        stateToken(listOf(wardrobe, occasion, weather, today, s.garments, s.wears, s.feedback, s.wardrobes, allowed?.sorted(), fixed.toSortedMap(), revision, refresh).toString())
+    var hiddenShown by rememberSaveable { mutableStateOf(false) }
+    val input = remember(wardrobe, occasion, weather, today, s.garments, s.wears, s.feedback, s.wardrobes, allowed, fixed, revision, refresh, choices) {
+        stateToken(listOf(wardrobe, occasion, weather, today, s.garments, s.wears, s.feedback, s.wardrobes, allowed?.sorted(), fixed.toSortedMap(), revision, refresh, choices).toString())
     }
     val fullCapsule = capsule?.let { c -> s.capsuleItems.filter { it.capsuleId == c.id }.map { it.garmentId }.toSet() }
     val currentRules = s.wardrobes.find { it.id == wardrobe }?.noRepeatDays ?: 0
@@ -64,10 +70,11 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
         delay(80)
         var ids = lookIds
         if (generatedFor != input) {
-            ids = ArrayList(withContext(Dispatchers.Default) {
-                DailyOutfits.generate(s, wardrobe, occasion, weather, today, "$today:$revision", allowed = allowed, fixed = fixed)
-            }.map { it.joinToString(",") { g -> g.id } })
-            lookIds = ids; generatedFor = input
+            val result = withContext(Dispatchers.Default) {
+                DailyOutfits.daily(s, wardrobe, occasion, weather, today, "$today:$revision", allowed = allowed, fixed = fixed, choices = choices)
+            }
+            ids = ArrayList(result.looks.map { it.joinToString(",") { g -> g.id } })
+            lookIds = ids; hiddenShown = result.hiddenShown; generatedFor = input
         }
         if (ids.none { row -> row.split(',').any { id -> s.garments.any { it.id == id } } }) {
             emptyReason = withContext(Dispatchers.Default) {
@@ -89,7 +96,7 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
     var noReplacement by remember { mutableStateOf(false) }
     // PERS-01: the variant a reason is being chosen for, and the last reason recorded (its scope and undo).
     var reasonFor by rememberSaveable { mutableIntStateOf(-1) }
-    var resettingFeedback by rememberSaveable { mutableStateOf(false) }
+    var preferencesOpen by rememberSaveable { mutableStateOf(false) }
     var choosingItems by rememberSaveable { mutableStateOf(false) }
     var uncomfortable by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
     var lastReason by rememberSaveable(wardrobe) { mutableStateOf("") }
@@ -135,6 +142,8 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                 if (capsule != null) Text(capsule.name, style = MaterialTheme.typography.titleMedium)
                 Text(stringResource(label(occasion)) + " · " + stringResource(label(weather)) +
                     if (packedOnly) " · " + stringResource(R.string.capsule_packed_only) else "", style = MaterialTheme.typography.bodyMedium)
+                if (forecastWeather != null && forecastWeather != weather) Text(stringResource(R.string.prefs_weather_shifted,
+                    stringResource(label(forecastWeather)), stringResource(label(weather))), style = MaterialTheme.typography.bodySmall)
                 if (weather in setOf("cold", "cool", "rain") && s.garments.none { it.wardrobeId == wardrobe && it.category == "outerwear" && WardrobeRules.ready(it.rulePiece()) })
                     Text(stringResource(R.string.daily_no_outerwear), style = MaterialTheme.typography.bodySmall)
                 TextButton(onClick = { configuring = true }, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.configure_conditions)) }
@@ -153,6 +162,14 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                 }
             }
         } }
+        if (hiddenShown && looks.isNotEmpty() && generatedFor == input) item {
+            OutlinedCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.prefs_hidden_shown), style = MaterialTheme.typography.bodyMedium)
+                    TextButton(onClick = { preferencesOpen = true }) { Text(stringResource(R.string.prefs_open)) }
+                }
+            }
+        }
         if (generatedFor != input || looks.isEmpty() && emptyReasonFor != input) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
         val diagnosis = emptyReason.takeIf { emptyReasonFor == input }
         if (looks.isEmpty() && generatedFor == input && diagnosis != null) item {
@@ -201,10 +218,8 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                 if (capsule.kind == "trip") SelectionRow(stringResource(R.string.capsule_packed_only), packedOnly, !busy) { packedOnly = it }
             }
             RecommendationPanel(s, wardrobe, vm)
-            val feedbackCount = s.feedback.count { it.wardrobeId == wardrobe }
-            if (feedbackCount > 0) {
-                Text(stringResource(R.string.feedback_count, feedbackCount), style = MaterialTheme.typography.bodySmall)
-                TextButton(onClick = { resettingFeedback = true }, enabled = !busy) { Text(stringResource(R.string.daily_reset_feedback)) }
+            OutlinedButton(onClick = { configuring = false; preferencesOpen = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                Text(stringResource(R.string.prefs_open))
             }
             if (fixedIds.isNotEmpty()) TextButton(onClick = { fixedIds = arrayListOf() }) { Text(stringResource(R.string.rules_clear_locks)) }
             WeatherPanel(vm.weather, today)
@@ -222,7 +237,7 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                     val index = actionIndex; val before = lookIds; val category = item.category
                     actionItem = ""
                     scope.launch {
-                        val replacement = withContext(Dispatchers.Default) { DailyOutfits.replace(s, wardrobe, occasion, weather, today, items, category, others, allowed) }
+                        val replacement = withContext(Dispatchers.Default) { DailyOutfits.replace(s, wardrobe, occasion, weather, today, items, category, others, allowed, choices) }
                         // Apply only to the same variants the user acted on.
                         if (lookIds != before) return@launch
                         if (replacement.isEmpty()) noReplacement = true
@@ -244,11 +259,7 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
         }, enabled = !busy && TextLimits.hasVisibleText(proposedName)) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = { namingIds = "" }, enabled = !busy) { Text(stringResource(R.string.cancel)) } })
     if (noReplacement) AlertDialog(onDismissRequest = { noReplacement = false }, text = { Text(stringResource(R.string.daily_no_replacement)) }, confirmButton = { TextButton(onClick = { noReplacement = false }) { Text(stringResource(R.string.close)) } })
-    if (resettingFeedback) AlertDialog(onDismissRequest = { resettingFeedback = false },
-        text = { Text(stringResource(R.string.feedback_reset_confirm)) },
-        confirmButton = { TextButton(onClick = { resettingFeedback = false; lastReason = ""; vm.resetFeedback(wardrobe) }, enabled = !busy) {
-            Text(stringResource(R.string.daily_reset_feedback)) } },
-        dismissButton = { TextButton(onClick = { resettingFeedback = false }) { Text(stringResource(R.string.cancel)) } })
+    if (preferencesOpen) PreferencesDialog(s, wardrobe, vm) { preferencesOpen = false; lastReason = "" }
     looks.getOrNull(reasonFor)?.let { items ->
         ModalBottomSheet(onDismissRequest = { reasonFor = -1; choosingItems = false }) {
             Column(Modifier.fillMaxWidth().heightIn(max = 640.dp).verticalScroll(rememberScrollState()).padding(16.dp),
