@@ -68,5 +68,6 @@
 - `tools/check_widget.py` у host checks: експорт приймачів, `FLAG_IMMUTABLE`, неточний `RTC`, стан виходу без
   даних, лише вже відкритий акаунт, `markPlanWorn` без зняття, рядки й плейсхолдери UA/EN/PL, sp/48 dp/«…»,
   контраст. 9 мутацій ловляться. Host checks — pass (27 наборів).
-- CI — див. журнал роадмапу.
+- CI PR #27 (run 41515927610, push 41515888991) — 4/4 jobs pass: 293 JVM-тести (+7), lint, preview APK; instrumentation 197
+  (192 pass, 5 skipped `CloudEmulatorTest`), включно з `TodayWidgetTest`; Firebase emulators.
 - На телефоні не перевірено: вигляд на різних лаунчерах і розмірах, великий шрифт, північ і зміна поясу наживо.
