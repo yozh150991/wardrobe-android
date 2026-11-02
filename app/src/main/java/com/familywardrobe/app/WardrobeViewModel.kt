@@ -248,6 +248,14 @@ class WardrobeViewModel internal constructor(application: Application, private v
         .combine(repo.dao.customColors()) { s, rows -> s.copy(customColors = rows) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Snapshot())
 
+    /** WID-01: taps on the «Образ на сьогодні» widget, for this signed-in account only. */
+    internal val widgetRequests = (application as WardrobeApplication).widgetRequests.asStateFlow()
+    internal fun consumeWidgetRequest(request: WidgetRequest) {
+        (getApplication<WardrobeApplication>()).widgetRequests.compareAndSet(request, null)
+    }
+    /** The widget's data changed in the app (today's plan, its items, wear or the active wardrobe). */
+    internal fun widgetChanged() = TodayWidgets.request(getApplication())
+
     init {
         session.privateJob = viewModelScope.coroutineContext[kotlinx.coroutines.Job]
         perform(OperationKind.INITIALIZE) {

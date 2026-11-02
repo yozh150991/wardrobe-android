@@ -32,17 +32,31 @@ suspend fun Repository.togglePlanWorn(id: String) = writes.withLock {
         if (plan.worn) {
             dao.clearSourceDay(source, plan.date)
             dao.savePlan(plan.copy(worn = false, wornItemIds = ""))
-        } else {
-            require(plan.date <= LocalDate.now().toString())
-            val outfit = requireNotNull(dao.outfit(plan.outfitId))
-            require(outfit.wardrobeId == plan.wardrobeId && dao.allIdeas().none { it.outfitId == outfit.id })
-            val ids = dao.outfitIds(outfit.id)
-            require(ids.isNotEmpty())
-            val items = ids.map { requireNotNull(dao.garment(it)) }
-            require(items.all { it.wardrobeId == plan.wardrobeId && WardrobeRules.ready(it.rulePiece()) })
-            dao.insertWears(ids.map { Wear(it, plan.date, source) })
-            dao.savePlan(plan.copy(worn = true, wornItemIds = DailyRules.signature(ids)))
-        }
+        } else wear(plan, LocalDate.now().toString())
+    }
+}
+private suspend fun Repository.wear(plan: DayPlan, today: String) {
+    require(plan.date <= today)
+    val outfit = requireNotNull(dao.outfit(plan.outfitId))
+    require(outfit.wardrobeId == plan.wardrobeId && dao.allIdeas().none { it.outfitId == outfit.id })
+    val ids = dao.outfitIds(outfit.id)
+    require(ids.isNotEmpty())
+    val items = ids.map { requireNotNull(dao.garment(it)) }
+    require(items.all { it.wardrobeId == plan.wardrobeId && WardrobeRules.ready(it.rulePiece()) })
+    dao.insertWears(ids.map { Wear(it, plan.date, "plan:${plan.id}") })
+    dao.savePlan(plan.copy(worn = true, wornItemIds = DailyRules.signature(ids)))
+}
+
+/**
+ * WID-01: «Одягнув сьогодні» from the widget. Only marks, never unmarks, so a second tap (or a repeated broadcast)
+ * changes nothing. [today] is the widget's date: a plan from another day or wardrobe is refused. Returns whether it
+ * was newly marked.
+ */
+suspend fun Repository.markPlanWorn(id: String, wardrobe: String, today: String): Boolean = writes.withLock {
+    db.withTransaction {
+        val plan = dao.plan(id) ?: return@withTransaction false
+        require(plan.wardrobeId == wardrobe && plan.date == today)
+        if (plan.worn) false else { wear(plan, today); true }
     }
 }
 /** An explicit item-day undo may remove a calendar source; reflect the actual remaining wear ledger. */

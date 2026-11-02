@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- WID-01 widget; dark values in values-night. Contrast ≥ 4.5:1 for text on the surface. -->
+    <color name="widget_surface">#FFFBF8F4</color>
+    <color name="widget_text">#FF1F1B16</color>
+    <color name="widget_secondary">#FF4F4539</color>
+    <color name="widget_accent">#FF6B4E16</color>
+    <color name="widget_on_accent">#FFFFFFFF</color>
+</resources>

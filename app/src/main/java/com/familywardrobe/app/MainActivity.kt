@@ -22,7 +22,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (savedInstanceState == null) receiveShare(intent)
+        if (savedInstanceState == null) { receiveShare(intent); receiveWidget(intent) }
         // Root Back keeps the task like Android 12+ does: finishing the Activity would clear the
         // account session and cancel running exports, family transfers and photo work on Android 8–11.
         // Compose BackHandlers are registered later and take priority for nested screens and dialogs.
@@ -55,6 +55,16 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         receiveShare(intent)
+        receiveWidget(intent)
+    }
+    /** WID-01: a widget tap opens the outfit or the daily picks, only for the account the widget was drawn for. */
+    private fun receiveWidget(value: Intent) {
+        val kind = when (value.action) { TodayWidgets.ACTION_OPEN -> WidgetRequest.OUTFIT; TodayWidgets.ACTION_DAILY -> WidgetRequest.DAILY; else -> return }
+        val app = application as WardrobeApplication
+        val account = value.getStringExtra(TodayWidgets.EXTRA_ACCOUNT).orEmpty()
+        if (account.isNotEmpty() && account == app.authBackend.signedInIdentity()?.key)
+            app.widgetRequests.value = WidgetRequest(kind, value.getStringExtra(TodayWidgets.EXTRA_OUTFIT).orEmpty())
+        intent = Intent(this, MainActivity::class.java).setAction(Intent.ACTION_MAIN)
     }
     private fun receiveShare(value: Intent) {
         if (value.action != Intent.ACTION_SEND) return

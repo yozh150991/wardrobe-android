@@ -41,6 +41,8 @@ internal class AuthViewModel(application: Application) : AndroidViewModel(applic
     private var sessionGeneration = 0
     private var cleared = false
     private val authListener = FirebaseAuth.AuthStateListener {
+        // WID-01: every sign-in, sign-out or expired session redraws the widget (signed out = no private data).
+        TodayWidgets.request(app)
         val state = _ui.value
         if (!cleared && state.session != null && !state.locked && backend.signedInIdentity()?.key != state.session.identity.key) lockSession()
     }
@@ -107,6 +109,7 @@ internal class AuthViewModel(application: Application) : AndroidViewModel(applic
         app.accountClosures[key] = erasure
         viewModelScope.launch {
             erasure.join()
+            TodayWidgets.request(app)
             if (_ui.value.session == null) _ui.value = _ui.value.copy(error = null, notice = R.string.account_deleted)
         }
     }

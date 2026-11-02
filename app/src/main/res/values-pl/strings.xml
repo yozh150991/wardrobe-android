@@ -1306,4 +1306,18 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="prefs_unknown_item">Rzecz usunięta</string>
     <string name="prefs_reset_all">Zresetuj wszystkie preferencje</string>
     <string name="prefs_hidden_shown">Wszystkie warianty na te warunki zostały wcześniej ukryte Twoimi opiniami — pokazano najlepsze z nich. Przywrócić lub zresetować je można w „Moje preferencje”.</string>
+    <string name="widget_title">Zestaw na dziś</string>
+    <string name="widget_description">Zaplanowany na dziś zestaw z aktywnej szafy z przyciskiem „Założone dziś”.</string>
+    <string name="widget_signed_out">Zaloguj się w aplikacji, aby zobaczyć zestaw na dziś.</string>
+    <string name="widget_open_app">Otwórz aplikację</string>
+    <string name="widget_no_plan">Na dziś nie zaplanowano zestawu.</string>
+    <string name="widget_pick">Dobierz zestaw</string>
+    <string name="widget_open">Otwórz zestaw</string>
+    <string name="widget_wear">Założone dziś</string>
+    <string name="widget_picture">Rzeczy zestawu „%1$s”</string>
+    <string name="widget_worn">Użycie potwierdzone</string>
+    <string name="widget_unavailable">Teraz niedostępne: %1$s</string>
+    <string name="widget_ideas">Zawiera rzeczy, których jeszcze nie masz</string>
+    <string name="widget_no_photos">Bez zdjęć</string>
+    <string name="widget_more">Więcej planów na dziś: %1$d</string>
 </resources>

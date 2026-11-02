@@ -1306,4 +1306,18 @@
     <string name="prefs_unknown_item">Річ видалено</string>
     <string name="prefs_reset_all">Скинути всі вподобання</string>
     <string name="prefs_hidden_shown">Усі варіанти для цих умов раніше приховані вашими відгуками — показано найкращі з них. Повернути чи скинути їх можна в «Мої вподобання».</string>
+    <string name="widget_title">Образ на сьогодні</string>
+    <string name="widget_description">Запланований на сьогодні образ активного гардероба з кнопкою «Одягнув сьогодні».</string>
+    <string name="widget_signed_out">Увійдіть у застосунок, щоб бачити образ на сьогодні.</string>
+    <string name="widget_open_app">Відкрити застосунок</string>
+    <string name="widget_no_plan">На сьогодні образ не заплановано.</string>
+    <string name="widget_pick">Підібрати образ</string>
+    <string name="widget_open">Відкрити образ</string>
+    <string name="widget_wear">Одягнув сьогодні</string>
+    <string name="widget_picture">Речі образу «%1$s»</string>
+    <string name="widget_worn">Носіння підтверджено</string>
+    <string name="widget_unavailable">Зараз недоступно: %1$s</string>
+    <string name="widget_ideas">Є речі, яких ще немає в гардеробі</string>
+    <string name="widget_no_photos">Без фото</string>
+    <string name="widget_more">Ще планів на сьогодні: %1$d</string>
 </resources>
