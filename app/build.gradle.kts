@@ -15,8 +15,8 @@ android {
         applicationId = "com.familywardrobe.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 57
-        versionName = "0.14.27-preference-profile"
+        versionCode = 58
+        versionName = "0.14.28-today-widget"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {

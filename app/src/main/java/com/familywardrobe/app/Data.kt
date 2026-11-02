@@ -519,6 +519,8 @@ class WardrobeApplication : Application() {
     internal val authBackend by lazy { FirebaseAuthBackend(this) }
     internal val accountRegistry by lazy { AccountRegistry(this) }
     internal val accountClosures = java.util.concurrent.ConcurrentHashMap<String, kotlinx.coroutines.Job>()
+    /** WID-01: the last widget tap waiting for the signed-in account's screen. */
+    internal val widgetRequests = kotlinx.coroutines.flow.MutableStateFlow<WidgetRequest?>(null)
     internal val backgroundScope = kotlinx.coroutines.CoroutineScope(
         kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO)
 }

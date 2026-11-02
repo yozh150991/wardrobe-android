@@ -107,6 +107,9 @@ internal class AccountSession(val identity: AuthIdentity, application: WardrobeA
         if (signedOut) {
             CloudSchedule.enabled(context, identity.key, false)
             FamilySyncSchedule.signOut(context, identity)
+            // WID-01: the widget drops this account's outfit, names and picture; an unhandled tap never reaches another account.
+            app.widgetRequests.value = null
+            TodayWidgets.request(app)
         }
         viewModelStore.clear()
         app.accountClosures[identity.key] = app.backgroundScope.launch(Dispatchers.IO) {

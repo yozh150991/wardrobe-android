@@ -1306,4 +1306,18 @@ Your current wardrobe is unchanged.</string>
     <string name="prefs_unknown_item">Item deleted</string>
     <string name="prefs_reset_all">Reset all preferences</string>
     <string name="prefs_hidden_shown">Every variant for these conditions was hidden by your feedback earlier, so the best of them are shown. Restore or reset them in “My preferences”.</string>
+    <string name="widget_title">Today’s outfit</string>
+    <string name="widget_description">Today’s planned outfit from the active wardrobe, with a “Wore it today” button.</string>
+    <string name="widget_signed_out">Sign in to the app to see today’s outfit.</string>
+    <string name="widget_open_app">Open the app</string>
+    <string name="widget_no_plan">No outfit is planned for today.</string>
+    <string name="widget_pick">Pick an outfit</string>
+    <string name="widget_open">Open outfit</string>
+    <string name="widget_wear">Wore it today</string>
+    <string name="widget_picture">Items of the outfit “%1$s”</string>
+    <string name="widget_worn">Wear confirmed</string>
+    <string name="widget_unavailable">Unavailable now: %1$s</string>
+    <string name="widget_ideas">Has pieces you don’t own yet</string>
+    <string name="widget_no_photos">No photos</string>
+    <string name="widget_more">More plans today: %1$d</string>
 </resources>

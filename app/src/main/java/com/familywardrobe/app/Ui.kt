@@ -212,6 +212,26 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
     }
     fun back() { navigate("__back") }
     BackHandler(nested) { back() }
+    // WID-01: a widget tap opens today's outfit or the daily picks once the account's data is ready.
+    val widgetRequest by vm.widgetRequests.collectAsStateWithLifecycle()
+    // Waits for the account's data and for a running operation that blocks navigation.
+    val loaded = initialized && snapshot.wardrobes.isNotEmpty() && current != null && canNavigate
+    LaunchedEffect(widgetRequest, loaded) {
+        val request = widgetRequest ?: return@LaunchedEffect
+        if (!loaded) return@LaunchedEffect
+        vm.consumeWidgetRequest(request)
+        when (request.kind) {
+            // Only an outfit of the wardrobe on screen; a switched wardrobe simply keeps the current screen.
+            WidgetRequest.OUTFIT -> if (snapshot.outfits.any { it.id == request.outfitId && it.wardrobeId == current?.id } &&
+                !(route == "saved" && outfitId == request.outfitId)) { outfitId = request.outfitId; navigate("saved") }
+            WidgetRequest.DAILY -> if (route != "daily") navigate("daily")
+        }
+    }
+    // WID-01: the widget redraws only when what it shows changes (today's plan, its items, wear, the wardrobe, the day).
+    val widgetState = remember(snapshot, current?.id, today) {
+        if (snapshot.wardrobes.isEmpty() || current == null) null else TodayWidgetModel.state(snapshot, current.id, today)
+    }
+    LaunchedEffect(widgetState) { if (widgetState != null) { delay(500); vm.widgetChanged() } }
     fun openItem(g: Garment) { detailReturn = route; selected = g.id; go("detail") }
     fun addItem(category: String) { editorLaunch = ""; vm.clearDraft(); vm.forgetEditorPhotos(); buyingWishId = ""; editId = ""; editorCategory = category; editorSequence++; editorDirty = false; go("edit", replace = route == "edit") }
     fun openShop(sharedId: String? = null) {
