@@ -14,18 +14,25 @@ object DailyOutfits {
                 item.lastWear, date, rules[item.piece.wardrobe] ?: 0)
         }
     }
+    private fun rows(s: Snapshot, wardrobe: String) = s.feedback.filter { it.wardrobeId == wardrobe }
+        .map { PreferenceRules.Row(it.signature, it.occasion, it.weather, it.reason) }
+    /** PERS-01: whole sets turned down for this context (an aesthetic dislike applies in every context). */
     fun rejected(s: Snapshot, wardrobe: String, occasion: String, weather: String): Set<String> =
-        s.feedback.filter { it.wardrobeId == wardrobe && it.occasion == occasion && it.weather == weather }.map { it.signature }.toSet()
+        PreferenceRules.rejected(rows(s, wardrobe), occasion, weather)
+    /** PERS-01: items suggested less often in this context; never a reason to hide one. */
+    fun penalties(s: Snapshot, wardrobe: String, occasion: String, weather: String): Map<String, Int> =
+        PreferenceRules.penalties(rows(s, wardrobe), occasion, weather)
     fun generate(s: Snapshot, wardrobe: String, occasion: String, weather: String, date: String,
         seed: String = date, additionalRejected: Set<String> = emptySet(), allowed: Set<String>? = null, fixed: Map<String, String> = emptyMap()): List<List<Garment>> {
         val byId = s.garments.associateBy { it.id }
         return DailyRules.generate(items(s, date, allowed), wardrobe, occasion, weather, date, seed,
-            rejected(s, wardrobe, occasion, weather) + additionalRejected, fixed, 3).map { ids -> ids.mapNotNull { byId[it] } }
+            rejected(s, wardrobe, occasion, weather) + additionalRejected, fixed, 3, penalties(s, wardrobe, occasion, weather))
+            .map { ids -> ids.mapNotNull { byId[it] } }
     }
     fun replace(s: Snapshot, wardrobe: String, occasion: String, weather: String, date: String,
         selected: List<Garment>, category: String, additionalRejected: Set<String> = emptySet(), allowed: Set<String>? = null): List<Garment> {
         val byId = s.garments.associateBy { it.id }
         return DailyRules.replace(items(s, date, allowed), wardrobe, occasion, weather, date, selected.map { it.id }, category,
-            rejected(s, wardrobe, occasion, weather) + additionalRejected).mapNotNull { byId[it] }
+            rejected(s, wardrobe, occasion, weather) + additionalRejected, penalties(s, wardrobe, occasion, weather)).mapNotNull { byId[it] }
     }
 }

@@ -437,10 +437,10 @@
     <string name="daily_rotation">У цьому образі є річ без записаних носінь — спробуй дати їй шанс.</string>
     <string name="daily_replace">Замінити: %1$s</string>
     <string name="daily_no_replacement">Іншої доступної речі для цієї деталі немає. Перевір прання, сезон або спробуй інший образ.</string>
-    <string name="daily_dislike">Не мій стиль</string>
-    <string name="daily_hot">Занадто тепло</string>
+    <string name="daily_dislike">Не подобається поєднання</string>
+    <string name="daily_hot">Надто тепло</string>
     <string name="daily_refresh">Оновити варіанти</string>
-    <string name="daily_reset_feedback">Скинути приховані образи</string>
+    <string name="daily_reset_feedback">Скинути відгуки щодо образів</string>
     <string name="daily_empty">Немає повного образу за поточними умовами. Перевір доступність, сезони, вибрані речі та правила повторного носіння.</string>
     <string name="daily_rain_hint">Перевір водостійкість взуття й верхнього одягу: цих властивостей у каталозі немає.</string>
     <string name="weather_no_city">Погода — вручну або за містом</string>
@@ -1261,4 +1261,19 @@
     <string name="account_delete_config">Сервер ще не підтримує видалення акаунта. Потрібне оновлення серверної частини.</string>
     <string name="account_delete_network">Не вдалося отримати відповідь сервера. Видалення могло вже початися: повтори, коли з’явиться мережа.</string>
     <string name="account_delete_retry">Не вдалося видалити акаунт. Спробуй ще раз.</string>
+    <string name="feedback_open">Не підходить…</string>
+    <string name="feedback_title">Чому не підходить?</string>
+    <string name="feedback_uncomfortable">Незручно</string>
+    <string name="feedback_formal">Надто офіційно</string>
+    <string name="feedback_combination_scope">Цей набір речей більше не пропонуватиметься в жодних умовах. Самі речі — як і раніше.</string>
+    <string name="feedback_uncomfortable_scope">Обрана річ пропонуватиметься рідше в усіх умовах, але не зникне з пропозицій. Прибрати її повністю — «%1$s» у меню речі.</string>
+    <string name="feedback_formal_scope">Для нагоди «%1$s» цей набір більше не пропонуватиметься, а його речі — рідше. Інші нагоди не зміняться.</string>
+    <string name="feedback_warm_scope">Для погоди «%1$s» цей набір більше не пропонуватиметься, а його речі — рідше.</string>
+    <string name="feedback_warm_step">Умови зміняться на «%1$s».</string>
+    <string name="feedback_which">Що саме незручно?</string>
+    <string name="feedback_done">Враховано: %1$s</string>
+    <string name="feedback_already">Це вже було враховано раніше.</string>
+    <string name="feedback_ok">Зрозуміло</string>
+    <string name="feedback_count">Збережені відгуки щодо образів: %1$d</string>
+    <string name="feedback_reset_confirm">Скинути всі відгуки щодо образів цього гардероба? Приховані набори знову з’являться, а незручні речі пропонуватимуться як раніше.</string>
 </resources>
