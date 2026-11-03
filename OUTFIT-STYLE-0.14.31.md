@@ -62,5 +62,5 @@
   що може використати підбір, вибір стилю з «Моїх вподобань».
 - `tools/check_style.py` у host checks — pass (29 наборів).
 - CI першої версії (до правил v2): PR #30 run 41605097325 — 4/4 jobs pass, 304 JVM-тести, instrumentation 193 pass +
-  5 skipped. CI правил v2 — див. журнал роадмапу.
+  5 skipped. CI правил v2: run 41606645513 — 4/4 jobs pass, 304 JVM-тести, instrumentation 193 pass + 5 skipped.
 - На телефоні не перевірено: вигляд плитки, чіпів і оцінки в темній темі та з великим шрифтом.
