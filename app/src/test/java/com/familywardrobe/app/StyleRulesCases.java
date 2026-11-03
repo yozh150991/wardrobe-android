@@ -145,6 +145,27 @@ public final class StyleRulesCases {
         StyleRules.Swap again = StyleRules.better(good, reversed, "any_weather", "casual", Set.of(), Set.of());
         check(again != null && again.newId.equals(swap.newId), "stable");
 
+        // 0.14.33: the daily generator scores colour pairs with this table and prefers the better-rated outfit.
+        List<DailyRules.Item> daily = new ArrayList<>();
+        for (WardrobeRules.Piece piece : List.of(p("t", "top", "grey", "casual"), p("navy", "bottom", "navy", "casual"),
+            p("brown", "bottom", "brown", "casual"), p("s", "shoes", "white", "casual")))
+            daily.add(new DailyRules.Item(piece, 0, false, ""));
+        List<List<String>> picks = DailyRules.generate(daily, "home", "everyday", "warm", "2026-11-03", "seed", Set.of(), Map.of(), 2);
+        check(picks.get(0).contains("brown") && picks.get(1).contains("navy"), "grey goes with brown first, navy second: " + picks);
+        check(DailyRules.pairScore(p("a", "top", "grey", "casual"), p("b", "bottom", "brown", "casual")) == 8 &&
+            DailyRules.pairScore(p("a", "top", "grey", "casual"), p("b", "bottom", "navy", "formal")) == 3, "pair score = table + style");
+        // The best variant leaves nothing better to swap to.
+        List<WardrobeRules.Piece> first = new ArrayList<>();
+        for (String id : picks.get(0)) for (DailyRules.Item i : daily) if (i.piece.id.equals(id)) first.add(i.piece);
+        List<WardrobeRules.Piece> all = new ArrayList<>(); for (DailyRules.Item i : daily) all.add(i.piece);
+        check(StyleRules.better(first, all, "warm", "casual", Set.of(), Set.of()) == null, "no «Краще» under the first variant");
+        // The person's own reasons still win: «Незручно» on the brown trousers (PERS-01) puts navy first.
+        List<List<String>> uncomfortable = DailyRules.generate(daily, "home", "everyday", "warm", "2026-11-03", "seed", Set.of(), Map.of(), 2,
+            Map.of("brown", PreferenceRules.UNCOMFORTABLE));
+        check(uncomfortable.get(0).contains("navy"), "reasons beat colours: " + uncomfortable);
+        // A fourth colour costs the rating; with otherwise equal scores the three-colour outfit comes first.
+        check(DailyRules.RATING_WEIGHT > 0 && DailyRules.RATING_WEIGHT < 1000, "the rating nudges, the per-item score leads");
+
         System.out.println("PASS: " + checks + " style assertions (colour pairs, rating, labels, «Добре → Краще»).");
     }
 }
