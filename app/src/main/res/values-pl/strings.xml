@@ -1392,4 +1392,17 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="style_occasion_chip">Okazja: %1$s. Zmień</string>
     <string name="style_pair_accent_contrast">akcent na neutralnym o przeciwnej temperaturze — jak niebieski z brązem</string>
     <string name="style_many_colours">Kolorów: %1$d — zasada trzech kolorów radzi nie więcej niż trzy, łącznie z neutralnymi</string>
+    <string name="cream">Kremowy</string>
+    <string name="camel">Camel</string>
+    <string name="khaki">Khaki</string>
+    <string name="light_blue">Błękitny</string>
+    <string name="green">Zielony</string>
+    <string name="burgundy">Bordowy</string>
+    <string name="pink">Różowy</string>
+    <string name="orange">Pomarańczowy</string>
+    <string name="yellow">Żółty</string>
+    <string name="purple">Fioletowy</string>
+    <string name="family_color_older">Serwer wspólnej szafy nie zna jeszcze koloru „%1$s” — będzie tam „%2$s”. W Twojej szafie kolor się nie zmieni.</string>
+    <string name="style_pair_analogous">sąsiednie na kole barw — harmonijnie</string>
+    <string name="style_pair_complementary">kolory dopełniające — odważny kontrast; najlepiej jeden przygasić albo użyć go mniej</string>
 </resources>

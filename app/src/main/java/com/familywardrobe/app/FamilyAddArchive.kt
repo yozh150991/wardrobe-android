@@ -16,12 +16,14 @@ internal class FamilyAddArchive(private val context: AccountContext, private val
         selectedPhotos: PhotoStore, selectedPhotoId: String): FamilyAddDraft {
         val id = newId(); val directory = store.directory(id); check(directory.mkdirs())
         val photos = store.photos(id)
+        val colors2 = FamilyColors.supported(remote)
         try {
-            val merged = FamilyAddition.merge(latest, selected)
-            val item = selected.garments.single()
+            val chosen = FamilyColors.forServer(selected, colors2)
+            val merged = FamilyAddition.merge(latest, chosen)
+            val item = chosen.garments.single()
             for (photo in latest.photoIds()) copyPhoto(latestPhotos, photo, photos, photo)
             copyPhoto(selectedPhotos, selectedPhotoId, photos, item.photoId)
-            val manifest = FamilyEnvelope(Backup(context, repo, photos)).encode(merged, remote.identity, remote.revision).toByteArray(Charsets.UTF_8)
+            val manifest = FamilyEnvelope(Backup(context, repo, photos)).encode(merged, remote.identity, remote.revision, colors2).toByteArray(Charsets.UTF_8)
             val target = File(directory, "publish.zip")
             FamilySnapshotZip.write(target, manifest, merged, photos, guard)
             val draft = FamilyAddDraft(FamilyPublication(remote.identity, id, remote.revision, FamilyArchive.digest(target, guard), target.length()), item.id, item.photoId, item.name)
@@ -40,10 +42,11 @@ internal class FamilyAddArchive(private val context: AccountContext, private val
         val id = newId(); val directory = store.directory(id); check(directory.mkdirs())
         val photos = store.photos(id)
         try {
-            FamilyAddition.merge(latest, selected)
-            val item = selected.garments.single()
+            val chosen = FamilyColors.forServer(selected, FamilyColors.supported(remote))
+            FamilyAddition.merge(latest, chosen)
+            val item = chosen.garments.single()
             copyPhoto(selectedPhotos, selectedPhotoId, photos, item.photoId)
-            val text = FamilyChange.addition(Backup(context, repo, photos).encode(selected))
+            val text = FamilyChange.addition(Backup(context, repo, photos).encode(chosen))
             val target = File(directory, "publish.zip")
             FamilySnapshotZip.writeChange(target, photos, item.photoId, guard)
             val draft = FamilyAddDraft(FamilyPublication(remote.identity, id, remote.revision, FamilyArchive.digest(target, guard), target.length()),

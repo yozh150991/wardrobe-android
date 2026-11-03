@@ -6,7 +6,9 @@ import java.util.*;
 public final class StyleRulesCases {
     private static int checks;
     private static void check(boolean value, String what) { checks++; if (!value) throw new AssertionError("Style check " + checks + ": " + what); }
-    static final List<String> COLOURS = List.of("white", "black", "grey", "beige", "navy", "brown", "olive", "blue", "red", "other");
+    // Same as Matching.colors (tools/check_style.py keeps them equal); ten were added in 0.14.32 (COL-02).
+    static final List<String> COLOURS = List.of("white", "cream", "black", "grey", "beige", "camel", "khaki", "brown", "navy", "light_blue", "blue",
+        "olive", "green", "red", "burgundy", "pink", "orange", "yellow", "purple", "other");
     private static WardrobeRules.Piece p(String id, String category, String colour, String style) {
         return new WardrobeRules.Piece(id, "home", category, "available", false, "all", style, colour);
     }
@@ -37,14 +39,31 @@ public final class StyleRulesCases {
         check(StyleRules.pair("red", "brown").equals(StyleRules.ACCENT) && StyleRules.pair("blue", "black").equals(StyleRules.ACCENT), "accent of the same or no temperature");
         // «Always work» lists (S7, S8) are never below 3.
         for (String[] combo : new String[][] {{"black", "white"}, {"navy", "beige"}, {"brown", "beige"}, {"olive", "black"}, {"olive", "white"},
-            {"brown", "olive"}, {"grey", "grey"}, {"black", "beige"}, {"navy", "red"}, {"grey", "red"}})
+            {"brown", "olive"}, {"grey", "grey"}, {"black", "beige"}, {"navy", "red"}, {"grey", "red"},
+            // COL-02 colours in the same lists: navy + cream, black + camel, green + black/brown, navy + burgundy, pink + grey,
+            // pink + light blue (pastel pink and blue, S7), sky blue + chocolate brown (S10).
+            {"navy", "cream"}, {"black", "camel"}, {"green", "black"}, {"green", "brown"}, {"navy", "burgundy"}, {"pink", "grey"},
+            {"pink", "light_blue"}, {"light_blue", "brown"}})
             check(StyleRules.pairPoints(StyleRules.pair(combo[0], combo[1])) >= 3, "always works: " + combo[0] + " + " + combo[1]);
         check(StyleRules.pair("grey", "grey").equals(StyleRules.TONAL), "tone on tone");
+        // COL-02: accents by their place on the artist's wheel (S1): neighbours harmonise, opposites are a bold contrast.
+        for (String[] combo : new String[][] {{"blue", "green"}, {"blue", "purple"}, {"red", "orange"}, {"red", "pink"}, {"pink", "purple"},
+            {"orange", "yellow"}, {"yellow", "green"}, {"red", "burgundy"}, {"burgundy", "pink"}})
+            check(StyleRules.pair(combo[0], combo[1]).equals(StyleRules.ANALOGOUS), "analogous " + combo[0] + " + " + combo[1]);
+        for (String[] combo : new String[][] {{"blue", "orange"}, {"red", "green"}, {"yellow", "purple"}})
+            check(StyleRules.pair(combo[0], combo[1]).equals(StyleRules.COMPLEMENTARY), "complementary " + combo[0] + " + " + combo[1]);
+        check(StyleRules.pair("red", "blue").equals(StyleRules.TWO_ACCENTS) && StyleRules.pair("pink", "orange").equals(StyleRules.TWO_ACCENTS), "neither");
+        check(StyleRules.pairPoints(StyleRules.ANALOGOUS) == 3 && StyleRules.pairPoints(StyleRules.COMPLEMENTARY) == 2, "wheel points");
+        // New neutrals keep the earlier logic: cream and camel are warm, light blue is cool.
+        check(StyleRules.pair("cream", "navy").equals(StyleRules.WARM_COOL) && StyleRules.pair("light_blue", "brown").equals(StyleRules.WARM_COOL) &&
+            StyleRules.pair("light_blue", "navy").equals(StyleRules.CONTRAST) && StyleRules.pair("camel", "khaki").equals(StyleRules.CALM), "new neutrals");
+        // Every base colour has attributes: none of the twenty falls back to «unknown» except "other".
+        for (String colour : COLOURS) check(colour.equals("other") == StyleRules.pair(colour, "grey").equals(StyleRules.UNKNOWN), "attributes for " + colour);
         check(StyleRules.pair("red", "red").equals(StyleRules.SAME_ACCENT), "the same accent twice");
         check(StyleRules.pair("black", "brown").equals(StyleRules.BLACK_BROWN), "black and brown");
         check(StyleRules.pair("black", "navy").equals(StyleRules.DARK_DARK), "black and navy");
         check(StyleRules.pair("red", "blue").equals(StyleRules.TWO_ACCENTS), "two accents");
-        check(StyleRules.pair("other", "grey").equals(StyleRules.UNKNOWN) && StyleRules.pair("pink", "grey").equals(StyleRules.UNKNOWN), "unknown colour");
+        check(StyleRules.pair("other", "grey").equals(StyleRules.UNKNOWN) && StyleRules.pair("turquoise", "grey").equals(StyleRules.UNKNOWN), "unknown colour");
         check(StyleRules.pair("white", "grey").equals(StyleRules.CALM), "calm neutrals");
         check(StyleRules.pairPoints(StyleRules.WARM_COOL) == 4 && StyleRules.pairPoints(StyleRules.ACCENT_CONTRAST) == 4 &&
             StyleRules.pairPoints(StyleRules.CONTRAST) == 3 && StyleRules.pairPoints(StyleRules.TONAL) == 3 &&

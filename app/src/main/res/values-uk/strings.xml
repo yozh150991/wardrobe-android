@@ -1392,4 +1392,17 @@
     <string name="style_occasion_chip">Нагода: %1$s. Змінити</string>
     <string name="style_pair_accent_contrast">акцент на нейтральному протилежної температури — як синій із коричневим</string>
     <string name="style_many_colours">Кольорів: %1$d — правило трьох кольорів радить не більше трьох, разом із нейтральними</string>
+    <string name="cream">Молочний</string>
+    <string name="camel">Кемел</string>
+    <string name="khaki">Хакі</string>
+    <string name="light_blue">Блакитний</string>
+    <string name="green">Зелений</string>
+    <string name="burgundy">Бордовий</string>
+    <string name="pink">Рожевий</string>
+    <string name="orange">Помаранчевий</string>
+    <string name="yellow">Жовтий</string>
+    <string name="purple">Фіолетовий</string>
+    <string name="family_color_older">Сервер спільного гардероба ще не знає кольору «%1$s» — там він буде «%2$s». У вашому гардеробі колір не зміниться.</string>
+    <string name="style_pair_analogous">сусідні на колі кольорів — гармонійно</string>
+    <string name="style_pair_complementary">доповняльні кольори — сміливий контраст; краще приглушити один або зменшити його частку</string>
 </resources>

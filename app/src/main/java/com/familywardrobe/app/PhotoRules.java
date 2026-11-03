@@ -91,6 +91,12 @@ public final class PhotoRules {
         if (hue >= 15f && hue < 50f && max < 0.70f) return "brown";
         if (hue >= 45f && hue <= 85f && max < 0.65f) return "olive";
         if (hue < 15f || hue > 345f) return "red";
+        // COL-02: hues that used to end as "other" now have their own base colours. Every earlier answer is unchanged.
+        if (hue >= 15f && hue < 45f && sat >= 0.45f) return "orange";
+        if (hue >= 45f && hue <= 70f && sat >= 0.45f && max >= 0.65f) return "yellow";
+        if (hue > 85f && hue < 175f) return "green";
+        if (hue > 260f && hue <= 320f) return "purple";
+        if (hue > 320f && hue <= 345f) return "pink";
         return "other";
     }
 }

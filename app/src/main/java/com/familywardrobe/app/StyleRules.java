@@ -6,8 +6,9 @@ import java.util.*;
  * STYLE-01/02: a transparent outfit rating (0–10) and the colour-pair table behind «Добре → Краще». Every point
  * comes from a named rule, so the screen can say why; nothing here is learned or hidden.
  *
- * Colours are the app's ten base colours (a custom shade uses its base). Each has a lightness (value) and a
- * temperature, the two properties colour theory pairs by [S1][S2]. Rules v2 (3 November 2026) follow the sources
+ * Colours are the app's twenty base colours (a custom shade uses its base; ten were added in 0.14.32, COL-02). Each
+ * has a lightness (value) and a temperature, the two properties colour theory pairs by [S1][S2]; a bright accent also
+ * has its place on the artist's colour wheel, so two accents can be neighbours or opposites [S1]. Rules v2 (3 November 2026) follow the sources
  * below; the research, the app survey and the trends are in COLOR-RULES-0.14.31.md. Points are this app's choice:
  * the sources say what works, not how many points it is worth.
  *
@@ -51,6 +52,8 @@ public final class StyleRules {
     public static final String CALM = "calm";
     /** 3: one neutral family head to toe; better in different shades [S7 grey + grey][S9]. */
     public static final String TONAL = "tonal";
+    /** 3: two accents next to each other on the colour wheel — blue + green, red + pink [S1 analogous][S2]. */
+    public static final String ANALOGOUS = "analogous";
     /** 2: an unknown or patterned colour is not judged (and never costs the harmony point). */
     public static final String UNKNOWN = "unknown";
     /** 2: one bright colour head to toe — bold, works in different shades [S9 bright hues also work]. */
@@ -61,6 +64,8 @@ public final class StyleRules {
     public static final String DARK_DARK = "dark_dark";
     /** 2: two bright colours — fine with neutrals around them [S2 two colours plus neutrals][S7 pink + blue]. */
     public static final String TWO_ACCENTS = "two_accents";
+    /** 2: opposite accents — blue + orange, red + green: strong contrast, best with one toned down [S1 complementary][S2]. */
+    public static final String COMPLEMENTARY = "complementary";
     /** The three-colour rule: at most three colours, neutrals included [S3]. */
     public static final int MAX_COLOURS = 3;
 
@@ -77,18 +82,32 @@ public final class StyleRules {
 
     private static final int LIGHT = 0, MID = 1, DARK = 2;
     private static final int NEUTRAL = 0, WARM = 1, COOL = 2;
-    /** {base neutral (1) or bright accent (0), lightness, temperature}. Olive is an earthy neutral. */
+    /**
+     * {base neutral (1) or bright accent (0), lightness, temperature, place of an accent on the artist's (red–yellow–blue)
+     * wheel in degrees, -1 for neutrals}. Neutrals follow [S2]: black, white, grey; brown, tan/camel, beige, khaki and
+     * cream as neutral versions; navy, olive and light blue work as neutrals. Warm and cool follow [S1].
+     */
     private static final Map<String, int[]> COLOURS = new HashMap<>();
     static {
-        COLOURS.put("white", new int[] {1, LIGHT, NEUTRAL});
-        COLOURS.put("black", new int[] {1, DARK, NEUTRAL});
-        COLOURS.put("grey", new int[] {1, MID, COOL});
-        COLOURS.put("beige", new int[] {1, LIGHT, WARM});
-        COLOURS.put("navy", new int[] {1, DARK, COOL});
-        COLOURS.put("brown", new int[] {1, DARK, WARM});
-        COLOURS.put("olive", new int[] {1, MID, WARM});
-        COLOURS.put("blue", new int[] {0, MID, COOL});
-        COLOURS.put("red", new int[] {0, MID, WARM});
+        COLOURS.put("white", new int[] {1, LIGHT, NEUTRAL, -1});
+        COLOURS.put("cream", new int[] {1, LIGHT, WARM, -1});
+        COLOURS.put("black", new int[] {1, DARK, NEUTRAL, -1});
+        COLOURS.put("grey", new int[] {1, MID, COOL, -1});
+        COLOURS.put("beige", new int[] {1, LIGHT, WARM, -1});
+        COLOURS.put("camel", new int[] {1, MID, WARM, -1});
+        COLOURS.put("khaki", new int[] {1, MID, WARM, -1});
+        COLOURS.put("brown", new int[] {1, DARK, WARM, -1});
+        COLOURS.put("navy", new int[] {1, DARK, COOL, -1});
+        COLOURS.put("light_blue", new int[] {1, LIGHT, COOL, -1});
+        COLOURS.put("olive", new int[] {1, MID, WARM, -1});
+        COLOURS.put("red", new int[] {0, MID, WARM, 0});
+        COLOURS.put("orange", new int[] {0, MID, WARM, 60});
+        COLOURS.put("yellow", new int[] {0, LIGHT, WARM, 120});
+        COLOURS.put("green", new int[] {0, MID, COOL, 180});
+        COLOURS.put("blue", new int[] {0, MID, COOL, 240});
+        COLOURS.put("purple", new int[] {0, MID, COOL, 300});
+        COLOURS.put("pink", new int[] {0, LIGHT, WARM, 330});
+        COLOURS.put("burgundy", new int[] {0, DARK, WARM, 350});
     }
     /** Small pieces do not decide the colours or the style of an outfit. */
     private static final Set<String> SMALL = Set.of("jewelry", "accessory");
@@ -99,8 +118,8 @@ public final class StyleRules {
     public static int pairPoints(String code) {
         switch (code) {
             case WARM_COOL: case ACCENT_CONTRAST: return 4;
-            case CONTRAST: case ACCENT: case CALM: case TONAL: return 3;
-            case UNKNOWN: case SAME_ACCENT: case BLACK_BROWN: case DARK_DARK: case TWO_ACCENTS: return 2;
+            case CONTRAST: case ACCENT: case CALM: case TONAL: case ANALOGOUS: return 3;
+            case UNKNOWN: case SAME_ACCENT: case BLACK_BROWN: case DARK_DARK: case TWO_ACCENTS: case COMPLEMENTARY: return 2;
             default: throw new IllegalArgumentException(code);
         }
     }
@@ -113,7 +132,11 @@ public final class StyleRules {
         Set<String> both = Set.of(a, b);
         if (both.equals(Set.of("black", "brown"))) return BLACK_BROWN;
         if (both.equals(Set.of("black", "navy"))) return DARK_DARK;
-        if (x[0] == 0 && y[0] == 0) return TWO_ACCENTS;
+        if (x[0] == 0 && y[0] == 0) {
+            int distance = Math.abs(x[3] - y[3]) % 360;
+            distance = Math.min(distance, 360 - distance);
+            return distance >= 150 ? COMPLEMENTARY : distance <= 60 ? ANALOGOUS : TWO_ACCENTS;
+        }
         if (x[0] == 0 || y[0] == 0) return oppositeTemperature(x, y) ? ACCENT_CONTRAST : ACCENT;
         if (oppositeTemperature(x, y)) return WARM_COOL;
         if ((x[1] == LIGHT && y[1] == DARK) || (x[1] == DARK && y[1] == LIGHT)) return CONTRAST;

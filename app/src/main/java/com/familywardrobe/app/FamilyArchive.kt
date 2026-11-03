@@ -12,6 +12,9 @@ internal class FamilyArchive(private val context: AccountContext, private val re
     private val directory = File(context.filesDir,"family-transfer")
     private fun file(r: FamilyMigrationRecord) = File(directory,"${r.remoteId}.zip")
     override fun prepare(id: String) = store.prepare(id)
+    /** COL-02: set from the server's reply before [stage] builds the archive; unknown = older colours only. */
+    @Volatile private var colors2 = false
+    override fun serverFeatures(features: Set<String>) { colors2 = FamilyColors.supported(features) }
     override suspend fun revision() = requireNotNull(repo.dao.cloudMeta()).localRevision
     override fun uploaded(record: FamilyMigrationRecord) = store.uploaded(record)
     override fun rotate(record: FamilyMigrationRecord, rebuild: Boolean): FamilyMigrationRecord {
@@ -52,7 +55,7 @@ internal class FamilyArchive(private val context: AccountContext, private val re
             revision to state
         }
         try {
-            val manifest = FamilyEnvelope(Backup(context,repo,photos)).encode(state,record.identity,0).toByteArray(Charsets.UTF_8)
+            val manifest = FamilyEnvelope(Backup(context,repo,photos)).encode(state,record.identity,0,colors2).toByteArray(Charsets.UTF_8)
             FamilySnapshotZip.write(temporary, manifest, state, photos, checkpoint)
             val hash = digest(temporary,checkpoint)
             check(temporary.renameTo(file(record)))
