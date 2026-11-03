@@ -4,10 +4,11 @@ import org.json.JSONObject
 
 /** Dedicated wire boundary. The expected identity comes from a server response, never from this file. */
 internal class FamilyEnvelope(private val backup: Backup) {
-    fun encode(source: Snapshot, identity: FamilyArchiveIdentity, baseRevision: Long): String {
+    /** [colors2]: the server knows the colours of 0.14.32 (COL-02); otherwise they become their older bases. */
+    fun encode(source: Snapshot, identity: FamilyArchiveIdentity, baseRevision: Long, colors2: Boolean = false): String {
         require(baseRevision >= 0)
         // PERS-02: reasons for turning down outfits are the publisher's own; members never inherit them.
-        val state = WardrobeSnapshots.select(source, identity.wardrobeId).copy(feedback = emptyList())
+        val state = FamilyColors.forServer(WardrobeSnapshots.select(source, identity.wardrobeId).copy(feedback = emptyList()), colors2)
         return JSONObject().put("format", FORMAT).put("version", FamilyRules.WIRE_VERSION)
             .put("remoteId", identity.remoteId).put("wardrobeId", identity.wardrobeId).put("ownerUid", identity.ownerUid)
             .put("baseRevision", baseRevision).put("snapshot", backup.encode(state)).toString().also { require(it.toByteArray(Charsets.UTF_8).size <= MAX_MANIFEST) }

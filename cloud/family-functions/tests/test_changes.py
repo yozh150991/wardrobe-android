@@ -63,13 +63,28 @@ class ChangeTests(Helpers, unittest.TestCase):
         g.update(id=uid(number), photoId=photo, name=f'Item {number}', customCategoryId=None, customColorId=None, photoFingerprint='')
         g.update(fields); return g
 
-    def add(self, number, photo, category=None, color=None, category_field=None, **fields):
+    def add(self, number, photo, category=None, color=None, category_field=None, color_field=None, **fields):
         if category_field: fields['category'] = category_field
+        if color_field: fields['color'] = color_field
         return dict(kind='add', garment=self.garment(number, photo, **fields), customCategory=category, customColor=color,
                     photo=dict(id=photo, ext='png'))
 
     def test_head_advertises_server_side_changes(self):
         self.assertIn('change1', self.service.resume(self.viewer, dict(remoteId=REMOTE))['features'])
+
+    def test_new_base_colours_are_advertised_and_accepted(self):
+        # COL-02: clients send the colours of 0.14.32 only to a server that reports "colors2".
+        self.assertIn('colors2', self.service.resume(self.viewer, dict(remoteId=REMOTE))['features'])
+        shade = dict(id=uid(610), wardrobeId=WARDROBE, name='Forest', nameKey='forest', baseColor='green')
+        self.stage(uid(600), uid(601))
+        receipt = self.apply(uid(600), self.add(602, uid(601), color=shade, customColorId=uid(610), color_field='green'))
+        self.assertEqual('committed', receipt['status'])
+        state, _ = self.head()
+        self.assertEqual('green', next(g for g in state['garments'] if g['id'] == uid(602))['color'])
+        self.assertEqual('green', next(c for c in state['customColors'] if c['id'] == uid(610))['baseColor'])
+        self.stage(uid(603), uid(604))
+        with self.assertRaises(Exception):
+            self.apply(uid(603), self.add(605, uid(604), color_field='turquoise'))
 
     def test_new_item_with_new_label_and_reused_label_by_name(self):
         label = dict(id=uid(510), wardrobeId=WARDROBE, name='Knits', nameKey='knits', baseCategory='top')

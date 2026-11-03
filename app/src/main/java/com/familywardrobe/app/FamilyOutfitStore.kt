@@ -95,8 +95,8 @@ internal class FamilyOutfitStore(private val context: AccountContext, private va
     /** Rows of outfit [id] in [state] encoded like the manifest; the shared photos only provide file extensions. */
     fun rows(view: FamilyReadView, state: Snapshot, id: String, repo: Repository): org.json.JSONObject? {
         val outfit = state.outfits.find { it.id == id } ?: return null
-        val single = Snapshot(wardrobes = state.wardrobes, outfits = listOf(outfit), parts = state.parts.filter { it.outfitId == id },
-            ideas = state.ideas.filter { it.outfitId == id })
+        val single = FamilyColors.forServer(Snapshot(wardrobes = state.wardrobes, outfits = listOf(outfit), parts = state.parts.filter { it.outfitId == id },
+            ideas = state.ideas.filter { it.outfitId == id }), FamilyColors.supported(view.remote))
         return FamilyChange.outfitRows(Backup(context, repo, view.candidate.photos).encode(single), id)
     }
     /**
@@ -124,7 +124,8 @@ internal class FamilyOutfitStore(private val context: AccountContext, private va
                     file.inputStream().use { PhotoStore.copyLimited(it, out, 12L * 1024 * 1024, guard) }; out.fd.sync()
                 }
             }
-            val manifest = FamilyEnvelope(Backup(context, repo, photos)).encode(changed, view.remote.identity, view.remote.revision)
+            val manifest = FamilyEnvelope(Backup(context, repo, photos)).encode(changed, view.remote.identity, view.remote.revision,
+                FamilyColors.supported(view.remote))
             val zip = File(directory, "publish.zip")
             FamilySnapshotZip.write(zip, manifest.toByteArray(Charsets.UTF_8), changed, photos, guard)
             val publication = FamilyPublication(view.remote.identity, id, view.remote.revision, FamilyArchive.digest(zip, guard), zip.length())

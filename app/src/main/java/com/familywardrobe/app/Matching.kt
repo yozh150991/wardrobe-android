@@ -4,7 +4,9 @@ package com.familywardrobe.app
 object Matching {
     val categories = WardrobeRules.CATEGORIES.toList()
     val coreCategories = WardrobeRules.CORE.toList()
-    val colors = listOf("white", "black", "grey", "beige", "navy", "brown", "olive", "blue", "red", "other")
+    /** COL-02 (0.14.32): ten more bases, grouped next to their families; "other" stays last. See [ColorRules.legacy]. */
+    val colors = listOf("white", "cream", "black", "grey", "beige", "camel", "khaki", "brown", "navy", "light_blue", "blue",
+        "olive", "green", "red", "burgundy", "pink", "orange", "yellow", "purple", "other")
     val seasons = listOf("all", "summer", "winter", "midseason")
     val styles = listOf("casual", "sport", "formal")
     val availability = listOf("available", "laundry", "repair", "lent")
