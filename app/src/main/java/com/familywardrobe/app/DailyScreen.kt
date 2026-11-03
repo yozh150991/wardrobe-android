@@ -2,6 +2,10 @@
 package com.familywardrobe.app
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ArrowDropDown
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.Event
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -14,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
@@ -27,6 +32,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import kotlin.math.roundToInt
 
 @Composable
 fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
@@ -116,6 +122,23 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
         val shown = rotationItem ?: return@LaunchedEffect
         if (anchor.isEmpty() && rotationLook.isNotEmpty()) vm.rotation.markShown(wardrobe, shown.id, today)
     }
+    // STYLE-01/02: each outfit's rating and the best single change from the person's own items, off the UI thread.
+    val target = remember(wardrobe, occasion, s.feedback, choices) { OutfitStyle.target(s, wardrobe, occasion, choices) }
+    var betters by remember { mutableStateOf<Map<String, BetterSwap>>(emptyMap()) }
+    LaunchedEffect(lookIds, rotationIds, rotationAnchorId, input) {
+        val variants = looks; val rotationNow = rotationLook; val pins = fixedIds.toSet(); val anchorId = rotationAnchorId
+        delay(80)
+        betters = withContext(Dispatchers.Default) {
+            buildMap {
+                variants.forEach { look -> OutfitStyle.better(s, wardrobe, occasion, weather, today, look, pins, allowed, choices)
+                    ?.let { put(DailyRules.signature(look.map { g -> g.id }), it) } }
+                // The item of «Давно не вдягали» stays: that is the point of the card.
+                if (rotationNow.isNotEmpty()) OutfitStyle.better(s, wardrobe, occasion, weather, today, rotationNow, pins + anchorId, allowed, choices)
+                    ?.let { put(ROTATION_KEY + DailyRules.signature(rotationNow.map { g -> g.id }), it) }
+            }
+        }
+    }
+    var occasionMenu by remember { mutableStateOf(false) }
     var snoozing by rememberSaveable { mutableStateOf("") }
     var archiving by rememberSaveable { mutableStateOf("") }
     var snoozedNotice by rememberSaveable(wardrobe) { mutableStateOf("") }
@@ -178,8 +201,26 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
         item {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (capsule != null) Text(capsule.name, style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(label(occasion)) + " · " + stringResource(label(weather)) +
-                    if (packedOnly) " · " + stringResource(R.string.capsule_packed_only) else "", style = MaterialTheme.typography.bodyMedium)
+                // STYLE-03: the conditions as chips: the occasion is picked right here, the weather opens the conditions.
+                val occasionDescription = stringResource(R.string.style_occasion_chip, stringResource(label(occasion)))
+                val temperature = forecast?.takeIf { weatherEnabled }?.let { f -> if (f.currentDate == today) f.feelsLike else f.days.find { it.date == today }?.high }
+                val weatherText = stringResource(label(weather)) + (temperature?.let { " · ${it.roundToInt()}°" } ?: "")
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Box {
+                        AssistChip(onClick = { occasionMenu = true }, enabled = !busy, label = { Text(stringResource(label(occasion))) },
+                            modifier = Modifier.semantics { contentDescription = occasionDescription },
+                            leadingIcon = { Icon(Icons.Outlined.Event, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                            trailingIcon = { Icon(Icons.Outlined.ArrowDropDown, contentDescription = null, modifier = Modifier.size(18.dp)) })
+                        DropdownMenu(occasionMenu, onDismissRequest = { occasionMenu = false }) {
+                            LookRules.OCCASIONS.forEach { code ->
+                                DropdownMenuItem(text = { Text(stringResource(label(code))) }, onClick = { occasion = code; occasionMenu = false })
+                            }
+                        }
+                    }
+                    AssistChip(onClick = { configuring = true }, label = { Text(weatherText) },
+                        leadingIcon = { Icon(Icons.Outlined.Cloud, contentDescription = null, modifier = Modifier.size(18.dp)) })
+                    if (packedOnly) AssistChip(onClick = { configuring = true }, label = { Text(stringResource(R.string.capsule_packed_only)) })
+                }
                 if (forecastWeather != null && forecastWeather != weather) Text(stringResource(R.string.prefs_weather_shifted,
                     stringResource(label(forecastWeather)), stringResource(label(weather))), style = MaterialTheme.typography.bodySmall)
                 if (weather in setOf("cold", "cool", "rain") && s.garments.none { it.wardrobeId == wardrobe && it.category == "outerwear" && WardrobeRules.ready(it.rulePiece()) })
@@ -239,10 +280,15 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                     Text(if (last != null) stringResource(R.string.rotation_reason_worn, rotationItem.name, dateLabel(last), idle)
                         else stringResource(R.string.rotation_reason_never, rotationItem.name, dateLabel(added), idle), style = MaterialTheme.typography.bodyMedium)
                     if (rotationLook.isNotEmpty()) {
-                        OutfitComposition(rotationLook.map(LookRules::owned), vm, locks = (fixedIds + rotationItem.id).map { "owned:$it" }.toSet()) { piece ->
-                            actionItem = piece.ownedId.orEmpty(); actionIndex = ROTATION
+                        val rating = remember(rotationLook, weather, target) { OutfitStyle.rate(rotationLook, weather, target) }
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ColourDots(OutfitStyle.colours(rotationLook)); ScoreBadge(rating)
                         }
-                        Text(stringResource(R.string.rotation_fits, stringResource(label(weather)), stringResource(label(occasion))), style = MaterialTheme.typography.bodySmall)
+                        OutfitGrid(rotationLook, vm, (fixedIds + rotationItem.id).toSet(), !busy) { g -> actionItem = g.id; actionIndex = ROTATION }
+                        StyleReasons(rating, rotationLook, weather, target)
+                        betters[ROTATION_KEY + DailyRules.signature(rotationLook.map { it.id })]?.let { swap ->
+                            BetterBlock(swap, !busy) { rotationIds = OutfitStyle.replaced(rotationIds, swap) }
+                        }
                         val autoName = stringResource(R.string.rotation_saved_name, rotationItem.name, dateText)
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Button(onClick = { beginSave(rotationLook, false, autoName) }, enabled = !busy) { Text(stringResource(R.string.save_outfit)) }
@@ -291,11 +337,22 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
         }
         itemsIndexed(looks, key = { index, _ -> index }) { index, items ->
             val autoName = stringResource(R.string.daily_saved_variant, dateText, index + 1)
+            // STYLE-01–03: score, colours, the items as tiles, why, and «Добре → Краще».
+            val rating = remember(items, weather, target) { OutfitStyle.rate(items, weather, target) }
             Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(stringResource(R.string.daily_option, index + 1), style = MaterialTheme.typography.titleLarge)
-                    OutfitComposition(items.map(LookRules::owned), vm, locks = fixedIds.map { "owned:$it" }.toSet()) { piece -> actionItem = piece.ownedId.orEmpty(); actionIndex = index }
-                    Text(stringResource(R.string.daily_reason, stringResource(label(weather)), stringResource(label(occasion))), style = MaterialTheme.typography.bodySmall)
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(stringResource(R.string.daily_option, index + 1), style = MaterialTheme.typography.titleLarge)
+                            ColourDots(OutfitStyle.colours(items))
+                        }
+                        ScoreBadge(rating)
+                    }
+                    OutfitGrid(items, vm, fixedIds.toSet(), !busy) { g -> actionItem = g.id; actionIndex = index }
+                    StyleReasons(rating, items, weather, target)
+                    betters[DailyRules.signature(items.map { it.id })]?.let { swap ->
+                        BetterBlock(swap, !busy) { lookIds = ArrayList(lookIds.mapIndexed { i, old -> if (i == index) OutfitStyle.replaced(old, swap) else old }) }
+                    }
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = { beginSave(items, false, autoName) }, enabled = !busy) { Text(stringResource(R.string.save_outfit)) }
                         OutlinedButton(onClick = { beginSave(items, true, autoName) }, enabled = !busy) { Text(stringResource(R.string.calendar_plan)) }
@@ -448,6 +505,8 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
 
 /** ROT-01: the action sheet acts on the «Давно не вдягали» outfit instead of a numbered variant. */
 private const val ROTATION = -2
+/** STYLE-02: the «Давно не вдягали» outfit's «Краще» is kept apart from a variant with the same items (its item is fixed). */
+private const val ROTATION_KEY = "rotation:"
 
 /** ROT-01: why the item chosen in the statistics makes no outfit today, in words the person can act on. */
 @Composable
