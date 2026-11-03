@@ -6,24 +6,63 @@ import java.util.*;
  * STYLE-01/02: a transparent outfit rating (0–10) and the colour-pair table behind «Добре → Краще». Every point
  * comes from a named rule, so the screen can say why; nothing here is learned or hidden.
  *
- * Colours are the app's ten base colours (a custom shade uses its base). Each has a lightness and a temperature:
- * a neutral warm + cool pair (grey with brown, navy with beige) is the richest, light with dark is a classic contrast,
- * one bright accent on a neutral base is safe, two bright accents compete, black with brown and black with navy blur.
+ * Colours are the app's ten base colours (a custom shade uses its base). Each has a lightness (value) and a
+ * temperature, the two properties colour theory pairs by [S1][S2]. Rules v2 (3 November 2026) follow the sources
+ * below; the research, the app survey and the trends are in COLOR-RULES-0.14.31.md. Points are this app's choice:
+ * the sources say what works, not how many points it is worth.
+ *
+ * Sources (opened 3 November 2026):
+ * [S1] Adobe, "Master the colour wheel": complementary, analogous, triadic harmonies; warm = red, orange, yellow,
+ *      cool = blue, green, violet. https://www.adobe.com/uk/creativecloud/design/discover/color-wheel.html
+ * [S2] Ape to Gentleman, "How to Colour Match Clothing": black, white, grey neutral; brown, tan, beige, khaki neutral
+ *      versions; navy works as a neutral; usually two colours (or one) plus neutrals; vary hue/saturation/brightness.
+ *      https://www.apetogentleman.com/colour-match/
+ * [S3] Woman & Home, "The three colour rule": up to three colours including neutrals, roughly 60/30/10.
+ *      https://www.womanandhome.com/fashion/three-colour-rule/
+ * [S4] Coveteur, black and brown: the old rule is outdated; add a third colour, vary shades and materials.
+ *      https://coveteur.com/black-brown-outfit-styling
+ * [S5] Mr Porter, "Can you wear black and navy together?": acceptable when deliberate and clearly different.
+ *      https://www.mrporter.com/en-es/journal/fashion/you-asked-can-you-wear-black-and-navy-together-762234
+ * [S6] FashionBeans, outdated style rules: navy and black, brown and black no longer forbidden.
+ *      https://www.fashionbeans.com/article/outdated-style-rules-should-break/
+ * [S7] Ape to Gentleman, "8 Outfit Colour Matching Combinations That Always Work": black + white, navy + cream,
+ *      brown + beige, green + black, olive + white, brown + green, grey + grey, pink + blue.
+ *      https://www.apetogentleman.com/outfit-colour-combinations/
+ * [S8] FashionBeans, "5 Colour Combinations That Always Work": black + camel, navy + burgundy, brown + green,
+ *      pink + grey, black + white. https://www.fashionbeans.com/2017/5-colour-combinations-that-always-work/
+ * [S9] Moss, tonal dressing: one colour family head to toe, varying the shade. https://www.moss.co.uk/inside-pocket/post/how-to-tonal-dressing
+ * [S10] Who What Wear, blue + brown trend (27 Jan 2025): sky blue with chocolate brown.
+ *      https://www.whowhatwear.com/fashion/celebrity-style/blue-brown-colour-trend-katie-holmes-alexa-chung
+ * [S11] The user's screenshot (3 November 2026): grey with navy «good», grey with brown «better».
  */
 public final class StyleRules {
     private StyleRules() {}
 
-    // Pair codes, best first; their points are in [pairPoints].
+    // Pair codes, best first; their points are in [pairPoints]. Every code names its sources.
+    /** 4: neutrals of opposite temperature — grey + brown, navy + beige/brown [S1][S7 navy + cream][S11]. */
     public static final String WARM_COOL = "warm_cool";
+    /** 4: an accent on a neutral of the opposite temperature — blue + brown, red + navy [S1 complementary][S8 navy + burgundy][S10]. */
+    public static final String ACCENT_CONTRAST = "accent_contrast";
+    /** 3: light with dark — black + white, navy + white, brown + beige [S2 brightness][S7][S8]. */
     public static final String CONTRAST = "contrast";
+    /** 3: one accent on a neutral base of the same or no temperature [S2 neutral base + one highlight][S8 pink + grey]. */
     public static final String ACCENT = "accent";
+    /** 3: neutrals together — grey + navy, olive + white, black + olive [S2][S7 olive + white, green + black]. */
     public static final String CALM = "calm";
+    /** 3: one neutral family head to toe; better in different shades [S7 grey + grey][S9]. */
     public static final String TONAL = "tonal";
+    /** 2: an unknown or patterned colour is not judged (and never costs the harmony point). */
     public static final String UNKNOWN = "unknown";
+    /** 2: one bright colour head to toe — bold, works in different shades [S9 bright hues also work]. */
     public static final String SAME_ACCENT = "same_accent";
+    /** 2: debated — the old rule is outdated, but it needs a third colour or different shades [S4][S6]. */
     public static final String BLACK_BROWN = "black_brown";
+    /** 2: debated — works when deliberate and clearly different, otherwise the darks blur [S5][S6]. */
     public static final String DARK_DARK = "dark_dark";
+    /** 2: two bright colours — fine with neutrals around them [S2 two colours plus neutrals][S7 pink + blue]. */
     public static final String TWO_ACCENTS = "two_accents";
+    /** The three-colour rule: at most three colours, neutrals included [S3]. */
+    public static final int MAX_COLOURS = 3;
 
     // Weather codes.
     public static final String WEATHER_OK = "ok";
@@ -56,13 +95,12 @@ public final class StyleRules {
     /** The two biggest pieces make the main colour pair. */
     private static final List<String> MAIN = List.of("top", "dress", "jumpsuit", "bottom", "layer", "outerwear", "shoes", "bag", "hat", "tights", "other_item");
 
+    /** No pairing is forbidden [S2 "no specific pairing is ruled out" in spirit; S4–S6]: the lowest tier is «with care». */
     public static int pairPoints(String code) {
         switch (code) {
-            case WARM_COOL: return 4;
-            case CONTRAST: case ACCENT: case CALM: return 3;
-            case TONAL: case UNKNOWN: return 2;
-            case SAME_ACCENT: case BLACK_BROWN: case DARK_DARK: return 1;
-            case TWO_ACCENTS: return 0;
+            case WARM_COOL: case ACCENT_CONTRAST: return 4;
+            case CONTRAST: case ACCENT: case CALM: case TONAL: return 3;
+            case UNKNOWN: case SAME_ACCENT: case BLACK_BROWN: case DARK_DARK: case TWO_ACCENTS: return 2;
             default: throw new IllegalArgumentException(code);
         }
     }
@@ -76,10 +114,14 @@ public final class StyleRules {
         if (both.equals(Set.of("black", "brown"))) return BLACK_BROWN;
         if (both.equals(Set.of("black", "navy"))) return DARK_DARK;
         if (x[0] == 0 && y[0] == 0) return TWO_ACCENTS;
-        if (x[0] == 0 || y[0] == 0) return ACCENT;
-        if ((x[2] == WARM && y[2] == COOL) || (x[2] == COOL && y[2] == WARM)) return WARM_COOL;
+        if (x[0] == 0 || y[0] == 0) return oppositeTemperature(x, y) ? ACCENT_CONTRAST : ACCENT;
+        if (oppositeTemperature(x, y)) return WARM_COOL;
         if ((x[1] == LIGHT && y[1] == DARK) || (x[1] == DARK && y[1] == LIGHT)) return CONTRAST;
         return CALM;
+    }
+
+    private static boolean oppositeTemperature(int[] x, int[] y) {
+        return (x[2] == WARM && y[2] == COOL) || (x[2] == COOL && y[2] == WARM);
     }
 
     public static final class Rating {
@@ -87,8 +129,12 @@ public final class StyleRules {
         public final int score, colour, style, weather;
         /** The main pair (two biggest pieces): its code and colours; "" with fewer than two pieces. */
         public final String pair, pairA, pairB;
-        /** The worst pair elsewhere when it clashes (1 point or less), or "". */
+        /** The weakest «with care» pair (2 points, not an unknown colour), or "": it costs the harmony point. */
         public final String clash, clashA, clashB;
+        /** Distinct known colours of the big pieces; more than [MAX_COLOURS] costs the harmony point [S3]. */
+        public final int colours;
+        /** Distinct bright (non-neutral) colours among them. */
+        public final int accents;
         /** The outfit's main style and how many of the counted pieces share it. */
         public final String dominant;
         public final int sharing, counted;
@@ -97,9 +143,10 @@ public final class StyleRules {
         /** The piece out of season for the weather, or "". */
         public final String seasonItem;
         Rating(int colour, int style, int weather, String pair, String pairA, String pairB, String clash, String clashA, String clashB,
-               String dominant, int sharing, int counted, boolean targetStyle, String weatherCode, String seasonItem) {
+               int colours, int accents, String dominant, int sharing, int counted, boolean targetStyle, String weatherCode, String seasonItem) {
             this.score = colour + style + weather; this.colour = colour; this.style = style; this.weather = weather;
             this.pair = pair; this.pairA = pairA; this.pairB = pairB; this.clash = clash; this.clashA = clashA; this.clashB = clashB;
+            this.colours = colours; this.accents = accents;
             this.dominant = dominant; this.sharing = sharing; this.counted = counted; this.targetStyle = targetStyle;
             this.weatherCode = weatherCode; this.seasonItem = seasonItem;
         }
@@ -118,17 +165,19 @@ public final class StyleRules {
         if (big.isEmpty()) big = new ArrayList<>(look);
         big.sort(Comparator.<WardrobeRules.Piece>comparingInt(p -> priority(p.category)).thenComparing(p -> p.id));
 
-        // Colour: the main pair's points, plus one when nothing else clashes.
+        // Colour: the main pair's points, plus a harmony point when every other pair works well and the outfit keeps
+        // to three colours [S3].
         int colour = 3; String pair = "", pairA = "", pairB = "";
-        String clash = "", clashA = "", clashB = ""; int worst = Integer.MAX_VALUE;
+        String clash = "", clashA = "", clashB = "";
+        Set<String> known = new TreeSet<>();
+        for (WardrobeRules.Piece p : big) if (COLOURS.containsKey(p.color)) known.add(p.color);
         if (big.size() >= 2) {
             pairA = big.get(0).color; pairB = big.get(1).color; pair = pair(pairA, pairB);
-            for (int i = 0; i < big.size(); i++) for (int j = i + 1; j < big.size(); j++) {
+            for (int i = 0; i < big.size() && clash.isEmpty(); i++) for (int j = i + 1; j < big.size(); j++) {
                 String code = pair(big.get(i).color, big.get(j).color);
-                int points = pairPoints(code);
-                if (points <= 1 && points < worst) { worst = points; clash = code; clashA = big.get(i).color; clashB = big.get(j).color; }
+                if (!code.equals(UNKNOWN) && pairPoints(code) <= 2) { clash = code; clashA = big.get(i).color; clashB = big.get(j).color; break; }
             }
-            colour = pairPoints(pair) + (clash.isEmpty() ? 1 : 0);
+            colour = pairPoints(pair) + (clash.isEmpty() && known.size() <= MAX_COLOURS ? 1 : 0);
         }
 
         // Style: one style throughout (2), mostly one (1), plus one when it is the occasion's style.
@@ -155,7 +204,9 @@ public final class StyleRules {
         String weatherCode = !outOfSeason.isEmpty() ? OUT_OF_SEASON : chilly && !outerwear ? NO_OUTERWEAR : WEATHER_OK;
         int weatherPoints = weatherCode.equals(WEATHER_OK) ? 2 : weatherCode.equals(NO_OUTERWEAR) ? 1 : 0;
 
-        return new Rating(colour, style, weatherPoints, pair, pairA, pairB, clash, clashA, clashB, dominant, sharing, counted,
+        int accents = 0;
+        for (String c : known) if (COLOURS.get(c)[0] == 0) accents++;
+        return new Rating(colour, style, weatherPoints, pair, pairA, pairB, clash, clashA, clashB, known.size(), accents, dominant, sharing, counted,
             onTarget, weatherCode, outOfSeason);
     }
 
@@ -195,8 +246,10 @@ public final class StyleRules {
                 if (!seasons || rejected.contains(DailyRules.signature(ids))) continue;
                 Rating after = rate(changed, weather, target);
                 if (after.score <= before.score) continue;
-                if (best == null || after.score > best.after.score || (after.score == best.after.score && after.colour > best.after.colour))
-                    best = new Swap(old.id, next.id, before, after);
+                // Ties: better colours, then fewer bright colours — a neutral base is the safe choice [S2].
+                boolean wins = best == null || after.score > best.after.score || (after.score == best.after.score &&
+                    (after.colour > best.after.colour || (after.colour == best.after.colour && after.accents < best.after.accents)));
+                if (wins) best = new Swap(old.id, next.id, before, after);
             }
         }
         return best;

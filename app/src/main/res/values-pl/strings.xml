@@ -1371,12 +1371,12 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="style_pair_contrast">jasny z ciemnym — klasyczny kontrast</string>
     <string name="style_pair_accent">neutralna baza i jeden akcent</string>
     <string name="style_pair_calm">spokojne neutralne — dobrze, ale bez wyrazu</string>
-    <string name="style_pair_tonal">ton w ton</string>
+    <string name="style_pair_tonal">ton w ton — spójnie; najlepiej w różnych odcieniach</string>
     <string name="style_pair_unknown">nie podano koloru, połączenie nie jest oceniane</string>
-    <string name="style_pair_same_accent">ten sam jaskrawy kolor dwa razy — za dużo</string>
-    <string name="style_pair_black_brown">czerń z brązem często się kłócą</string>
-    <string name="style_pair_dark_dark">dwa bardzo ciemne kolory się zlewają</string>
-    <string name="style_pair_two_accents">dwa jaskrawe akcenty rywalizują</string>
+    <string name="style_pair_same_accent">odważny monochrom jednego jaskrawego koloru — najlepiej w różnych odcieniach</string>
+    <string name="style_pair_black_brown">połączenie dyskusyjne: pomoże trzeci kolor i różne odcienie</string>
+    <string name="style_pair_dark_dark">połączenie dyskusyjne: odcienie powinny wyraźnie się różnić</string>
+    <string name="style_pair_two_accents">dwa jaskrawe kolory — resztę lepiej zostawić neutralną</string>
     <string name="style_one_style">Jeden styl: %1$s</string>
     <string name="style_one_style_other">Jeden styl: %1$s (na tę okazję zwykle — %2$s)</string>
     <string name="style_mixed">Style mieszane: %1$s — %2$d z %3$d rzeczy</string>
@@ -1390,4 +1390,6 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="style_better_weather">Wtedy zestaw lepiej pasuje do pogody.</string>
     <string name="style_apply">Zamień</string>
     <string name="style_occasion_chip">Okazja: %1$s. Zmień</string>
+    <string name="style_pair_accent_contrast">akcent na neutralnym o przeciwnej temperaturze — jak niebieski z brązem</string>
+    <string name="style_many_colours">Kolorów: %1$d — zasada trzech kolorów radzi nie więcej niż trzy, łącznie z neutralnymi</string>
 </resources>

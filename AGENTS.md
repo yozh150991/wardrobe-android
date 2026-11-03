@@ -8,6 +8,8 @@ OutfitStyle.kt (candidates as the daily picks; no uncomfortable, hidden or pinne
 ScoreBadge, OutfitGrid, StyleReasons, BetterBlock); DailyScreen uses them for variants and the rotation card, chips
 for occasion and weather. The generator still uses WardrobeRules.score (old colour weights): moving it to the new
 table is the next step, with its and the purchase-advice expectations. tools/check_style.py guards it.
+Rules v2 (same PR): sourced table, references [S1–S11] next to every pair code in StyleRules.java (the guard
+requires a source with a link for each), research/app survey/trends in COLOR-RULES-0.14.31.md.
 
 ## Current handoff — ROT-02 postpone, reasons and frequency, 3 November 2026
 

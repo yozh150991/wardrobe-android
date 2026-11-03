@@ -2,7 +2,7 @@ package com.familywardrobe.app;
 
 import java.util.*;
 
-/** STYLE-01/02: the colour-pair table, the 0–10 rating and «Добре → Краще» on the production rules. */
+/** STYLE-01/02: the colour-pair table (rules v2, sourced in StyleRules), the 0–10 rating and «Добре → Краще». */
 public final class StyleRulesCases {
     private static int checks;
     private static void check(boolean value, String what) { checks++; if (!value) throw new AssertionError("Style check " + checks + ": " + what); }
@@ -20,7 +20,8 @@ public final class StyleRulesCases {
             String code = StyleRules.pair(a, b);
             check(code.equals(StyleRules.pair(b, a)), "symmetric " + a + "/" + b);
             int points = StyleRules.pairPoints(code);
-            check(points >= 0 && points <= 4, "points in range " + a + "/" + b);
+            // No pairing is forbidden any more (S4–S6): the lowest tier is «with care».
+            check(points >= 2 && points <= 4, "points in range " + a + "/" + b);
         }
         // The example from the user's screenshot: grey with navy is good, grey with brown is better.
         check(StyleRules.pair("grey", "navy").equals(StyleRules.CALM), "grey + navy");
@@ -30,6 +31,14 @@ public final class StyleRulesCases {
         check(StyleRules.pair("navy", "beige").equals(StyleRules.WARM_COOL) && StyleRules.pair("navy", "brown").equals(StyleRules.WARM_COOL), "navy with warm");
         check(StyleRules.pair("white", "navy").equals(StyleRules.CONTRAST) && StyleRules.pair("black", "white").equals(StyleRules.CONTRAST), "light with dark");
         check(StyleRules.pair("white", "red").equals(StyleRules.ACCENT) && StyleRules.pair("navy", "blue").equals(StyleRules.ACCENT), "one accent");
+        // An accent on a neutral of the opposite temperature: blue + brown (S10), navy + burgundy, pink + grey (S8).
+        check(StyleRules.pair("blue", "brown").equals(StyleRules.ACCENT_CONTRAST) && StyleRules.pair("red", "navy").equals(StyleRules.ACCENT_CONTRAST) &&
+            StyleRules.pair("red", "grey").equals(StyleRules.ACCENT_CONTRAST) && StyleRules.pair("blue", "beige").equals(StyleRules.ACCENT_CONTRAST), "complementary accent");
+        check(StyleRules.pair("red", "brown").equals(StyleRules.ACCENT) && StyleRules.pair("blue", "black").equals(StyleRules.ACCENT), "accent of the same or no temperature");
+        // «Always work» lists (S7, S8) are never below 3.
+        for (String[] combo : new String[][] {{"black", "white"}, {"navy", "beige"}, {"brown", "beige"}, {"olive", "black"}, {"olive", "white"},
+            {"brown", "olive"}, {"grey", "grey"}, {"black", "beige"}, {"navy", "red"}, {"grey", "red"}})
+            check(StyleRules.pairPoints(StyleRules.pair(combo[0], combo[1])) >= 3, "always works: " + combo[0] + " + " + combo[1]);
         check(StyleRules.pair("grey", "grey").equals(StyleRules.TONAL), "tone on tone");
         check(StyleRules.pair("red", "red").equals(StyleRules.SAME_ACCENT), "the same accent twice");
         check(StyleRules.pair("black", "brown").equals(StyleRules.BLACK_BROWN), "black and brown");
@@ -37,8 +46,10 @@ public final class StyleRulesCases {
         check(StyleRules.pair("red", "blue").equals(StyleRules.TWO_ACCENTS), "two accents");
         check(StyleRules.pair("other", "grey").equals(StyleRules.UNKNOWN) && StyleRules.pair("pink", "grey").equals(StyleRules.UNKNOWN), "unknown colour");
         check(StyleRules.pair("white", "grey").equals(StyleRules.CALM), "calm neutrals");
-        check(StyleRules.pairPoints(StyleRules.WARM_COOL) == 4 && StyleRules.pairPoints(StyleRules.CONTRAST) == 3 && StyleRules.pairPoints(StyleRules.TONAL) == 2 &&
-            StyleRules.pairPoints(StyleRules.BLACK_BROWN) == 1 && StyleRules.pairPoints(StyleRules.TWO_ACCENTS) == 0, "points");
+        check(StyleRules.pairPoints(StyleRules.WARM_COOL) == 4 && StyleRules.pairPoints(StyleRules.ACCENT_CONTRAST) == 4 &&
+            StyleRules.pairPoints(StyleRules.CONTRAST) == 3 && StyleRules.pairPoints(StyleRules.TONAL) == 3 &&
+            StyleRules.pairPoints(StyleRules.BLACK_BROWN) == 2 && StyleRules.pairPoints(StyleRules.DARK_DARK) == 2 &&
+            StyleRules.pairPoints(StyleRules.TWO_ACCENTS) == 2 && StyleRules.pairPoints(StyleRules.SAME_ACCENT) == 2, "points");
         boolean refused = false;
         try { StyleRules.pairPoints("nonsense"); } catch (IllegalArgumentException e) { refused = true; }
         check(refused, "unknown codes are refused");
@@ -59,7 +70,15 @@ public final class StyleRulesCases {
         List<WardrobeRules.Piece> clash = List.of(p("t", "top", "grey", "casual"), p("b", "bottom", "black", "casual"), p("s", "shoes", "brown", "casual"));
         StyleRules.Rating c = StyleRules.rate(clash, "any_weather", "casual");
         check(c.colour == 3 && c.clash.equals(StyleRules.BLACK_BROWN) && c.clashA.equals("black") && c.clashB.equals("brown"), "black trousers, brown shoes");
-        check(StyleRules.rate(List.of(p("t", "top", "red", "casual"), p("b", "bottom", "blue", "casual")), "any_weather", "casual").colour == 0, "two accents main pair");
+        StyleRules.Rating accents = StyleRules.rate(List.of(p("t", "top", "red", "casual"), p("b", "bottom", "blue", "casual")), "any_weather", "casual");
+        check(accents.colour == 2 && accents.clash.equals(StyleRules.TWO_ACCENTS), "two accents: with care, no harmony point");
+        // The three-colour rule (S3): a fourth colour costs the harmony point and is named; unknown colours are not counted.
+        List<WardrobeRules.Piece> four = new ArrayList<>(good); four.add(p("c", "outerwear", "brown", "casual"));
+        StyleRules.Rating many = StyleRules.rate(four, "any_weather", "casual");
+        check(many.colours == 4 && many.colour == 3 && many.clash.isEmpty(), "four colours: " + many.colours + "/" + many.colour);
+        List<WardrobeRules.Piece> pattern = new ArrayList<>(good); pattern.add(p("c", "outerwear", "other", "casual"));
+        StyleRules.Rating patterned = StyleRules.rate(pattern, "any_weather", "casual");
+        check(patterned.colours == 3 && patterned.colour == 4, "a patterned coat is neither counted nor judged");
         // Style: one style throughout, mostly one, and whether it is the occasion's.
         check(StyleRules.rate(good, "any_weather", "formal").style == 2, "one style, not the occasion's");
         List<WardrobeRules.Piece> mixed = List.of(p("t", "top", "grey", "formal"), p("b", "bottom", "navy", "casual"), p("s", "shoes", "white", "casual"));
@@ -86,8 +105,14 @@ public final class StyleRulesCases {
             p("t2", "top", "red", "casual"), p("b4", "bottom", "brown", "formal"));
         StyleRules.Swap swap = StyleRules.better(good, wardrobe, "any_weather", "casual", Set.of(), Set.of());
         check(swap != null && swap.oldId.equals("b") && swap.newId.equals("b2") && swap.before.score == 9 && swap.after.score == 10, "navy → brown trousers");
-        check(StyleRules.better(good, wardrobe, "any_weather", "casual", Set.of("b"), Set.of()) == null, "a pinned piece stays");
-        check(StyleRules.better(good, wardrobe, "any_weather", "casual", Set.of(), Set.of(DailyRules.signature(List.of("t", "b2", "s")))) == null, "a hidden combination stays hidden");
+        // A red top would also reach 10 (red + navy, S8), but the neutral swap wins the tie.
+        check(StyleRules.rate(List.of(p("t2", "top", "red", "casual"), p("b", "bottom", "navy", "casual"), p("s", "shoes", "white", "casual")), "any_weather", "casual").score == 10 &&
+            swap.after.accents == 0, "tie goes to the neutral");
+        StyleRules.Swap pinned = StyleRules.better(good, wardrobe, "any_weather", "casual", Set.of("b"), Set.of());
+        check(pinned != null && pinned.oldId.equals("t") && pinned.newId.equals("t2"), "a pinned piece stays; another one changes");
+        check(StyleRules.better(good, wardrobe, "any_weather", "casual", Set.of("b", "t"), Set.of()) == null, "nothing left to change");
+        StyleRules.Swap notHidden = StyleRules.better(good, wardrobe, "any_weather", "casual", Set.of(), Set.of(DailyRules.signature(List.of("t", "b2", "s"))));
+        check(notHidden != null && notHidden.newId.equals("t2"), "a hidden combination stays hidden");
         List<WardrobeRules.Piece> unavailable = List.of(new WardrobeRules.Piece("b2", "home", "bottom", "laundry", false, "all", "casual", "brown"),
             new WardrobeRules.Piece("b5", "child", "bottom", "available", false, "all", "casual", "brown"), p("b6", "bottom", "brown", "casual", "winter"));
         check(StyleRules.better(good, unavailable, "warm", "casual", Set.of(), Set.of()) == null, "laundry, another wardrobe or the wrong season never");

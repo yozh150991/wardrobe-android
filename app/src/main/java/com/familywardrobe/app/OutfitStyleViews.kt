@@ -109,6 +109,7 @@ internal fun OutfitGrid(items: List<Garment>, vm: WardrobeViewModel, locks: Set<
 
 private fun pairText(code: String): Int = when (code) {
     StyleRules.WARM_COOL -> R.string.style_pair_warm_cool
+    StyleRules.ACCENT_CONTRAST -> R.string.style_pair_accent_contrast
     StyleRules.CONTRAST -> R.string.style_pair_contrast
     StyleRules.ACCENT -> R.string.style_pair_accent
     StyleRules.CALM -> R.string.style_pair_calm
@@ -140,6 +141,8 @@ internal fun StyleReasons(rating: StyleRules.Rating, items: List<Garment>, weath
         if (rating.pair.isNotEmpty()) ReasonLine(StyleRules.pairPoints(rating.pair) >= 3, pairLine(rating.pairA, rating.pairB, rating.pair))
         if (rating.clash.isNotEmpty() && !(rating.clashA == rating.pairA && rating.clashB == rating.pairB))
             ReasonLine(false, pairLine(rating.clashA, rating.clashB, rating.clash))
+        // The three-colour rule (neutrals included).
+        if (rating.colours > StyleRules.MAX_COLOURS) ReasonLine(false, stringResource(R.string.style_many_colours, rating.colours))
         val style = stringResource(label(rating.dominant))
         ReasonLine(rating.sharing == rating.counted && rating.targetStyle, when {
             rating.sharing == rating.counted && rating.targetStyle -> stringResource(R.string.style_one_style, style)

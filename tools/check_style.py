@@ -37,11 +37,24 @@ check("it.reason == PreferenceRules.DISLIKE" in style, 'swaps skip items marked 
 check('clearAndSetSemantics { contentDescription = description }' in views, 'the score is read as one sentence')
 check('fontScale >= 1.4f) 2 else 3' in views, 'two tiles per row with a large font')
 
+# Rules v2: every pair code and the three-colour rule name their sources, and every source is listed with a link.
+sources = set(re.findall(r'\[(S\d+)\] ', rules))
+for name in re.findall(r'public static final String (\w+) = "\w+";', rules.split('// Weather codes.')[0]):
+    doc = rules.split(f'public static final String {name} =', 1)[0].rsplit('/**', 1)[1]
+    tags = set(re.findall(r'\[(S\d+)', doc))
+    check(name == 'UNKNOWN' or bool(tags), f'{name} has no source')
+    check(tags <= sources, f'{name} cites an unlisted source {tags - sources}')
+check('[S3]' in rules.split('MAX_COLOURS', 1)[0].rsplit('/**', 1)[1], 'the three-colour rule names its source')
+for tag in sources:
+    entry = rules.split(f'[{tag}] ', 1)[1].split(' * [S', 1)[0]
+    check('https://' in entry or tag == 'S11', f'{tag} has no link')
+
 keys = ['style_label_great', 'style_label_good', 'style_label_fair', 'style_label_weak', 'style_score_description', 'style_pair_line',
         'style_pair_warm_cool', 'style_pair_contrast', 'style_pair_accent', 'style_pair_calm', 'style_pair_tonal', 'style_pair_unknown',
         'style_pair_same_accent', 'style_pair_black_brown', 'style_pair_dark_dark', 'style_pair_two_accents', 'style_one_style',
         'style_one_style_other', 'style_mixed', 'style_weather_ok', 'style_weather_no_outerwear', 'style_weather_season', 'style_now',
-        'style_better', 'style_better_change', 'style_better_style', 'style_better_weather', 'style_apply', 'style_occasion_chip']
+        'style_better', 'style_better_change', 'style_better_style', 'style_better_weather', 'style_apply', 'style_occasion_chip',
+        'style_pair_accent_contrast', 'style_many_colours']
 res = root / 'app/src/main/res'
 placeholders = {}
 for folder in ('values', 'values-uk', 'values-en', 'values-pl'):

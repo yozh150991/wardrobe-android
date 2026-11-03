@@ -1371,12 +1371,12 @@
     <string name="style_pair_contrast">світле з темним — класичний контраст</string>
     <string name="style_pair_accent">нейтральна основа й один акцент</string>
     <string name="style_pair_calm">спокійні нейтральні — добре, але без виразності</string>
-    <string name="style_pair_tonal">тон у тон</string>
+    <string name="style_pair_tonal">тон у тон — цілісно; краще в різних відтінках</string>
     <string name="style_pair_unknown">колір не вказано, поєднання не оцінюється</string>
-    <string name="style_pair_same_accent">той самий яскравий колір двічі — забагато</string>
-    <string name="style_pair_black_brown">чорне з коричневим часто сперечаються</string>
-    <string name="style_pair_dark_dark">два дуже темні кольори зливаються</string>
-    <string name="style_pair_two_accents">два яскраві акценти змагаються</string>
+    <string name="style_pair_same_accent">сміливий монохром одного яскравого кольору — краще в різних відтінках</string>
+    <string name="style_pair_black_brown">спірне поєднання: допоможуть третій колір і різні відтінки</string>
+    <string name="style_pair_dark_dark">спірне поєднання: відтінки мають явно відрізнятися</string>
+    <string name="style_pair_two_accents">два яскраві кольори — решту краще лишити нейтральною</string>
     <string name="style_one_style">Один стиль: %1$s</string>
     <string name="style_one_style_other">Один стиль: %1$s (для цієї нагоди зазвичай — %2$s)</string>
     <string name="style_mixed">Стилі змішані: %1$s — %2$d з %3$d речей</string>
@@ -1390,4 +1390,6 @@
     <string name="style_better_weather">Так образ краще пасуватиме до погоди.</string>
     <string name="style_apply">Замінити</string>
     <string name="style_occasion_chip">Нагода: %1$s. Змінити</string>
+    <string name="style_pair_accent_contrast">акцент на нейтральному протилежної температури — як синій із коричневим</string>
+    <string name="style_many_colours">Кольорів: %1$d — правило трьох кольорів радить не більше трьох, разом із нейтральними</string>
 </resources>
