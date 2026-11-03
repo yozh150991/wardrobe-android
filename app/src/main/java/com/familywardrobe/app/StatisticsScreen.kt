@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package com.familywardrobe.app
 
 import androidx.compose.foundation.layout.*
@@ -11,10 +12,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.temporal.ChronoUnit
 
 data class ItemUsage(val garment: Garment, val days: Int, val last: String?, val forgotten: Boolean)
 object WardrobeStats {
@@ -23,14 +20,15 @@ object WardrobeStats {
         return s.garments.filter { it.wardrobeId == wardrobe && (includeArchive || !it.archived) }.map { g ->
             val dates = actual[g.id].orEmpty().map { it.date }.distinct()
             val last = dates.maxOrNull()
-            val since = last?.let(LocalDate::parse) ?: Instant.ofEpochMilli(g.createdAt).atZone(ZoneId.systemDefault()).toLocalDate()
-            ItemUsage(g, dates.size, last, ChronoUnit.DAYS.between(since, LocalDate.parse(today)) >= 90)
+            // ROT-01: the same rule as the daily suggestion (90 days since the last wear, or since it was added).
+            ItemUsage(g, dates.size, last, RotationRules.forgotten(last.orEmpty(), RotationOutfits.added(g), today))
         }
     }
 }
 
 @Composable
-fun StatisticsScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String, open: (Garment) -> Unit, build: (Garment) -> Unit) {
+fun StatisticsScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String, open: (Garment) -> Unit,
+    pickToday: (Garment) -> Unit, build: (Garment) -> Unit) {
     var includeArchive by rememberSaveable { mutableStateOf(false) }
     var group by rememberSaveable { mutableStateOf("most") }
     val locale = LocalConfiguration.current.locales[0]
@@ -75,8 +73,10 @@ fun StatisticsScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today
                             if (g.archived) Text(stringResource(R.string.archive))
                         }
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         TextButton(onClick = { open(g) }, enabled = !busy) { Text(stringResource(R.string.item_details)) }
+                        // ROT-01: today's outfit around this item, for today's conditions, on «Що вдягнути сьогодні».
+                        if (WardrobeRules.ready(g.rulePiece())) TextButton(onClick = { pickToday(g) }, enabled = !busy) { Text(stringResource(R.string.rotation_pick_today)) }
                         if (WardrobeRules.ready(g.rulePiece())) TextButton(onClick = { build(g) }, enabled = !busy) { Text(stringResource(R.string.statistics_build)) }
                     }
                 }

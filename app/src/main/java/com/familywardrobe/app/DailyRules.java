@@ -27,6 +27,11 @@ public final class DailyRules {
         }
         int tie(String seed) { if (!tied) { tie = Objects.hash(seed, key()); tied = true; } return tie; }
     }
+    /** The item season that suits [weather]; "all" fits every season. */
+    public static String season(String weather) {
+        return weather.equals("warm") ? "summer" : weather.equals("cold") ? "winter" :
+            weather.equals("cool") || weather.equals("rain") ? "midseason" : "all";
+    }
     public static String signature(Collection<String> ids) {
         List<String> sorted = new ArrayList<>(new HashSet<>(ids)); Collections.sort(sorted); return String.join("|", sorted);
     }
@@ -44,8 +49,7 @@ public final class DailyRules {
             String date, String seed, Set<String> rejected, Map<String, String> fixed, int limit, Map<String, Integer> penalty,
             String targetStyle) {
         if (limit < 1 || limit > 20) throw new IllegalArgumentException();
-        String season = weather.equals("warm") ? "summer" : weather.equals("cold") ? "winter" :
-            weather.equals("cool") || weather.equals("rain") ? "midseason" : "all";
+        String season = season(weather);
         String style = targetStyle != null ? targetStyle : PreferenceProfile.defaultStyle(occasion);
         List<Candidate> all = new ArrayList<>();
         for (List<String> layout : WardrobeRules.baseLayouts(fixed.keySet())) {
