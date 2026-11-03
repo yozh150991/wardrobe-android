@@ -55,5 +55,6 @@
 - Instrumentation `RotationStoreTest`: налаштування переживають новий store (перезапуск), окремі для гардероба й
   акаунта, завершені відкладення не читаються, тихий запис показу, очищення історії, скидання.
 - Host checks — pass (28 наборів).
-- CI — див. журнал роадмапу.
+- CI PR #29 (run 41602238387) — 4/4 jobs pass: 300 JVM-тестів, lint, preview APK; instrumentation 198 (193 pass,
+  5 skipped `CloudEmulatorTest`), включно з `RotationStoreTest`; Firebase emulators.
 - На телефоні не перевірено.
