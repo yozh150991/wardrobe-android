@@ -109,6 +109,8 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
     var selected by rememberSaveable { mutableStateOf("") }
     var editId by rememberSaveable { mutableStateOf(if (initialDraft?.optString("kind") == "garment") initialDraft.optString("original") else "") }
     var outfitId by rememberSaveable { mutableStateOf("") }
+    // ROT-01: an item chosen in the statistics for today's outfit; part of the navigation frame, so Back keeps it.
+    var rotationAnchor by rememberSaveable { mutableStateOf("") }
     var calendarDate by rememberSaveable { mutableStateOf("") }
     var schedulingId by rememberSaveable { mutableStateOf("") }
     var capsuleId by rememberSaveable { mutableStateOf("") }
@@ -174,13 +176,14 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
         .put("selected", selected).put("editId", editId).put("outfitId", outfitId)
         .put("wishId", wishId).put("capsuleId", capsuleId).put("importId", importId)
         .put("lookId", lookId).put("lookAnchor", lookAnchor).put("buyingWishId", buyingWishId)
-        .put("calendarDate", calendarDate).put("capsulePickItems", capsulePickItems).toString()
+        .put("calendarDate", calendarDate).put("capsulePickItems", capsulePickItems).put("rotationAnchor", rotationAnchor).toString()
     fun restoreFrame(value: String) {
         val f = JSONObject(value)
         selected = f.optString("selected"); editId = f.optString("editId"); outfitId = f.optString("outfitId")
         wishId = f.optString("wishId"); capsuleId = f.optString("capsuleId"); importId = f.optString("importId")
         lookId = f.optString("lookId"); lookAnchor = f.optString("lookAnchor"); buyingWishId = f.optString("buyingWishId")
-        calendarDate = f.optString("calendarDate"); capsulePickItems = f.optBoolean("capsulePickItems"); route = f.getString("route"); entryKey = f.getString("key")
+        calendarDate = f.optString("calendarDate"); capsulePickItems = f.optBoolean("capsulePickItems"); rotationAnchor = f.optString("rotationAnchor")
+        route = f.getString("route"); entryKey = f.getString("key")
     }
     fun clearReturnStates(wardrobeId: String) {
         if (route !in roots) screenState.removeState("$wardrobeId:$entryKey")
@@ -212,6 +215,8 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
     }
     fun back() { navigate("__back") }
     BackHandler(nested) { back() }
+    /** «Що вдягнути сьогодні»; with [anchor], the suggestion is built around that item (ROT-01, from the statistics). */
+    fun openDaily(anchor: String = "") { go("daily"); rotationAnchor = anchor }
     // WID-01: a widget tap opens today's outfit or the daily picks once the account's data is ready.
     val widgetRequest by vm.widgetRequests.collectAsStateWithLifecycle()
     // Waits for the account's data and for a running operation that blocks navigation.
@@ -224,7 +229,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
             // Only an outfit of the wardrobe on screen; a switched wardrobe simply keeps the current screen.
             WidgetRequest.OUTFIT -> if (snapshot.outfits.any { it.id == request.outfitId && it.wardrobeId == current?.id } &&
                 !(route == "saved" && outfitId == request.outfitId)) { outfitId = request.outfitId; navigate("saved") }
-            WidgetRequest.DAILY -> if (route != "daily") navigate("daily")
+            WidgetRequest.DAILY -> if (route != "daily") { rotationAnchor = ""; navigate("daily") }
         }
     }
     // WID-01: the widget redraws only when what it shows changes (today's plan, its items, wear, the wardrobe, the day).
@@ -317,7 +322,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                 "catalog" -> {
                     Catalog(snapshot, current.id, vm, today, requestedCategory, ::openItem, ::addItem, ::firstOutfit,
                         onCategoryConsumed = { requestedCategory = "" }, onBatch = { go("batch") },
-                        onDaily = { go("daily") }, onStatistics = { go("statistics") }, onAddMethods = { addMethods = true },
+                        onDaily = { openDaily() }, onStatistics = { go("statistics") }, onAddMethods = { addMethods = true },
                         onReprocess = { go("reprocess") })
                 }
                 "reprocess" -> PhotoReprocessScreen(snapshot, vm)
@@ -373,15 +378,16 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                     }
                 }
                 "daily" -> DailyScreen(snapshot, current.id, vm, today, ::openItem,
-                    saved = { outfitId = it; go("saved") }, schedule = { schedulingId = it }, addItems = { go("catalog") })
+                    saved = { outfitId = it; go("saved") }, schedule = { schedulingId = it }, addItems = { go("catalog") },
+                    anchor = rotationAnchor, clearAnchor = { rotationAnchor = "" })
                 "capsuledaily" -> snapshot.capsules.find { it.id == capsuleId && it.wardrobeId == current.id }?.let { capsule ->
                     DailyScreen(snapshot, current.id, vm, today, ::openItem,
                         saved = { outfitId = it; go("saved") }, schedule = { schedulingId = it }, capsule = capsule, addItems = { go("catalog") }, editCapsule = { capsulePickItems = true; go("capsule") })
                 } ?: MissingSelection { go("__back") }
 
                 "calendar" -> CalendarScreen(snapshot, current.id, vm, today, calendarDate,
-                    open = { outfitId = it; go("saved") }, daily = { go("daily") })
-                "statistics" -> StatisticsScreen(snapshot, current.id, vm, today, ::openItem) { g ->
+                    open = { outfitId = it; go("saved") }, daily = { openDaily() })
+                "statistics" -> StatisticsScreen(snapshot, current.id, vm, today, ::openItem, pickToday = { g -> openDaily(g.id) }) { g ->
                     vm.clearDraft(); lookAnchor = g.id; lookId = ""; editorDirty = false; go("look")
                 }
                 "capsules" -> CapsuleListScreen(snapshot, current.id, vm) { capsuleId = it; capsulePickItems = false; go("capsule") }
@@ -402,7 +408,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                 } ?: MissingSelection { go("__back") }
 
                 "outfits" -> OutfitList(snapshot, current.id, vm, ::firstOutfit,
-                    daily = { go("daily") }, calendar = { calendarDate = today; go("calendar") }, capsules = { go("capsules") }) { outfitId = it; go("saved") }
+                    daily = { openDaily() }, calendar = { calendarDate = today; go("calendar") }, capsules = { go("capsules") }) { outfitId = it; go("saved") }
                 "saved" -> snapshot.outfits.find { it.id == outfitId }?.let { SavedOutfit(it, snapshot, vm, today, ::openItem, openWish = { id -> wishReturn = "saved"; wishId = id; go("wishdetail") }, schedule = { schedulingId = it.id }) { vm.clearDraft(); lookId = it.id; lookAnchor = ""; editorDirty = false; go("look") } } ?: MissingSelection { go("__back") }
 
                 "shopping" -> Wishlist(snapshot, current.id, vm, ::addWish, foundProduct = { editWish(it, true) }, importProduct = { openShop() }) { wishReturn = "shopping"; wishId = it; go("wishdetail") }
