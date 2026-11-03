@@ -19,17 +19,21 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
  * be changed or reset; reasons can be taken back one by one.
  */
 @Composable
-internal fun PreferencesDialog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, dismiss: () -> Unit) {
+internal fun PreferencesDialog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String, dismiss: () -> Unit) {
     val busy by vm.busy.collectAsStateWithLifecycle()
     val revision by vm.personalChoices.revision.collectAsStateWithLifecycle()
     val choices = remember(wardrobe, revision) { vm.personalChoices.read(wardrobe) }
+    val names = s.garments.filter { it.wardrobeId == wardrobe }.associate { it.id to it.name }
+    // ROT-02: the «Давно не вдягали» card's frequency and the items postponed from it.
+    val rotationRevision by vm.rotation.revision.collectAsStateWithLifecycle()
+    val rotation = remember(wardrobe, rotationRevision, today) { vm.rotation.read(wardrobe, today) }
+    val postponed = rotation.snoozes.values.mapNotNull { snooze -> names[snooze.garmentId]?.let { snooze to it } }.sortedBy { it.first.until }
     var resetting by rememberSaveable { mutableStateOf(false) }
     val feedback = s.feedback.filter { it.wardrobeId == wardrobe }
-    val names = s.garments.filter { it.wardrobeId == wardrobe }.associate { it.id to it.name }
     val uncomfortable = feedback.filter { !it.signature.contains('|') && it.reason == PreferenceRules.DISLIKE }
     val hidden = feedback.filter { it.signature.contains('|') }
     val warmth = DailyOutfits.warmth(s, wardrobe, choices)
-    val empty = feedback.isEmpty() && choices == PersonalChoices()
+    val empty = feedback.isEmpty() && choices == PersonalChoices() && rotation.frequency == RotationRules.DAILY && postponed.isEmpty()
     Dialog(onDismissRequest = dismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -88,6 +92,26 @@ internal fun PreferencesDialog(s: Snapshot, wardrobe: String, vm: WardrobeViewMo
                         }
                         PreferenceRow(title, scope, !busy) { vm.undoFeedback(wardrobe, listOf(row.id)) }
                     }
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(stringResource(R.string.rotation_title), style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(R.string.prefs_rotation_hint), style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                RotationRules.FREQUENCIES.forEach { value ->
+                                    FilterChip(selected = rotation.frequency == value, onClick = { vm.rotation.setFrequency(wardrobe, value) },
+                                        enabled = !busy, label = { Text(stringResource(frequencyLabel(value))) })
+                                }
+                            }
+                            Text(stringResource(R.string.prefs_rotation_postponed, postponed.size), style = MaterialTheme.typography.titleSmall)
+                            if (postponed.isEmpty()) Text(stringResource(R.string.prefs_none), style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    items(postponed, key = { "postponed:${it.first.garmentId}" }) { (snooze, name) ->
+                        PreferenceRow(name, stringResource(R.string.prefs_rotation_until, dateLabel(snooze.until), stringResource(postponeLabel(snooze.reason))), !busy) {
+                            vm.rotation.restore(wardrobe, snooze.garmentId)
+                        }
+                    }
                     if (!empty) item {
                         OutlinedButton(onClick = { resetting = true }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                             Text(stringResource(R.string.prefs_reset_all))
@@ -129,6 +153,19 @@ private fun warmthSource(warmth: PreferenceProfile.Warmth): String = when (warmt
     PreferenceProfile.Source.CHOICE -> stringResource(R.string.prefs_warmth_choice, stringResource(warmthLabel(warmth.shift)))
     PreferenceProfile.Source.AUTO -> stringResource(R.string.prefs_warmth_auto, warmth.evidence)
     PreferenceProfile.Source.DEFAULT -> stringResource(R.string.prefs_warmth_default, PreferenceProfile.DERIVE)
+}
+
+private fun frequencyLabel(value: String): Int = when (value) {
+    RotationRules.WEEKLY -> R.string.rotation_weekly
+    RotationRules.OFF -> R.string.rotation_off
+    else -> R.string.rotation_daily
+}
+
+private fun postponeLabel(reason: String): Int = when (reason) {
+    RotationRules.SIZE -> R.string.rotation_reason_size
+    RotationRules.WAITING -> R.string.rotation_reason_waiting
+    RotationRules.NO_MATCH -> R.string.rotation_reason_no_match
+    else -> R.string.rotation_reason_later
 }
 
 private fun warmthLabel(value: String): Int = when (value) {

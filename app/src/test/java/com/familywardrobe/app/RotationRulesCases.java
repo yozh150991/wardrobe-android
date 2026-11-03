@@ -94,6 +94,49 @@ public final class RotationRulesCases {
         check(!looks.isEmpty() && looks.stream().allMatch(look -> look.contains("t-old") && !look.contains("t-new")), "anchored look " + looks);
         check(looks.get(0).containsAll(List.of("b1", "s1")), "a whole outfit");
 
-        System.out.println("PASS: " + checks + " rotation assertions (90-day rule, suitability, order, generator anchor).");
+        // ROT-02 «Відкласти»: a week, a month or three months; the item is back on that day, an unreadable date never hides it.
+        check(RotationRules.until(TODAY, RotationRules.SNOOZE_WEEK).equals("2026-11-10"), "a week");
+        check(RotationRules.until(TODAY, RotationRules.SNOOZE_MONTH).equals("2026-12-03"), "a month");
+        check(RotationRules.until(TODAY, RotationRules.SNOOZE_SEASON).equals("2027-02-01"), "three months");
+        boolean refused = false;
+        try { RotationRules.until(TODAY, 5); } catch (IllegalArgumentException e) { refused = true; }
+        check(refused, "only the offered durations");
+        check(RotationRules.snoozed("2026-11-10", "2026-11-09") && !RotationRules.snoozed("2026-11-10", "2026-11-10"), "until is exclusive");
+        check(!RotationRules.snoozed("", TODAY) && !RotationRules.snoozed("garbage", TODAY), "no or broken date: not postponed");
+        check(RotationRules.reasonDays(RotationRules.WAITING) == 90 && RotationRules.reasonDays(RotationRules.SIZE) == 90 &&
+            RotationRules.reasonDays(RotationRules.NO_MATCH) == 30, "reasons postpone as agreed");
+        refused = false;
+        try { RotationRules.reasonDays(RotationRules.LATER); } catch (IllegalArgumentException e) { refused = true; }
+        check(refused, "a plain postponement has its own duration");
+
+        // Postponed items leave the candidates; an item the card showed on another day this week goes to the end.
+        List<RotationRules.Item> week = new ArrayList<>();
+        for (RotationRules.Item i : items) {
+            String until = i.piece.id.equals("older-casual") ? "2026-11-10" : "";
+            String seen = i.piece.id.equals("old-casual") ? "2026-11-01" : i.piece.id.equals("formal") ? TODAY : "";
+            week.add(new RotationRules.Item(i.piece, i.lastWear, i.added, i.excluded, i.uncomfortable, until, seen));
+        }
+        List<String> fair = RotationRules.candidates(week, "home", "cold", "casual", TODAY);
+        check(fair.equals(List.of("very-old-formal", "formal", "old-casual")), "postponed out, seen this week last, today's stays: " + fair);
+        check(RotationRules.candidates(week, "home", "cold", "casual", "2026-11-10").equals(List.of("older-casual", "old-casual", "very-old-formal", "formal")),
+            "back on its day; seen a week ago no longer last: " + RotationRules.candidates(week, "home", "cold", "casual", "2026-11-10"));
+        check(!RotationRules.recentlySeen(TODAY, TODAY) && RotationRules.recentlySeen("2026-11-02", TODAY) &&
+            RotationRules.recentlySeen("2026-10-28", TODAY) && !RotationRules.recentlySeen("2026-10-27", TODAY), "a week of history");
+        check(!RotationRules.recentlySeen("", TODAY) && !RotationRules.recentlySeen("2026-11-05", TODAY) && !RotationRules.recentlySeen("x", TODAY), "no, future or broken history");
+
+        // Frequency: daily by default, weekly from the last day shown, off; «Сховати на сьогодні» only for today.
+        check(RotationRules.FREQUENCIES.equals(List.of("daily", "weekly", "off")), "the three choices");
+        check(RotationRules.visible(RotationRules.DAILY, "2026-11-02", "", TODAY), "daily");
+        check(RotationRules.visible("unknown", "", "", TODAY), "an unknown value is the default");
+        check(!RotationRules.visible(RotationRules.OFF, "", "", TODAY), "off");
+        check(!RotationRules.visible(RotationRules.DAILY, "", TODAY, TODAY) && RotationRules.visible(RotationRules.DAILY, "", "2026-11-02", TODAY), "hidden for today only");
+        check(RotationRules.visible(RotationRules.WEEKLY, "", "", TODAY), "weekly: first time");
+        check(RotationRules.visible(RotationRules.WEEKLY, TODAY, "", TODAY), "weekly: all day once shown");
+        check(!RotationRules.visible(RotationRules.WEEKLY, "2026-10-28", "", TODAY), "weekly: six days later");
+        check(RotationRules.visible(RotationRules.WEEKLY, "2026-10-27", "", TODAY), "weekly: a week later");
+        check(RotationRules.visible(RotationRules.WEEKLY, "2026-11-20", "", TODAY), "weekly: a clock moved back never hides it");
+        check(!RotationRules.visible(RotationRules.WEEKLY, "2026-10-27", TODAY, TODAY), "weekly: hidden today");
+
+        System.out.println("PASS: " + checks + " rotation assertions (90-day rule, suitability, order, generator anchor, postponing, frequency).");
     }
 }

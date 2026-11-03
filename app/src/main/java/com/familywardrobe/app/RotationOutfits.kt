@@ -19,31 +19,33 @@ object RotationOutfits {
     fun lastWears(s: Snapshot, today: String): Map<String, String> =
         s.wears.filter { it.date <= today }.groupBy { it.garmentId }.mapValues { (_, rows) -> rows.maxOf { it.date } }
 
-    fun items(s: Snapshot, wardrobe: String, today: String): List<RotationRules.Item> {
+    /** [state]: ROT-02 postponements and which items the card showed recently. */
+    fun items(s: Snapshot, wardrobe: String, today: String, state: RotationState = RotationState()): List<RotationRules.Item> {
         val last = lastWears(s, today)
         // PERS-01 «Незручно» is an item row: a signature of one ID.
         val uncomfortable = s.feedback.filter { it.wardrobeId == wardrobe && !it.signature.contains('|') && it.reason == PreferenceRules.DISLIKE }
             .map { it.signature }.toSet()
         return s.garments.filter { it.wardrobeId == wardrobe }.map { g ->
-            RotationRules.Item(g.rulePiece(), last[g.id].orEmpty(), added(g), g.suggestionExcluded, g.id in uncomfortable)
+            RotationRules.Item(g.rulePiece(), last[g.id].orEmpty(), added(g), g.suggestionExcluded, g.id in uncomfortable,
+                state.snoozes[g.id]?.until.orEmpty(), state.seen[g.id].orEmpty())
         }
     }
 
     /** Items not worn for 90 days that suit today, in the order they are suggested. */
     fun candidates(s: Snapshot, wardrobe: String, occasion: String, weather: String, today: String,
-        choices: PersonalChoices = PersonalChoices()): List<String> =
-        RotationRules.candidates(items(s, wardrobe, today), wardrobe, weather, DailyOutfits.style(s, wardrobe, occasion, choices).style, today)
+        choices: PersonalChoices = PersonalChoices(), state: RotationState = RotationState()): List<String> =
+        RotationRules.candidates(items(s, wardrobe, today, state), wardrobe, weather, DailyOutfits.style(s, wardrobe, occasion, choices).style, today)
 
     /**
      * The first candidate after [after] (wrapping around) that makes a whole outfit for today, keeping the person's
-     * pinned items ([fixed]) and hidden combinations. With [anchor], only that item is tried, forgotten or not.
+     * pinned items ([fixed]) and hidden combinations. With [anchor], only that item is tried, forgotten, postponed or not.
      */
     fun suggest(s: Snapshot, wardrobe: String, occasion: String, weather: String, today: String,
         after: String = "", anchor: String = "", fixed: Map<String, String> = emptyMap(),
-        choices: PersonalChoices = PersonalChoices()): RotationLook? {
+        choices: PersonalChoices = PersonalChoices(), state: RotationState = RotationState()): RotationLook? {
         val byId = s.garments.filter { it.wardrobeId == wardrobe }.associateBy { it.id }
-        val items = items(s, wardrobe, today).associateBy { it.piece.id }
-        val candidates = candidates(s, wardrobe, occasion, weather, today, choices)
+        val items = items(s, wardrobe, today, state).associateBy { it.piece.id }
+        val candidates = candidates(s, wardrobe, occasion, weather, today, choices, state)
         fun result(g: Garment, look: List<Garment>, problem: String? = null): RotationLook {
             val item = items.getValue(g.id)
             return RotationLook(g, look, item.lastWear.ifEmpty { null }, item.added, RotationRules.idleDays(item.lastWear, item.added, today),

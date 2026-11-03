@@ -96,5 +96,25 @@ class RotationOutfitsTest {
         for (row in usage.values) assertEquals(row.garment.id, RotationRules.forgotten(row.last.orEmpty(), RotationOutfits.added(row.garment), today), row.forgotten)
     }
 
+    /** ROT-02: a postponed item is skipped until its day; the item shown yesterday gives way to another one. */
+    @Test fun postponedAndRecentlyShownItemsDoNotNag() {
+        val s = base.copy(garments = base.garments + garment("old-shoes", "shoes"))
+        assertEquals("old-shoes", RotationOutfits.suggest(s, "home", "everyday", "warm", today)!!.anchor.id)
+        val postponed = RotationState(snoozes = mapOf("old-shoes" to RotationSnooze("old-shoes", "2026-11-10", RotationRules.LATER)))
+        RotationOutfits.suggest(s, "home", "everyday", "warm", today, state = postponed)!!.let {
+            assertEquals("old-top", it.anchor.id); assertEquals(0, it.others)
+        }
+        assertEquals("old-shoes", RotationOutfits.suggest(s, "home", "everyday", "warm", "2026-11-10", state = postponed)!!.anchor.id)
+        // Only postponed items left: no card at all, rather than the same item again.
+        val both = RotationState(snoozes = postponed.snoozes + ("old-top" to RotationSnooze("old-top", "2027-02-01", RotationRules.WAITING)))
+        assertNull(RotationOutfits.suggest(s, "home", "everyday", "warm", today, state = both))
+        // Shown yesterday: today the other one leads; shown today: it stays first all day.
+        val yesterday = RotationState(seen = mapOf("old-shoes" to "2026-11-02"))
+        assertEquals("old-top", RotationOutfits.suggest(s, "home", "everyday", "warm", today, state = yesterday)!!.anchor.id)
+        assertEquals("old-shoes", RotationOutfits.suggest(s, "home", "everyday", "warm", today, state = RotationState(seen = mapOf("old-shoes" to today)))!!.anchor.id)
+        // Chosen explicitly in the statistics, a postponed item is still shown.
+        assertEquals("old-shoes", RotationOutfits.suggest(s, "home", "everyday", "warm", today, anchor = "old-shoes", state = postponed)!!.anchor.id)
+    }
+
     @Test fun rulesCases() { RotationRulesCases.main(emptyArray()) }
 }

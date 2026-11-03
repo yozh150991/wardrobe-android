@@ -217,6 +217,8 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
     BackHandler(nested) { back() }
     /** «Що вдягнути сьогодні»; with [anchor], the suggestion is built around that item (ROT-01, from the statistics). */
     fun openDaily(anchor: String = "") { go("daily"); rotationAnchor = anchor }
+    /** The manual look editor around [g] (statistics; ROT-02 «Немає з чим поєднати»). */
+    fun buildWith(g: Garment) { vm.clearDraft(); lookAnchor = g.id; lookId = ""; editorDirty = false; go("look") }
     // WID-01: a widget tap opens today's outfit or the daily picks once the account's data is ready.
     val widgetRequest by vm.widgetRequests.collectAsStateWithLifecycle()
     // Waits for the account's data and for a running operation that blocks navigation.
@@ -379,7 +381,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                 }
                 "daily" -> DailyScreen(snapshot, current.id, vm, today, ::openItem,
                     saved = { outfitId = it; go("saved") }, schedule = { schedulingId = it }, addItems = { go("catalog") },
-                    anchor = rotationAnchor, clearAnchor = { rotationAnchor = "" })
+                    anchor = rotationAnchor, clearAnchor = { rotationAnchor = "" }, buildWith = ::buildWith)
                 "capsuledaily" -> snapshot.capsules.find { it.id == capsuleId && it.wardrobeId == current.id }?.let { capsule ->
                     DailyScreen(snapshot, current.id, vm, today, ::openItem,
                         saved = { outfitId = it; go("saved") }, schedule = { schedulingId = it }, capsule = capsule, addItems = { go("catalog") }, editCapsule = { capsulePickItems = true; go("capsule") })
@@ -387,9 +389,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
 
                 "calendar" -> CalendarScreen(snapshot, current.id, vm, today, calendarDate,
                     open = { outfitId = it; go("saved") }, daily = { openDaily() })
-                "statistics" -> StatisticsScreen(snapshot, current.id, vm, today, ::openItem, pickToday = { g -> openDaily(g.id) }) { g ->
-                    vm.clearDraft(); lookAnchor = g.id; lookId = ""; editorDirty = false; go("look")
-                }
+                "statistics" -> StatisticsScreen(snapshot, current.id, vm, today, ::openItem, pickToday = { g -> openDaily(g.id) }, build = ::buildWith)
                 "capsules" -> CapsuleListScreen(snapshot, current.id, vm) { capsuleId = it; capsulePickItems = false; go("capsule") }
                 "capsule" -> snapshot.capsules.find { it.id == capsuleId && it.wardrobeId == current.id }?.let { capsule ->
                     CapsuleDetailScreen(capsule, snapshot, vm, ::openItem, openOutfit = { outfitId = it; go("saved") }, removed = { go("__back") }, generate = { go("capsuledaily") }, initialPickItems = capsulePickItems)
