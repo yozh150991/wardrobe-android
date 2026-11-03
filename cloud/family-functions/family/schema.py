@@ -14,7 +14,9 @@ from .errors import require
 ID = re.compile(r'[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}')
 HASH = re.compile(r'[a-f0-9]{64}')
 CATEGORIES = 'top bottom dress jumpsuit shoes layer outerwear bag tights jewelry hat accessory other_item'.split()
-COLORS = 'white black grey beige navy brown olive blue red other'.split()
+# COL-02 (0.14.32): ten more base colours; clients send them only to a server that reports the "colors2" feature.
+COLORS = ('white black grey beige navy brown olive blue red other '
+          'cream camel khaki light_blue green burgundy pink orange yellow purple').split()
 OCCASIONS = 'everyday work occasion active_day'.split()
 WEATHERS = 'any_weather warm cool cold rain'.split()
 FIELDS = {

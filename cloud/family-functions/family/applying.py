@@ -24,7 +24,7 @@ from .archive import MAX_ARCHIVE, MAX_PHOTO, validate_archive
 from .errors import FamilyError, require
 from .schema import HASH, integer, label_key, row_shape, strict_json, valid_id
 
-FEATURES = ['change1', 'outfit1']
+FEATURES = ['change1', 'outfit1', 'colors2']
 MAX_CHANGE_ARCHIVE = MAX_PHOTO + 64 * 1024
 MAX_CHANGE_JSON = 64 * 1024
 APPLY_ATTEMPTS = 3

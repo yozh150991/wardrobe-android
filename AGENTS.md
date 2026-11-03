@@ -1,3 +1,56 @@
+## Current handoff — step 2: daily generator on the new colour table, 3 November 2026
+
+0.14.33-generator-colors/code 63, Room/backup 10. Read GENERATOR-COLORS-0.14.33.md. Stacked on COL-02 (PR #31 ⊃
+#30 ⊃ #29 ⊃ #28); its PR targets main and contains them. DailyRules.pairScore = StyleRules pair points + 4 for a
+matching style (was WardrobeRules.score); final order = per-item average + RATING_WEIGHT (500) × rating, so personal
+reasons and wears still lead. Every host tool compiling DailyRules now includes StyleRules.java. Manual building,
+compatibility and purchase advice still use WardrobeRules.score. Next: step 3, a personal palette in preferences.
+
+## Current handoff — COL-02 ten more base colours, 3 November 2026
+
+0.14.32-colors2/code 62, Room/backup 10. Read COLORS-0.14.32.md. Stacked on STYLE (PR #30 ⊃ #29 ⊃ #28); its PR
+targets main and contains them. User: «По порядку» — 1 new colours (this), 2 generator on the new colour table,
+3 personal palette. Decision: full + server flag. Matching.colors has 20 bases; ColorRules.legacy maps the new
+ones for family servers without "colors2" (FamilyColors.forServer at every send: FamilyEnvelope.encode(colors2),
+initial transfer via FamilyLocalTransfer.serverFeatures from family_create, add/change, photo, outfits); the shared
+add form offers FamilyColors.choices. Server schema.py accepts 20, FEATURES adds colors2: needs a family functions
+deploy by the user (never a plain firebase deploy). StyleRules: attributes for all 20, wheel-based ANALOGOUS (3)
+and COMPLEMENTARY (2). PhotoRules: former «other» hues → green/orange/yellow/purple/pink. Next: step 2.
+
+## Current handoff — STYLE-01–03 outfit score, «Добре → Краще», new card, 3 November 2026
+
+0.14.31-outfit-style/code 61, Room/backup 10. Read OUTFIT-STYLE-0.14.31.md. Stacked on ROT-02 (PR #29 ⊃ #28); its
+PR targets main and contains both. From the user's Essembl screenshots; user chose: score with explanation,
+Good → Better with a colour-pair table, new card look (no mockup first); try-on is out of scope. StyleRules.java
+(pair table by lightness/temperature, rating = colour 0–5 + style 0–3 + weather 0–2, better = best single swap),
+OutfitStyle.kt (candidates as the daily picks; no uncomfortable, hidden or pinned), OutfitStyleViews.kt (dots,
+ScoreBadge, OutfitGrid, StyleReasons, BetterBlock); DailyScreen uses them for variants and the rotation card, chips
+for occasion and weather. The generator still uses WardrobeRules.score (old colour weights): moving it to the new
+table is the next step, with its and the purchase-advice expectations. tools/check_style.py guards it.
+Rules v2 (same PR): sourced table, references [S1–S11] next to every pair code in StyleRules.java (the guard
+requires a source with a link for each), research/app survey/trends in COLOR-RULES-0.14.31.md.
+
+## Current handoff — ROT-02 postpone, reasons and frequency, 3 November 2026
+
+0.14.30-rotation-control/code 60, Room/backup 10. Read ROTATION-CONTROL-0.14.30.md. Stacked on ROT-01 (PR #28);
+its PR targets main and contains ROT-01. User decisions: postpone for a week/month/3 months; reasons
+«Незручно» (PERS-01 row), size/no longer liked (archive with confirmation or 3 months), waiting (3 months), nothing
+to wear it with (a month + manual look editor); card daily/weekly/off (daily default) plus «Сховати на сьогодні»;
+no push. RotationRules: until/snoozed/reasonDays/recentlySeen/visible; RotationStore in account prefs
+"preferences" (rot.* keys; markShown never bumps revision). Next: two-phone acceptance; the user sent
+Essembl-style recommendation examples (Good/Better colour pairs, outfit score) to discuss as a new item.
+
+## Current handoff — ROT-01 long-unworn items, 3 November 2026
+
+0.14.29-rotation/code 59, Room/backup 10. Read ROTATION-0.14.29.md. Based on main after PR #27 (PR #25/#26/#27
+merged). User decisions: 90 days as in the statistics; a card on Daily plus «Підібрати на сьогодні» in the
+statistics; one suggestion with «Інша річ». RotationRules.java (forgotten = 90 days since the last actual wear
+or since added; suitable = ready, not excluded, not uncomfortable, season fits the weather; order = occasion
+style, then longest wait; order() cycles with the current item last), RotationOutfits.suggest (production
+generator with the item pinned; user pins win; an item chosen in the statistics overrides its category pin and
+explains why it cannot be worn). WardrobeStats uses the same rule. tools/check_rotation.py guards it.
+Next: ROT-02 (snooze, reason for not wearing, frequency/off) or two-phone acceptance.
+
 ## Current handoff — WID-01 today widget, 2 November 2026
 
 0.14.28-today-widget/code 58, Room/backup 10. Read TODAY-WIDGET-0.14.28.md. Branched from PERS-02 (PR #26);
@@ -183,7 +236,7 @@ Tests only, 0.14.13-qa-fixes/code 43 unchanged. Read QA-REPORT-0.14.13.md: 13 op
 ## Почати тут
 
 1. Прочитай [WARDROBE-ROADMAP.md](WARDROBE-ROADMAP.md), особливо швидкий старт, поточні статуси й останню контрольну точку. Це головний беклог; старі `ROADMAP-UPDATE-*` — історія релізів.
-2. Звір `app/build.gradle.kts`, `README.md`, локальні зміни та останній release-звіт. Поточну базу бери з `app/build.gradle.kts` і верхнього «Current handoff» цього файла (на 02.11.2026 — 0.14.28-today-widget, code 58, Room/backup 10). Історія нижче: 0.14.12-family-labels поверх 0.14.11; FAM-03 нова спільна річ поверх 0.14.10; FAM-03 заміна фото поверх 0.14.9; Codex 0.14.8-family-add поверх 0.14.8-audit-fixes; AUDIT-FIXES-0.14.8.md; фото-зміни описані нижче. FAM-01/03 partial: Android initial transfer/UI підключено до family backend; див. FAMILY-ANDROID-0.14.2.md та RELEASE-VALIDATION-0.14.2.json. Це початкова серверна копія зі збереженням приватного локального гардероба. Read-only shared cache/lease реалізовано у 0.14.5, FAM-02 invite/accept/role/revoke у 0.14.6. У 0.14.7 metadata edits, у 0.14.8 копіювання однієї речі/фото; наступне — заміна shared-фото, образи, multi-operation queue і continuous sync. Оновлений Android потребує backend 0.14.2 (actor binding і structured recovery errors). Не запускати live deploy автоматично; firebase.family.example.json окремий від приватної конфігурації. Native-приймання спільне; production GCS, GC, App Check і витрати ще потребують перевірки.
+2. Звір `app/build.gradle.kts`, `README.md`, локальні зміни та останній release-звіт. Поточну базу бери з `app/build.gradle.kts` і верхнього «Current handoff» цього файла (на 03.11.2026 — 0.14.33-generator-colors, code 63, Room/backup 10). Історія нижче: 0.14.12-family-labels поверх 0.14.11; FAM-03 нова спільна річ поверх 0.14.10; FAM-03 заміна фото поверх 0.14.9; Codex 0.14.8-family-add поверх 0.14.8-audit-fixes; AUDIT-FIXES-0.14.8.md; фото-зміни описані нижче. FAM-01/03 partial: Android initial transfer/UI підключено до family backend; див. FAMILY-ANDROID-0.14.2.md та RELEASE-VALIDATION-0.14.2.json. Це початкова серверна копія зі збереженням приватного локального гардероба. Read-only shared cache/lease реалізовано у 0.14.5, FAM-02 invite/accept/role/revoke у 0.14.6. У 0.14.7 metadata edits, у 0.14.8 копіювання однієї речі/фото; наступне — заміна shared-фото, образи, multi-operation queue і continuous sync. Оновлений Android потребує backend 0.14.2 (actor binding і structured recovery errors). Не запускати live deploy автоматично; firebase.family.example.json окремий від приватної конфігурації. Native-приймання спільне; production GCS, GC, App Check і витрати ще потребують перевірки.
 3. За прямою вказівкою користувача 10.10.2026 («Тестувати будемо все разом») PHOTO-12–14 реалізовані у 0.13.8, PHOTO-01–10 збережені; native-приймання перенесене на спільний етап. Воно не блокує подальше погоджене впровадження; автоматичні перевірки виконувати. Спільне native-приймання має включати FAM-01 foundation (FAMILY-FOUNDATION-0.14.0.md: 8 Android-тестів, вибір/retry/акаунти/backup health), COL-01/CAT-01 (COLORS-0.13.10.md/CATEGORIES-0.13.9.md) та PHOTO-12–14 (PHOTO-PRECISION-0.13.8.md: краї/ласо/захист, перезапуск/Undo/Redo/Apply/Discard, пошкодження/акаунти/cleanup), PHOTO-09–10 (PHOTO-QUALITY-0.13.7.md: роздільність, пам’ять/час/backup, вибрана черга, перезапуск/скасування/конфлікти/акаунти), PHOTO-06–08 (PHOTO-INSPECTION-0.13.6.md), PHOTO-05 (лупа/спільна історія/м’якість і сила, PHOTO-TOOLS-0.13.5.md), PHOTO-04 (історія/пензель, PHOTO-EDITOR-0.13.4.md), PHOTO-03 (очищення/фон, PHOTO-CLEANUP-0.13.3.md), PHOTO-02 (зум фото, PHOTO-ZOOM-0.13.2.md) та PHOTO-01: причини збоїв фото, ручне завершення й видиму валідацію; див. PHOTO-RECOVERY-0.13.1.md. Погоджений порядок: компактний каталог → імпорт із магазину через Android Share → розширений помічник покупки → окремі сімейні акаунти → персоналізація → віджет/забуті речі → подорожі. Поточний наступний ID і статус завжди бери з роадмапу.
 
 ## Поточний Android photo hotfix3 (17.10.2026)

@@ -16,6 +16,8 @@ public final class DailyRules {
     private static final class Candidate {
         final List<Item> items;
         final int score;
+        /** STYLE: the whole outfit's 0–10 rating, worked out once for the final order. */
+        private int rating = -1;
         // Sorting compares tied scores by signature; building it on every comparison dominated the run time.
         private String key;
         private int tie;
@@ -26,6 +28,31 @@ public final class DailyRules {
             return key;
         }
         int tie(String seed) { if (!tied) { tie = Objects.hash(seed, key()); tied = true; } return tie; }
+        int rating(String weather, String style) {
+            if (rating < 0) { List<WardrobeRules.Piece> pieces = new ArrayList<>(); for (Item i : items) pieces.add(i.piece); rating = StyleRules.rate(pieces, weather, style).score; }
+            return rating;
+        }
+        /** Per-item average of the pair and item scores, plus [RATING_WEIGHT] per rating point. */
+        int rank(String weather, String style) { return score * 1000 / Math.max(1, items.size()) + RATING_WEIGHT * rating(weather, style); }
+    }
+    /**
+     * 0.14.33: how much one point of the outfit rating counts in the final order — half a point of the per-item
+     * average, so the rating decides between close variants (three colours at most, no «with care» pair) without
+     * overriding the person's own reasons, wears and favourites.
+     */
+    static final int RATING_WEIGHT = 500;
+
+    /**
+     * 0.14.33: two pieces together — the colour pair from the sourced table ([StyleRules], 2–4 points) and 4 when the
+     * styles match. Before, the colours used WardrobeRules.score (neutral 3, same 2, olive + blue 1, otherwise 0).
+     */
+    static int pairScore(WardrobeRules.Piece a, WardrobeRules.Piece b) {
+        return StyleRules.pairPoints(StyleRules.pair(a.color, b.color)) + (a.style.equals(b.style) ? 4 : 0);
+    }
+    /** The item season that suits [weather]; "all" fits every season. */
+    public static String season(String weather) {
+        return weather.equals("warm") ? "summer" : weather.equals("cold") ? "winter" :
+            weather.equals("cool") || weather.equals("rain") ? "midseason" : "all";
     }
     public static String signature(Collection<String> ids) {
         List<String> sorted = new ArrayList<>(new HashSet<>(ids)); Collections.sort(sorted); return String.join("|", sorted);
@@ -44,8 +71,7 @@ public final class DailyRules {
             String date, String seed, Set<String> rejected, Map<String, String> fixed, int limit, Map<String, Integer> penalty,
             String targetStyle) {
         if (limit < 1 || limit > 20) throw new IllegalArgumentException();
-        String season = weather.equals("warm") ? "summer" : weather.equals("cold") ? "winter" :
-            weather.equals("cool") || weather.equals("rain") ? "midseason" : "all";
+        String season = season(weather);
         String style = targetStyle != null ? targetStyle : PreferenceProfile.defaultStyle(occasion);
         List<Candidate> all = new ArrayList<>();
         for (List<String> layout : WardrobeRules.baseLayouts(fixed.keySet())) {
@@ -77,7 +103,7 @@ public final class DailyRules {
                 int score = prior.score + itemScore(next, style, date, penalty);
                 for (Item selected : prior.items) {
                     if (selected.piece.id.equals(next.piece.id) || !WardrobeRules.compatibleSeasons(selected.piece.season, next.piece.season)) { compatible = false; break; }
-                    score += WardrobeRules.score(selected.piece, next.piece);
+                    score += pairScore(selected.piece, next.piece);
                 }
                 if (compatible) { List<Item> picked = new ArrayList<>(prior.items); picked.add(next); expanded.add(new Candidate(picked, score)); }
             }
@@ -89,7 +115,7 @@ public final class DailyRules {
         }
         all.addAll(beam);
         }
-        all.sort(Comparator.<Candidate>comparingInt(c -> c.score * 1000 / Math.max(1, c.items.size())).reversed()
+        all.sort(Comparator.<Candidate>comparingInt(c -> c.rank(weather, style)).reversed()
             .thenComparingInt(c -> c.tie(seed)).thenComparing(DailyRules::key));
         List<List<String>> result = new ArrayList<>(); Set<String> seen = new HashSet<>();
         for (Candidate c : all) {
