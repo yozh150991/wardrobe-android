@@ -31,7 +31,8 @@ import java.time.format.FormatStyle
 @Composable
 fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
     open: (Garment) -> Unit, saved: (String) -> Unit, schedule: (String) -> Unit, capsule: Capsule? = null,
-    addItems: () -> Unit = {}, editCapsule: () -> Unit = {}) {
+    addItems: () -> Unit = {}, editCapsule: () -> Unit = {}, anchor: String = "", clearAnchor: () -> Unit = {},
+    buildWith: (Garment) -> Unit = {}) {
     var occasion by rememberSaveable { mutableStateOf("everyday") }
     var manualWeather by rememberSaveable { mutableStateOf("any_weather") }
     var fixedIds by rememberSaveable(wardrobe, capsule?.id) { mutableStateOf(arrayListOf<String>()) }
@@ -86,6 +87,43 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
         }
     }
     val looks = remember(lookIds, s.garments) { lookIds.map { ids -> ids.split(',').mapNotNull { id -> s.garments.find { it.id == id } } }.filter { it.isNotEmpty() } }
+    // ROT-01: one outfit around an item not worn for 90 days (or the item chosen in the statistics), not in capsules.
+    var rotationAfter by rememberSaveable(wardrobe) { mutableStateOf("") }
+    var rotationFor by rememberSaveable { mutableStateOf("") }
+    var rotationAnchorId by rememberSaveable { mutableStateOf("") }
+    var rotationIds by rememberSaveable { mutableStateOf("") }
+    var rotationOthers by rememberSaveable { mutableIntStateOf(0) }
+    var rotationProblem by rememberSaveable { mutableStateOf("") }
+    // ROT-02: how often the card appears, what is postponed and what it showed recently (this account's own settings).
+    val rotationRevision by vm.rotation.revision.collectAsStateWithLifecycle()
+    val rotationState = remember(wardrobe, rotationRevision, today) { vm.rotation.read(wardrobe, today) }
+    // An item chosen in the statistics is shown whatever the frequency: the person asked for it.
+    val rotationVisible = anchor.isNotEmpty() || RotationRules.visible(rotationState.frequency, rotationState.lastShown, rotationState.hiddenOn, today)
+    val rotationInput = if (capsule != null || !rotationVisible) "" else stateToken("$input|$anchor|$rotationAfter|$rotationState")
+    LaunchedEffect(rotationInput) {
+        if (rotationInput.isEmpty() || rotationFor == rotationInput) return@LaunchedEffect
+        delay(80)
+        val result = withContext(Dispatchers.Default) {
+            RotationOutfits.suggest(s, wardrobe, occasion, weather, today, rotationAfter, anchor, fixed, choices, rotationState)
+        }
+        rotationAnchorId = result?.anchor?.id.orEmpty(); rotationIds = result?.look.orEmpty().joinToString(",") { it.id }
+        rotationOthers = result?.others ?: 0; rotationProblem = result?.problem.orEmpty(); rotationFor = rotationInput
+    }
+    val rotationItem = s.garments.find { it.id == rotationAnchorId && it.wardrobeId == wardrobe }.takeIf { rotationFor == rotationInput && capsule == null }
+    val rotationLook = remember(rotationIds, s.garments) { rotationIds.split(',').mapNotNull { id -> s.garments.find { it.id == id } } }
+    // The card showed this item today: tomorrow another one leads (no nagging); weekly mode counts from today.
+    LaunchedEffect(rotationItem?.id, rotationLook.isNotEmpty(), today) {
+        val shown = rotationItem ?: return@LaunchedEffect
+        if (anchor.isEmpty() && rotationLook.isNotEmpty()) vm.rotation.markShown(wardrobe, shown.id, today)
+    }
+    var snoozing by rememberSaveable { mutableStateOf("") }
+    var archiving by rememberSaveable { mutableStateOf("") }
+    var snoozedNotice by rememberSaveable(wardrobe) { mutableStateOf("") }
+    fun postpone(item: Garment, days: Int, reason: String) {
+        val until = vm.rotation.snooze(wardrobe, item.id, days, reason, today)
+        snoozing = ""; archiving = ""; snoozedNotice = "${item.id}|$until"
+        if (anchor.isNotEmpty()) clearAnchor()
+    }
     val scope = rememberCoroutineScope()
     var configuring by rememberSaveable { mutableStateOf(false) }
     var actionItem by rememberSaveable { mutableStateOf("") }
@@ -170,6 +208,67 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                 }
             }
         }
+        snoozedNotice.split('|').takeIf { it.size == 2 }?.let { (id, until) -> s.garments.find { it.id == id }?.let { g -> item(key = "rotation-snoozed") {
+            OutlinedCard(Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.rotation_snoozed, g.name, dateLabel(until)), style = MaterialTheme.typography.bodyMedium)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = { vm.rotation.restore(wardrobe, id); snoozedNotice = "" }) { Text(stringResource(R.string.undo_action)) }
+                        TextButton(onClick = { snoozedNotice = "" }) { Text(stringResource(R.string.feedback_ok)) }
+                    }
+                }
+            }
+        } } }
+        if (capsule == null && anchor.isEmpty() && rotationState.hiddenOn == today && rotationState.frequency != RotationRules.OFF) item(key = "rotation-hidden") {
+            OutlinedCard(Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.rotation_hidden), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    TextButton(onClick = { vm.rotation.unhide(wardrobe) }, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.rotation_show)) }
+                }
+            }
+        }
+        if (rotationItem != null && (rotationLook.isNotEmpty() || anchor.isNotEmpty())) item(key = "rotation") {
+            val last = remember(s.wears, rotationItem.id, today) { RotationOutfits.lastWears(s, today)[rotationItem.id] }
+            val added = RotationOutfits.added(rotationItem)
+            val idle = RotationRules.idleDays(last.orEmpty(), added, today).toInt()
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(stringResource(if (anchor.isNotEmpty()) R.string.rotation_anchor_title else R.string.rotation_title),
+                        style = MaterialTheme.typography.titleLarge)
+                    // Why it is suggested: the last actual wear, or how long it has waited since it was added.
+                    Text(if (last != null) stringResource(R.string.rotation_reason_worn, rotationItem.name, dateLabel(last), idle)
+                        else stringResource(R.string.rotation_reason_never, rotationItem.name, dateLabel(added), idle), style = MaterialTheme.typography.bodyMedium)
+                    if (rotationLook.isNotEmpty()) {
+                        OutfitComposition(rotationLook.map(LookRules::owned), vm, locks = (fixedIds + rotationItem.id).map { "owned:$it" }.toSet()) { piece ->
+                            actionItem = piece.ownedId.orEmpty(); actionIndex = ROTATION
+                        }
+                        Text(stringResource(R.string.rotation_fits, stringResource(label(weather)), stringResource(label(occasion))), style = MaterialTheme.typography.bodySmall)
+                        val autoName = stringResource(R.string.rotation_saved_name, rotationItem.name, dateText)
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(onClick = { beginSave(rotationLook, false, autoName) }, enabled = !busy) { Text(stringResource(R.string.save_outfit)) }
+                            OutlinedButton(onClick = { beginSave(rotationLook, true, autoName) }, enabled = !busy) { Text(stringResource(R.string.calendar_plan)) }
+                        }
+                    } else {
+                        Text(rotationProblemText(rotationProblem, weather), style = MaterialTheme.typography.bodyMedium)
+                        TextButton(onClick = { configuring = true }, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.configure_conditions)) }
+                    }
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (rotationOthers > 0) TextButton(onClick = {
+                            val current = rotationItem.id
+                            if (anchor.isNotEmpty()) clearAnchor()
+                            rotationAfter = current
+                        }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.rotation_other)) }
+                        // ROT-02: postpone this item, or say why it is not worn.
+                        TextButton(onClick = { snoozing = rotationItem.id }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.rotation_snooze)) }
+                        if (anchor.isEmpty()) TextButton(onClick = { vm.rotation.hideToday(wardrobe, today) }, enabled = !busy,
+                            modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.rotation_hide_today)) }
+                    }
+                    if (anchor.isEmpty()) TextButton(onClick = { preferencesOpen = true }, modifier = Modifier.heightIn(min = 48.dp)) {
+                        Text(stringResource(R.string.rotation_frequency_link))
+                    }
+                }
+            }
+        }
         if (generatedFor != input || looks.isEmpty() && emptyReasonFor != input) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
         val diagnosis = emptyReason.takeIf { emptyReasonFor == input }
         if (looks.isEmpty() && generatedFor == input && diagnosis != null) item {
@@ -231,19 +330,26 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(item.name, style = MaterialTheme.typography.titleLarge)
                 TextButton(onClick = { actionItem = ""; open(item) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.item_details)) }
+                val rotation = actionIndex == ROTATION
                 OutlinedButton(onClick = {
-                    val items = looks.getOrNull(actionIndex).orEmpty()
-                    val others = looks.filterIndexed { index, _ -> index != actionIndex }.map { DailyRules.signature(it.map { g -> g.id }) }.toSet()
-                    val index = actionIndex; val before = lookIds; val category = item.category
+                    val items = if (rotation) rotationLook else looks.getOrNull(actionIndex).orEmpty()
+                    val others = looks.filterIndexed { index, _ -> rotation || index != actionIndex }.map { DailyRules.signature(it.map { g -> g.id }) }.toSet()
+                    val index = actionIndex; val before = lookIds; val beforeRotation = rotationIds; val category = item.category
                     actionItem = ""
                     scope.launch {
+                        // ROT-01: the other pieces stay, so the item not worn for a long time stays in its outfit.
                         val replacement = withContext(Dispatchers.Default) { DailyOutfits.replace(s, wardrobe, occasion, weather, today, items, category, others, allowed, choices) }
                         // Apply only to the same variants the user acted on.
+                        if (rotation) {
+                            if (rotationIds != beforeRotation) return@launch
+                            if (replacement.isEmpty()) noReplacement = true else rotationIds = replacement.joinToString(",") { it.id }
+                            return@launch
+                        }
                         if (lookIds != before) return@launch
                         if (replacement.isEmpty()) noReplacement = true
                         else lookIds = ArrayList(lookIds.mapIndexed { i, old -> if (i == index) replacement.joinToString(",") { it.id } else old })
                     }
-                }, enabled = !busy && item.id !in fixedIds, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.replace)) }
+                }, enabled = !busy && item.id !in fixedIds && !(rotation && item.id == rotationAnchorId), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.replace)) }
                 OutlinedButton(onClick = { fixedIds = ArrayList(if (item.id in fixedIds) fixedIds - item.id else fixedIds.filter { id -> s.garments.find { it.id == id }?.category != item.category } + item.id); actionItem = "" },
                     enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(if (item.id in fixedIds) R.string.unlock_piece else R.string.lock_piece)) }
                 TextButton(onClick = { vm.excludeFromRecommendations(item.id, true); actionItem = "" }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.rules_exclude)) }
@@ -259,7 +365,51 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
         }, enabled = !busy && TextLimits.hasVisibleText(proposedName)) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = { namingIds = "" }, enabled = !busy) { Text(stringResource(R.string.cancel)) } })
     if (noReplacement) AlertDialog(onDismissRequest = { noReplacement = false }, text = { Text(stringResource(R.string.daily_no_replacement)) }, confirmButton = { TextButton(onClick = { noReplacement = false }) { Text(stringResource(R.string.close)) } })
-    if (preferencesOpen) PreferencesDialog(s, wardrobe, vm) { preferencesOpen = false; lastReason = "" }
+    if (preferencesOpen) PreferencesDialog(s, wardrobe, vm, today) { preferencesOpen = false; lastReason = "" }
+    s.garments.find { it.id == snoozing && it.wardrobeId == wardrobe }?.let { item ->
+        ModalBottomSheet(onDismissRequest = { snoozing = "" }) {
+            Column(Modifier.fillMaxWidth().heightIn(max = 640.dp).verticalScroll(rememberScrollState()).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.rotation_snooze_title, item.name), style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.rotation_snooze_hint), style = MaterialTheme.typography.bodySmall)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    for ((days, title) in listOf(RotationRules.SNOOZE_WEEK to R.string.rotation_snooze_week,
+                        RotationRules.SNOOZE_MONTH to R.string.rotation_snooze_month, RotationRules.SNOOZE_SEASON to R.string.rotation_snooze_season)) {
+                        OutlinedButton(onClick = { postpone(item, days, RotationRules.LATER) }, enabled = !busy) { Text(stringResource(title)) }
+                    }
+                }
+                Text(stringResource(R.string.rotation_why), style = MaterialTheme.typography.titleMedium)
+                // «Незручно» is the PERS-01 reason itself: the same row, scope and undo as under a daily variant.
+                ReasonOption(stringResource(R.string.feedback_uncomfortable), reasonScope(FeedbackReason.UNCOMFORTABLE, "", ""), enabled = !busy) {
+                    snoozing = ""; uncomfortable = arrayListOf(item.id)
+                    record(rotationLook.takeIf { look -> look.any { it.id == item.id } } ?: listOf(item), FeedbackReason.UNCOMFORTABLE)
+                }
+                ReasonOption(stringResource(R.string.rotation_reason_size), stringResource(R.string.rotation_reason_size_scope), enabled = !busy) {
+                    snoozing = ""; archiving = item.id
+                }
+                ReasonOption(stringResource(R.string.rotation_reason_waiting), stringResource(R.string.rotation_reason_waiting_scope), enabled = !busy) {
+                    postpone(item, RotationRules.reasonDays(RotationRules.WAITING), RotationRules.WAITING)
+                }
+                ReasonOption(stringResource(R.string.rotation_reason_no_match), stringResource(R.string.rotation_reason_no_match_scope), enabled = !busy) {
+                    postpone(item, RotationRules.reasonDays(RotationRules.NO_MATCH), RotationRules.NO_MATCH); buildWith(item)
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+        }
+    }
+    s.garments.find { it.id == archiving && it.wardrobeId == wardrobe }?.let { item ->
+        AlertDialog(onDismissRequest = { archiving = "" }, title = { Text(stringResource(R.string.rotation_archive_title, item.name)) },
+            text = { Text(stringResource(R.string.rotation_archive_text)) },
+            // The app's usual archive change: the snackbar offers «Скасувати».
+            confirmButton = { TextButton(onClick = { archiving = ""; vm.changeAvailability(item, archived = true); if (anchor.isNotEmpty()) clearAnchor() },
+                enabled = !busy) { Text(stringResource(R.string.archive)) } },
+            dismissButton = { Column(horizontalAlignment = Alignment.End) {
+                TextButton(onClick = { postpone(item, RotationRules.reasonDays(RotationRules.SIZE), RotationRules.SIZE) }, enabled = !busy) {
+                    Text(stringResource(R.string.rotation_snooze_instead))
+                }
+                TextButton(onClick = { archiving = "" }) { Text(stringResource(R.string.cancel)) }
+            } })
+    }
     looks.getOrNull(reasonFor)?.let { items ->
         ModalBottomSheet(onDismissRequest = { reasonFor = -1; choosingItems = false }) {
             Column(Modifier.fillMaxWidth().heightIn(max = 640.dp).verticalScroll(rememberScrollState()).padding(16.dp),
@@ -294,6 +444,19 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
             }
         }
     }
+}
+
+/** ROT-01: the action sheet acts on the «Давно не вдягали» outfit instead of a numbered variant. */
+private const val ROTATION = -2
+
+/** ROT-01: why the item chosen in the statistics makes no outfit today, in words the person can act on. */
+@Composable
+private fun rotationProblemText(code: String, weather: String): String = when (code) {
+    RotationRules.UNAVAILABLE -> stringResource(R.string.rotation_problem_unavailable)
+    RotationRules.EXCLUDED -> stringResource(R.string.rotation_problem_excluded)
+    RotationRules.WEATHER -> stringResource(R.string.rotation_problem_weather, stringResource(label(weather)))
+    RotationRules.REPEAT -> stringResource(R.string.rotation_problem_repeat)
+    else -> stringResource(R.string.rotation_problem_items)
 }
 
 /** PERS-01: one reason with what it changes and where, so its effect is predictable before it is chosen. */
