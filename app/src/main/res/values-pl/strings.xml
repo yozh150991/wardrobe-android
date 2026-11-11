@@ -1421,4 +1421,5 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="calendar_worn_title">Noszone tego dnia</string>
     <string name="calendar_worn_empty">Brak zapisanego noszenia tego dnia.</string>
     <string name="calendar_wear_item">Oznacz noszone rzeczy</string>
+    <string name="daily_other_variants">Pokaż inne warianty</string>
 </resources>

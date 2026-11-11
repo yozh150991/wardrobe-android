@@ -64,8 +64,11 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
     var generatedFor by rememberSaveable { mutableStateOf("") }
     var lookIds by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
     var hiddenShown by rememberSaveable { mutableStateOf(false) }
-    val input = remember(wardrobe, occasion, weather, today, s.garments, s.wears, s.feedback, s.wardrobes, allowed, fixed, revision, refresh, choices) {
-        stateToken(listOf(wardrobe, occasion, weather, today, s.garments, s.wears, s.feedback, s.wardrobes, allowed?.sorted(), fixed.toSortedMap(), revision, refresh, choices).toString())
+    // GEN-02: «Інші варіанти» skips the outfits already shown for these conditions, until every one has been seen.
+    var skipped by rememberSaveable(wardrobe, occasion, weather, today) { mutableStateOf(arrayListOf<String>()) }
+    var skippedAll by remember { mutableStateOf(false) }
+    val input = remember(wardrobe, occasion, weather, today, s.garments, s.wears, s.feedback, s.wardrobes, allowed, fixed, revision, refresh, choices, skipped) {
+        stateToken(listOf(wardrobe, occasion, weather, today, s.garments, s.wears, s.feedback, s.wardrobes, allowed?.sorted(), fixed.toSortedMap(), revision, refresh, choices, skipped).toString())
     }
     val fullCapsule = capsule?.let { c -> s.capsuleItems.filter { it.capsuleId == c.id }.map { it.garmentId }.toSet() }
     val currentRules = s.wardrobes.find { it.id == wardrobe }?.noRepeatDays ?: 0
@@ -77,9 +80,14 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
         delay(80)
         var ids = lookIds
         if (generatedFor != input) {
-            val result = withContext(Dispatchers.Default) {
-                DailyOutfits.daily(s, wardrobe, occasion, weather, today, "$today:$revision", allowed = allowed, fixed = fixed, choices = choices)
+            val skip = skipped.toSet()
+            val (result, exhausted) = withContext(Dispatchers.Default) {
+                val other = DailyOutfits.daily(s, wardrobe, occasion, weather, today, "$today:$revision", skip, allowed, fixed, choices)
+                // Nothing new is left (or only combinations the person hid): start again from the best ones.
+                if (skip.isEmpty() || other.looks.isNotEmpty() && !other.hiddenShown) other to false
+                else DailyOutfits.daily(s, wardrobe, occasion, weather, today, "$today:$revision", allowed = allowed, fixed = fixed, choices = choices) to true
             }
+            skippedAll = exhausted
             ids = ArrayList(result.looks.map { it.joinToString(",") { g -> g.id } })
             lookIds = ids; hiddenShown = result.hiddenShown; generatedFor = input
         }
@@ -389,7 +397,12 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                 }
             }
         }
-        if (looks.isNotEmpty()) item { OutlinedButton(onClick = { revision++ }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.daily_refresh)) } }
+        if (looks.isNotEmpty()) item {
+            OutlinedButton(onClick = {
+                val shown = looks.map { DailyRules.signature(it.map { g -> g.id }) }
+                skipped = ArrayList(if (skippedAll) shown else (skipped + shown).distinct()); revision++
+            }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.daily_other_variants)) }
+        }
     }
     if (configuring) ModalBottomSheet(onDismissRequest = { configuring = false }) {
         Column(Modifier.fillMaxWidth().heightIn(max = 640.dp).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

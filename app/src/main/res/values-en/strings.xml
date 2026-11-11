@@ -1421,4 +1421,5 @@ Your current wardrobe is unchanged.</string>
     <string name="calendar_worn_title">Worn this day</string>
     <string name="calendar_worn_empty">No wear recorded for this day.</string>
     <string name="calendar_wear_item">Mark worn items</string>
+    <string name="daily_other_variants">Show other options</string>
 </resources>
