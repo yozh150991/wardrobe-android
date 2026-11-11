@@ -1,13 +1,17 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package com.familywardrobe.app
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -74,6 +78,20 @@ internal fun PreferencesDialog(s: Snapshot, wardrobe: String, vm: WardrobeViewMo
                             }
                         }
                     }
+                    // PERS-03: the person's own colours, chosen here — no photo or selfie analysis.
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(stringResource(R.string.prefs_colours_title), style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(R.string.prefs_colours_hint), style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            PaletteChoice(stringResource(R.string.prefs_colours_liked), choices, PersonalChoices.LIKED, !busy) { colour, value ->
+                                vm.setPaletteColour(wardrobe, colour, value)
+                            }
+                            PaletteChoice(stringResource(R.string.prefs_colours_avoided), choices, PersonalChoices.AVOIDED, !busy) { colour, value ->
+                                vm.setPaletteColour(wardrobe, colour, value)
+                            }
+                        }
+                    }
                     item { Text(stringResource(R.string.prefs_uncomfortable_title, uncomfortable.size), style = MaterialTheme.typography.titleMedium) }
                     if (uncomfortable.isEmpty()) item { Text(stringResource(R.string.prefs_none), style = MaterialTheme.typography.bodySmall) }
                     items(uncomfortable, key = { "item:${it.id}" }) { row ->
@@ -125,6 +143,24 @@ internal fun PreferencesDialog(s: Snapshot, wardrobe: String, vm: WardrobeViewMo
     if (resetting) AlertDialog(onDismissRequest = { resetting = false }, text = { Text(stringResource(R.string.feedback_reset_confirm)) },
         confirmButton = { TextButton(onClick = { resetting = false; vm.resetPreferences(wardrobe) }, enabled = !busy) { Text(stringResource(R.string.prefs_reset_all)) } },
         dismissButton = { TextButton(onClick = { resetting = false }) { Text(stringResource(R.string.cancel)) } })
+}
+
+/**
+ * One palette list: every base colour as a chip with its swatch. Choosing a colour here takes it out of the other list;
+ * choosing it again clears it.
+ */
+@Composable
+private fun PaletteChoice(title: String, choices: PersonalChoices, kind: String, enabled: Boolean, set: (String, String) -> Unit) {
+    val outline = MaterialTheme.colorScheme.outline
+    Text(title, style = MaterialTheme.typography.titleSmall)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        PersonalChoices.PALETTE.forEach { colour ->
+            val selected = choices.palette(colour) == kind
+            FilterChip(selected = selected, onClick = { set(colour, if (selected) PersonalChoices.NONE else kind) }, enabled = enabled,
+                leadingIcon = { Box(Modifier.size(18.dp).clip(CircleShape).background(swatch(colour)).border(1.dp, outline, CircleShape)) },
+                label = { Text(stringResource(label(colour))) })
+        }
+    }
 }
 
 @Composable

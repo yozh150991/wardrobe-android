@@ -14,7 +14,8 @@ object OutfitStyle {
 
     /**
      * Candidates are what the daily suggestions may use (ready, not excluded, not held back by the wardrobe's repeat
-     * rule, within a capsule when [allowed]), without items marked «Незручно»; hidden combinations stay hidden.
+     * rule, within a capsule when [allowed]), without items marked «Незручно» or in a colour the person wears less
+     * (PERS-03); hidden combinations stay hidden.
      * [fixed]: pinned pieces (and the item of «Давно не вдягали»), never replaced.
      */
     fun better(s: Snapshot, wardrobe: String, occasion: String, weather: String, date: String, look: List<Garment>,
@@ -22,7 +23,7 @@ object OutfitStyle {
         if (look.isEmpty()) return null
         val uncomfortable = s.feedback.filter { it.wardrobeId == wardrobe && !it.signature.contains('|') && it.reason == PreferenceRules.DISLIKE }
             .map { it.signature }.toSet()
-        val candidates = DailyOutfits.items(s, date, allowed).map { it.piece }.filter { it.wardrobe == wardrobe && it.id !in uncomfortable }
+        val candidates = DailyOutfits.items(s, date, allowed).map { it.piece }.filter { it.wardrobe == wardrobe && it.id !in uncomfortable && it.color !in choices.avoided }
         val swap = StyleRules.better(look.map { it.rulePiece() }, candidates, weather, target(s, wardrobe, occasion, choices), fixed,
             DailyOutfits.rejected(s, wardrobe, occasion, weather)) ?: return null
         val byId = s.garments.associateBy { it.id }

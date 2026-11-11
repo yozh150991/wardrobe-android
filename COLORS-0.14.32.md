@@ -83,5 +83,6 @@
 - `PhotoRulesCases`: нові відтінки з фото, бірюзовий лишається «Іншим».
 - Backend 193 тести (+1: `colors2` оголошено, зелений приймається разом із відтінком, невідомий колір відхиляється).
 - Host checks — pass (29 наборів).
-- CI — див. журнал роадмапу.
+- CI — 4/4 jobs pass для push і PR (runs 41611165449, 41611196435): JVM 306 (з `FamilyColorsTest`),
+  instrumentation 199, 5 skipped (з `ColorsPersistenceTest`), Firebase emulators, Source and Git safety.
 - На телефоні не перевірено; живий сервер не оновлювався агентом.

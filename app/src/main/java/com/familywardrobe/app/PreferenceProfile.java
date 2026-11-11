@@ -13,6 +13,8 @@ import java.util.*;
  *   often there, unless the person chose formal.</li>
  *   <li>Warmth: the person's choice; otherwise one step lighter than the forecast after {@link #DERIVE}
  *   «Надто тепло» reasons; otherwise the forecast as it is. A manually chosen weather is never shifted.</li>
+ *   <li>Colours (PERS-03, 0.14.34): the person's own palette — liked colours a little more often, colours worn less
+ *   less often; see {@link #PALETTE_LIKED}.</li>
  * </ul>
  */
 public final class PreferenceProfile {
@@ -79,9 +81,41 @@ public final class PreferenceProfile {
     /** PERS-01 penalties plus "formal items less often" for this occasion when its style says so; still capped. */
     public static Map<String, Integer> penalties(List<PreferenceRules.Row> rows, Style style, String occasion, String weather,
             Collection<WardrobeRules.Piece> pieces) {
+        return penalties(rows, style, occasion, weather, pieces, Collections.emptySet());
+    }
+
+    /**
+     * PERS-03 «Мої кольори»: base colours the person marks themselves — ones they like wearing and ones they would rather
+     * wear less. No photo or selfie analysis. Like every preference here it only changes scores:
+     * <ul>
+     *   <li>a liked colour adds {@link #PALETTE_LIKED} per item — less than a favourite item (+4), because it covers a
+     *   whole colour, not one chosen piece;</li>
+     *   <li>a colour worn less takes {@link #PALETTE_AVOIDED} per item, as much as one context reason, within the same
+     *   {@link PreferenceRules#MAX} cap, so an item that is the only choice for its category is still suggested.</li>
+     * </ul>
+     * A colour is in one list at most; if both say so, "less" wins. The 0–10 outfit rating stays the colour theory's
+     * (StyleRules): the palette moves variants up or down, it does not rate them.
+     */
+    public static final int PALETTE_LIKED = 3;
+    public static final int PALETTE_AVOIDED = PreferenceRules.CONTEXT;
+
+    /** The penalties above plus PERS-03 colours worn less ([avoided]); still capped per item. */
+    public static Map<String, Integer> penalties(List<PreferenceRules.Row> rows, Style style, String occasion, String weather,
+            Collection<WardrobeRules.Piece> pieces, Set<String> avoided) {
         Map<String, Integer> result = new HashMap<>(PreferenceRules.penalties(rows, occasion, weather));
-        if (style.avoidFormal) for (WardrobeRules.Piece piece : pieces)
-            if (piece.style.equals("formal")) result.merge(piece.id, PreferenceRules.CONTEXT, (a, b) -> Math.min(PreferenceRules.MAX, a + b));
+        for (WardrobeRules.Piece piece : pieces) {
+            if (style.avoidFormal && piece.style.equals("formal")) result.merge(piece.id, PreferenceRules.CONTEXT, PreferenceProfile::capped);
+            if (avoided.contains(piece.color)) result.merge(piece.id, PALETTE_AVOIDED, PreferenceProfile::capped);
+        }
+        return result;
+    }
+    private static int capped(int a, int b) { return Math.min(PreferenceRules.MAX, a + b); }
+
+    /** PERS-03: points added per item of a liked colour (not one that is also marked "less"). */
+    public static Map<String, Integer> bonus(Collection<WardrobeRules.Piece> pieces, Set<String> liked, Set<String> avoided) {
+        Map<String, Integer> result = new HashMap<>();
+        for (WardrobeRules.Piece piece : pieces)
+            if (liked.contains(piece.color) && !avoided.contains(piece.color)) result.put(piece.id, PALETTE_LIKED);
         return result;
     }
 }

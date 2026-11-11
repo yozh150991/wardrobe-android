@@ -12,8 +12,65 @@ public final class PreferenceProfileCases {
     private static DailyRules.Item item(String id, String category, String style) {
         return new DailyRules.Item(new WardrobeRules.Piece(id, "home", category, "available", false, "all", style, "black"), 0, false, "");
     }
+    private static DailyRules.Item coloured(String id, String category, String color) {
+        return new DailyRules.Item(new WardrobeRules.Piece(id, "home", category, "available", false, "all", "casual", color), 0, false, "");
+    }
     private static List<WardrobeRules.Piece> pieces(List<DailyRules.Item> items) {
         List<WardrobeRules.Piece> result = new ArrayList<>(); for (DailyRules.Item i : items) result.add(i.piece); return result;
+    }
+
+    /** PERS-03: «Мої кольори» — liked a little more often, «Краще рідше» less often, never an exclusion or a rating. */
+    private static void palette(List<PreferenceRules.Row> heavy, PreferenceProfile.Style auto) {
+        check(PreferenceProfile.PALETTE_LIKED > 0 && PreferenceProfile.PALETTE_LIKED < 4, "a liked colour weighs less than a favourite item (+4)");
+        check(PreferenceProfile.PALETTE_AVOIDED == PreferenceRules.CONTEXT && PreferenceProfile.PALETTE_AVOIDED < PreferenceRules.MAX,
+            "a colour worn less weighs one context reason");
+        // Grey and white tops are equal on navy (calm and contrast, 3 points each): only the palette decides.
+        List<DailyRules.Item> tops = List.of(coloured("grey", "top", "grey"), coloured("white", "top", "white"),
+            coloured("trousers", "bottom", "navy"), coloured("shoes", "shoes", "navy"));
+        PreferenceProfile.Style everyday = PreferenceProfile.style(List.of(), "everyday", null);
+        for (String colour : List.of("grey", "white")) {
+            String other = colour.equals("grey") ? "white" : "grey";
+            Map<String, Integer> bonus = PreferenceProfile.bonus(pieces(tops), Set.of(colour), Set.of());
+            check(bonus.equals(Map.of(colour, PreferenceProfile.PALETTE_LIKED)), "bonus only for the liked colour " + colour);
+            check(DailyRules.generate(tops, "home", "everyday", "warm", "2026-11-03", "s", Set.of(), Map.of(), 2, Map.of(), "casual", bonus)
+                .get(0).contains(colour), "the liked " + colour + " top leads");
+            Map<String, Integer> less = PreferenceProfile.penalties(List.of(), everyday, "everyday", "warm", pieces(tops), Set.of(colour));
+            check(less.equals(Map.of(colour, PreferenceProfile.PALETTE_AVOIDED)), "penalty only for the colour worn less " + colour);
+            List<List<String>> avoided = DailyRules.generate(tops, "home", "everyday", "warm", "2026-11-03", "s", Set.of(), Map.of(), 2, less, "casual");
+            check(avoided.get(0).contains(other) && avoided.size() == 2 && avoided.get(1).contains(colour),
+                "the " + colour + " top comes after the other one but is still suggested");
+        }
+        // «Less» wins over «liked»; an empty palette changes nothing; an oversized bonus is capped.
+        check(PreferenceProfile.bonus(pieces(tops), Set.of("grey"), Set.of("grey")).isEmpty(), "a colour in both lists gets no bonus");
+        check(PreferenceProfile.penalties(List.of(), everyday, "everyday", "warm", pieces(tops), Set.of()).isEmpty(), "no palette, no penalty");
+        List<List<String>> plain = DailyRules.generate(tops, "home", "everyday", "warm", "2026-11-03", "s", Set.of(), Map.of(), 2, Map.of(), "casual");
+        check(plain.equals(DailyRules.generate(tops, "home", "everyday", "warm", "2026-11-03", "s", Set.of(), Map.of(), 2, Map.of(), "casual", Map.of())),
+            "no bonus = the result before PERS-03");
+        check(DailyRules.generate(tops, "home", "everyday", "warm", "2026-11-03", "s", Set.of(), Map.of(), 2, Map.of(), "casual", Map.of("grey", 3))
+            .equals(DailyRules.generate(tops, "home", "everyday", "warm", "2026-11-03", "s", Set.of(), Map.of(), 2, Map.of(), "casual", Map.of("grey", 99))),
+            "a bonus is capped at PALETTE_LIKED");
+        // A colour worn less adds to the other reasons within the same cap.
+        List<DailyRules.Item> formalBlack = List.of(item("formal", "top", "formal"), item("casual", "top", "casual"));
+        check(PreferenceProfile.penalties(heavy, auto, "work", "warm", pieces(formalBlack), Set.of("black")).get("formal") == PreferenceRules.MAX,
+            "still capped with the palette");
+        check(PreferenceProfile.penalties(List.of(), auto, "work", "warm", pieces(formalBlack), Set.of("black")).get("casual") == PreferenceProfile.PALETTE_AVOIDED,
+            "colour worn less on its own");
+        // A style match (+12) still outweighs a liked colour: the palette steers between suitable items only.
+        List<DailyRules.Item> styles = List.of(item("formal", "top", "formal"),
+            new DailyRules.Item(new WardrobeRules.Piece("casual", "home", "top", "available", false, "all", "casual", "grey"), 0, false, ""),
+            item("b1", "bottom", "casual"), item("s1", "shoes", "casual"));
+        Map<String, Integer> likesBlack = PreferenceProfile.bonus(pieces(styles), Set.of("black"), Set.of());
+        check(DailyRules.generate(styles, "home", "everyday", "warm", "2026-11-03", "s", Set.of(), Map.of(), 1, Map.of(), "casual", likesBlack)
+            .get(0).contains("casual"), "the occasion's style beats a liked colour");
+        check(DailyRules.generate(styles, "home", "everyday", "warm", "2026-11-03", "s", Set.of(), Map.of(), 1, Map.of(), "casual", Map.of("formal", 99))
+            .get(0).contains("casual"), "an oversized bonus is capped below a style match");
+        // Every colour worn less: the day is never empty.
+        Set<String> all = Set.of("grey", "white", "navy");
+        check(!DailyRules.generate(tops, "home", "everyday", "warm", "2026-11-03", "s", Set.of(), Map.of(), 2,
+            PreferenceProfile.penalties(List.of(), everyday, "everyday", "warm", pieces(tops), all), "casual").isEmpty(), "never empty with every colour worn less");
+        // Replacing one piece respects the palette too.
+        check(DailyRules.replace(tops, "home", "everyday", "warm", "2026-11-03", List.of("trousers", "shoes"), "top", Set.of(), Map.of(), "casual",
+            PreferenceProfile.bonus(pieces(tops), Set.of("white"), Set.of())).contains("white"), "replace picks the liked colour");
     }
 
     public static void main(String[] args) {
@@ -78,6 +135,7 @@ public final class PreferenceProfileCases {
             check(!DailyRules.generate(onlyFormal, "home", occasion, "warm", "2026-10-30", "s", Set.of(), Map.of(), 3, penalty, style.style).isEmpty(),
                 "never empty " + occasion + "/" + choice);
         }
-        System.out.println("PASS: " + checks + " profile assertions (sources, thresholds, choices, never empty).");
+        palette(heavy, auto);
+        System.out.println("PASS: " + checks + " profile assertions (sources, thresholds, choices, palette, never empty).");
     }
 }
