@@ -1320,4 +1320,17 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="widget_ideas">Zawiera rzeczy, których jeszcze nie masz</string>
     <string name="widget_no_photos">Bez zdjęć</string>
     <string name="widget_more">Więcej planów na dziś: %1$d</string>
+    <string name="rotation_title">Dawno nienoszone</string>
+    <string name="rotation_anchor_title">Zestaw z tą rzeczą</string>
+    <string name="rotation_reason_worn">„%1$s” noszono ostatnio %2$s. Dni bez noszenia: %3$d.</string>
+    <string name="rotation_reason_never">„%1$s” nie była jeszcze noszona. W szafie od %2$s, dni: %3$d.</string>
+    <string name="rotation_fits">Pasuje do warunków: %1$s · %2$s.</string>
+    <string name="rotation_saved_name">%1$s · %2$s</string>
+    <string name="rotation_other">Inna rzecz</string>
+    <string name="rotation_pick_today">Dobierz na dziś</string>
+    <string name="rotation_problem_unavailable">Teraz nie da się jej założyć: jest w praniu, naprawie, pożyczona lub w archiwum.</string>
+    <string name="rotation_problem_excluded">Ta rzecz jest wykluczona z propozycji. Przywrócić ją można w „Ustaw warunki”.</string>
+    <string name="rotation_problem_weather">Ze względu na sezon nie pasuje do pogody „%1$s”. Zmień warunki lub wybierz ją innego dnia.</string>
+    <string name="rotation_problem_repeat">Była noszona niedawno, a reguła szafy nie powtarza rzeczy przez kilka dni.</string>
+    <string name="rotation_problem_items">Brakuje teraz dostępnych rzeczy, które do niej pasują.</string>
 </resources>
