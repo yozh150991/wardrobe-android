@@ -15,7 +15,8 @@ def check(condition, message):
 matching = (source / 'Matching.kt').read_text()
 colours = matching.split('val colors = listOf(', 1)[1].split(')', 1)[0]
 cases = (root / 'app/src/test/java/com/familywardrobe/app/StyleRulesCases.java').read_text()
-check(colours == cases.split('List<String> COLOURS = List.of(', 1)[1].split(')', 1)[0], 'StyleRulesCases.COLOURS must equal Matching.colors')
+check(re.findall(r'"(\w+)"', colours) == re.findall(r'"(\w+)"', cases.split('List<String> COLOURS = List.of(', 1)[1].split(')', 1)[0]),
+      'StyleRulesCases.COLOURS must equal Matching.colors')
 rules = (source / 'StyleRules.java').read_text()
 for colour in re.findall(r'"(\w+)"', colours):
     check(colour == 'other' or f'COLOURS.put("{colour}"' in rules, f'StyleRules has no attributes for {colour}')
@@ -54,7 +55,7 @@ keys = ['style_label_great', 'style_label_good', 'style_label_fair', 'style_labe
         'style_pair_same_accent', 'style_pair_black_brown', 'style_pair_dark_dark', 'style_pair_two_accents', 'style_one_style',
         'style_one_style_other', 'style_mixed', 'style_weather_ok', 'style_weather_no_outerwear', 'style_weather_season', 'style_now',
         'style_better', 'style_better_change', 'style_better_style', 'style_better_weather', 'style_apply', 'style_occasion_chip',
-        'style_pair_accent_contrast', 'style_many_colours']
+        'style_pair_accent_contrast', 'style_many_colours', 'style_pair_analogous', 'style_pair_complementary']
 res = root / 'app/src/main/res'
 placeholders = {}
 for folder in ('values', 'values-uk', 'values-en', 'values-pl'):

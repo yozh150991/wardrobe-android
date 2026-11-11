@@ -32,7 +32,9 @@ import androidx.compose.ui.unit.dp
 internal fun swatch(colour: String): Color = when (colour) {
     "white" -> Color(0xFFF6F3EC); "black" -> Color(0xFF1C1C1C); "grey" -> Color(0xFF9A9A9A); "beige" -> Color(0xFFD9C4A1)
     "navy" -> Color(0xFF1E2C5A); "brown" -> Color(0xFF5C3B2A); "olive" -> Color(0xFF6B6A36); "blue" -> Color(0xFF3B6DB3)
-    "red" -> Color(0xFFB3363A); else -> Color(0xFFB9B1A7)
+    "red" -> Color(0xFFB3363A); "cream" -> Color(0xFFF1E6CC); "camel" -> Color(0xFFC19A6B); "khaki" -> Color(0xFFA39867)
+    "light_blue" -> Color(0xFF9EC5E8); "green" -> Color(0xFF2E7D4F); "burgundy" -> Color(0xFF6D1F2C); "pink" -> Color(0xFFE8A0B4)
+    "orange" -> Color(0xFFE07A2E); "yellow" -> Color(0xFFE9C83A); "purple" -> Color(0xFF6B3FA0); else -> Color(0xFFB9B1A7)
 }
 
 /** Overlapping colour dots, like a palette card; read aloud as the colour names. */
@@ -118,6 +120,8 @@ private fun pairText(code: String): Int = when (code) {
     StyleRules.BLACK_BROWN -> R.string.style_pair_black_brown
     StyleRules.DARK_DARK -> R.string.style_pair_dark_dark
     StyleRules.TWO_ACCENTS -> R.string.style_pair_two_accents
+    StyleRules.ANALOGOUS -> R.string.style_pair_analogous
+    StyleRules.COMPLEMENTARY -> R.string.style_pair_complementary
     else -> R.string.style_pair_unknown
 }
 

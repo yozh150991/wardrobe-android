@@ -37,8 +37,10 @@ public final class PhotoRulesCases {
         equal("top", PhotoRules.category(Map.of(197, .98f, 58, .40f)));
     }
     public static void paletteColors() {
-        int[] values = {0xff000000,0xffffffff,0xff808080,0xffe0cba8,0xff142850,0xff805030,0xff666633,0xff2060d0,0xffe02020,0xff20e020};
-        String[] names = {"black","white","grey","beige","navy","brown","olive","blue","red","other"};
+        // COL-02: green, orange, yellow, purple and pink used to be "other"; turquoise still is.
+        int[] values = {0xff000000,0xffffffff,0xff808080,0xffe0cba8,0xff142850,0xff805030,0xff666633,0xff2060d0,0xffe02020,0xff20e020,
+            0xffe07a2e,0xffe9c83a,0xff6b3fa0,0xffe8509a,0xff20d0d0};
+        String[] names = {"black","white","grey","beige","navy","brown","olive","blue","red","green","orange","yellow","purple","pink","other"};
         for (int i = 0; i < names.length; i++) equal(names[i], PhotoRules.dominantColor(solid(values[i])));
     }
     public static void transparentPixelsDoNotInfluenceColor() {

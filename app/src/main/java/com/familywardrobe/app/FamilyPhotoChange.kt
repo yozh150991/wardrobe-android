@@ -46,7 +46,7 @@ internal class FamilyPhotoArchive(private val context: AccountContext, private v
                 FamilyChange.photo(garmentId, fingerprint, photoId, photos.currentFile(photoId).extension)
             } else {
                 for (photo in changed.photoIds() - photoId) copier.copyPhoto(latestPhotos, photo, photos, photo)
-                val manifest = FamilyEnvelope(Backup(context, repo, photos)).encode(changed, remote.identity, remote.revision).toByteArray(Charsets.UTF_8)
+                val manifest = FamilyEnvelope(Backup(context, repo, photos)).encode(changed, remote.identity, remote.revision, FamilyColors.supported(remote)).toByteArray(Charsets.UTF_8)
                 FamilySnapshotZip.write(target, manifest, changed, photos, guard); null
             }
             val item = changed.garments.single { it.id == garmentId }

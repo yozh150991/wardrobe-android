@@ -61,6 +61,9 @@ fun label(code: String): Int = when (code) {
     "white" -> R.string.white; "black" -> R.string.black; "grey" -> R.string.grey
     "beige" -> R.string.beige; "navy" -> R.string.navy; "brown" -> R.string.brown
     "olive" -> R.string.olive; "blue" -> R.string.blue; "red" -> R.string.red; "other" -> R.string.other
+    "cream" -> R.string.cream; "camel" -> R.string.camel; "khaki" -> R.string.khaki; "light_blue" -> R.string.light_blue
+    "green" -> R.string.green; "burgundy" -> R.string.burgundy; "pink" -> R.string.pink; "orange" -> R.string.orange
+    "yellow" -> R.string.yellow; "purple" -> R.string.purple
     "all" -> R.string.all_seasons; "summer" -> R.string.summer; "winter" -> R.string.winter; "midseason" -> R.string.midseason
     "casual" -> R.string.casual; "sport" -> R.string.sport; "formal" -> R.string.formal
     "available" -> R.string.available; "laundry" -> R.string.laundry; "repair" -> R.string.repair; "lent" -> R.string.lent

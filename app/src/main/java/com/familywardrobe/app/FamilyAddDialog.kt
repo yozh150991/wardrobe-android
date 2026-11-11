@@ -52,6 +52,8 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
     val reader by vm.familyReader.state.collectAsStateWithLifecycle()
     val sharedSnapshot = reader.view?.takeIf { reader.remoteId == remote }?.candidate?.snapshot
     val sharedWardrobe = sharedSnapshot?.wardrobes?.singleOrNull()
+    // COL-02: the colours of 0.14.32 only once this wardrobe's server knows them.
+    val colors2 = reader.view?.takeIf { reader.remoteId == remote }?.remote?.let { FamilyColors.supported(it) } == true
     var pendingCapture by rememberSaveable { mutableStateOf("") }
     var pendingGeneration by rememberSaveable { mutableLongStateOf(-1L) }
     LaunchedEffect(state.synced) {
@@ -125,6 +127,9 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
                             item {
                                 Text(selection.customCategories.singleOrNull()?.name ?: stringResource(label(detail.category)))
                                 Text(selection.customColors.singleOrNull()?.name ?: stringResource(label(detail.color)))
+                                if (!colors2 && ColorRules.legacy(detail.color) != detail.color) Text(stringResource(R.string.family_color_older,
+                                    stringResource(label(detail.color)), stringResource(label(ColorRules.legacy(detail.color)))),
+                                    style = MaterialTheme.typography.bodySmall)
                                 Text(stringResource(R.string.family_read_size, detail.size))
                                 if (detail.subcategory.isNotBlank()) Text(detail.subcategory)
                                 if (detail.location.isNotBlank()) Text(detail.location)
@@ -162,7 +167,7 @@ internal fun FamilyAddDialog(vm: WardrobeViewModel, remote: String, dismiss: () 
                                 Choice(newCategory, Matching.categories, { newCategory = it; newCustomCategory = "" }, R.string.category, enabled = !state.running)
                                 if (customCategories.isNotEmpty()) NamedChoice(newCustomCategory, customCategories.map { it.id to it.name },
                                     { newCustomCategory = it }, R.string.family_new_custom_category, !state.running)
-                                Choice(newColor, Matching.colors, { newColor = it; newCustomColor = "" }, R.string.color, enabled = !state.running)
+                                Choice(newColor, FamilyColors.choices(colors2), { newColor = it; newCustomColor = "" }, R.string.color, enabled = !state.running)
                                 if (customColors.isNotEmpty()) NamedChoice(newCustomColor, customColors.map { it.id to it.name },
                                     { newCustomColor = it }, R.string.family_new_custom_color, !state.running)
                                 OutlinedTextField(newSize, { newSize = TextLimits.input(it, 40) }, singleLine = true, label = { Text(stringResource(R.string.family_edit_size)) }, modifier = Modifier.fillMaxWidth())

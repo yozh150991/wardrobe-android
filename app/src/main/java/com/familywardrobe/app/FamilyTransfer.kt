@@ -30,6 +30,8 @@ internal interface FamilyLocalTransfer {
     fun uploaded(record: FamilyMigrationRecord): FamilyMigrationRecord
     suspend fun confirm(record: FamilyMigrationRecord, remote: FamilyRemote)
     fun rotate(record: FamilyMigrationRecord, rebuild: Boolean): FamilyMigrationRecord
+    /** COL-02: what the server said it supports, before the archive is built (colours of 0.14.32 need "colors2"). */
+    fun serverFeatures(features: Set<String>) {}
 }
 
 /** Initial publication only. No direct head writes, local content mutation or automatic CAS overwrite. */
@@ -57,7 +59,9 @@ internal class FamilyTransferEngine(private val local: FamilyLocalTransfer, priv
         checkpoint(); progress(FamilyStep.CHECKING, 0, 0)
         backend.authenticate(); checkpoint()
         var record = local.prepare(id)
-        if (acknowledge(backend.create(record), record)) return
+        val created = backend.create(record)
+        local.serverFeatures(created.features)
+        if (acknowledge(created, record)) return
         repeat(2) { attempt ->
             try {
                 checkpoint(); progress(FamilyStep.PREPARING, 0, 0)
@@ -92,7 +96,9 @@ internal class FamilyTransferEngine(private val local: FamilyLocalTransfer, priv
     suspend fun restart(id: String) {
         checkpoint(); backend.authenticate(); checkpoint()
         val record = local.prepare(id)
-        if (checked(backend.create(record), record).revision != 0L) throw FamilyTransferException(FamilyProblem.CONFLICT)
+        val created = backend.create(record)
+        local.serverFeatures(created.features)
+        if (checked(created, record).revision != 0L) throw FamilyTransferException(FamilyProblem.CONFLICT)
         checkpoint(); local.rotate(record, true); run(id)
     }
 }
