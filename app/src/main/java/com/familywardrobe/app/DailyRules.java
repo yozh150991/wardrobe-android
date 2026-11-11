@@ -15,14 +15,17 @@ public final class DailyRules {
     }
     private static final class Candidate {
         final List<Item> items;
+        /** Beam order inside one layout: the items' own scores plus every pair's score. */
         final int score;
+        /** The pairs' part of [score], kept apart for the final order (see {@link #rank}). */
+        final int pairs;
         /** STYLE: the whole outfit's 0–10 rating, worked out once for the final order. */
         private int rating = -1;
         // Sorting compares tied scores by signature; building it on every comparison dominated the run time.
         private String key;
         private int tie;
         private boolean tied;
-        Candidate(List<Item> items, int score) { this.items = items; this.score = score; }
+        Candidate(List<Item> items, int score, int pairs) { this.items = items; this.score = score; this.pairs = pairs; }
         String key() {
             if (key == null) { List<String> ids = new ArrayList<>(); for (Item i : items) ids.add(i.piece.id); key = signature(ids); }
             return key;
@@ -32,8 +35,17 @@ public final class DailyRules {
             if (rating < 0) { List<WardrobeRules.Piece> pieces = new ArrayList<>(); for (Item i : items) pieces.add(i.piece); rating = StyleRules.rate(pieces, weather, style).score; }
             return rating;
         }
-        /** Per-item average of the pair and item scores, plus [RATING_WEIGHT] per rating point. */
-        int rank(String weather, String style) { return score * 1000 / Math.max(1, items.size()) + RATING_WEIGHT * rating(weather, style); }
+        /**
+         * The final order across layouts: the average item score, the average pair score and [RATING_WEIGHT] per
+         * rating point. GEN-01 (0.14.36): pairs are averaged over the pairs, not the items. Before, a dress with
+         * shoes (one pair for two items) counted half a pair per item while a top, a bottom and shoes (three pairs)
+         * counted a whole one, so a dress almost never reached the three variants; an outfit with a coat (six pairs
+         * for four items) counted one and a half. For three items the value is the same as before.
+         */
+        int rank(String weather, String style) {
+            int size = Math.max(1, items.size()), pairCount = Math.max(1, items.size() * (items.size() - 1) / 2);
+            return (score - pairs) * 1000 / size + pairs * 1000 / pairCount + RATING_WEIGHT * rating(weather, style);
+        }
     }
     /**
      * 0.14.33: how much one point of the outfit rating counts in the final order — half a point of the per-item
@@ -88,7 +100,7 @@ public final class DailyRules {
         if (weather.equals("cold") || weather.equals("cool") || weather.equals("rain")) categories.add("outerwear");
         if (!WardrobeRules.CATEGORIES.containsAll(fixed.keySet())) return Collections.emptyList();
         for (String category : WardrobeRules.CATEGORIES) if (fixed.containsKey(category) && !categories.contains(category)) categories.add(category);
-        List<Candidate> beam = new ArrayList<>(); beam.add(new Candidate(Collections.emptyList(), 0));
+        List<Candidate> beam = new ArrayList<>(); beam.add(new Candidate(Collections.emptyList(), 0, 0));
         for (String category : categories) {
             List<Item> choices = new ArrayList<>();
             for (Item item : items) {
@@ -109,12 +121,13 @@ public final class DailyRules {
             List<Candidate> expanded = new ArrayList<>();
             for (Candidate prior : beam) for (Item next : choices) {
                 boolean compatible = true;
-                int score = prior.score + itemScore(next, style, date, penalty, bonus);
+                int pairs = prior.pairs;
                 for (Item selected : prior.items) {
                     if (selected.piece.id.equals(next.piece.id) || !WardrobeRules.compatibleSeasons(selected.piece.season, next.piece.season)) { compatible = false; break; }
-                    score += pairScore(selected.piece, next.piece);
+                    pairs += pairScore(selected.piece, next.piece);
                 }
-                if (compatible) { List<Item> picked = new ArrayList<>(prior.items); picked.add(next); expanded.add(new Candidate(picked, score)); }
+                int score = prior.score - prior.pairs + itemScore(next, style, date, penalty, bonus) + pairs;
+                if (compatible) { List<Item> picked = new ArrayList<>(prior.items); picked.add(next); expanded.add(new Candidate(picked, score, pairs)); }
             }
             expanded.sort(Comparator.<Candidate>comparingInt(c -> c.score).reversed()
                 .thenComparingInt(c -> c.tie(seed)).thenComparing(DailyRules::key));
@@ -126,13 +139,58 @@ public final class DailyRules {
         }
         all.sort(Comparator.<Candidate>comparingInt(c -> c.rank(weather, style)).reversed()
             .thenComparingInt(c -> c.tie(seed)).thenComparing(DailyRules::key));
-        List<List<String>> result = new ArrayList<>(); Set<String> seen = new HashSet<>();
-        for (Candidate c : all) {
+        List<Candidate> shown = new ArrayList<>(); Set<String> seen = new HashSet<>();
+        for (Candidate c : all) if (!rejected.contains(c.key()) && seen.add(c.key())) shown.add(c);
+        List<List<String>> result = new ArrayList<>();
+        for (Candidate c : distinct(shown, limit)) {
             List<String> ids = new ArrayList<>(); for (Item i : c.items) ids.add(i.piece.id);
-            String sig = c.key();
-            if (!rejected.contains(sig) && seen.add(sig)) { result.add(ids); if (result.size() == limit) break; }
+            result.add(ids);
         }
         return result;
+    }
+    /**
+     * GEN-02 (0.14.36): the variants shown together should be different outfits, not one outfit with other shoes.
+     * From [ordered] (best first) take up to [limit], in three passes, each keeping the order:
+     * <ol>
+     *   <li>variants that differ from every one already taken by {@link #DISTINCT_ITEMS} items or more, at least one
+     *   of them a base piece (top, bottom, dress or jumpsuit);</li>
+     *   <li>then ones that differ by a base piece;</li>
+     *   <li>then whatever is left, so a small wardrobe (or pinned pieces) still gets its variants.</li>
+     * </ol>
+     * The best variant is always first, and the result stays in the original order.
+     */
+    static final int DISTINCT_ITEMS = 2;
+    private static List<Candidate> distinct(List<Candidate> ordered, int limit) {
+        if (ordered.size() <= limit || limit == 1) return ordered.subList(0, Math.min(limit, ordered.size()));
+        List<Integer> taken = new ArrayList<>();
+        for (int pass = 0; pass < 3 && taken.size() < limit; pass++) {
+            for (int index = 0; index < ordered.size() && taken.size() < limit; index++) {
+                if (taken.contains(index)) continue;
+                boolean fits = true;
+                for (int other : taken) {
+                    int[] d = difference(ordered.get(index), ordered.get(other));
+                    if (pass == 0 && (d[0] < DISTINCT_ITEMS || d[1] == 0) || pass == 1 && d[1] == 0) { fits = false; break; }
+                }
+                if (fits) taken.add(index);
+            }
+        }
+        Collections.sort(taken);
+        List<Candidate> result = new ArrayList<>(); for (int index : taken) result.add(ordered.get(index));
+        return result;
+    }
+    /** [0]: how many items one outfit has that the other lacks (the larger side); [1]: how many of those are base pieces. */
+    private static int[] difference(Candidate a, Candidate b) {
+        int[] left = missing(a, b), right = missing(b, a);
+        return new int[]{Math.max(left[0], right[0]), Math.max(left[1], right[1])};
+    }
+    private static int[] missing(Candidate from, Candidate in) {
+        int items = 0, base = 0;
+        for (Item i : from.items) {
+            boolean found = false;
+            for (Item j : in.items) if (i.piece.id.equals(j.piece.id)) { found = true; break; }
+            if (!found) { items++; if (WardrobeRules.BASE_CATEGORIES.contains(i.piece.category)) base++; }
+        }
+        return new int[]{items, base};
     }
     public static List<String> replace(List<Item> items, String wardrobe, String occasion, String weather,
             String date, List<String> selected, String category, Set<String> rejected) {

@@ -1421,4 +1421,5 @@
     <string name="calendar_worn_title">Вдягнено цього дня</string>
     <string name="calendar_worn_empty">Носіння за цей день не відмічено.</string>
     <string name="calendar_wear_item">Відмітити вдягнені речі</string>
+    <string name="daily_other_variants">Показати інші варіанти</string>
 </resources>
