@@ -524,10 +524,13 @@ class WardrobeViewModel internal constructor(application: Application, private v
     internal val personalChoices = PersonalChoiceStore(accountContext)
     fun setStyleChoice(wardrobe: String, occasion: String, value: String) = personalChoices.setStyle(wardrobe, occasion, value)
     fun setWarmthChoice(wardrobe: String, value: String) = personalChoices.setWarmth(wardrobe, value)
-    /** Everything the preferences screen shows for [wardrobe]: reasons and choices. */
+    /** ROT-02: «Давно не вдягали» frequency, postponed items and history; this account's own, like the choices. */
+    internal val rotation = RotationStore(accountContext)
+    /** Everything the preferences screen shows for [wardrobe]: reasons, choices and the «Давно не вдягали» card. */
     fun resetPreferences(wardrobe: String) = perform {
         repo.writes.withLock { repo.dao.clearFeedback(wardrobe) }
         personalChoices.clear(wardrobe)
+        rotation.clear(wardrobe)
     }
     fun saveCanvasLook(wardrobe: String, pieces: List<LookPiece>, name: String, occasion: String, weather: String,
         source: String, outfitId: String, layout: String, background: String, done: (String) -> Unit) = perform {
