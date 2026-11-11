@@ -147,6 +147,15 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
         snoozing = ""; archiving = ""; snoozedNotice = "${item.id}|$until"
         if (anchor.isNotEmpty()) clearAnchor()
     }
+    // WEAR-01: what was worn today in this wardrobe, and the rows the last «Вдягаю сьогодні» added (its exact undo).
+    val wornToday = remember(s.wears, s.garments, wardrobe, today) {
+        val ids = s.wears.filter { it.date == today }.map { it.garmentId }.toSet()
+        s.garments.filter { it.wardrobeId == wardrobe && it.id in ids }
+    }
+    var wornAdded by rememberSaveable(wardrobe) { mutableStateOf(arrayListOf<String>()) }
+    var wornOn by rememberSaveable(wardrobe) { mutableStateOf("") }
+    fun wearNow(items: List<Garment>) = vm.wearItems(wardrobe, items, today) { added -> wornAdded = ArrayList(added); wornOn = today }
+    fun wornAll(items: List<Garment>) = items.isNotEmpty() && items.all { g -> wornToday.any { it.id == g.id } }
     val scope = rememberCoroutineScope()
     var configuring by rememberSaveable { mutableStateOf(false) }
     var actionItem by rememberSaveable { mutableStateOf("") }
@@ -228,6 +237,19 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                 TextButton(onClick = { configuring = true }, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.configure_conditions)) }
             }
         }
+        if (wornToday.isNotEmpty()) item(key = "worn-today") {
+            OutlinedCard(Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(stringResource(R.string.wear_today_title), style = MaterialTheme.typography.titleMedium)
+                    OutfitGrid(wornToday, vm, emptySet(), !busy) { g -> open(g) }
+                    Text(stringResource(R.string.wear_today_hint), style = MaterialTheme.typography.bodySmall)
+                    // Only what the last «Вдягаю сьогодні» added: wear from an outfit, a plan or an item's own page stays.
+                    val undo = wornAdded.filter { id -> wornToday.any { it.id == id } }
+                    if (wornOn == today && undo.isNotEmpty()) TextButton(onClick = { vm.undoWears(wardrobe, undo, today); wornAdded = arrayListOf() },
+                        enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.undo_action)) }
+                }
+            }
+        }
         FeedbackReason.entries.find { it.name == lastReason }?.let { reason -> item {
             OutlinedCard(Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -291,7 +313,9 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                         }
                         val autoName = stringResource(R.string.rotation_saved_name, rotationItem.name, dateText)
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = { beginSave(rotationLook, false, autoName) }, enabled = !busy) { Text(stringResource(R.string.save_outfit)) }
+                            Button(onClick = { wearNow(rotationLook) }, enabled = !busy && !wornAll(rotationLook)) {
+                                Text(stringResource(if (wornAll(rotationLook)) R.string.wear_today_marked else R.string.wear_look_today)) }
+                            OutlinedButton(onClick = { beginSave(rotationLook, false, autoName) }, enabled = !busy) { Text(stringResource(R.string.save_outfit)) }
                             OutlinedButton(onClick = { beginSave(rotationLook, true, autoName) }, enabled = !busy) { Text(stringResource(R.string.calendar_plan)) }
                         }
                     } else {
@@ -353,8 +377,11 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                     betters[DailyRules.signature(items.map { it.id })]?.let { swap ->
                         BetterBlock(swap, !busy) { lookIds = ArrayList(lookIds.mapIndexed { i, old -> if (i == index) OutfitStyle.replaced(old, swap) else old }) }
                     }
+                    // WEAR-01: one tap marks the variant as worn today — no saved outfit, no name, no plan.
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { beginSave(items, false, autoName) }, enabled = !busy) { Text(stringResource(R.string.save_outfit)) }
+                        Button(onClick = { wearNow(items) }, enabled = !busy && !wornAll(items)) {
+                            Text(stringResource(if (wornAll(items)) R.string.wear_today_marked else R.string.wear_look_today)) }
+                        OutlinedButton(onClick = { beginSave(items, false, autoName) }, enabled = !busy) { Text(stringResource(R.string.save_outfit)) }
                         OutlinedButton(onClick = { beginSave(items, true, autoName) }, enabled = !busy) { Text(stringResource(R.string.calendar_plan)) }
                     }
                     TextButton(onClick = { reasonFor = index; choosingItems = false; uncomfortable = arrayListOf() }, enabled = !busy,

@@ -1411,4 +1411,14 @@
     <string name="prefs_colours_avoided">Краще рідше</string>
     <string name="style_colours_mine">Ваші кольори: %1$s</string>
     <string name="style_colours_less">Рідше за вашим вибором: %1$s</string>
+    <string name="wear_look_today">Вдягаю сьогодні</string>
+    <string name="wear_today_marked">Відмічено на сьогодні</string>
+    <string name="wear_today_title">Сьогодні вдягнено</string>
+    <string name="wear_today_hint">Враховано в статистиці, правилі повторів і «Давно не вдягали». Зберігати образ для цього не потрібно.</string>
+    <string name="wear_other_day">Вдягнено іншого дня…</string>
+    <string name="wear_history_title">Останні носіння</string>
+    <string name="wear_remove_day">Прибрати носіння за %1$s?</string>
+    <string name="calendar_worn_title">Вдягнено цього дня</string>
+    <string name="calendar_worn_empty">Носіння за цей день не відмічено.</string>
+    <string name="calendar_wear_item">Відмітити вдягнені речі</string>
 </resources>

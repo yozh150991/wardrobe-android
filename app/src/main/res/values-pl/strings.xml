@@ -1411,4 +1411,14 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="prefs_colours_avoided">Raczej rzadziej</string>
     <string name="style_colours_mine">Twoje kolory: %1$s</string>
     <string name="style_colours_less">Rzadziej z Twojego wyboru: %1$s</string>
+    <string name="wear_look_today">Zakładam dziś</string>
+    <string name="wear_today_marked">Oznaczone na dziś</string>
+    <string name="wear_today_title">Dziś noszone</string>
+    <string name="wear_today_hint">Uwzględnione w statystykach, regule powtórzeń i „Dawno nienoszone”. Nie trzeba do tego zapisywać zestawu.</string>
+    <string name="wear_other_day">Noszone innego dnia…</string>
+    <string name="wear_history_title">Ostatnie noszenie</string>
+    <string name="wear_remove_day">Usunąć noszenie z dnia %1$s?</string>
+    <string name="calendar_worn_title">Noszone tego dnia</string>
+    <string name="calendar_worn_empty">Brak zapisanego noszenia tego dnia.</string>
+    <string name="calendar_wear_item">Oznacz noszone rzeczy</string>
 </resources>

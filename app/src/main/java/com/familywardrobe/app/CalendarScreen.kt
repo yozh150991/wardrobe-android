@@ -21,10 +21,16 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
+/** [latest]: the last day that can be chosen (WEAR-01: wear is never recorded for a future day); null = any day. */
 @Composable
-fun DateChoiceDialog(date: String, dismiss: () -> Unit, chosen: (String) -> Unit) {
+fun DateChoiceDialog(date: String, dismiss: () -> Unit, latest: String? = null, chosen: (String) -> Unit) {
+    val limit = latest?.let { LocalDate.parse(it) }
+    val selectable = remember(limit) { object : SelectableDates {
+        override fun isSelectableDate(utcTimeMillis: Long) = limit == null || !Instant.ofEpochMilli(utcTimeMillis).atZone(ZoneOffset.UTC).toLocalDate().isAfter(limit)
+        override fun isSelectableYear(year: Int) = limit == null || year <= limit.year
+    } }
     val picker = rememberDatePickerState(initialSelectedDateMillis = LocalDate.parse(date).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
-        yearRange = 1900..2200)
+        yearRange = 1900..(limit?.year ?: 2200), selectableDates = selectable)
     DatePickerDialog(onDismissRequest = dismiss, confirmButton = {
         TextButton(onClick = { picker.selectedDateMillis?.let { chosen(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate().toString()) } },
             enabled = picker.selectedDateMillis != null) { Text(stringResource(R.string.save)) }
@@ -38,10 +44,11 @@ fun ScheduleDialog(outfit: Outfit, vm: WardrobeViewModel, date: String, dismiss:
 
 @Composable
 fun CalendarScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String, initialDate: String,
-    open: (String) -> Unit, daily: () -> Unit) {
+    open: (String) -> Unit, daily: () -> Unit, openItem: (Garment) -> Unit = {}) {
     var date by rememberSaveable(wardrobe, initialDate) { mutableStateOf(initialDate.ifBlank { today }) }
     var chooseDate by remember { mutableStateOf(false) }
     var choosingOutfit by remember { mutableStateOf(false) }
+    var markingWear by rememberSaveable { mutableStateOf(false) }
     var moving by remember { mutableStateOf<DayPlan?>(null) }
     var deleting by remember { mutableStateOf<DayPlan?>(null) }
     val busy by vm.busy.collectAsStateWithLifecycle()
@@ -50,6 +57,9 @@ fun CalendarScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: 
     val monday = chosen.minusDays((chosen.dayOfWeek.value - 1).toLong())
     val ownPlans = s.plans.filter { it.wardrobeId == wardrobe }
     val plans = ownPlans.filter { it.date == date }
+    // WEAR-01: what was actually worn that day, whatever recorded it — a plan, an outfit, an item or a daily variant.
+    val wornIds = s.wears.filter { it.date == date }.map { it.garmentId }.toSet()
+    val worn = s.garments.filter { it.wardrobeId == wardrobe && it.id in wornIds }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -71,6 +81,17 @@ fun CalendarScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: 
                     Button(onClick = { choosingOutfit = true }, enabled = !busy && s.outfits.any { it.wardrobeId == wardrobe }) { Text(stringResource(R.string.calendar_add)) }
                     OutlinedButton(onClick = daily, enabled = !busy) { Text(stringResource(R.string.daily_title)) }
                     TextButton(onClick = { date = today }) { Text(stringResource(R.string.calendar_today)) }
+                }
+            }
+        }
+        if (worn.isNotEmpty() || date <= today) item(key = "worn") {
+            OutlinedCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(stringResource(R.string.calendar_worn_title), style = MaterialTheme.typography.titleMedium)
+                    if (worn.isEmpty()) Text(stringResource(R.string.calendar_worn_empty), style = MaterialTheme.typography.bodySmall)
+                    else OutfitGrid(worn, vm, emptySet(), !busy) { g -> openItem(g) }
+                    if (date <= today) OutlinedButton(onClick = { markingWear = true }, enabled = !busy && s.garments.any { it.wardrobeId == wardrobe && !it.archived },
+                        modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.calendar_wear_item)) }
                 }
             }
         }
@@ -110,6 +131,14 @@ fun CalendarScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: 
     deleting?.let { plan -> AlertDialog(onDismissRequest = { deleting = null }, text = { Text(stringResource(R.string.calendar_remove_hint)) },
         confirmButton = { TextButton(onClick = { vm.removePlan(plan.id); deleting = null }, enabled = !busy) { Text(stringResource(R.string.delete)) } },
         dismissButton = { TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.cancel)) } }) }
+    // Ticking an item marks it worn that day; unticking removes that day's wear of the item (like its own page does).
+    if (markingWear && date <= today) VisualPickerDialog(R.string.calendar_wear_item,
+        s.garments.filter { it.wardrobeId == wardrobe && (!it.archived || it.id in wornIds) }.map { garmentOption(it) }, vm,
+        { markingWear = false }, selected = wornIds, enabled = !busy) { id, checked ->
+            s.garments.find { it.id == id && it.wardrobeId == wardrobe }?.let { g ->
+                if (checked) vm.wearItems(wardrobe, listOf(g), date) else vm.wear(g, date)
+            }
+        }
     if (choosingOutfit) VisualPickerDialog(R.string.calendar_add, s.outfits.filter { it.wardrobeId == wardrobe }.map { outfitOption(it, s) }, vm,
         { choosingOutfit = false }, enabled = !busy) { id, _ -> vm.schedule(id, date) { choosingOutfit = false } }
 }

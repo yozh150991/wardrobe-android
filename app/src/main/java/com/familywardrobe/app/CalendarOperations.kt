@@ -67,6 +67,27 @@ suspend fun Repository.reconcilePlanWear(date: String) {
         dao.savePlan(plan.copy(worn = ids.isNotEmpty(), wornItemIds = DailyRules.signature(ids)))
     }
 }
+/**
+ * WEAR-01: these items were worn on [date] — a suggested variant («Вдягаю сьогодні») or an earlier day — without
+ * saving an outfit or a plan. Each item gets its own "item:" row, the same one «Вдягнув сьогодні» writes, so backups,
+ * the cloud copy and shared wardrobes need no new format. Only adds: an item already worn that day (from any source)
+ * is left as it is. Never a future day. Returns the items newly marked, for an exact undo.
+ */
+suspend fun Repository.wearItems(wardrobe: String, ids: List<String>, date: String, today: String): List<String> = writes.withLock {
+    require(RoadmapRules.validDate(date) && RoadmapRules.validDate(today) && date <= today)
+    require(ids.isNotEmpty() && ids.size <= WardrobeRules.MAX_PARTS && ids.distinct().size == ids.size)
+    db.withTransaction {
+        require(ids.all { dao.garment(it)?.wardrobeId == wardrobe })
+        val added = ids.filter { dao.itemCount(it, date) == 0 }
+        dao.insertWears(added.map { Wear(it, date, "item:$it") })
+        added
+    }
+}
+/** Undo of [wearItems]: removes exactly the rows it added; wear recorded from an outfit or a plan stays. */
+suspend fun Repository.forgetWears(wardrobe: String, ids: List<String>, date: String) = writes.withLock {
+    require(RoadmapRules.validDate(date))
+    db.withTransaction { ids.filter { dao.garment(it)?.wardrobeId == wardrobe }.forEach { dao.clearWear(it, date, "item:$it") } }
+}
 /** Returns the new row's ID, or null when the same row already existed (so an undo never removes an older one). */
 suspend fun Repository.recordFeedback(wardrobe: String, ids: List<String>, occasion: String, weather: String, reason: String): String? = writes.withLock {
     db.withTransaction { insertFeedback(wardrobe, ids, occasion, weather, reason) }

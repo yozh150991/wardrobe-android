@@ -26,7 +26,9 @@ for colour in re.findall(r'"(\w+)"', colours):
 
 daily = (source / 'DailyScreen.kt').read_text()
 check('OutfitComposition(' not in daily, 'Daily cards use the tile grid (STYLE-03)')
-check(daily.count('ScoreBadge(rating)') == 2 and daily.count('StyleReasons(rating') == 2 and daily.count('OutfitGrid(') == 2,
+check(daily.count('ScoreBadge(rating)') == 2 and daily.count('StyleReasons(rating') == 2 and
+      # The third grid is WEAR-01's «Сьогодні вдягнено» card (no score: it is a record, not a suggestion).
+      daily.count('OutfitGrid(') == 3 and 'OutfitGrid(wornToday, vm, emptySet(), !busy)' in daily,
       'variants and «Давно не вдягали» both show the score, the reasons and the grid')
 check('withContext(Dispatchers.Default) {\n            buildMap {' in daily, '«Краще» is computed off the UI thread')
 check('pins + anchorId' in daily, 'the item of «Давно не вдягали» is never swapped away')
