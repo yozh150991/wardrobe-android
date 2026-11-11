@@ -1405,4 +1405,10 @@ Your current wardrobe is unchanged.</string>
     <string name="family_color_older">The shared wardrobe’s server doesn’t know “%1$s” yet — it will be “%2$s” there. Your own wardrobe keeps the colour.</string>
     <string name="style_pair_analogous">neighbours on the colour wheel — harmonious</string>
     <string name="style_pair_complementary">complementary colours — a bold contrast; best with one toned down or used less</string>
+    <string name="prefs_colours_title">My colours</string>
+    <string name="prefs_colours_hint">No photo analysis: mark the colours you like wearing and the ones you’d rather wear less. Items in these colours come up a little more or less often — none disappears. The outfit score out of 10 doesn’t change: it follows the colour-pairing rules.</string>
+    <string name="prefs_colours_liked">I like wearing</string>
+    <string name="prefs_colours_avoided">Rather less often</string>
+    <string name="style_colours_mine">Your colours: %1$s</string>
+    <string name="style_colours_less">Less often by your choice: %1$s</string>
 </resources>

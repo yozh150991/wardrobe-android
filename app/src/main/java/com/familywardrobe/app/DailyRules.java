@@ -70,6 +70,15 @@ public final class DailyRules {
     public static List<List<String>> generate(List<Item> items, String wardrobe, String occasion, String weather,
             String date, String seed, Set<String> rejected, Map<String, String> fixed, int limit, Map<String, Integer> penalty,
             String targetStyle) {
+        return generate(items, wardrobe, occasion, weather, date, seed, rejected, fixed, limit, penalty, targetStyle, Collections.emptyMap());
+    }
+    /**
+     * [bonus]: score added per item ID (PERS-03 liked colours, see PreferenceProfile), at most
+     * {@link PreferenceProfile#PALETTE_LIKED}; like a penalty it never decides on its own whether an item can be used.
+     */
+    public static List<List<String>> generate(List<Item> items, String wardrobe, String occasion, String weather,
+            String date, String seed, Set<String> rejected, Map<String, String> fixed, int limit, Map<String, Integer> penalty,
+            String targetStyle, Map<String, Integer> bonus) {
         if (limit < 1 || limit > 20) throw new IllegalArgumentException();
         String season = season(weather);
         String style = targetStyle != null ? targetStyle : PreferenceProfile.defaultStyle(occasion);
@@ -94,13 +103,13 @@ public final class DailyRules {
                 if (category.equals("outerwear") && !fixed.containsKey("outerwear")) continue;
                 beam = Collections.emptyList(); break;
             }
-            choices.sort(Comparator.<Item>comparingInt(i -> itemScore(i, style, date, penalty)).reversed()
+            choices.sort(Comparator.<Item>comparingInt(i -> itemScore(i, style, date, penalty, bonus)).reversed()
                 .thenComparingInt(i -> Objects.hash(seed, i.piece.id)).thenComparing(i -> i.piece.id));
             if (choices.size() > 24) choices = new ArrayList<>(choices.subList(0, 24));
             List<Candidate> expanded = new ArrayList<>();
             for (Candidate prior : beam) for (Item next : choices) {
                 boolean compatible = true;
-                int score = prior.score + itemScore(next, style, date, penalty);
+                int score = prior.score + itemScore(next, style, date, penalty, bonus);
                 for (Item selected : prior.items) {
                     if (selected.piece.id.equals(next.piece.id) || !WardrobeRules.compatibleSeasons(selected.piece.season, next.piece.season)) { compatible = false; break; }
                     score += pairScore(selected.piece, next.piece);
@@ -135,6 +144,11 @@ public final class DailyRules {
     }
     public static List<String> replace(List<Item> items, String wardrobe, String occasion, String weather,
             String date, List<String> selected, String category, Set<String> rejected, Map<String, Integer> penalty, String targetStyle) {
+        return replace(items, wardrobe, occasion, weather, date, selected, category, rejected, penalty, targetStyle, Collections.emptyMap());
+    }
+    public static List<String> replace(List<Item> items, String wardrobe, String occasion, String weather, String date,
+            List<String> selected, String category, Set<String> rejected, Map<String, Integer> penalty, String targetStyle,
+            Map<String, Integer> bonus) {
         Map<String, String> fixed = new HashMap<>(); String old = "";
         for (String id : selected) {
             Item item = null; for (Item candidate : items) if (candidate.piece.id.equals(id)) { item = candidate; break; }
@@ -143,12 +157,13 @@ public final class DailyRules {
         }
         final String excluded = old;
         List<Item> candidates = new ArrayList<>(); for (Item i : items) if (!i.piece.id.equals(excluded)) candidates.add(i);
-        List<List<String>> result = generate(candidates, wardrobe, occasion, weather, date, "replace", rejected, fixed, 1, penalty, targetStyle);
+        List<List<String>> result = generate(candidates, wardrobe, occasion, weather, date, "replace", rejected, fixed, 1, penalty, targetStyle, bonus);
         return result.isEmpty() ? Collections.emptyList() : result.get(0);
     }
     private static String key(Candidate c) { return c.key(); }
-    private static int itemScore(Item item, String style, String date, Map<String, Integer> penalty) {
+    private static int itemScore(Item item, String style, String date, Map<String, Integer> penalty, Map<String, Integer> bonus) {
         return (item.piece.style.equals(style) ? 12 : 0) + (item.favorite ? 4 : 0) - Math.min(12, Math.max(0, item.wears))
-            - (date.equals(item.lastWear) ? 15 : 0) - Math.min(PreferenceRules.MAX, Math.max(0, penalty.getOrDefault(item.piece.id, 0)));
+            - (date.equals(item.lastWear) ? 15 : 0) - Math.min(PreferenceRules.MAX, Math.max(0, penalty.getOrDefault(item.piece.id, 0)))
+            + Math.min(PreferenceProfile.PALETTE_LIKED, Math.max(0, bonus.getOrDefault(item.piece.id, 0)));
     }
 }

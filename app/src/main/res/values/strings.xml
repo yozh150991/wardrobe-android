@@ -1405,4 +1405,10 @@
     <string name="family_color_older">Сервер спільного гардероба ще не знає кольору «%1$s» — там він буде «%2$s». У вашому гардеробі колір не зміниться.</string>
     <string name="style_pair_analogous">сусідні на колі кольорів — гармонійно</string>
     <string name="style_pair_complementary">доповняльні кольори — сміливий контраст; краще приглушити один або зменшити його частку</string>
+    <string name="prefs_colours_title">Мої кольори</string>
+    <string name="prefs_colours_hint">Без аналізу фото: позначте кольори, які любите носити, і ті, які краще рідше. Речі цих кольорів з’являються в підборі трохи частіше або рідше — жодна не зникає. Оцінка образу з 10 не змінюється: вона за правилами поєднання кольорів.</string>
+    <string name="prefs_colours_liked">Люблю носити</string>
+    <string name="prefs_colours_avoided">Краще рідше</string>
+    <string name="style_colours_mine">Ваші кольори: %1$s</string>
+    <string name="style_colours_less">Рідше за вашим вибором: %1$s</string>
 </resources>

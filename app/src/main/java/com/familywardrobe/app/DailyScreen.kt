@@ -285,7 +285,7 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                             ColourDots(OutfitStyle.colours(rotationLook)); ScoreBadge(rating)
                         }
                         OutfitGrid(rotationLook, vm, (fixedIds + rotationItem.id).toSet(), !busy) { g -> actionItem = g.id; actionIndex = ROTATION }
-                        StyleReasons(rating, rotationLook, weather, target)
+                        StyleReasons(rating, rotationLook, weather, target, choices)
                         betters[ROTATION_KEY + DailyRules.signature(rotationLook.map { it.id })]?.let { swap ->
                             BetterBlock(swap, !busy) { rotationIds = OutfitStyle.replaced(rotationIds, swap) }
                         }
@@ -349,7 +349,7 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                         ScoreBadge(rating)
                     }
                     OutfitGrid(items, vm, fixedIds.toSet(), !busy) { g -> actionItem = g.id; actionIndex = index }
-                    StyleReasons(rating, items, weather, target)
+                    StyleReasons(rating, items, weather, target, choices)
                     betters[DailyRules.signature(items.map { it.id })]?.let { swap ->
                         BetterBlock(swap, !busy) { lookIds = ArrayList(lookIds.mapIndexed { i, old -> if (i == index) OutfitStyle.replaced(old, swap) else old }) }
                     }

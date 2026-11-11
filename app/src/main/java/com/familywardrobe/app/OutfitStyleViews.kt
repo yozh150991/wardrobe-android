@@ -138,9 +138,13 @@ private fun ReasonLine(good: Boolean, text: String) {
     }
 }
 
-/** Why the outfit got its score: colours, style and weather, each in words the person can check. */
+/**
+ * Why the outfit got its score: colours, style and weather, each in words the person can check. PERS-03: then which of
+ * its colours are the person's own and which they wear less — why the variant moved up or down, not part of the score.
+ */
 @Composable
-internal fun StyleReasons(rating: StyleRules.Rating, items: List<Garment>, weather: String, target: String) {
+internal fun StyleReasons(rating: StyleRules.Rating, items: List<Garment>, weather: String, target: String,
+    palette: PersonalChoices = PersonalChoices()) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         if (rating.pair.isNotEmpty()) ReasonLine(StyleRules.pairPoints(rating.pair) >= 3, pairLine(rating.pairA, rating.pairB, rating.pair))
         if (rating.clash.isNotEmpty() && !(rating.clashA == rating.pairA && rating.clashB == rating.pairB))
@@ -159,6 +163,11 @@ internal fun StyleReasons(rating: StyleRules.Rating, items: List<Garment>, weath
             StyleRules.NO_OUTERWEAR -> ReasonLine(false, stringResource(R.string.style_weather_no_outerwear, weatherName))
             else -> ReasonLine(false, stringResource(R.string.style_weather_season, items.find { it.id == rating.seasonItem }?.name.orEmpty(), weatherName))
         }
+        val colours = items.map { it.color }.distinct()
+        val mine = colours.filter { palette.palette(it) == PersonalChoices.LIKED }.map { stringResource(label(it)) }
+        val less = colours.filter { palette.palette(it) == PersonalChoices.AVOIDED }.map { stringResource(label(it)) }
+        if (mine.isNotEmpty()) ReasonLine(true, stringResource(R.string.style_colours_mine, mine.joinToString(", ")))
+        if (less.isNotEmpty()) ReasonLine(false, stringResource(R.string.style_colours_less, less.joinToString(", ")))
     }
 }
 

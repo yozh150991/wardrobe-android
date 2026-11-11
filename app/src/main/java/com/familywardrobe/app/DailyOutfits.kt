@@ -28,10 +28,13 @@ object DailyOutfits {
     /** PERS-02: how the forecast is shifted for this person. */
     fun warmth(s: Snapshot, wardrobe: String, choices: PersonalChoices = PersonalChoices()): PreferenceProfile.Warmth =
         PreferenceProfile.warmth(rows(s, wardrobe), choices.warmth)
-    /** Items suggested less often in this context (PERS-01 reasons, PERS-02 style); never a reason to hide one. */
+    /** Items suggested less often in this context (PERS-01 reasons, PERS-02 style, PERS-03 colours worn less); never a reason to hide one. */
     fun penalties(s: Snapshot, wardrobe: String, occasion: String, weather: String, choices: PersonalChoices = PersonalChoices()): Map<String, Int> =
-        PreferenceProfile.penalties(rows(s, wardrobe), style(s, wardrobe, occasion, choices), occasion, weather,
-            s.garments.filter { it.wardrobeId == wardrobe }.map { it.rulePiece() })
+        PreferenceProfile.penalties(rows(s, wardrobe), style(s, wardrobe, occasion, choices), occasion, weather, pieces(s, wardrobe), choices.avoided)
+    /** PERS-03: items of the person's liked colours, suggested a little more often. */
+    fun bonus(s: Snapshot, wardrobe: String, choices: PersonalChoices = PersonalChoices()): Map<String, Int> =
+        if (choices.liked.isEmpty()) emptyMap() else PreferenceProfile.bonus(pieces(s, wardrobe), choices.liked, choices.avoided)
+    private fun pieces(s: Snapshot, wardrobe: String) = s.garments.filter { it.wardrobeId == wardrobe }.map { it.rulePiece() }
     fun generate(s: Snapshot, wardrobe: String, occasion: String, weather: String, date: String,
         seed: String = date, additionalRejected: Set<String> = emptySet(), allowed: Set<String>? = null, fixed: Map<String, String> = emptyMap(),
         choices: PersonalChoices = PersonalChoices()): List<List<Garment>> =
@@ -48,8 +51,9 @@ object DailyOutfits {
         val target = style(s, wardrobe, occasion, choices).style
         val scores = penalties(s, wardrobe, occasion, weather, choices)
         val hidden = rejected(s, wardrobe, occasion, weather)
+        val liked = bonus(s, wardrobe, choices)
         fun run(skip: Set<String>) = DailyRules.generate(items, wardrobe, occasion, weather, date, seed,
-            skip, fixed, 3, scores, target).map { ids -> ids.mapNotNull { byId[it] } }
+            skip, fixed, 3, scores, target, liked).map { ids -> ids.mapNotNull { byId[it] } }
         val looks = run(hidden + additionalRejected)
         if (looks.isNotEmpty() || !fallback || hidden.isEmpty()) return DailyLooks(looks)
         val shown = run(additionalRejected)
@@ -61,6 +65,6 @@ object DailyOutfits {
         val byId = s.garments.associateBy { it.id }
         return DailyRules.replace(items(s, date, allowed), wardrobe, occasion, weather, date, selected.map { it.id }, category,
             rejected(s, wardrobe, occasion, weather) + additionalRejected, penalties(s, wardrobe, occasion, weather, choices),
-            style(s, wardrobe, occasion, choices).style).mapNotNull { byId[it] }
+            style(s, wardrobe, occasion, choices).style, bonus(s, wardrobe, choices)).mapNotNull { byId[it] }
     }
 }

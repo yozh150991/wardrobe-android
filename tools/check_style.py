@@ -55,7 +55,8 @@ keys = ['style_label_great', 'style_label_good', 'style_label_fair', 'style_labe
         'style_pair_same_accent', 'style_pair_black_brown', 'style_pair_dark_dark', 'style_pair_two_accents', 'style_one_style',
         'style_one_style_other', 'style_mixed', 'style_weather_ok', 'style_weather_no_outerwear', 'style_weather_season', 'style_now',
         'style_better', 'style_better_change', 'style_better_style', 'style_better_weather', 'style_apply', 'style_occasion_chip',
-        'style_pair_accent_contrast', 'style_many_colours', 'style_pair_analogous', 'style_pair_complementary']
+        'style_pair_accent_contrast', 'style_many_colours', 'style_pair_analogous', 'style_pair_complementary',
+        'style_colours_mine', 'style_colours_less']
 res = root / 'app/src/main/res'
 placeholders = {}
 for folder in ('values', 'values-uk', 'values-en', 'values-pl'):

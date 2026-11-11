@@ -43,6 +43,9 @@ class OutfitStyleTest {
         // Inside a capsule only its items count.
         assertNull(OutfitStyle.better(base, "home", "everyday", "any_weather", today, good, allowed = setOf("sweater", "jeans", "sneakers")))
         assertNull(OutfitStyle.better(base, "home", "everyday", "any_weather", today, emptyList()))
+        // PERS-03: «Краще» never offers a colour the person wears less; a liked colour changes nothing here.
+        assertNull(OutfitStyle.better(base, "home", "everyday", "any_weather", today, good, choices = PersonalChoices(avoided = setOf("brown"))))
+        assertEquals("cords", OutfitStyle.better(base, "home", "everyday", "any_weather", today, good, choices = PersonalChoices(liked = setOf("navy")))!!.new.id)
     }
 
     @Test fun thePersonsStyleChoiceCounts() {

@@ -8,7 +8,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** PERS-01: reasons are stored with their context, survive a restart, undo exactly what they added, stay format 10. */
+/** PERS-01: reasons are stored with their context, survive a restart, undo exactly what they added, stay format 10. PERS-02/PERS-03: choices. */
 @RunWith(AndroidJUnit4::class)
 class PreferencePersistenceTest {
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
@@ -77,6 +77,17 @@ class PreferencePersistenceTest {
             store.setStyle("home", "work", PreferenceProfile.AUTO)
             assertEquals(PreferenceProfile.AUTO, store.read("home").style("work"))
             try { store.setStyle("home", "work", "pyjamas"); fail("Unknown style") } catch (_: IllegalArgumentException) { }
+            // PERS-03: colours move between «Люблю носити» and «Краще рідше», are scoped the same way and reset with the rest.
+            store.setPalette("home", "navy", PersonalChoices.LIKED); store.setPalette("home", "orange", PersonalChoices.LIKED)
+            store.setPalette("home", "orange", PersonalChoices.AVOIDED)
+            assertEquals(setOf("navy"), PersonalChoiceStore(first).read("home").liked)
+            assertEquals(setOf("orange"), PersonalChoiceStore(first).read("home").avoided)
+            assertEquals(PersonalChoices(), PersonalChoiceStore(first).read("child"))
+            assertTrue(PersonalChoiceStore(second).read("home").liked.isEmpty())
+            store.setPalette("home", "navy", PersonalChoices.NONE)
+            assertTrue(store.read("home").liked.isEmpty())
+            try { store.setPalette("home", "other", PersonalChoices.LIKED); fail("«Інший» is no single colour") } catch (_: IllegalArgumentException) { }
+            try { store.setPalette("home", "navy", "maybe"); fail("Unknown palette value") } catch (_: IllegalArgumentException) { }
             store.clear("home")
             assertEquals(PersonalChoices(), PersonalChoiceStore(first).read("home"))
         } finally {

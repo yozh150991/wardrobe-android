@@ -51,6 +51,28 @@ class DailyOutfitsPreferenceTest {
         val plain = DailyOutfits.daily(base, "home", "everyday", "warm", date)
         assertFalse(plain.hiddenShown); assertTrue(plain.looks.isNotEmpty())
     }
+    /** PERS-03: «Мої кольори» on the app's entry point — liked first, «Краще рідше» last but still there, swaps follow. */
+    @Test fun thePersonsColoursSteerTheVariants() {
+        // Grey and white tops are equal on navy: only the palette decides which leads.
+        val s = base.copy(garments = listOf(garment("grey", "top").copy(color = "grey"), garment("white", "top").copy(color = "white"),
+            garment("trousers", "bottom"), garment("shoes", "shoes")))
+        for ((colour, other) in listOf("grey" to "white", "white" to "grey")) {
+            val liked = PersonalChoices(liked = setOf(colour))
+            assertEquals(mapOf(colour to PreferenceProfile.PALETTE_LIKED), DailyOutfits.bonus(s, "home", liked))
+            assertTrue(DailyOutfits.generate(s, "home", "everyday", "warm", date, choices = liked).first().any { it.id == colour })
+            val less = PersonalChoices(avoided = setOf(colour))
+            assertEquals(PreferenceProfile.PALETTE_AVOIDED, DailyOutfits.penalties(s, "home", "everyday", "warm", less)[colour])
+            val looks = DailyOutfits.generate(s, "home", "everyday", "warm", date, choices = less)
+            assertTrue(looks.first().any { it.id == other }); assertTrue(looks.any { look -> look.any { it.id == colour } })
+        }
+        // Every colour worn less: still suggestions. No palette: nothing changes.
+        val all = PersonalChoices(avoided = setOf("grey", "white", "navy"))
+        assertTrue(DailyOutfits.generate(s, "home", "everyday", "warm", date, choices = all).isNotEmpty())
+        assertTrue(DailyOutfits.bonus(s, "home").isEmpty()); assertTrue(DailyOutfits.penalties(s, "home", "everyday", "warm").isEmpty())
+        assertEquals(PersonalChoices.LIKED, PersonalChoices(liked = setOf("grey")).palette("grey"))
+        assertEquals(PersonalChoices.NONE, PersonalChoices(liked = setOf("grey")).palette("white"))
+        assertEquals(19, PersonalChoices.PALETTE.size); assertFalse("other" in PersonalChoices.PALETTE)
+    }
     @Test fun anotherWardrobesReasonsDoNotCount() {
         val other = base.copy(wardrobes = base.wardrobes + Wardrobe(id = "child", name = "Child"),
             feedback = listOf(OutfitFeedback(wardrobeId = "child", signature = "a|b", weather = "warm", occasion = "work", reason = PreferenceRules.OCCASION),
