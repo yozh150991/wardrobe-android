@@ -183,6 +183,7 @@ interface WardrobeDao {
     @Query("DELETE FROM wears WHERE source=:source AND date=:date") suspend fun clearSourceDay(source: String, date: String)
     @Query("SELECT COUNT(*) FROM wears WHERE source=:source AND date=:date") suspend fun sourceCount(source: String, date: String): Int
     @Query("SELECT COUNT(*) FROM wears WHERE garmentId=:id AND date=:date") suspend fun itemCount(id: String, date: String): Int
+    @Query("DELETE FROM wears WHERE garmentId=:id AND date=:date AND source=:source") suspend fun clearWear(id: String, date: String, source: String)
     @Query("SELECT * FROM purchase_undo") fun purchaseUndos(): Flow<List<PurchaseUndoRow>>
     @Query("SELECT * FROM purchase_undo") suspend fun allPurchaseUndos(): List<PurchaseUndoRow>
     @Query("SELECT * FROM purchase_undo WHERE wishId=:id") suspend fun purchaseUndoRow(id: String): PurchaseUndoRow?

@@ -1411,4 +1411,14 @@ Your current wardrobe is unchanged.</string>
     <string name="prefs_colours_avoided">Rather less often</string>
     <string name="style_colours_mine">Your colours: %1$s</string>
     <string name="style_colours_less">Less often by your choice: %1$s</string>
+    <string name="wear_look_today">Wearing it today</string>
+    <string name="wear_today_marked">Marked for today</string>
+    <string name="wear_today_title">Worn today</string>
+    <string name="wear_today_hint">Counted in the statistics, the repeat rule and “Not worn for a while”. You don’t need to save the outfit for this.</string>
+    <string name="wear_other_day">Worn on another day…</string>
+    <string name="wear_history_title">Recent wear</string>
+    <string name="wear_remove_day">Remove the wear on %1$s?</string>
+    <string name="calendar_worn_title">Worn this day</string>
+    <string name="calendar_worn_empty">No wear recorded for this day.</string>
+    <string name="calendar_wear_item">Mark worn items</string>
 </resources>

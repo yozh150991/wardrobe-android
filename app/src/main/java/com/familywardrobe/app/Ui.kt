@@ -42,6 +42,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
@@ -391,7 +393,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                 } ?: MissingSelection { go("__back") }
 
                 "calendar" -> CalendarScreen(snapshot, current.id, vm, today, calendarDate,
-                    open = { outfitId = it; go("saved") }, daily = { openDaily() })
+                    open = { outfitId = it; go("saved") }, daily = { openDaily() }, openItem = ::openItem)
                 "statistics" -> StatisticsScreen(snapshot, current.id, vm, today, ::openItem, pickToday = { g -> openDaily(g.id) }, build = ::buildWith)
                 "capsules" -> CapsuleListScreen(snapshot, current.id, vm) { capsuleId = it; capsulePickItems = false; go("capsule") }
                 "capsule" -> snapshot.capsules.find { it.id == capsuleId && it.wardrobeId == current.id }?.let { capsule ->
@@ -514,6 +516,9 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
 fun Detail(g: Garment, s: Snapshot, vm: WardrobeViewModel, today: String, onEdit: () -> Unit, onMatch: () -> Unit) {
     val busy by vm.busy.collectAsStateWithLifecycle()
     var confirmArchive by remember { mutableStateOf(false) }
+    // WEAR-01: wear noticed later (another day), and a day's wear recorded by mistake.
+    var wearOtherDay by rememberSaveable { mutableStateOf(false) }
+    var removingWear by rememberSaveable { mutableStateOf("") }
     val dates = s.wears.filter { it.garmentId == g.id }.map { it.date }.distinct().sortedDescending()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ZoomableItemPhoto(g.photoId, vm, Modifier.fillMaxWidth().height(280.dp).clip(RoundedCornerShape(20.dp)), title = g.name, garmentColour = g.color)
@@ -553,10 +558,30 @@ fun Detail(g: Garment, s: Snapshot, vm: WardrobeViewModel, today: String, onEdit
         OutlinedButton(onClick = { vm.wear(g) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(if (today in dates) R.string.undo_wear else R.string.wear))
         }
+        TextButton(onClick = { wearOtherDay = true }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.wear_other_day)) }
+        if (dates.isNotEmpty()) {
+            Text(stringResource(R.string.wear_history_title), style = MaterialTheme.typography.titleSmall)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                dates.take(8).forEach { day ->
+                    val remove = stringResource(R.string.wear_remove_day, dateLabel(day))
+                    InputChip(selected = false, onClick = { removingWear = day }, enabled = !busy, label = { Text(dateLabel(day)) },
+                        trailingIcon = { Icon(Icons.Outlined.Close, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        modifier = Modifier.semantics { contentDescription = remove })
+                }
+            }
+        }
         TextButton(onClick = { if (g.archived) vm.changeAvailability(g, archived = false) else confirmArchive = true }, enabled = !busy) {
             Text(stringResource(if (g.archived) R.string.restore_item else R.string.archive))
         }
     }
+    if (wearOtherDay) DateChoiceDialog(today, { wearOtherDay = false }, latest = today) { day ->
+        wearOtherDay = false; vm.wearItems(g.wardrobeId, listOf(g), day)
+    }
+    if (removingWear.isNotEmpty()) AlertDialog(onDismissRequest = { removingWear = "" },
+        text = { Text(stringResource(R.string.wear_remove_day, dateLabel(removingWear))) },
+        confirmButton = { TextButton(onClick = { val day = removingWear; removingWear = ""; if (day in dates) vm.wear(g, day) }, enabled = !busy) {
+            Text(stringResource(R.string.delete)) } },
+        dismissButton = { TextButton(onClick = { removingWear = "" }) { Text(stringResource(R.string.cancel)) } })
     if (confirmArchive) AlertDialog(onDismissRequest = { confirmArchive = false }, title = { Text(stringResource(R.string.archive_title)) },
         text = { Text(stringResource(R.string.archive_hint)) }, confirmButton = { TextButton(onClick = {
             vm.changeAvailability(g, archived = true); confirmArchive = false

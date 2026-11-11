@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
+import java.time.LocalDate
 import org.json.JSONObject
 
 data class PhotoWork(val owner: String = "", val source: String = "", val running: Boolean = false, val original: String = "")
@@ -502,8 +503,19 @@ class WardrobeViewModel internal constructor(application: Application, private v
         if (!repo.undoAvailability(change)) notice.value = R.string.undo_availability_conflict
         if (availabilityUndo.value == change) availabilityUndo.value = null
     }
-    fun wear(item: Garment) = perform { repo.toggleItemWear(item.id) }
-    fun wearOutfit(id: String) = perform { repo.toggleOutfitWear(id) }
+    /** [date]: today when null; an earlier day for wear noticed later (WEAR-01). Never a future day. */
+    fun wear(item: Garment, date: String? = null) = perform { repo.toggleItemWear(item.id, wearDate(date)) }
+    fun wearOutfit(id: String, date: String? = null) = perform { repo.toggleOutfitWear(id, wearDate(date)) }
+    private fun wearDate(date: String?): String {
+        val today = LocalDate.now().toString()
+        require(date == null || RoadmapRules.validDate(date) && date <= today)
+        return date ?: today
+    }
+    /** WEAR-01: marks [items] worn on [date] without saving an outfit; [done] receives the ones newly marked, for the undo. */
+    fun wearItems(wardrobe: String, items: List<Garment>, date: String, done: (List<String>) -> Unit = {}) = perform {
+        done(repo.wearItems(wardrobe, items.map { it.id }, date, LocalDate.now().toString()))
+    }
+    fun undoWears(wardrobe: String, ids: List<String>, date: String) = perform { repo.forgetWears(wardrobe, ids, date) }
     fun schedule(id: String, date: String, done: () -> Unit) = perform { repo.scheduleOutfit(id, date); done() }
     fun movePlan(id: String, date: String, done: () -> Unit) = perform { repo.movePlan(id, date); done() }
     fun removePlan(id: String) = perform { repo.removePlan(id) }
