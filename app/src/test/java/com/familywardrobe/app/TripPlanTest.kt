@@ -51,6 +51,35 @@ class TripPlanTest {
         assertEquals(DailyDiagnostics.Reason.CAPSULE_EMPTY, TripPlan.coverage(empty, trip, "everyday", today, null).days.first().reason)
     }
 
+    /** TRIP-03: as few new items as possible, reused across days; what is already packed counts. */
+    @Test fun aCompactPackingReusesItems() {
+        // The wardrobe: four tops, two bottoms, two pairs of shoes, a coat. An empty capsule for four days.
+        val wardrobe = listOf(garment("t1", "top"), garment("t2", "top", "grey"), garment("t3", "top", "navy"), garment("t4", "top", "beige"),
+            garment("b1", "bottom", "navy"), garment("b2", "bottom", "beige"), garment("s1", "shoes"), garment("s2", "shoes", "brown"),
+            garment("coat", "outerwear", "black"))
+        val s = Snapshot(wardrobes = listOf(Wardrobe(id = "home", name = "Home")), garments = wardrobe, capsules = listOf(trip))
+        val p = TripPlan.packing(s, trip, "everyday", today, null)
+        assertEquals(4, p.days); assertEquals(4, p.covered)
+        // Four different outfits from five of the eight everyday items (day one needs three, every later day one more at
+        // most); no coat without a forecast; one pair of trousers for the whole trip.
+        assertEquals(5, p.add.size); assertTrue(p.add.none { it.id == "coat" })
+        assertEquals(1, p.add.count { it.category == "bottom" })
+        assertEquals(listOf("top", "bottom", "shoes"), p.add.map { it.category }.distinct())
+        // Adding them makes every day covered, each with its own outfit.
+        val packed = s.copy(capsuleItems = p.add.map { CapsuleItem(trip.id, it.id, manual = true) })
+        val c = TripPlan.coverage(packed, trip, "everyday", today, null)
+        assertEquals(4, c.covered); assertTrue(c.days.none { it.repeated })
+        // Asked again, nothing more is needed.
+        assertTrue(TripPlan.packing(packed, trip, "everyday", today, null).add.isEmpty())
+        // A cold forecast day adds the coat.
+        val cold = forecast(ForecastDay("2026-11-15", 0.0, 6.0, 0))
+        assertTrue(TripPlan.packing(s, trip, "everyday", today, cold).add.any { it.id == "coat" })
+        // Without shoes in the wardrobe no day can be covered, and nothing is proposed.
+        val noShoes = s.copy(garments = wardrobe.filter { it.category != "shoes" })
+        val none = TripPlan.packing(noShoes, trip, "everyday", today, null)
+        assertEquals(0, none.covered); assertTrue(none.add.isEmpty())
+    }
+
     @Test fun datesPastAndLongTrips() {
         val s = snapshot(tops + rest)
         // Started two days ago: today and later only.

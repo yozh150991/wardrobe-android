@@ -39,4 +39,6 @@
 - **JVM `MatchingTest.manualBuildingUsesTheSourcedColourTable`** (новий): порядок, набір і бал через `Matching`.
 - **Guards:** `Matching` передає таблицю в усі три виклики; пояснення за запитом; «Давно не вдягали» після варіантів,
   крім обраної в статистиці речі.
-- Host checks — pass (34 набори), попередні очікування без змін. CI — див. журнал роадмапу. На телефоні не перевірено.
+- Host checks — pass (34 набори), попередні очікування без змін. На телефоні не перевірено.
+- CI — 4/4 jobs pass для push і PR (runs 43247751545, 43247767054): JVM 313 (з `MatchingTest`), instrumentation 200
+  (5 skipped), Firebase emulators, Source and Git safety.

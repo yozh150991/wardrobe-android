@@ -22,6 +22,17 @@ suspend fun Repository.linkCapsuleOutfit(capsuleId: String, outfitId: String, se
         reconcileCapsule(capsuleId)
     }
 }
+/** TRIP-03: adds the suggested items to the capsule at once, as manual items; ones already there become manual. */
+suspend fun Repository.addCapsuleItems(capsuleId: String, garmentIds: List<String>) = writes.withLock {
+    require(garmentIds.isNotEmpty() && garmentIds.size <= 200 && garmentIds.distinct().size == garmentIds.size)
+    db.withTransaction {
+        val capsule = requireNotNull(dao.capsule(capsuleId))
+        require(garmentIds.all { dao.garment(it)?.wardrobeId == capsule.wardrobeId })
+        val existing = dao.allCapsuleItems().filter { it.capsuleId == capsuleId }.associateBy { it.garmentId }
+        garmentIds.forEach { id -> dao.saveCapsuleItem((existing[id] ?: CapsuleItem(capsuleId, id)).copy(manual = true)) }
+        reconcileCapsule(capsuleId)
+    }
+}
 suspend fun Repository.manualCapsuleItem(capsuleId: String, garmentId: String, selected: Boolean) = writes.withLock {
     db.withTransaction {
         val capsule = requireNotNull(dao.capsule(capsuleId)); val item = requireNotNull(dao.garment(garmentId))

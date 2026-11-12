@@ -1,4 +1,4 @@
-"""Labels for 0.14.41 TRIP-02: the days of a trip and whether the packing covers them.
+"""Labels for 0.14.41 TRIP-02 (the days of a trip and whether the packing covers them) and 0.14.42 TRIP-03 (packing).
 
 New keys are appended; existing keys are left as they are.
 """
@@ -24,6 +24,19 @@ STRINGS = {
 'trip_past': ('Минулі дні поїздки не показано: %1$d.', 'Past trip days are not shown: %1$d.', 'Minione dni wyjazdu nie są pokazane: %1$d.'),
 'trip_over': ('Поїздка вже минула.', 'The trip is over.', 'Wyjazd już się skończył.'),
 'trip_truncated': ('Показано перші %1$d днів.', 'The first %1$d days are shown.', 'Pokazano pierwsze %1$d dni.'),
+# 0.14.42 TRIP-03: a compact packing suggestion.
+'trip_suggest': ('Запропонувати речі', 'Suggest items', 'Zaproponuj rzeczy'),
+'trip_suggest_add': ('Додати %1$d речей — тоді образ буде на %2$d з %3$d днів, з повторним використанням речей:',
+    'Add %1$d items — then %2$d of %3$d days have an outfit, reusing items:', 'Dodaj %1$d rzeczy — wtedy zestaw będzie na %2$d z %3$d dni, z ponownym użyciem rzeczy:'),
+'trip_suggest_enough': ('Додавати нічого не треба: речей у капсулі вистачає на %2$d з %3$d днів.',
+    'Nothing to add: the capsule’s items cover %2$d of %3$d days.', 'Nie trzeba nic dodawać: rzeczy w kapsule wystarczą na %2$d z %3$d dni.'),
+'trip_suggest_gaps': ('Деяким дням образу бракує навіть з усього гардероба — причини видно в картках днів.',
+    'Some days lack an outfit even from the whole wardrobe — the day cards show why.',
+    'Niektórym dniom brakuje zestawu nawet z całej szafy — powody widać na kartach dni.'),
+'trip_suggest_hint': ('Речі додаються до капсули як додані вручну; зібране позначається окремо.',
+    'The items are added to the capsule as added by hand; packing is marked separately.',
+    'Rzeczy są dodawane do kapsuły jako dodane ręcznie; spakowanie zaznacza się osobno.'),
+'trip_suggest_confirm': ('Додати %1$d', 'Add %1$d', 'Dodaj %1$d'),
 }
 if __name__ == '__main__':
     from pathlib import Path
