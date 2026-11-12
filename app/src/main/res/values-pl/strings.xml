@@ -1425,4 +1425,17 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="rare_hint">Rzecz, którą celowo nosisz rzadko (garnitur, odzież narciarska): nie trafia do „Dawno nienoszone” ani do zapomnianych w statystykach.</string>
     <string name="style_why_show">Skąd ta ocena</string>
     <string name="style_why_hide">Ukryj wyjaśnienie</string>
+    <string name="trip_days_title">Dni wyjazdu</string>
+    <string name="trip_days_hint">Jeden zestaw dziennie z rzeczy tej kapsuły — według tych samych zasad co „Co dziś założyć”. Nic nie jest zapisywane ani liczone jako noszone.</string>
+    <string name="trip_covered">Pokryte dni: %1$d z %2$d</string>
+    <string name="trip_forecast_city">Pogoda z prognozy dla miasta %1$s. Jeśli jedziesz gdzie indziej, warunki mogą być inne.</string>
+    <string name="trip_no_weather">Pogoda jest wyłączona: zestawy dobrano bez niej.</string>
+    <string name="trip_weather_known">%1$s · %2$d°</string>
+    <string name="trip_weather_unknown">Brak jeszcze prognozy na ten dzień — pogoda nie jest uwzględniona.</string>
+    <string name="trip_repeated">Nie ma już nowych zestawów — powtórka z jednego z wcześniejszych dni.</string>
+    <string name="trip_no_outerwear">Na taką pogodę w kapsule nie ma gotowego okrycia wierzchniego.</string>
+    <string name="trip_rain">Szansa na deszcz %1$d%%: prognoza nie sprawia, że rzeczy są wodoodporne.</string>
+    <string name="trip_past">Minione dni wyjazdu nie są pokazane: %1$d.</string>
+    <string name="trip_over">Wyjazd już się skończył.</string>
+    <string name="trip_truncated">Pokazano pierwsze %1$d dni.</string>
 </resources>

@@ -1425,4 +1425,17 @@ Your current wardrobe is unchanged.</string>
     <string name="rare_hint">An item you wear rarely on purpose (a suit, ski wear): it is not offered in “Not worn for a while” or counted as forgotten in the statistics.</string>
     <string name="style_why_show">Why this score</string>
     <string name="style_why_hide">Hide the explanation</string>
+    <string name="trip_days_title">Trip days</string>
+    <string name="trip_days_hint">One outfit a day from this capsule’s items, by the same rules as “What to wear today”. Nothing is saved or counted as worn.</string>
+    <string name="trip_covered">Days covered: %1$d of %2$d</string>
+    <string name="trip_forecast_city">Weather from the forecast for %1$s. If you are going elsewhere, it may be different there.</string>
+    <string name="trip_no_weather">Weather is off: the outfits ignore it.</string>
+    <string name="trip_weather_known">%1$s · %2$d°</string>
+    <string name="trip_weather_unknown">No forecast for this day yet — weather is not taken into account.</string>
+    <string name="trip_repeated">No new outfits left — one from an earlier day again.</string>
+    <string name="trip_no_outerwear">For this weather the capsule has no ready outerwear.</string>
+    <string name="trip_rain">Chance of rain %1$d%%: the forecast does not make the items waterproof.</string>
+    <string name="trip_past">Past trip days are not shown: %1$d.</string>
+    <string name="trip_over">The trip is over.</string>
+    <string name="trip_truncated">The first %1$d days are shown.</string>
 </resources>

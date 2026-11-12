@@ -397,7 +397,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                 "statistics" -> StatisticsScreen(snapshot, current.id, vm, today, ::openItem, pickToday = { g -> openDaily(g.id) }, build = ::buildWith)
                 "capsules" -> CapsuleListScreen(snapshot, current.id, vm) { capsuleId = it; capsulePickItems = false; go("capsule") }
                 "capsule" -> snapshot.capsules.find { it.id == capsuleId && it.wardrobeId == current.id }?.let { capsule ->
-                    CapsuleDetailScreen(capsule, snapshot, vm, ::openItem, openOutfit = { outfitId = it; go("saved") }, removed = { go("__back") }, generate = { go("capsuledaily") }, initialPickItems = capsulePickItems)
+                    CapsuleDetailScreen(capsule, snapshot, vm, ::openItem, openOutfit = { outfitId = it; go("saved") }, removed = { go("__back") }, generate = { go("capsuledaily") }, initialPickItems = capsulePickItems, today = today)
                 } ?: MissingSelection { go("__back") }
 
                 "compatibility" -> snapshot.wishes.find { it.id == wishId && it.wardrobeId == current.id && it.ownedId.isBlank() }?.let { w ->
