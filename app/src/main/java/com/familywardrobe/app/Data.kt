@@ -200,10 +200,19 @@ interface WardrobeDao {
 }
 
 @Database(entities = [Wardrobe::class, Garment::class, Outfit::class, OutfitPart::class, Wear::class, Wish::class, OutfitIdea::class, ImportDraft::class, DayPlan::class, OutfitFeedback::class, Capsule::class, CapsuleItem::class, CapsuleOutfit::class, PurchaseUndoRow::class, WishEvent::class, CloudSyncMeta::class, CustomCategory::class, CustomColor::class],
-    version = 10, exportSchema = true)
+    version = 11, exportSchema = true)
 abstract class WardrobeDatabase : RoomDatabase() {
     abstract fun dao(): WardrobeDao
     companion object {
+        /** TRIP-01 (0.14.44): the trip's city with its coordinates and the trip's occasion. */
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE capsules ADD COLUMN city TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE capsules ADD COLUMN latitude REAL")
+                db.execSQL("ALTER TABLE capsules ADD COLUMN longitude REAL")
+                db.execSQL("ALTER TABLE capsules ADD COLUMN occasion TEXT NOT NULL DEFAULT ''")
+            }
+        }
         val MIGRATION_9_10 = object : Migration(9, 10) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("CREATE TABLE IF NOT EXISTS custom_colors (id TEXT NOT NULL, wardrobeId TEXT NOT NULL, name TEXT NOT NULL, nameKey TEXT NOT NULL, baseColor TEXT NOT NULL, PRIMARY KEY(id), FOREIGN KEY(wardrobeId) REFERENCES wardrobes(id) ON UPDATE NO ACTION ON DELETE CASCADE)")
@@ -296,7 +305,7 @@ abstract class WardrobeDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_outfit_ideas_wishId ON outfit_ideas(wishId)")
             }
         }
-        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
+        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
     }
 }
 

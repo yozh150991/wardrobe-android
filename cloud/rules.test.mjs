@@ -73,9 +73,9 @@ test('snapshots are private and immutable; active head is protected from deletio
 });
 
 // Prepared for emulator execution: newer archives must never be overwritten by older clients.
-test('formats 8 and 9 upgrade to 10; downgrade and unknown format are denied', async () => {
+test('formats 8 and 9 upgrade to 10 and 11; downgrade and unknown format are denied', async () => {
   const db = env.authenticatedContext('alice').firestore();
-  await assertFails(setDoc(head(db), { ...value(), format: 11 }));
+  await assertFails(setDoc(head(db), { ...value(), format: 12 }));
   await assertSucceeds(setDoc(head(db), value()));
   await assertSucceeds(setDoc(head(db), { ...value(2, nextArchive), format: 9 }));
   await assertFails(setDoc(head(db), value(3)));
@@ -83,5 +83,10 @@ test('formats 8 and 9 upgrade to 10; downgrade and unknown format are denied', a
   await assertFails(setDoc(head(db), { ...value(4, nextArchive), format: 9 }));
   await assertFails(setDoc(head(db), value(4, nextArchive)));
   await assertSucceeds(setDoc(head(db), { ...value(4, nextArchive), format: 10 }));
+  // TRIP-01 (0.14.44): trip details make format 11; an older app (format 10) may not overwrite them afterwards.
+  await assertSucceeds(setDoc(head(db), { ...value(5), format: 11 }));
+  await assertFails(setDoc(head(db), { ...value(6, nextArchive), format: 10 }));
+  await assertFails(setDoc(head(db), { ...value(6, nextArchive), format: 12 }));
+  await assertSucceeds(setDoc(head(db), { ...value(6, nextArchive), format: 11 }));
   await assertFails(getDoc(head(env.authenticatedContext('bob').firestore())));
 });

@@ -175,4 +175,15 @@ class RoomMigrationSchemaTest {
             assertTrue(rows(db, "PRAGMA foreign_key_check").isEmpty())
         }
     }
+
+    /** TRIP-01 (0.14.44): a capsule kept from version 10 has no city, no coordinates and no saved occasion. */
+    @Test fun tripCapsulesKeepTheirRowsWithEmptyTripDetails() {
+        create(10).use { db ->
+            insert(db, "wardrobes", mapOf("id" to "w", "name" to "Home"))
+            insert(db, "capsules", mapOf("id" to "c", "wardrobeId" to "w", "name" to "Lviv", "kind" to "trip", "startDate" to "2026-12-01", "endDate" to "2026-12-03"))
+            migrate(db, 10, 11)
+            assertEquals(listOf(listOf("c", "trip", "2026-12-01", "", null, null, "")),
+                rows(db, "SELECT id, kind, startDate, city, latitude, longitude, occasion FROM capsules"))
+        }
+    }
 }

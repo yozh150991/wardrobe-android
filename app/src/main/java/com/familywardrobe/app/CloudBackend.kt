@@ -13,7 +13,8 @@ class CloudDraftException : IllegalStateException("Finish the local draft first"
 class CloudChangedException : IllegalStateException("Local data changed")
 class CloudConfigurationException(cause: Exception) : IllegalStateException("Cloud storage is not configured", cause)
 
-data class CloudHead(val revision: Long, val path: String, val hash: String, val wardrobes: Int, val garments: Int, val outfits: Int)
+/** [format]: the archive's backup format; 11 since TRIP-01 (0.14.44) when a capsule has trip details. */
+data class CloudHead(val revision: Long, val path: String, val hash: String, val wardrobes: Int, val garments: Int, val outfits: Int, val format: Int = 10)
 
 internal interface CloudTransport {
     suspend fun read(): CloudHead?
@@ -30,9 +31,10 @@ internal class CloudBackend(private val uid: String, private val app: FirebaseAp
     private fun parse(s: DocumentSnapshot): CloudHead? {
         if(!s.exists())return null
         val revision=requireNotNull(s.getLong("revision"));val path=requireNotNull(s.getString("archive"));val hash=requireNotNull(s.getString("fingerprint"))
-        require(revision>0 && CloudSyncRules.validPath(uid,path) && hash.matches(Regex("[a-f0-9]{64}")) && (s.getLong("format") ?: 0L) in 8L..10L)
+        require(revision>0 && CloudSyncRules.validPath(uid,path) && hash.matches(Regex("[a-f0-9]{64}")))
+        val format=(s.getLong("format") ?: 0L).also { require(it in 8L..Backup.CURRENT.toLong()) }.toInt()
         fun count(key: String)=requireNotNull(s.getLong(key)).also { require(it in 0L..100_000L) }.toInt()
-        return CloudHead(revision,path,hash,count("wardrobes"),count("garments"),count("outfits"))
+        return CloudHead(revision,path,hash,count("wardrobes"),count("garments"),count("outfits"),format)
     }
     override suspend fun read(): CloudHead?=parse(head.get(Source.SERVER).await())
     fun listen(changed: () -> Unit, failed: () -> Unit): ListenerRegistration=head.addSnapshotListener { s,e ->
@@ -55,9 +57,12 @@ internal class CloudBackend(private val uid: String, private val app: FirebaseAp
             val existing=parse(transaction.get(head))
             if(existing!=null && existing.path==value.path && existing.hash==value.hash)return@runTransaction existing
             if((existing?.revision ?: 0L)!=base)throw CloudConflictException()
-            transaction.set(head,mapOf("revision" to base+1,"archive" to value.path,"fingerprint" to value.hash,"format" to 10,
+            transaction.set(head,mapOf("revision" to base+1,"archive" to value.path,"fingerprint" to value.hash,
+                // The rules never let the format go down: once trip details were synced, a later archive without them
+                // still says 11, so a phone with an older app can not overwrite them.
+                "format" to maxOf(existing?.format ?: 10, value.format, 10),
                 "wardrobes" to value.wardrobes,"garments" to value.garments,"outfits" to value.outfits,"updatedAt" to FieldValue.serverTimestamp()))
-            value.copy(revision=base+1)
+            value.copy(revision=base+1,format=maxOf(existing?.format ?: 10, value.format, 10))
         }.await()
     }
     override suspend fun removeUncommitted(path: String) { if(read()?.path!=path) storage.reference.child(path).delete().await() }

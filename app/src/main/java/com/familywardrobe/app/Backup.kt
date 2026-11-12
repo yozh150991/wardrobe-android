@@ -143,7 +143,7 @@ class Backup(private val context: Context, private val repo: Repository, private
             }
         }
         require(names == expected)
-        BackupVerification(state.wardrobes.size, state.garments.size, state.outfits.size, fingerprint)
+        BackupVerification(state.wardrobes.size, state.garments.size, state.outfits.size, fingerprint, json.getInt("version"))
     }
     suspend fun restore(uri: Uri, restoredLabel: String = context.getString(R.string.restored_label),
         defaultName: String = context.getString(R.string.my_wardrobe), expectedFingerprint: String? = null,
@@ -317,9 +317,21 @@ class Backup(private val context: Context, private val repo: Repository, private
             } finally { copied.forEach { it.delete() }; staging.deleteRecursively() }
         }
     }
+    companion object {
+        /** Newest backup format this app writes and reads (TRIP-01, 0.14.44). */
+        const val CURRENT = 11
+    }
     private fun obj(vararg fields: Pair<String, Any?>) = JSONObject().apply { fields.forEach { put(it.first, it.second ?: JSONObject.NULL) } }
     private fun <T> arr(values: List<T>, convert: (T) -> JSONObject) = JSONArray().apply { values.forEach { put(convert(it)) } }
-    internal fun encode(s: Snapshot) = obj("format" to "family-wardrobe", "version" to 10,
+    /**
+     * TRIP-01 (0.14.44): format 11 adds the trip's city, coordinates and occasion to capsules. It is written only
+     * when a capsule has such details, so a wardrobe without them stays format 10 and older phones keep reading it.
+     * [maximum] caps the format: a shared wardrobe's copy is always 10 (the family server knows 10 only), so the
+     * details stay private to the owner.
+     */
+    internal fun formatOf(s: Snapshot, maximum: Int = CURRENT): Int =
+        if (maximum >= 11 && s.capsules.any { it.hasTripDetails }) 11 else 10
+    internal fun encode(s: Snapshot, maximum: Int = CURRENT) = formatOf(s, maximum).let { version -> obj("format" to "family-wardrobe", "version" to version,
         "photoFiles" to JSONObject().apply {
             s.photoIds().forEach { put(it, photos.currentFile(it).extension) }
         },
@@ -350,12 +362,15 @@ class Backup(private val context: Context, private val repo: Repository, private
         "feedback" to arr(s.feedback) { obj("id" to it.id, "wardrobeId" to it.wardrobeId, "signature" to it.signature,
             "weather" to it.weather, "occasion" to it.occasion, "reason" to it.reason) },
         "capsules" to arr(s.capsules) { obj("id" to it.id, "wardrobeId" to it.wardrobeId, "name" to it.name, "kind" to it.kind,
-            "startDate" to it.startDate, "endDate" to it.endDate) },
+            "startDate" to it.startDate, "endDate" to it.endDate).apply {
+                if (version >= 11) put("city", it.city).put("latitude", it.latitude ?: JSONObject.NULL)
+                    .put("longitude", it.longitude ?: JSONObject.NULL).put("occasion", it.occasion)
+            } },
         "capsuleItems" to arr(s.capsuleItems) { obj("capsuleId" to it.capsuleId, "garmentId" to it.garmentId, "manual" to it.manual, "packed" to it.packed) },
         "capsuleOutfits" to arr(s.capsuleOutfits) { obj("capsuleId" to it.capsuleId, "outfitId" to it.outfitId) },
         "purchaseUndos" to arr(s.purchaseUndos) { obj("wishId" to it.wishId, "garmentJson" to it.garmentJson, "createdAt" to it.createdAt) },
         "wishEvents" to arr(s.wishEvents) { e -> obj("id" to e.id, "wishId" to e.wishId, "kind" to e.kind, "name" to e.name, "category" to e.category,
-            "priceMinor" to e.priceMinor, "currency" to e.currency, "link" to e.link, "inspiration" to e.inspiration, "photoId" to e.photoId, "createdAt" to e.createdAt) })
+            "priceMinor" to e.priceMinor, "currency" to e.currency, "link" to e.link, "inspiration" to e.inspiration, "photoId" to e.photoId, "createdAt" to e.createdAt) }) }
     private fun <T> read(json: JSONObject, key: String, convert: (JSONObject) -> T): List<T> {
         val a = json.getJSONArray(key); require(a.length() <= 100_000)
         return (0 until a.length()).map { convert(a.getJSONObject(it)) }
@@ -370,7 +385,7 @@ class Backup(private val context: Context, private val repo: Repository, private
     }
     private fun JSONObject.optionalPhoto(): String = text("photoId").also { require(it.isEmpty() || PhotoStore.ID.matches(it)) }
     internal fun decode(j: JSONObject): Snapshot {
-        require(j.getString("format") == "family-wardrobe" && j.getInt("version") in 1..10)
+        require(j.getString("format") == "family-wardrobe" && j.getInt("version") in 1..CURRENT)
         val state = Snapshot(
             read(j, "wardrobes") { Wardrobe(it.id("id"), it.text("name", 80), it.getLong("createdAt"),
                 it.optBoolean("usesDefaultName", it.getString("id") == Repository.DEFAULT_WARDROBE),
@@ -420,7 +435,11 @@ class Backup(private val context: Context, private val repo: Repository, private
             if (j.getInt("version") < 6) emptyList() else read(j, "feedback") { f -> OutfitFeedback(f.id("id"), f.id("wardrobeId"),
                 f.text("signature", 443), f.text("weather"), f.text("occasion"), f.text("reason")) },
             if (j.getInt("version") < 6) emptyList() else read(j, "capsules") { c -> Capsule(c.id("id"), c.id("wardrobeId"), c.text("name", 80),
-                c.text("kind"), c.text("startDate", 10), c.text("endDate", 10)) },
+                c.text("kind"), c.text("startDate", 10), c.text("endDate", 10),
+                if (j.getInt("version") >= 11) c.text("city", Capsule.MAX_CITY) else "",
+                if (j.getInt("version") >= 11 && !c.isNull("latitude")) c.getDouble("latitude") else null,
+                if (j.getInt("version") >= 11 && !c.isNull("longitude")) c.getDouble("longitude") else null,
+                if (j.getInt("version") >= 11) c.text("occasion", 20) else "") },
             if (j.getInt("version") < 6) emptyList() else read(j, "capsuleItems") { c -> CapsuleItem(c.id("capsuleId"), c.id("garmentId"), c.getBoolean("manual"), c.getBoolean("packed")) },
             if (j.getInt("version") < 6) emptyList() else read(j, "capsuleOutfits") { c -> CapsuleOutfit(c.id("capsuleId"), c.id("outfitId")) },
             if (j.getInt("version") < 8) emptyList() else read(j, "purchaseUndos") { c ->

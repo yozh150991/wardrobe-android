@@ -1445,4 +1445,16 @@ Your current wardrobe is unchanged.</string>
     <string name="trip_suggest_hint">The items are added to the capsule as added by hand; packing is marked separately.</string>
     <string name="trip_suggest_confirm">Add %1$d</string>
     <string name="today_tab">Today</string>
+    <string name="trip_city_label">Trip city</string>
+    <string name="trip_city_hint">Optional. When the weather is on, the trip days follow this city’s forecast.</string>
+    <string name="trip_city_search">Search</string>
+    <string name="trip_city_none">No such city found.</string>
+    <string name="trip_city_failed">Could not search for the city. Check the connection and try again.</string>
+    <string name="trip_city_selected">City: %1$s</string>
+    <string name="trip_city_remove">Remove the city</string>
+    <string name="trip_private_hint">The trip’s city and occasion are kept in your backups and cloud copy, but never in shared wardrobes.</string>
+    <string name="trip_city_forecast">Weather from the forecast for %1$s, up to %2$d days ahead. Later days have no forecast.</string>
+    <string name="trip_city_loading">Loading the forecast for %1$s…</string>
+    <string name="trip_city_unavailable">The forecast for %1$s is not available right now: outfits are chosen without the weather.</string>
+    <string name="trip_city_weather_off">The weather is off: the forecast for %1$s is not loaded and outfits are chosen without it.</string>
 </resources>

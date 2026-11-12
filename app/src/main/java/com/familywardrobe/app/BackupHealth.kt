@@ -24,7 +24,8 @@ data class BackupHealth(val lastSuccess: Long = 0, val lastAttempt: Long = 0,
     val failed: Boolean = false, val folder: String = "", val folderName: String = "", val enabled: Boolean = false) {
     fun overdue(now: Long = System.currentTimeMillis()) = lastSuccess == 0L || now - lastSuccess >= 7L * 86_400_000
 }
-data class BackupVerification(val wardrobes: Int, val garments: Int, val outfits: Int, val fingerprint: String = "")
+/** [format]: the archive's backup format (10, or 11 with trip details, TRIP-01); the cloud head records it. */
+data class BackupVerification(val wardrobes: Int, val garments: Int, val outfits: Int, val fingerprint: String = "", val format: Int = 10)
 data class RestorePreview(val uri: String, val verification: BackupVerification)
 enum class ScheduledBackupState { IDLE, SCHEDULED, QUEUED, BLOCKED, RUNNING }
 

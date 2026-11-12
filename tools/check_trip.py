@@ -20,7 +20,7 @@ check('DailyDiagnostics.explain(' in plan, 'a day without an outfit says why')
 check(not re.search(r'\b(save|insert|wear|schedule|toggle)\w*\(', plan.replace('DailyOutfits.daily', '')), 'nothing is saved or recorded as worn')
 screen = read('CapsuleScreen.kt')
 check('withContext(Dispatchers.Default) { TripPlan.coverage(s, capsule, tripOccasion, today, tripForecast, choices) }' in screen, 'computed off the UI thread')
-check('val tripForecast = forecast.takeIf { weatherEnabled }' in screen, 'the forecast only when weather is on')
+check('val tripForecast = if (tripCity != null) cityForecast.takeIf { weatherEnabled } else forecast.takeIf { weatherEnabled }' in screen, 'the forecast only when weather is on (TRIP-01: the trip city’s own when it has one)')
 check('R.string.trip_forecast_city' in screen and 'R.string.trip_weather_unknown' in screen and 'R.string.trip_rain' in screen,
       'the forecast city, unknown days and the rain caveat are shown')
 keys = ['trip_days_title', 'trip_days_hint', 'trip_covered', 'trip_forecast_city', 'trip_no_weather', 'trip_weather_known', 'trip_weather_unknown',
@@ -41,7 +41,8 @@ ops = read('CapsuleOperations.kt')
 check('suspend fun Repository.addCapsuleItems' in ops and 'require(garmentIds.all { dao.garment(it)?.wardrobeId == capsule.wardrobeId })' in ops,
       'suggested items are added at once, only from this wardrobe')
 check('vm.addCapsuleItems(capsule.id, proposal.add.map { it.id })' in screen, 'added only when the person confirms')
+from trip_details_strings import STRINGS as TRIP_DETAILS  # TRIP-01 keys, checked by check_trip_details.py
 for name in set(re.findall(r'R\.string\.(trip_\w+)', screen)):
-    check(name in keys, f'R.string.{name} is not in the checked key list')
+    check(name in keys or name in TRIP_DETAILS, f'R.string.{name} is not in the checked key list')
 if failures: raise SystemExit('FAIL trip:\n' + '\n'.join(failures))
 print(f'PASS trip guards: {len(keys)} strings × 4 locales, trip items only, same rules, forecast honest, compact packing on confirmation')

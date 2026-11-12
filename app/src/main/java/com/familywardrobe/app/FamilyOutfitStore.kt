@@ -97,7 +97,7 @@ internal class FamilyOutfitStore(private val context: AccountContext, private va
         val outfit = state.outfits.find { it.id == id } ?: return null
         val single = FamilyColors.forServer(Snapshot(wardrobes = state.wardrobes, outfits = listOf(outfit), parts = state.parts.filter { it.outfitId == id },
             ideas = state.ideas.filter { it.outfitId == id }), FamilyColors.supported(view.remote))
-        return FamilyChange.outfitRows(Backup(context, repo, view.candidate.photos).encode(single), id)
+        return FamilyChange.outfitRows(Backup(context, repo, view.candidate.photos).encode(single, FamilyRules.CONTENT_VERSION), id)
     }
     /**
      * [delta]: the server applies the outfit's rows to its newest head, so nothing is uploaded; an edit carries the rows

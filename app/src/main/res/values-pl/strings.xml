@@ -1445,4 +1445,16 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="trip_suggest_hint">Rzeczy są dodawane do kapsuły jako dodane ręcznie; spakowanie zaznacza się osobno.</string>
     <string name="trip_suggest_confirm">Dodaj %1$d</string>
     <string name="today_tab">Dziś</string>
+    <string name="trip_city_label">Miasto wyjazdu</string>
+    <string name="trip_city_hint">Opcjonalnie. Gdy pogoda jest włączona, dni wyjazdu są dobierane według prognozy dla tego miasta.</string>
+    <string name="trip_city_search">Szukaj</string>
+    <string name="trip_city_none">Nie znaleziono takiego miasta.</string>
+    <string name="trip_city_failed">Nie udało się wyszukać miasta. Sprawdź połączenie i spróbuj ponownie.</string>
+    <string name="trip_city_selected">Miasto: %1$s</string>
+    <string name="trip_city_remove">Usuń miasto</string>
+    <string name="trip_private_hint">Miasto i okazja wyjazdu są zapisywane w Twoich kopiach i chmurze, ale nie trafiają do wspólnych garderób.</string>
+    <string name="trip_city_forecast">Pogoda według prognozy dla %1$s, do %2$d dni naprzód. Dalsze dni są bez prognozy.</string>
+    <string name="trip_city_loading">Wczytujemy prognozę dla %1$s…</string>
+    <string name="trip_city_unavailable">Prognoza dla %1$s jest teraz niedostępna: zestawy dobrano bez pogody.</string>
+    <string name="trip_city_weather_off">Pogoda jest wyłączona: prognoza dla %1$s nie jest wczytywana, zestawy dobrano bez niej.</string>
 </resources>
