@@ -137,6 +137,14 @@ public final class RotationRulesCases {
         check(RotationRules.visible(RotationRules.WEEKLY, "2026-11-20", "", TODAY), "weekly: a clock moved back never hides it");
         check(!RotationRules.visible(RotationRules.WEEKLY, "2026-10-27", TODAY, TODAY), "weekly: hidden today");
 
+        // UX-06: «Ношу рідко» — idle on purpose, so never offered as forgotten; everything else about it is unchanged.
+        RotationRules.Item suit = item("suit", "top", "2026-01-10", "2025-01-01");
+        RotationRules.Item rareSuit = new RotationRules.Item(suit.piece, suit.lastWear, suit.added, false, false, "", "", true);
+        check(RotationRules.candidates(List.of(suit), "home", "any_weather", "casual", TODAY).equals(List.of("suit")), "a forgotten suit is offered");
+        check(RotationRules.candidates(List.of(rareSuit), "home", "any_weather", "casual", TODAY).isEmpty(), "marked «Ношу рідко» it is not");
+        check(RotationRules.forgotten(rareSuit.lastWear, rareSuit.added, TODAY) && RotationRules.problem(rareSuit, "any_weather") == null,
+            "its idle days and suitability are unchanged (it can still be chosen in the statistics)");
+        check(!new RotationRules.Item(suit.piece, suit.lastWear, suit.added, false, false, "", "").rare, "not rare by default");
         System.out.println("PASS: " + checks + " rotation assertions (90-day rule, suitability, order, generator anchor, postponing, frequency).");
     }
 }

@@ -98,6 +98,22 @@ public final class DailyRules {
      * was chosen by hand. It decides the coat, the second layer, tights and which seasons' items suit.
      * GEN-04: the pieces weather adds are optional — without a ready one the outfit is still suggested.
      */
+    /**
+     * GEN-03 (0.14.39): wear counts against an item only within this many days. Before, every wear day of the item's
+     * whole history counted (up to −12), so after a year most items sat at the cap and a well-loved favourite lost
+     * to a new item for good.
+     */
+    public static final int RECENT_DAYS = 30;
+    /** Distinct wear days in the {@link #RECENT_DAYS} days up to and including [today]; later days do not count. */
+    public static int recentWears(Collection<String> dates, String today) {
+        java.time.LocalDate end = java.time.LocalDate.parse(today), start = end.minusDays(RECENT_DAYS - 1);
+        Set<String> days = new HashSet<>();
+        for (String date : dates) {
+            java.time.LocalDate day = java.time.LocalDate.parse(date);
+            if (!day.isBefore(start) && !day.isAfter(end)) days.add(date);
+        }
+        return days.size();
+    }
     static final List<String> WEATHER_PIECES = Collections.unmodifiableList(Arrays.asList("outerwear", "layer", "tights"));
     public static List<List<String>> generate(List<Item> items, String wardrobe, String occasion, String weather,
             String date, String seed, Set<String> rejected, Map<String, String> fixed, int limit, Map<String, Integer> penalty,

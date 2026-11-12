@@ -55,13 +55,19 @@ public final class RotationRules {
         public final String snoozedUntil;
         /** ROT-02: the last day the card showed this item, or "". */
         public final String seen;
+        /** UX-06 «Ношу рідко»: worn rarely on purpose (a suit, ski wear) — never offered as forgotten. */
+        public final boolean rare;
         public Item(WardrobeRules.Piece piece, String lastWear, String added, boolean excluded, boolean uncomfortable) {
             this(piece, lastWear, added, excluded, uncomfortable, "", "");
         }
         public Item(WardrobeRules.Piece piece, String lastWear, String added, boolean excluded, boolean uncomfortable,
                     String snoozedUntil, String seen) {
+            this(piece, lastWear, added, excluded, uncomfortable, snoozedUntil, seen, false);
+        }
+        public Item(WardrobeRules.Piece piece, String lastWear, String added, boolean excluded, boolean uncomfortable,
+                    String snoozedUntil, String seen, boolean rare) {
             this.piece = piece; this.lastWear = lastWear; this.added = added; this.excluded = excluded; this.uncomfortable = uncomfortable;
-            this.snoozedUntil = snoozedUntil; this.seen = seen;
+            this.snoozedUntil = snoozedUntil; this.seen = seen; this.rare = rare;
         }
     }
 
@@ -101,7 +107,8 @@ public final class RotationRules {
     public static List<String> candidates(List<Item> items, String wardrobe, String weather, String style, String today, Double temperature) {
         List<Item> picked = new ArrayList<>();
         for (Item item : items) {
-            if (!wardrobe.equals(item.piece.wardrobe) || problem(item, weather, temperature) != null) continue;
+            // UX-06: an item worn rarely on purpose is not a forgotten one; it can still be chosen in the statistics.
+            if (!wardrobe.equals(item.piece.wardrobe) || item.rare || problem(item, weather, temperature) != null) continue;
             if (snoozed(item.snoozedUntil, today)) continue;
             if (forgotten(item.lastWear, item.added, today)) picked.add(item);
         }

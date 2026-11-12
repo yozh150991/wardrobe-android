@@ -121,6 +121,15 @@ public final class GeneratorRulesCases {
         Set<String> hidden = Set.of(DailyRules.signature(varied.get(0)));
         List<List<String>> without = DailyRules.generate(nine, "home", "everyday", "warm", "2026-11-11", "seed", hidden, Map.of(), 3);
         check(without.size() == 3 && !without.contains(varied.get(0)), "a hidden combination is not shown");
+        // GEN-03: only the last 30 days' wear counts.
+        check(DailyRules.RECENT_DAYS == 30, "30 days");
+        check(DailyRules.recentWears(List.of("2026-11-11", "2026-10-13", "2026-10-12", "2026-11-12", "2026-11-11"), "2026-11-11") == 2,
+            "today and the 29 days before it count, once per day; later days and older ones do not");
+        check(DailyRules.recentWears(List.of(), "2026-11-11") == 0 && DailyRules.recentWears(List.of("2026-02-28", "2026-03-01"), "2026-03-29") == 2
+            && DailyRules.recentWears(List.of("2026-02-28"), "2026-03-30") == 0, "across a month boundary");
+        boolean refused = false;
+        try { DailyRules.recentWears(List.of("2026-13-01"), "2026-11-11"); } catch (RuntimeException expected) { refused = true; }
+        check(refused, "an invalid date is refused");
         System.out.println("PASS: " + checks + " generator assertions (dress and layout fairness, distinct variants, order, pins).");
     }
 }

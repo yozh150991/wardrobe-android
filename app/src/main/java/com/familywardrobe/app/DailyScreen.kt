@@ -39,7 +39,9 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
     open: (Garment) -> Unit, saved: (String) -> Unit, schedule: (String) -> Unit, capsule: Capsule? = null,
     addItems: () -> Unit = {}, editCapsule: () -> Unit = {}, anchor: String = "", clearAnchor: () -> Unit = {},
     buildWith: (Garment) -> Unit = {}) {
-    var occasion by rememberSaveable { mutableStateOf("everyday") }
+    // UX-05: the screen opens on the occasion last chosen for this wardrobe.
+    var occasion by rememberSaveable(wardrobe) { mutableStateOf(vm.lastOccasion(wardrobe)) }
+    LaunchedEffect(wardrobe, occasion) { vm.rememberOccasion(wardrobe, occasion) }
     var manualWeather by rememberSaveable { mutableStateOf("any_weather") }
     var fixedIds by rememberSaveable(wardrobe, capsule?.id) { mutableStateOf(arrayListOf<String>()) }
     var packedOnly by rememberSaveable(capsule?.id) { mutableStateOf(false) }

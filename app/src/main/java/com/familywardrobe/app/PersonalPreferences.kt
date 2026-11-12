@@ -28,6 +28,18 @@ internal class PersonalChoiceStore(context: Context) {
     private fun styleKey(wardrobe: String, occasion: String) = "pref.style.$wardrobe.$occasion"
     private fun warmthKey(wardrobe: String) = "pref.warmth.$wardrobe"
     private fun paletteKey(wardrobe: String, kind: String) = "pref.palette.$wardrobe.$kind"
+    private fun occasionKey(wardrobe: String) = "daily.occasion.$wardrobe"
+    /**
+     * UX-05: the occasion last chosen on «Що вдягнути сьогодні» for this wardrobe, so the screen opens on it. A
+     * convenience, not a preference: «Скинути всі вподобання» leaves it; it is erased with the account.
+     */
+    fun lastOccasion(wardrobe: String): String =
+        prefs.getString(occasionKey(wardrobe), null)?.takeIf { it in LookRules.OCCASIONS } ?: "everyday"
+    /** Saved quietly: the screen already shows the new occasion, nothing needs to re-read the choices. */
+    fun rememberOccasion(wardrobe: String, occasion: String) {
+        require(occasion in LookRules.OCCASIONS)
+        if (prefs.getString(occasionKey(wardrobe), null) != occasion) prefs.edit().putString(occasionKey(wardrobe), occasion).apply()
+    }
     private fun colours(wardrobe: String, kind: String): Set<String> =
         prefs.getString(paletteKey(wardrobe, kind), null).orEmpty().split(',').filter { it in PersonalChoices.PALETTE }.toSet()
 

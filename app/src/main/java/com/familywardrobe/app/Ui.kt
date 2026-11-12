@@ -534,6 +534,9 @@ fun Detail(g: Garment, s: Snapshot, vm: WardrobeViewModel, today: String, onEdit
             AssistChip(onClick = {}, label = { Text(stringResource(if (g.archived) R.string.archived else label(g.availability))) })
             FilterChip(g.rarelyWorn, { vm.update(g) { it.copy(rarelyWorn = !it.rarelyWorn) } }, enabled = !busy, label = { Text(stringResource(R.string.rare)) })
         }
+        // UX-06: what «Ношу рідко» does, so the chip is not a mystery.
+        if (g.rarelyWorn) Text(stringResource(R.string.rare_hint), style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
         s.wishes.find { it.ownedId == g.id }?.let { PurchaseHistory(it, vm) }
         Info(R.string.size, g.size.ifBlank { "—" }); Info(R.string.color, s.customColor(g)?.name ?: stringResource(label(g.color)))
         Info(R.string.location, g.location.ifBlank { "—" }); Info(R.string.season, stringResource(label(g.season)))

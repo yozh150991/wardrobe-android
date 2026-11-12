@@ -81,4 +81,5 @@
 - **JVM (у CI):** `WeatherForecastTest` (температура з прогнозу, застарілий прогноз),
   `DailyOutfitsPreferenceTest.theTemperatureDecidesTheCoatAndTheLayer` (через точки входу застосунку).
 - Усі попередні набори пройшли без зміни очікувань. Host checks — pass (33 набори).
-- CI — див. журнал роадмапу. На телефоні не перевірено.
+- CI — 4/4 jobs pass для push і PR (runs 43225623264, 43225633399): JVM 310, instrumentation 200 (5 skipped),
+  Firebase emulators, Source and Git safety. На телефоні не перевірено.
