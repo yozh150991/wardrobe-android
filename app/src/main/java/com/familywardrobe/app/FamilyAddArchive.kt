@@ -46,7 +46,7 @@ internal class FamilyAddArchive(private val context: AccountContext, private val
             FamilyAddition.merge(latest, chosen)
             val item = chosen.garments.single()
             copyPhoto(selectedPhotos, selectedPhotoId, photos, item.photoId)
-            val text = FamilyChange.addition(Backup(context, repo, photos).encode(chosen))
+            val text = FamilyChange.addition(Backup(context, repo, photos).encode(chosen, FamilyRules.CONTENT_VERSION))
             val target = File(directory, "publish.zip")
             FamilySnapshotZip.writeChange(target, photos, item.photoId, guard)
             val draft = FamilyAddDraft(FamilyPublication(remote.identity, id, remote.revision, FamilyArchive.digest(target, guard), target.length()),

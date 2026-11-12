@@ -89,7 +89,12 @@ jobs:
           # Room re-exports the current schema during the build; a diff means the entities
           # changed without a committed schema (and usually without a migration).
           git status --porcelain -- app/schemas
-          test -z "$(git status --porcelain -- app/schemas)"
+          if [ -n "$(git status --porcelain -- app/schemas)" ]; then
+            # Print what Room generated, so a new schema version can be committed exactly as exported.
+            git diff -- app/schemas | head -c 60000
+            git ls-files --others --exclude-standard -- app/schemas | while read -r file; do echo "::group::$file"; cat "$file"; echo "::endgroup::"; done
+            exit 1
+          fi
       - name: Unit test summary
         if: always()
         run: |

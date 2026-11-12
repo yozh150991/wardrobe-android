@@ -69,7 +69,7 @@ object BackupStateRules {
             require(feedback.wardrobeId in wardrobes && feedback.weather in LookRules.WEATHERS && feedback.occasion in LookRules.OCCASIONS && feedback.reason in setOf("dislike", "hot", "occasion"))
             require(ids.size in 1..WardrobeRules.MAX_PARTS && ids.distinct().size == ids.size && ids.all { garments[it]?.wardrobeId == feedback.wardrobeId } && DailyRules.signature(ids) == feedback.signature)
         }
-        require(s.capsules.all { it.wardrobeId in wardrobes && it.name.trim().length in 1..80 && it.kind in setOf("capsule", "trip") && RoadmapRules.period(it.startDate, it.endDate) })
+        require(s.capsules.all { it.wardrobeId in wardrobes && it.name.trim().length in 1..80 && it.kind in setOf("capsule", "trip") && RoadmapRules.period(it.startDate, it.endDate) && it.validTripDetails })
         require(s.capsuleOutfits.distinct().size == s.capsuleOutfits.size && s.capsuleOutfits.all {
             it.capsuleId in capsules && outfits[it.outfitId]?.wardrobeId == capsules[it.capsuleId]?.wardrobeId
         })

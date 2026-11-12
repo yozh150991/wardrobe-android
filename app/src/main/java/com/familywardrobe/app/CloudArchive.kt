@@ -38,7 +38,7 @@ internal class CloudArchive(private val context: Context,private val repo: Repos
                     require(total<=CloudBackend.MAX_ARCHIVE);zip.closeEntry()
                 }
             }
-            val json=requireNotNull(manifest);require(json.getInt("version") in 8..10)
+            val json=requireNotNull(manifest);require(json.getInt("version") in 8..Backup.CURRENT)
             val state=Backup(context,repo,photos).decode(json)
             val expected=state.photoIds().map { "photos/$it.${json.getJSONObject("photoFiles").getString(it)}" }.toSet()+"manifest.json"
             require(names==expected && state.wardrobes.size==remote.wardrobes && state.garments.size==remote.garments && state.outfits.size==remote.outfits)

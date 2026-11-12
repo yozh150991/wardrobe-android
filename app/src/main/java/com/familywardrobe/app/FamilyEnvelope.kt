@@ -11,7 +11,7 @@ internal class FamilyEnvelope(private val backup: Backup) {
         val state = FamilyColors.forServer(WardrobeSnapshots.select(source, identity.wardrobeId).copy(feedback = emptyList()), colors2)
         return JSONObject().put("format", FORMAT).put("version", FamilyRules.WIRE_VERSION)
             .put("remoteId", identity.remoteId).put("wardrobeId", identity.wardrobeId).put("ownerUid", identity.ownerUid)
-            .put("baseRevision", baseRevision).put("snapshot", backup.encode(state)).toString().also { require(it.toByteArray(Charsets.UTF_8).size <= MAX_MANIFEST) }
+            .put("baseRevision", baseRevision).put("snapshot", backup.encode(state, FamilyRules.CONTENT_VERSION)).toString().also { require(it.toByteArray(Charsets.UTF_8).size <= MAX_MANIFEST) }
     }
 
     fun decode(text: String, expected: FamilyArchiveIdentity, baseRevision: Long): Snapshot {

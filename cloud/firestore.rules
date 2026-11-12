@@ -10,7 +10,7 @@ service cloud.firestore {
           && d.revision is int && d.revision > 0
           && d.archive is string && d.archive.matches('users/' + uid + '/snapshots/[a-f0-9-]{36}[.]zip')
           && d.fingerprint is string && d.fingerprint.matches('[a-f0-9]{64}')
-          && d.format is int && d.format in [8, 9, 10]
+          && d.format is int && d.format in [8, 9, 10, 11]
           && d.wardrobes is int && d.wardrobes >= 0 && d.wardrobes <= 100000
           && d.garments is int && d.garments >= 0 && d.garments <= 100000
           && d.outfits is int && d.outfits >= 0 && d.outfits <= 100000

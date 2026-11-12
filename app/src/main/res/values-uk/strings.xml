@@ -1445,4 +1445,16 @@
     <string name="trip_suggest_hint">Речі додаються до капсули як додані вручну; зібране позначається окремо.</string>
     <string name="trip_suggest_confirm">Додати %1$d</string>
     <string name="today_tab">Сьогодні</string>
+    <string name="trip_city_label">Місто поїздки</string>
+    <string name="trip_city_hint">Необов’язково. Коли погоду ввімкнено, дні поїздки підбираються за прогнозом для цього міста.</string>
+    <string name="trip_city_search">Знайти</string>
+    <string name="trip_city_none">Такого міста не знайдено.</string>
+    <string name="trip_city_failed">Не вдалося знайти місто. Перевір інтернет і спробуй ще раз.</string>
+    <string name="trip_city_selected">Місто: %1$s</string>
+    <string name="trip_city_remove">Прибрати місто</string>
+    <string name="trip_private_hint">Місто й нагода поїздки зберігаються у твоїх резервних копіях і хмарі, але не потрапляють у спільні гардероби.</string>
+    <string name="trip_city_forecast">Погода — за прогнозом для %1$s, до %2$d днів наперед. Далі дні без прогнозу.</string>
+    <string name="trip_city_loading">Завантажуємо прогноз для %1$s…</string>
+    <string name="trip_city_unavailable">Прогноз для %1$s зараз недоступний: образи підібрано без погоди.</string>
+    <string name="trip_city_weather_off">Погоду не ввімкнено: прогноз для %1$s не завантажується, образи підібрано без неї.</string>
 </resources>

@@ -55,7 +55,7 @@ internal class CloudSyncEngine(private val app: WardrobeApplication,private val 
         try {
             backend.download(CloudHead(before.baseRevision+1,before.uploadPath,before.uploadHash,0,0,0),file);guard()
             val v=Backup(context,repo,photos).verify(Uri.fromFile(file));require(v.fingerprint==before.uploadHash)
-            val accepted=backend.commit(before.baseRevision,CloudHead(before.baseRevision+1,before.uploadPath,before.uploadHash,v.wardrobes,v.garments,v.outfits))
+            val accepted=backend.commit(before.baseRevision,CloudHead(before.baseRevision+1,before.uploadPath,before.uploadHash,v.wardrobes,v.garments,v.outfits,v.format))
             guard()
             update {it.copy(baseRevision=accepted.revision,dirty=!CloudSyncRules.canClearDirty(before.uploadLocalRevision,it.localRevision),uploadPath="",uploadHash="",error="",lastSuccess=System.currentTimeMillis())}
             return true
@@ -114,7 +114,7 @@ internal class CloudSyncEngine(private val app: WardrobeApplication,private val 
             }
             backend.upload(file,path);guard();if(!meta().enabled)return
             val accepted=try {
-                backend.commit(before.baseRevision,CloudHead(before.baseRevision+1,path,verification.fingerprint,verification.wardrobes,verification.garments,verification.outfits))
+                backend.commit(before.baseRevision,CloudHead(before.baseRevision+1,path,verification.fingerprint,verification.wardrobes,verification.garments,verification.outfits,verification.format))
             }catch(e: Exception) {
                 // A lost acknowledgement after a server commit must not become an overwrite or a false conflict.
                 val current=runCatching {backend.read()}.getOrNull()

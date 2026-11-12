@@ -3,6 +3,7 @@ package com.familywardrobe.app
 import android.content.Context
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.sync.withLock
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -34,6 +35,10 @@ data class Forecast(val city: WeatherCity, val fetchedAt: Long, val currentDate:
 
 /** Optional city search; no device location permission. Cache and settings are account-private. */
 class WeatherController(context: Context, private val scope: CoroutineScope) {
+    companion object {
+        /** Open-Meteo forecasts up to 16 days; a trip further ahead shows its first days only. */
+        const val TRIP_DAYS = 16
+    }
     private val prefs = context.getSharedPreferences("weather", 0)
     val enabled = MutableStateFlow(prefs.getBoolean("enabled", false))
     val city = MutableStateFlow(readCity())
@@ -55,20 +60,44 @@ class WeatherController(context: Context, private val scope: CoroutineScope) {
         val name = query.trim(); if (name.length !in 2..100) return
         job?.cancel(); val token = ++generation; results.value = emptyList(); failed.value = false; loading.value = true
         job = scope.launch {
-            try {
-                val lang = Locale.getDefault().language.takeIf { it in setOf("uk", "en", "pl") } ?: "en"
-                val response = request("https://geocoding-api.open-meteo.com/v1/search?name=${URLEncoder.encode(name, "UTF-8")}&count=5&language=$lang&format=json")
-                val entries = response.optJSONArray("results") ?: JSONArray()
-                results.value = (0 until minOf(entries.length(), 5)).map { index ->
-                    val o = entries.getJSONObject(index)
-                    val lat = o.getDouble("latitude"); val lon = o.getDouble("longitude")
-                    require(lat.isFinite() && lat in -90.0..90.0 && lon.isFinite() && lon in -180.0..180.0)
-                    WeatherCity(listOf(o.getString("name"), o.optString("admin1"), o.optString("country"))
-                        .filter { it.isNotBlank() }.distinct().joinToString(", ").take(250), lat, lon)
-                }
-            } catch (e: CancellationException) { throw e } catch (_: Exception) { failed.value = true }
+            try { results.value = cities(name) } catch (e: CancellationException) { throw e } catch (_: Exception) { failed.value = true }
             finally { if (generation == token) loading.value = false }
         }
+    }
+    /**
+     * The same city search without touching the daily weather's city (TRIP-01: a trip's own city). Throws when the
+     * service can not be reached; an empty list means no such place.
+     */
+    suspend fun cities(query: String): List<WeatherCity> {
+        val name = query.trim(); require(name.length in 2..100)
+        val lang = Locale.getDefault().language.takeIf { it in setOf("uk", "en", "pl") } ?: "en"
+        val response = request("https://geocoding-api.open-meteo.com/v1/search?name=${URLEncoder.encode(name, "UTF-8")}&count=5&language=$lang&format=json")
+        val entries = response.optJSONArray("results") ?: JSONArray()
+        return (0 until minOf(entries.length(), 5)).map { index ->
+            val o = entries.getJSONObject(index)
+            val lat = o.getDouble("latitude"); val lon = o.getDouble("longitude")
+            require(lat.isFinite() && lat in -90.0..90.0 && lon.isFinite() && lon in -180.0..180.0)
+            WeatherCity(listOf(o.getString("name"), o.optString("admin1"), o.optString("country"))
+                .filter { it.isNotBlank() }.distinct().joinToString(", ").take(Capsule.MAX_CITY), lat, lon)
+        }
+    }
+    private val tripForecasts = mutableMapOf<WeatherCity, Forecast>()
+    private val tripLock = kotlinx.coroutines.sync.Mutex()
+    /**
+     * TRIP-01: the forecast for a trip's own city, up to [TRIP_DAYS] days ahead, kept in memory for an hour. The daily
+     * weather's city and cache stay as they are. Null while the service can not be reached and nothing was fetched.
+     */
+    suspend fun forecastFor(place: WeatherCity): Forecast? = tripLock.withLock {
+        val cached = tripForecasts[place]
+        if (cached != null && System.currentTimeMillis() - cached.fetchedAt < 60 * 60 * 1000L) return@withLock cached
+        try { fetch(place, TRIP_DAYS).also { tripForecasts[place] = it } }
+        catch (e: CancellationException) { throw e } catch (_: Exception) { cached }
+    }
+    private suspend fun fetch(place: WeatherCity, days: Int): Forecast {
+        val json = request("https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&current=apparent_temperature&daily=temperature_2m_min,temperature_2m_max,precipitation_probability_max&timezone=auto&forecast_days=$days")
+        json.put("city", JSONObject().put("name", place.name).put("lat", place.latitude).put("lon", place.longitude))
+            .put("fetchedAt", System.currentTimeMillis())
+        return decode(json, days)
     }
     fun select(value: WeatherCity) {
         city.value = value; forecast.value = null; results.value = emptyList()
@@ -93,7 +122,7 @@ class WeatherController(context: Context, private val scope: CoroutineScope) {
             finally { if (generation == token) loading.value = false }
         }
     }
-    private fun decode(o: JSONObject): Forecast {
+    private fun decode(o: JSONObject, limit: Int = 7): Forecast {
         val c = o.getJSONObject("city"); val selected = WeatherCity(c.getString("name"), c.getDouble("lat"), c.getDouble("lon"))
         val current = o.getJSONObject("current"); val apparent = current.getDouble("apparent_temperature")
         require(apparent.isFinite() && apparent in -90.0..65.0)
@@ -101,7 +130,7 @@ class WeatherController(context: Context, private val scope: CoroutineScope) {
         val daily = o.getJSONObject("daily"); val dates = daily.getJSONArray("time")
         val low = daily.getJSONArray("temperature_2m_min"); val high = daily.getJSONArray("temperature_2m_max")
         val rain = daily.optJSONArray("precipitation_probability_max")
-        val days = (0 until minOf(dates.length(), 7)).map { index ->
+        val days = (0 until minOf(dates.length(), limit)).map { index ->
             val date = dates.getString(index); val l = low.getDouble(index); val h = high.getDouble(index)
             require(RoadmapRules.validDate(date) && l.isFinite() && h.isFinite() && l in -90.0..65.0 && h in l..65.0)
             ForecastDay(date, l, h, rain?.takeIf { !it.isNull(index) }?.optInt(index)?.takeIf { it in 0..100 })

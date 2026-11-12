@@ -1,3 +1,16 @@
+## Current handoff — TRIP-01 trip city and occasion, 12 November 2026
+
+0.14.44-trip-details/code 74, **Room 11, backup format 11** (only when a capsule has trip details; otherwise 10).
+Read TRIP-DETAILS-0.14.44.md. Stacked on UX-04 (PR #42 ⊃ … ⊃ #36, CI green, not merged); its PR targets main and
+contains them. Capsule gains city/latitude/longitude/occasion (MIGRATION_10_11, validTripDetails on save and
+restore). Backup.formatOf writes 11 only with details; encode(s, maximum) caps it. CloudHead.format (8–11); commit
+writes max(existing, archive) because the rules forbid lowering it. cloud/firestore.rules accept 11 — **the user
+deploys cloud/deploy-rules.ps1 before phones get 0.14.44**. Every family/server-bound encode passes
+FamilyRules.CONTENT_VERSION (10): trip details never reach shared wardrobes; schema.py and functions unchanged.
+WeatherController.cities/forecastFor serve the trip city (16 days, memory cache) without touching the daily city.
+Schema 11.json was written without an SDK; tools/room_identity.py recomputes Room's identityHash (it reproduces
+every exported schema) and check_trip_details.py verifies all of them. On drift CI prints the generated schema.
+
 ## Current handoff — UX-04 «Сьогодні» tab, 12 November 2026
 
 0.14.43-today-tab/code 73, Room/backup 10. Read TODAY-TAB-0.14.43.md. Stacked on TRIP-03 (PR #41 ⊃ … ⊃ #36, CI

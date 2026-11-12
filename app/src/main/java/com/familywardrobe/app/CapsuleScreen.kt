@@ -64,12 +64,20 @@ fun CapsuleDetailScreen(capsule: Capsule, s: Snapshot, vm: WardrobeViewModel, op
     val weatherEnabled by vm.weather.enabled.collectAsStateWithLifecycle()
     val choiceRevision by vm.personalChoices.revision.collectAsStateWithLifecycle()
     val choices = remember(capsule.wardrobeId, choiceRevision) { vm.personalChoices.read(capsule.wardrobeId) }
-    var tripOccasion by rememberSaveable(capsule.id) { mutableStateOf("everyday") }
+    // TRIP-01: the trip's occasion is saved with the capsule; "everyday" is the default and is not stored.
+    val tripOccasion = capsule.occasion.ifEmpty { "everyday" }
     // TRIP-03: a compact packing suggestion, computed on request.
     var suggestion by remember(capsule.id) { mutableStateOf<PackingSuggestion?>(null) }
     var suggesting by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val tripForecast = forecast.takeIf { weatherEnabled }
+    // TRIP-01: a trip with its own city uses that city's forecast (16 days ahead); otherwise the daily weather's city.
+    val tripCity = capsule.tripCity
+    var cityLoading by remember { mutableStateOf(false) }
+    val cityForecast by produceState<Forecast?>(null, tripCity, weatherEnabled) {
+        value = null
+        if (weatherEnabled && tripCity != null) { cityLoading = true; try { value = vm.weather.forecastFor(tripCity) } finally { cityLoading = false } }
+    }
+    val tripForecast = if (tripCity != null) cityForecast.takeIf { weatherEnabled } else forecast.takeIf { weatherEnabled }
     val dated = capsule.startDate.isNotBlank()
     val coverage by produceState<TripCoverage?>(null, dated, capsule, s.garments, s.capsuleItems, s.wears, s.feedback, s.wardrobes,
         tripOccasion, tripForecast, choices, today) {
@@ -99,9 +107,16 @@ fun CapsuleDetailScreen(capsule: Capsule, s: Snapshot, vm: WardrobeViewModel, op
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.trip_days_title), style = MaterialTheme.typography.titleLarge)
                 Text(stringResource(R.string.trip_days_hint), style = MaterialTheme.typography.bodySmall)
-                Choice(tripOccasion, LookRules.OCCASIONS, { tripOccasion = it }, R.string.look_occasion, enabled = !busy)
-                Text(tripForecast?.let { stringResource(R.string.trip_forecast_city, it.city.name) } ?: stringResource(R.string.trip_no_weather),
-                    style = MaterialTheme.typography.bodySmall)
+                Choice(tripOccasion, LookRules.OCCASIONS, { if (it != tripOccasion) vm.saveCapsule(capsule.copy(occasion = if (it == "everyday") "" else it)) {} },
+                    R.string.look_occasion, enabled = !busy)
+                val cityName = tripCity?.name
+                Text(when {
+                    cityName == null -> tripForecast?.let { stringResource(R.string.trip_forecast_city, it.city.name) } ?: stringResource(R.string.trip_no_weather)
+                    !weatherEnabled -> stringResource(R.string.trip_city_weather_off, cityName)
+                    cityForecast != null -> stringResource(R.string.trip_city_forecast, cityName, WeatherController.TRIP_DAYS)
+                    cityLoading -> stringResource(R.string.trip_city_loading, cityName)
+                    else -> stringResource(R.string.trip_city_unavailable, cityName)
+                }, style = MaterialTheme.typography.bodySmall)
                 when (val c = coverage) {
                     null -> LinearProgressIndicator(Modifier.fillMaxWidth())
                     else -> {
@@ -200,7 +215,17 @@ private fun CapsuleEditor(original: Capsule?, wardrobe: String, vm: WardrobeView
     var start by rememberSaveable { mutableStateOf(original?.startDate.orEmpty()) }
     var end by rememberSaveable { mutableStateOf(original?.endDate.orEmpty()) }
     var dateField by remember { mutableStateOf("") }
+    // TRIP-01: an optional city of the trip, searched without changing the daily weather's city.
+    var cityName by rememberSaveable { mutableStateOf(original?.city.orEmpty()) }
+    var latitude by rememberSaveable { mutableStateOf(original?.latitude) }
+    var longitude by rememberSaveable { mutableStateOf(original?.longitude) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var found by remember { mutableStateOf<List<WeatherCity>?>(null) }
+    var searching by remember { mutableStateOf(false) }
+    var searchFailed by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val busy by vm.busy.collectAsStateWithLifecycle()
+    val trip = kind == "trip"
     AlertDialog(onDismissRequest = { if (!busy) dismiss() }, title = { Text(stringResource(if (original == null) R.string.capsule_add else R.string.edit)) }, text = {
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(name, { name = TextLimits.input(it, 80) }, label = { Text(stringResource(R.string.name)) }, singleLine = true, enabled = !busy)
@@ -210,8 +235,38 @@ private fun CapsuleEditor(original: Capsule?, wardrobe: String, vm: WardrobeView
             TextButton(onClick = { dateField = "end" }, enabled = !busy) { Text(stringResource(R.string.capsule_end, if (end.isBlank()) "—" else dateLabel(end))) }
             if (start.isNotBlank() || end.isNotBlank()) TextButton(onClick = { start = ""; end = "" }, enabled = !busy) { Text(stringResource(R.string.capsule_clear_dates)) }
             if (!RoadmapRules.period(start, end)) Text(stringResource(R.string.capsule_date_error), color = MaterialTheme.colorScheme.error)
+            if (trip) {
+                Text(stringResource(R.string.trip_city_label), style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.trip_city_hint), style = MaterialTheme.typography.bodySmall)
+                if (cityName.isNotEmpty()) {
+                    Text(stringResource(R.string.trip_city_selected, cityName))
+                    TextButton(onClick = { cityName = ""; latitude = null; longitude = null }, enabled = !busy) { Text(stringResource(R.string.trip_city_remove)) }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(query, { query = TextLimits.input(it, 100) }, Modifier.weight(1f), label = { Text(stringResource(R.string.weather_city)) },
+                        singleLine = true, enabled = !busy && !searching)
+                    TextButton(onClick = {
+                        searching = true; searchFailed = false; found = null
+                        scope.launch {
+                            try { found = vm.weather.cities(query) } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { searchFailed = true }
+                            finally { searching = false }
+                        }
+                    }, enabled = !busy && !searching && query.trim().length in 2..100) { Text(stringResource(R.string.trip_city_search)) }
+                }
+                if (searching) LinearProgressIndicator(Modifier.fillMaxWidth())
+                if (searchFailed) Text(stringResource(R.string.trip_city_failed), color = MaterialTheme.colorScheme.error)
+                if (found?.isEmpty() == true) Text(stringResource(R.string.trip_city_none))
+                found.orEmpty().forEach { place ->
+                    TextButton(onClick = { cityName = place.name; latitude = place.latitude; longitude = place.longitude; found = null; query = "" }, enabled = !busy) {
+                        Text(place.name)
+                    }
+                }
+                Text(stringResource(R.string.trip_private_hint), style = MaterialTheme.typography.bodySmall)
+            }
         }
-    }, confirmButton = { TextButton(onClick = { vm.saveCapsule(Capsule(id, wardrobe, name, kind, start, end), saved) },
+    }, confirmButton = { TextButton(onClick = { vm.saveCapsule(Capsule(id, wardrobe, name, kind, start, end,
+        city = if (trip) cityName else "", latitude = if (trip && cityName.isNotEmpty()) latitude else null,
+        longitude = if (trip && cityName.isNotEmpty()) longitude else null, occasion = original?.occasion.orEmpty()), saved) },
         enabled = !busy && TextLimits.hasVisibleText(name) && RoadmapRules.period(start, end)) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = dismiss, enabled = !busy) { Text(stringResource(R.string.cancel)) } })
     if (dateField.isNotBlank()) DateChoiceDialog((if (dateField == "start") start else end).ifBlank { LocalDate.now().toString() }, { dateField = "" }) {
