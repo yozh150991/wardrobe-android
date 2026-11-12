@@ -58,7 +58,7 @@ keys = ['style_label_great', 'style_label_good', 'style_label_fair', 'style_labe
         'style_one_style_other', 'style_mixed', 'style_weather_ok', 'style_weather_no_outerwear', 'style_weather_season', 'style_now',
         'style_better', 'style_better_change', 'style_better_style', 'style_better_weather', 'style_apply', 'style_occasion_chip',
         'style_pair_accent_contrast', 'style_many_colours', 'style_pair_analogous', 'style_pair_complementary',
-        'style_colours_mine', 'style_colours_less']
+        'style_colours_mine', 'style_colours_less', 'style_why_show', 'style_why_hide']
 res = root / 'app/src/main/res'
 placeholders = {}
 for folder in ('values', 'values-uk', 'values-en', 'values-pl'):
@@ -71,6 +71,12 @@ for name in set(re.findall(r'R\.string\.(style_\w+)', views + daily)):
     check(name in keys, f'R.string.{name} is not in the checked key list')
 for code in re.findall(r'public static final String (\w+) = "\w+";', rules.split('// Weather codes.')[0]):
     check(f'StyleRules.{code} ->' in views or code == 'UNKNOWN', f'no words for pair {code}')
+# UX-03: variants first, the explanation on request, «Давно не вдягали» after the variants unless an item was chosen.
+check("var why by rememberSaveable(index) { mutableStateOf(false) }" in daily and "if (why) StyleReasons(rating, items, weather, target, choices)" in daily,
+      'the score explanation opens on request')
+check(daily.index('itemsIndexed(looks') < daily.index('        if (anchor.isEmpty()) rotationBlock()') and
+      daily.index('        if (anchor.isNotEmpty()) rotationBlock()') < daily.index('itemsIndexed(looks'),
+      '«Давно не вдягали» follows the variants, unless an item was chosen in the statistics')
 if failures:
     raise SystemExit('FAIL style:\n' + '\n'.join(failures))
 

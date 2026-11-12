@@ -85,6 +85,15 @@ public final class WardrobeRules {
         return "all".equals(a) || "all".equals(b) || a.equals(b);
     }
 
+    /**
+     * How well two pieces go together. STYLE-04 (0.14.40): the app passes {@code DailyRules::pairScore} — the sourced
+     * colour table of StyleRules plus 4 for a matching style — so manual building ranks pieces exactly like the
+     * daily suggestions. {@link #score} is the original table (10 base colours only), kept for the plain overloads.
+     */
+    public interface Scorer { int score(Piece a, Piece b); }
+    public static final Scorer LEGACY = WardrobeRules::score;
+
+    /** The original table: neutral 3, the same colour 2, olive with blue 1, anything else 0; +4 for the same style. */
     public static int score(Piece a, Piece b) {
         int color;
         if ("other".equals(a.color) || "other".equals(b.color)) color = 0;
@@ -95,23 +104,25 @@ public final class WardrobeRules {
         return color + (a.style.equals(b.style) ? 4 : 0);
     }
 
-    public static List<Piece> candidates(Piece base, List<Piece> items, String category) {
+    public static List<Piece> candidates(Piece base, List<Piece> items, String category) { return candidates(base, items, category, LEGACY); }
+    public static List<Piece> candidates(Piece base, List<Piece> items, String category, Scorer scorer) {
         List<Piece> result = new ArrayList<>();
         if (!ready(base)) return result;
         for (Piece item : items) {
             if (!base.id.equals(item.id) && base.wardrobe.equals(item.wardrobe) && category.equals(item.category)
                 && ready(item) && compatibleSeasons(base.season, item.season)) result.add(item);
         }
-        result.sort(Comparator.<Piece>comparingInt(item -> score(base, item)).reversed().thenComparing(item -> item.id));
+        result.sort(Comparator.<Piece>comparingInt(item -> scorer.score(base, item)).reversed().thenComparing(item -> item.id));
         return result;
     }
 
-    public static List<String> build(Piece base, List<Piece> items) {
+    public static List<String> build(Piece base, List<Piece> items) { return build(base, items, LEGACY); }
+    public static List<String> build(Piece base, List<Piece> items, Scorer scorer) {
         if (!ready(base)) return Collections.emptyList();
         List<Piece> best=Collections.emptyList(); int bestValue=Integer.MIN_VALUE;
         for(List<String> layout:baseLayouts(Collections.singleton(base.category))) {
             List<String> required=new ArrayList<>(layout); required.remove(base.category);
-            Search search=new Search(base,items,required); search.visit(0,new ArrayList<>(Collections.singletonList(base)));
+            Search search=new Search(base,items,required,scorer); search.visit(0,new ArrayList<>(Collections.singletonList(base)));
             List<String> categories=new ArrayList<>();for(Piece p:search.best) categories.add(p.category);
             int value=(completeCategories(categories)?100000:0)+search.best.size()*100+search.bestScore;
             if(value>bestValue) {best=search.best;bestValue=value;}
@@ -120,10 +131,11 @@ public final class WardrobeRules {
         List<String> result = new ArrayList<>();for(Piece p:sorted) result.add(p.id);return result;
     }
 
-    public static List<String> firstOutfit(String wardrobe, List<Piece> items) {
+    public static List<String> firstOutfit(String wardrobe, List<Piece> items) { return firstOutfit(wardrobe, items, LEGACY); }
+    public static List<String> firstOutfit(String wardrobe, List<Piece> items, Scorer scorer) {
         List<String> best=Collections.emptyList();Set<String> tried=new HashSet<>();
         for(Piece anchor:items) if(wardrobe.equals(anchor.wardrobe) && BASE_CATEGORIES.contains(anchor.category) && ready(anchor) && tried.add(anchor.category+":"+anchor.season)) {
-            List<String> candidate=build(anchor,items);List<String> categories=new ArrayList<>();
+            List<String> candidate=build(anchor,items,scorer);List<String> categories=new ArrayList<>();
             for(String id:candidate) for(Piece item:items) if(item.id.equals(id)) {categories.add(item.category);break;}
             if(completeCategories(categories)) return candidate;
             if(candidate.size()>best.size()) best=candidate;
@@ -135,10 +147,12 @@ public final class WardrobeRules {
         final List<List<Piece>> choices = new ArrayList<>();
         List<Piece> best = new ArrayList<>();
         int bestScore = Integer.MIN_VALUE;
-        Search(Piece base, List<Piece> items, List<String> categories) {
+        final Scorer scorer;
+        Search(Piece base, List<Piece> items, List<String> categories, Scorer scorer) {
+            this.scorer = scorer;
             for (String category : categories) {
                 List<Piece> bounded=new ArrayList<>();java.util.Map<String,Integer> counts=new java.util.HashMap<>();
-                for(Piece p:candidates(base,items,category)) if(counts.getOrDefault(p.season,0)<12) {
+                for(Piece p:candidates(base,items,category,scorer)) if(counts.getOrDefault(p.season,0)<12) {
                     bounded.add(p);counts.put(p.season,counts.getOrDefault(p.season,0)+1);
                 }
                 choices.add(bounded);
@@ -148,7 +162,7 @@ public final class WardrobeRules {
             if (picked.size() + choices.size() - index < best.size()) return;
             if (index == choices.size()) {
                 int total = 0;
-                for (int a = 0; a < picked.size(); a++) for (int b = a + 1; b < picked.size(); b++) total += score(picked.get(a), picked.get(b));
+                for (int a = 0; a < picked.size(); a++) for (int b = a + 1; b < picked.size(); b++) total += scorer.score(picked.get(a), picked.get(b));
                 if (picked.size() > best.size() || (picked.size() == best.size() && total > bestScore)) {
                     best = new ArrayList<>(picked); bestScore = total;
                 }

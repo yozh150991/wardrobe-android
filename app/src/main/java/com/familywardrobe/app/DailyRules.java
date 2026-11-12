@@ -58,7 +58,7 @@ public final class DailyRules {
      * 0.14.33: two pieces together — the colour pair from the sourced table ([StyleRules], 2–4 points) and 4 when the
      * styles match. Before, the colours used WardrobeRules.score (neutral 3, same 2, olive + blue 1, otherwise 0).
      */
-    static int pairScore(WardrobeRules.Piece a, WardrobeRules.Piece b) {
+    public static int pairScore(WardrobeRules.Piece a, WardrobeRules.Piece b) {
         return StyleRules.pairPoints(StyleRules.pair(a.color, b.color)) + (a.style.equals(b.style) ? 4 : 0);
     }
     /** The item season that suits [weather]; "all" fits every season. */

@@ -10,6 +10,7 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -247,9 +248,8 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                 }
                 if (forecastWeather != null && forecastWeather != weather) Text(stringResource(R.string.prefs_weather_shifted,
                     stringResource(label(forecastWeather)), stringResource(label(weather))), style = MaterialTheme.typography.bodySmall)
-                if (weather in setOf("cold", "cool", "rain") && s.garments.none { it.wardrobeId == wardrobe && it.category == "outerwear" && WardrobeRules.ready(it.rulePiece()) })
+                if (WeatherRules.outerwear(weather, temperature) && s.garments.none { it.wardrobeId == wardrobe && it.category == "outerwear" && WardrobeRules.ready(it.rulePiece()) })
                     Text(stringResource(R.string.daily_no_outerwear), style = MaterialTheme.typography.bodySmall)
-                TextButton(onClick = { configuring = true }, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.configure_conditions)) }
             }
         }
         if (wornToday.isNotEmpty()) item(key = "worn-today") {
@@ -286,74 +286,79 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                 }
             }
         }
-        snoozedNotice.split('|').takeIf { it.size == 2 }?.let { (id, until) -> s.garments.find { it.id == id }?.let { g -> item(key = "rotation-snoozed") {
-            OutlinedCard(Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.rotation_snoozed, g.name, dateLabel(until)), style = MaterialTheme.typography.bodyMedium)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = { vm.rotation.restore(wardrobe, id); snoozedNotice = "" }) { Text(stringResource(R.string.undo_action)) }
-                        TextButton(onClick = { snoozedNotice = "" }) { Text(stringResource(R.string.feedback_ok)) }
-                    }
-                }
-            }
-        } } }
-        if (capsule == null && anchor.isEmpty() && rotationState.hiddenOn == today && rotationState.frequency != RotationRules.OFF) item(key = "rotation-hidden") {
-            OutlinedCard(Modifier.fillMaxWidth()) {
-                Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.rotation_hidden), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                    TextButton(onClick = { vm.rotation.unhide(wardrobe) }, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.rotation_show)) }
-                }
-            }
-        }
-        if (rotationItem != null && (rotationLook.isNotEmpty() || anchor.isNotEmpty())) item(key = "rotation") {
-            val last = remember(s.wears, rotationItem.id, today) { RotationOutfits.lastWears(s, today)[rotationItem.id] }
-            val added = RotationOutfits.added(rotationItem)
-            val idle = RotationRules.idleDays(last.orEmpty(), added, today).toInt()
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(stringResource(if (anchor.isNotEmpty()) R.string.rotation_anchor_title else R.string.rotation_title),
-                        style = MaterialTheme.typography.titleLarge)
-                    // Why it is suggested: the last actual wear, or how long it has waited since it was added.
-                    Text(if (last != null) stringResource(R.string.rotation_reason_worn, rotationItem.name, dateLabel(last), idle)
-                        else stringResource(R.string.rotation_reason_never, rotationItem.name, dateLabel(added), idle), style = MaterialTheme.typography.bodyMedium)
-                    if (rotationLook.isNotEmpty()) {
-                        val rating = remember(rotationLook, weather, target, temperature) { OutfitStyle.rate(rotationLook, weather, target, temperature) }
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            ColourDots(OutfitStyle.colours(rotationLook)); ScoreBadge(rating)
-                        }
-                        OutfitGrid(rotationLook, vm, (fixedIds + rotationItem.id).toSet(), !busy) { g -> actionItem = g.id; actionIndex = ROTATION }
-                        StyleReasons(rating, rotationLook, weather, target, choices)
-                        betters[ROTATION_KEY + DailyRules.signature(rotationLook.map { it.id })]?.let { swap ->
-                            BetterBlock(swap, !busy) { rotationIds = OutfitStyle.replaced(rotationIds, swap) }
-                        }
-                        val autoName = stringResource(R.string.rotation_saved_name, rotationItem.name, dateText)
+        // UX-03: the day's variants come first; «Давно не вдягали» follows them — unless the person chose an item in the
+        // statistics, which is then what they came for.
+        val rotationBlock: LazyListScope.() -> Unit = {
+            snoozedNotice.split('|').takeIf { it.size == 2 }?.let { (id, until) -> s.garments.find { it.id == id }?.let { g -> item(key = "rotation-snoozed") {
+                OutlinedCard(Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(R.string.rotation_snoozed, g.name, dateLabel(until)), style = MaterialTheme.typography.bodyMedium)
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = { wearNow(rotationLook) }, enabled = !busy && !wornAll(rotationLook)) {
-                                Text(stringResource(if (wornAll(rotationLook)) R.string.wear_today_marked else R.string.wear_look_today)) }
-                            OutlinedButton(onClick = { beginSave(rotationLook, false, autoName) }, enabled = !busy) { Text(stringResource(R.string.save_outfit)) }
-                            OutlinedButton(onClick = { beginSave(rotationLook, true, autoName) }, enabled = !busy) { Text(stringResource(R.string.calendar_plan)) }
+                            TextButton(onClick = { vm.rotation.restore(wardrobe, id); snoozedNotice = "" }) { Text(stringResource(R.string.undo_action)) }
+                            TextButton(onClick = { snoozedNotice = "" }) { Text(stringResource(R.string.feedback_ok)) }
                         }
-                    } else {
-                        Text(rotationProblemText(rotationProblem, weather), style = MaterialTheme.typography.bodyMedium)
-                        TextButton(onClick = { configuring = true }, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.configure_conditions)) }
                     }
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        if (rotationOthers > 0) TextButton(onClick = {
-                            val current = rotationItem.id
-                            if (anchor.isNotEmpty()) clearAnchor()
-                            rotationAfter = current
-                        }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.rotation_other)) }
-                        // ROT-02: postpone this item, or say why it is not worn.
-                        TextButton(onClick = { snoozing = rotationItem.id }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.rotation_snooze)) }
-                        if (anchor.isEmpty()) TextButton(onClick = { vm.rotation.hideToday(wardrobe, today) }, enabled = !busy,
-                            modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.rotation_hide_today)) }
+                }
+            } } }
+            if (capsule == null && anchor.isEmpty() && rotationState.hiddenOn == today && rotationState.frequency != RotationRules.OFF) item(key = "rotation-hidden") {
+                OutlinedCard(Modifier.fillMaxWidth()) {
+                    Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.rotation_hidden), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                        TextButton(onClick = { vm.rotation.unhide(wardrobe) }, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.rotation_show)) }
                     }
-                    if (anchor.isEmpty()) TextButton(onClick = { preferencesOpen = true }, modifier = Modifier.heightIn(min = 48.dp)) {
-                        Text(stringResource(R.string.rotation_frequency_link))
+                }
+            }
+            if (rotationItem != null && (rotationLook.isNotEmpty() || anchor.isNotEmpty())) item(key = "rotation") {
+                val last = remember(s.wears, rotationItem.id, today) { RotationOutfits.lastWears(s, today)[rotationItem.id] }
+                val added = RotationOutfits.added(rotationItem)
+                val idle = RotationRules.idleDays(last.orEmpty(), added, today).toInt()
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(stringResource(if (anchor.isNotEmpty()) R.string.rotation_anchor_title else R.string.rotation_title),
+                            style = MaterialTheme.typography.titleLarge)
+                        // Why it is suggested: the last actual wear, or how long it has waited since it was added.
+                        Text(if (last != null) stringResource(R.string.rotation_reason_worn, rotationItem.name, dateLabel(last), idle)
+                            else stringResource(R.string.rotation_reason_never, rotationItem.name, dateLabel(added), idle), style = MaterialTheme.typography.bodyMedium)
+                        if (rotationLook.isNotEmpty()) {
+                            val rating = remember(rotationLook, weather, target, temperature) { OutfitStyle.rate(rotationLook, weather, target, temperature) }
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ColourDots(OutfitStyle.colours(rotationLook)); ScoreBadge(rating)
+                            }
+                            OutfitGrid(rotationLook, vm, (fixedIds + rotationItem.id).toSet(), !busy) { g -> actionItem = g.id; actionIndex = ROTATION }
+                            StyleReasons(rating, rotationLook, weather, target, choices)
+                            betters[ROTATION_KEY + DailyRules.signature(rotationLook.map { it.id })]?.let { swap ->
+                                BetterBlock(swap, !busy) { rotationIds = OutfitStyle.replaced(rotationIds, swap) }
+                            }
+                            val autoName = stringResource(R.string.rotation_saved_name, rotationItem.name, dateText)
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = { wearNow(rotationLook) }, enabled = !busy && !wornAll(rotationLook)) {
+                                    Text(stringResource(if (wornAll(rotationLook)) R.string.wear_today_marked else R.string.wear_look_today)) }
+                                OutlinedButton(onClick = { beginSave(rotationLook, false, autoName) }, enabled = !busy) { Text(stringResource(R.string.save_outfit)) }
+                                OutlinedButton(onClick = { beginSave(rotationLook, true, autoName) }, enabled = !busy) { Text(stringResource(R.string.calendar_plan)) }
+                            }
+                        } else {
+                            Text(rotationProblemText(rotationProblem, weather), style = MaterialTheme.typography.bodyMedium)
+                            TextButton(onClick = { configuring = true }, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.configure_conditions)) }
+                        }
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (rotationOthers > 0) TextButton(onClick = {
+                                val current = rotationItem.id
+                                if (anchor.isNotEmpty()) clearAnchor()
+                                rotationAfter = current
+                            }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.rotation_other)) }
+                            // ROT-02: postpone this item, or say why it is not worn.
+                            TextButton(onClick = { snoozing = rotationItem.id }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.rotation_snooze)) }
+                            if (anchor.isEmpty()) TextButton(onClick = { vm.rotation.hideToday(wardrobe, today) }, enabled = !busy,
+                                modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.rotation_hide_today)) }
+                        }
+                        if (anchor.isEmpty()) TextButton(onClick = { preferencesOpen = true }, modifier = Modifier.heightIn(min = 48.dp)) {
+                            Text(stringResource(R.string.rotation_frequency_link))
+                        }
                     }
                 }
             }
         }
+        if (anchor.isNotEmpty()) rotationBlock()
         if (generatedFor != input || looks.isEmpty() && emptyReasonFor != input) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
         val diagnosis = emptyReason.takeIf { emptyReasonFor == input }
         if (looks.isEmpty() && generatedFor == input && diagnosis != null) item {
@@ -388,7 +393,11 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                         ScoreBadge(rating)
                     }
                     OutfitGrid(items, vm, fixedIds.toSet(), !busy) { g -> actionItem = g.id; actionIndex = index }
-                    StyleReasons(rating, items, weather, target, choices)
+                    // UX-03: the score's explanation on request; «Краще» stays visible, it is an action.
+                    var why by rememberSaveable(index) { mutableStateOf(false) }
+                    TextButton(onClick = { why = !why }, modifier = Modifier.heightIn(min = 48.dp)) {
+                        Text(stringResource(if (why) R.string.style_why_hide else R.string.style_why_show)) }
+                    if (why) StyleReasons(rating, items, weather, target, choices)
                     betters[DailyRules.signature(items.map { it.id })]?.let { swap ->
                         BetterBlock(swap, !busy) { lookIds = ArrayList(lookIds.mapIndexed { i, old -> if (i == index) OutfitStyle.replaced(old, swap) else old }) }
                     }
@@ -410,6 +419,7 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                 skipped = ArrayList(if (skippedAll) shown else (skipped + shown).distinct()); revision++
             }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.daily_other_variants)) }
         }
+        if (anchor.isEmpty()) rotationBlock()
     }
     if (configuring) ModalBottomSheet(onDismissRequest = { configuring = false }) {
         Column(Modifier.fillMaxWidth().heightIn(max = 640.dp).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

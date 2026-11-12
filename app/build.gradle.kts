@@ -15,8 +15,8 @@ android {
         applicationId = "com.familywardrobe.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 69
-        versionName = "0.14.39-recent-wears"
+        versionCode = 70
+        versionName = "0.14.40-daily-layout"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {

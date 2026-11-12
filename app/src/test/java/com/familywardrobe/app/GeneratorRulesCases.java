@@ -121,6 +121,30 @@ public final class GeneratorRulesCases {
         Set<String> hidden = Set.of(DailyRules.signature(varied.get(0)));
         List<List<String>> without = DailyRules.generate(nine, "home", "everyday", "warm", "2026-11-11", "seed", hidden, Map.of(), 3);
         check(without.size() == 3 && !without.contains(varied.get(0)), "a hidden combination is not shown");
+        // STYLE-04: manual building ranks pieces with the same table as the daily suggestions.
+        WardrobeRules.Scorer table = DailyRules::pairScore;
+        WardrobeRules.Piece navy = new WardrobeRules.Piece("navy", "home", "bottom", "available", false, "all", "casual", "navy");
+        List<WardrobeRules.Piece> manualTops = List.of(new WardrobeRules.Piece("a-grey", "home", "top", "available", false, "all", "casual", "grey"),
+            new WardrobeRules.Piece("b-cream", "home", "top", "available", false, "all", "casual", "cream"),
+            new WardrobeRules.Piece("c-formal", "home", "top", "available", false, "all", "formal", "cream"));
+        check(WardrobeRules.candidates(navy, manualTops, "top").get(0).id.equals("a-grey"), "the original table: grey and cream tie on navy (both 3)");
+        List<WardrobeRules.Piece> ranked = WardrobeRules.candidates(navy, manualTops, "top", table);
+        check(ranked.get(0).id.equals("b-cream") && ranked.get(1).id.equals("a-grey") && ranked.get(2).id.equals("c-formal"),
+            "the sourced table: cream on navy (warm with cool, 4) before grey (calm, 3); the style still weighs more");
+        check(table.score(navy, manualTops.get(1)) == DailyRules.pairScore(navy, manualTops.get(1)) && WardrobeRules.score(navy, manualTops.get(1)) == 3 + 4,
+            "the scorer is the generator's pair score");
+        WardrobeRules.Piece pink = new WardrobeRules.Piece("pink", "home", "top", "available", false, "all", "casual", "pink");
+        WardrobeRules.Piece grey = new WardrobeRules.Piece("grey", "home", "bottom", "available", false, "all", "casual", "grey");
+        check(WardrobeRules.score(pink, grey) == 3 + 4 && table.score(pink, grey) >= 3 + 4, "a new colour is no longer left at the bottom");
+        WardrobeRules.Piece camel = new WardrobeRules.Piece("camel", "home", "top", "available", false, "all", "casual", "camel");
+        WardrobeRules.Piece cream = new WardrobeRules.Piece("cream", "home", "bottom", "available", false, "all", "casual", "cream");
+        check(WardrobeRules.score(camel, cream) == 4 && table.score(camel, cream) >= 4 + 3, "camel with cream: 0 colour points before, now a calm pair");
+        List<WardrobeRules.Piece> manualWardrobe = new ArrayList<>(manualTops); manualWardrobe.add(navy);
+        manualWardrobe.add(new WardrobeRules.Piece("shoes", "home", "shoes", "available", false, "all", "casual", "white"));
+        check(WardrobeRules.build(navy, manualWardrobe, table).equals(List.of("b-cream", "navy", "shoes")), "build picks the best pair by the sourced table");
+        check(WardrobeRules.build(navy, manualWardrobe).equals(List.of("a-grey", "navy", "shoes")), "the plain overload keeps the original table");
+        check(!WardrobeRules.firstOutfit("home", manualWardrobe, table).isEmpty(), "the first outfit too");
+
         // GEN-03: only the last 30 days' wear counts.
         check(DailyRules.RECENT_DAYS == 30, "30 days");
         check(DailyRules.recentWears(List.of("2026-11-11", "2026-10-13", "2026-10-12", "2026-11-12", "2026-11-11"), "2026-11-11") == 2,
