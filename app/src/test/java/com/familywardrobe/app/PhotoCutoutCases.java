@@ -182,8 +182,111 @@ public final class PhotoCutoutCases {
         check(PhotoRules.usableCutout(output), "Large frame result usable");
     }
 
+    /** The plain mask the cleaner used before 0.14.37: the model's confidence as alpha, nothing else. */
+    private static int ramp(float c, int sourceAlpha) {
+        float t = Math.max(0, Math.min(1, (c - .15f) / .55f));
+        return Math.min(sourceAlpha, Math.round(255 * t * t * (3 - 2 * t)));
+    }
+
+    /** 0.14.37: only the backdrop is removed. Dips of the model's confidence inside the garment are not holes. */
+    public static void protectGarment() {
+        final int DARK_RED = 0xffa02035, GREY = 0xff808080;
+        // A pocket the model took for background (confidence .05) is fabric: enclosed by the garment, not the backdrop's colour.
+        Fixture f = garment();
+        f.box(35, 30, 43, 40, DARK_RED, .05f);
+        int[] p = f.cut(false);
+        check(at(p, 38, 35) == DARK_RED, "A hole inside the garment that is not backdrop is restored with its own colour");
+        check(at(f.cut(true), 38, 35) == DARK_RED, "The stronger action does not punch it either");
+        // A print in the backdrop's colour: open only when the model was sure (the earlier case, .03); unsure means fabric.
+        f = garment(); f.box(35, 30, 43, 40, WHITE, .30f);
+        check(at(f.cut(false), 38, 35) == WHITE, "A pale print the model was unsure about is fabric");
+        f = garment(); f.box(35, 30, 43, 40, WHITE, .03f);
+        check(at(f.cut(false), 38, 35) == 0, "Backdrop seen through the garment stays open");
+        // A fold across the garment (confidence .45) was 57% see-through; now only its two ends at the edge stay soft.
+        f = garment(); f.box(25, 40, 55, 44, RED, .45f);
+        p = f.cut(false);
+        check(ramp(.45f, 255) < 150 && at(p, 40, 42) == RED, "Fabric inside the garment is opaque, not see-through");
+        check((at(p, 25, 42) >>> 24) == ramp(.45f, 255), "The soft edge itself is the model's");
+        // A sleeve the model was unsure about (.30), in the garment's colour, on a backdrop of another colour: kept, feathered in.
+        f = garment(); f.box(55, 20, 67, 40, RED, .30f);
+        p = f.cut(false);
+        check(ramp(.30f, 255) < 60 && at(p, 60, 30) == RED, "Unsure fabric in the garment's colour is kept");
+        int rim = at(p, 66, 30) >>> 24, next = at(p, 65, 30) >>> 24;
+        check(rim > ramp(.30f, 255) && rim < next && next < 255, "It is feathered in from the outside, not cut hard");
+        check(at(f.cut(true), 60, 30) == 0, "The stronger action still removes what the model doubts at the edge");
+        // A shadow under the hem is not the garment's colour: it is not kept that way.
+        f = garment(); f.box(25, 66, 55, 74, GREY, .30f);
+        p = f.cut(false);
+        check((at(p, 40, 70) >>> 24) == ramp(.30f, 255), "A shadow keeps the model's alpha, it is not made fabric");
+        // A hanger or a hand the model doubts, in a colour the garment does not have: the same.
+        f = garment(); f.box(55, 20, 67, 40, 0xff3a7d44, .30f);
+        check((at(f.cut(false), 60, 30) >>> 24) == ramp(.30f, 255), "Another object's colour is not rescued");
+        // White on white: colour cannot tell. Unsure areas inside are restored; one the model was very sure about stays open.
+        f = new Fixture(); f.box(20, 10, 60, 70, WHITE, 1);
+        f.box(30, 20, 40, 30, WHITE, .10f); f.box(30, 40, 42, 56, WHITE, .02f);
+        p = f.cut(false);
+        check(at(p, 35, 25) == WHITE, "White on white: an unsure area inside is fabric");
+        check(at(p, 36, 48) == 0, "White on white: an area the model was sure about stays open");
+        f = new Fixture(); f.box(20, 10, 60, 70, WHITE, 1); f.box(30, 40, 33, 43, WHITE, .02f);
+        check(at(f.cut(false), 31, 41) == WHITE, "White on white: a speck is not a hole");
+        // What the person erased by hand stays erased, also inside a restored area.
+        f = garment(); f.box(35, 30, 43, 40, DARK_RED, .05f);
+        f.rgb[35 * W + 38] = 0x00a02035; f.rgb[36 * W + 38] = 0x60a02035;
+        p = f.cut(false);
+        check(at(p, 38, 35) == 0 && (at(p, 38, 36) >>> 24) == 0x60 && at(p, 39, 35) == DARK_RED, "Manual erasing is an upper bound inside restored areas");
+        // Nothing is ever removed compared with the plain mask, and the stronger action never keeps more than the default.
+        f = garment();
+        f.box(35, 30, 43, 40, DARK_RED, .05f); f.box(25, 46, 55, 50, RED, .45f); f.box(55, 20, 67, 40, RED, .30f);
+        f.box(25, 66, 55, 74, GREY, .30f); f.box(30, 54, 36, 60, WHITE, .03f);
+        int[] gentle = f.cut(false), strong = f.cut(true);
+        boolean onlyAdds = true, dominates = true, sameColour = true;
+        for (int i = 0; i < gentle.length; i++) {
+            onlyAdds &= (gentle[i] >>> 24) >= ramp(f.mask[i], f.rgb[i] >>> 24);
+            dominates &= (gentle[i] >>> 24) >= (strong[i] >>> 24);
+            if ((gentle[i] >>> 24) > 0) sameColour &= (gentle[i] & 0xffffff) == (f.rgb[i] & 0xffffff);
+        }
+        check(onlyAdds, "Protection only restores: no pixel is more transparent than the model's mask");
+        check(dominates, "The stronger action never keeps more than the default");
+        check(sameColour, "Restored fabric has the source's colour");
+        check(at(gentle, 0, 0) == 0 && at(gentle, 33, 57) == 0, "The backdrop and a real opening are still removed");
+        check(Arrays.equals(gentle, f.cut(false)), "Deterministic");
+        // A real opening with a soft rim: the rim keeps the model's alpha, like the outer edge does.
+        f = garment(); f.box(34, 30, 44, 40, RED, .55f); f.box(36, 32, 42, 38, WHITE, .03f);
+        p = f.cut(false);
+        check(at(p, 39, 35) == 0 && (at(p, 35, 35) >>> 24) == ramp(.55f, 255), "An opening has a soft edge too");
+        // An opening inside fabric the model doubts: the default keeps it open, so the stronger action may not close it.
+        f = garment(); f.box(32, 28, 46, 42, RED, .40f); f.box(36, 32, 42, 38, WHITE, .03f);
+        gentle = f.cut(false); strong = f.cut(true);
+        dominates = true;
+        for (int i = 0; i < gentle.length; i++) dominates &= (gentle[i] >>> 24) >= (strong[i] >>> 24);
+        check(at(gentle, 39, 35) == 0 && at(gentle, 33, 30) == RED, "The default: the opening stays, the doubted fabric around it is kept");
+        check(dominates && at(strong, 39, 35) == 0, "The stronger action never restores what the default removed");
+    }
+
+    /** 0.14.37: a photo that already has transparency is shown to the model on a contrasting backdrop, not on black. */
+    public static void modelInput() {
+        int[] opaque = new int[64]; Arrays.fill(opaque, RED);
+        check(PhotoCutoutRules.modelInput(opaque, () -> {}) == null, "A photo without transparency is the input itself");
+        int[] dark = new int[64]; Arrays.fill(dark, 0, 32, 0xff101820);
+        int[] shown = PhotoCutoutRules.modelInput(dark, () -> {});
+        check(shown[0] == 0xff101820 && shown[40] == 0xffffffff, "A dark garment is shown on white, not on black");
+        int[] light = new int[64]; Arrays.fill(light, 0, 32, 0xfff4f0e8);
+        shown = PhotoCutoutRules.modelInput(light, () -> {});
+        check(shown[0] == 0xfff4f0e8 && shown[40] == 0xff202020, "A light garment is shown on dark grey");
+        dark[32] = 0x80101820;
+        shown = PhotoCutoutRules.modelInput(dark, () -> {});
+        int blend = shown[32] & 255;
+        check((shown[32] >>> 24) == 255 && blend > 0x20 && blend < 0xff, "A soft edge blends into the backdrop");
+        boolean allOpaque = true; for (int pixel : shown) allOpaque &= (pixel >>> 24) == 255;
+        check(allOpaque, "The model's input has no transparency");
+        check(dark[40] == 0 && dark[32] == 0x80101820, "The source is not changed");
+        int[] empty = new int[16];
+        check(PhotoCutoutRules.modelInput(empty, () -> {})[0] == 0xffffffff, "A fully transparent photo: white");
+    }
+
     public static void main(String[] args) {
         roundedConfidence(); cleanup(); gentleMode(); preserveDetails(); malformedAndCancellation(); backdrops(); largeFrame();
+        protectGarment(); modelInput();
         System.out.println("PASS: " + assertions + " production mask/backdrop assertions; synthetic fixtures, not ML accuracy.");
     }
 }
