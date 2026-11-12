@@ -24,6 +24,9 @@ import re, xml.etree.ElementTree as E
 for folder in ('values', 'values-uk', 'values-en', 'values-pl'):
     strings = {s.get('name'): ''.join(s.itertext()) for s in E.parse(root / 'app/src/main/res' / folder / 'strings.xml').getroot().iter('string')}
     if not strings.get('daily_other_variants', '').strip(): failures.append(f'{folder}: daily_other_variants missing')
+matching = (source / 'Matching.kt').read_text()
+if 'private val scorer = WardrobeRules.Scorer { a, b -> DailyRules.pairScore(a, b) }' not in matching or matching.count(', scorer)') != 3:
+    failures.append('manual building uses the sourced colour table (STYLE-04)')
 if failures: raise SystemExit('FAIL generator:\n' + '\n'.join(failures))
 with tempfile.TemporaryDirectory(prefix='wardrobe-generator-') as output:
     files = [source / name for name in ('WardrobeRules.java', 'DailyRules.java', 'PreferenceRules.java', 'PreferenceProfile.java', 'StyleRules.java', 'WeatherRules.java')]

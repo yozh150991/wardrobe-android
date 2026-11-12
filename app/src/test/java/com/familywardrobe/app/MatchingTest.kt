@@ -41,6 +41,14 @@ class MatchingTest {
         val sports = item("sports", "top", style = "sport")
         assertTrue(Matching.score(base, casual) > Matching.score(base, sports))
     }
+    /** STYLE-04: manual building uses the daily suggestions' colour table. */
+    @Test fun manualBuildingUsesTheSourcedColourTable() {
+        val base = item("base", "bottom", color = "navy")
+        val all = listOf(base, item("a-grey", "top", color = "grey"), item("b-cream", "top", color = "cream"), item("shoes", "shoes", color = "white"))
+        assertEquals(listOf("b-cream", "a-grey"), Matching.candidates(base, all, "top").map { it.id })
+        assertEquals(setOf("base", "b-cream", "shoes"), Matching.build(base, all).toSet())
+        assertEquals(DailyRules.pairScore(base.rulePiece(), all[2].rulePiece()), Matching.score(base, all[2]))
+    }
     @Test fun archivedBaseCannotStartSuggestion() {
         val base = item("base", "bottom").copy(archived = true)
         assertTrue(Matching.build(base, listOf(base)).isEmpty())
