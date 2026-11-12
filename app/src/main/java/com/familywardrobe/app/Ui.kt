@@ -87,7 +87,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
     val initialized by vm.initialized.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val initialDraft = remember { vm.draft() }
-    var route by rememberSaveable { mutableStateOf(when (initialDraft?.optString("kind")) { "garment", "purchase" -> "edit"; "import" -> "importedit"; "shop" -> "shop"; "wish" -> "wishedit"; "look" -> "look"; else -> "catalog" }) }
+    var route by rememberSaveable { mutableStateOf(when (initialDraft?.optString("kind")) { "garment", "purchase" -> "edit"; "import" -> "importedit"; "shop" -> "shop"; "wish" -> "wishedit"; "look" -> "look"; else -> "daily" }) }
     val online by vm.network.online.collectAsStateWithLifecycle()
     var reviewIds by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
     var deferredIds by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
@@ -175,8 +175,9 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
     LaunchedEffect(Unit) { while (true) { today = LocalDate.now().toString(); delay(30_000) } }
     val current = snapshot.wardrobes.find { it.id == active } ?: snapshot.wardrobes.firstOrNull()
     val garment = snapshot.garments.find { it.id == selected }
-    val nested = route in setOf("detail", "edit", "look", "saved", "manage", "appearance", "wishdetail", "wishedit", "batch", "importedit", "daily", "calendar", "statistics", "capsules", "capsule", "capsuledaily", "compatibility", "shop", "reprocess")
-    val roots = setOf("catalog", "shopping", "outfits", "settings")
+    val nested = route in setOf("detail", "edit", "look", "saved", "manage", "appearance", "wishdetail", "wishedit", "batch", "importedit", "calendar", "statistics", "capsules", "capsule", "capsuledaily", "compatibility", "shop", "reprocess")
+    // UX-04 (0.14.43): «Сьогодні» is a tab of its own and the app opens on it.
+    val roots = setOf("daily", "catalog", "shopping", "outfits", "settings")
     fun frame(): String = JSONObject().put("route", route).put("key", entryKey)
         .put("selected", selected).put("editId", editId).put("outfitId", outfitId)
         .put("wishId", wishId).put("capsuleId", capsuleId).put("importId", importId)
@@ -255,7 +256,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
     fun editWish(wish: Wish, converting: Boolean) { vm.clearDraft(); wishId = wish.id; wishKind = if (converting) "product" else wish.kind; convertingWish = converting; editorSequence++; editorDirty = false; go("wishedit") }
     var navigationWardrobe by rememberSaveable { mutableStateOf(active) }
     LaunchedEffect(current?.id) {
-        current?.id?.let { id -> if (navigationWardrobe != id) { clearReturnStates(navigationWardrobe); navigationWardrobe = id; editorDirty = false; returnStack = arrayListOf(); route = "catalog"; entryKey = "catalog"; requestedCategory = "" } }
+        current?.id?.let { id -> if (navigationWardrobe != id) { clearReturnStates(navigationWardrobe); navigationWardrobe = id; editorDirty = false; returnStack = arrayListOf(); route = if (route == "daily") "daily" else "catalog"; entryKey = route; requestedCategory = "" } }
     }
     val title = when (route) {
         "reprocess" -> R.string.photo_reprocess_title
@@ -273,7 +274,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
         topBar = {
             Column {
                 WardrobeTopBar(title, current, snapshot.wardrobes, nested, canNavigate,
-                    back = ::back, select = { vm.select(it); go("catalog"); requestedCategory = "" },
+                    back = ::back, select = { vm.select(it); go(if (route == "daily") "daily" else "catalog"); requestedCategory = "" },
                     create = { newWardrobe = true }, manage = { go("manage") },
                     statistics = if (route == "catalog") ({ go("statistics") }) else null,
                     imports = if (route == "catalog") ({ go("batch") }) else null)
@@ -297,9 +298,9 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                 }
             }
         }, bottomBar = {
-            val navigation = listOf("catalog" to Icons.Outlined.Checkroom, "shopping" to Icons.Outlined.BookmarkBorder,
+            val navigation = listOf("daily" to Icons.Outlined.Today, "catalog" to Icons.Outlined.Checkroom, "shopping" to Icons.Outlined.BookmarkBorder,
                 "outfits" to Icons.Outlined.Layers, "settings" to Icons.Outlined.Settings)
-            val navColumns = if (LocalConfiguration.current.fontScale >= 1.4f) 2 else 4
+            val navColumns = if (LocalConfiguration.current.fontScale >= 1.4f) 3 else 5
             if (!nested) Surface(color = MaterialTheme.colorScheme.surface) {
               Column {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -307,9 +308,10 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                   NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp,
                     windowInsets = WindowInsets(0, 0, 0, 0)) {
                   row.forEach { (screen, icon) ->
-                    val name = when (screen) { "outfits" -> R.string.outfits; "shopping" -> R.string.shopping; "settings" -> R.string.settings; else -> R.string.catalog }
-                    NavigationBarItem(selected = route == screen || (nested && screen == when (route) { "look", "saved", "daily", "capsuledaily", "calendar", "capsules", "capsule" -> "outfits"; "wishdetail", "wishedit", "compatibility" -> "shopping"; "detail" -> if (detailReturn == "saved") "outfits" else "catalog"; "manage", "appearance" -> "settings"; else -> "catalog" }),
-                        onClick = { navigate(screen) }, enabled = canNavigate, icon = { Icon(icon, null) },
+                    val name = when (screen) { "daily" -> R.string.today_tab; "outfits" -> R.string.outfits; "shopping" -> R.string.shopping; "settings" -> R.string.settings; else -> R.string.catalog }
+                    NavigationBarItem(selected = route == screen || (nested && screen == when (route) { "look", "saved", "capsuledaily", "calendar", "capsules", "capsule" -> "outfits"; "wishdetail", "wishedit", "compatibility" -> "shopping"; "detail" -> if (detailReturn == "saved") "outfits" else "catalog"; "manage", "appearance" -> "settings"; else -> "catalog" }),
+                        // The tab is the plain «Сьогодні»: an item chosen earlier in the statistics is not kept.
+                        onClick = { if (screen == "daily") rotationAnchor = ""; navigate(screen) }, enabled = canNavigate, icon = { Icon(icon, null) },
                         label = { Text(stringResource(name), maxLines = 2) },
                         colors = NavigationBarItemDefaults.colors(selectedIconColor = MaterialTheme.colorScheme.primary,
                             selectedTextColor = MaterialTheme.colorScheme.primary, indicatorColor = MaterialTheme.colorScheme.primaryContainer,
