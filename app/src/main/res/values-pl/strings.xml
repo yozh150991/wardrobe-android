@@ -1444,4 +1444,5 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="trip_suggest_gaps">Niektórym dniom brakuje zestawu nawet z całej szafy — powody widać na kartach dni.</string>
     <string name="trip_suggest_hint">Rzeczy są dodawane do kapsuły jako dodane ręcznie; spakowanie zaznacza się osobno.</string>
     <string name="trip_suggest_confirm">Dodaj %1$d</string>
+    <string name="today_tab">Dziś</string>
 </resources>

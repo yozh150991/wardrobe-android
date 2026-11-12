@@ -1444,4 +1444,5 @@ Your current wardrobe is unchanged.</string>
     <string name="trip_suggest_gaps">Some days lack an outfit even from the whole wardrobe — the day cards show why.</string>
     <string name="trip_suggest_hint">The items are added to the capsule as added by hand; packing is marked separately.</string>
     <string name="trip_suggest_confirm">Add %1$d</string>
+    <string name="today_tab">Today</string>
 </resources>
