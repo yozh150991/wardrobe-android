@@ -182,7 +182,9 @@ public final class StyleRules {
     }
 
     /** [target]: the occasion's style (with the person's PERS-02 choice). */
-    public static Rating rate(List<WardrobeRules.Piece> look, String weather, String target) {
+    public static Rating rate(List<WardrobeRules.Piece> look, String weather, String target) { return rate(look, weather, target, null); }
+    /** [temperature]: the forecast's temperature behind [weather], or null (WTH-01, see WeatherRules). */
+    public static Rating rate(List<WardrobeRules.Piece> look, String weather, String target, Double temperature) {
         List<WardrobeRules.Piece> big = new ArrayList<>();
         for (WardrobeRules.Piece p : look) if (!SMALL.contains(p.category)) big.add(p);
         if (big.isEmpty()) big = new ArrayList<>(look);
@@ -216,14 +218,14 @@ public final class StyleRules {
         boolean onTarget = dominant.equals(target);
         int style = consistency + (onTarget ? 1 : 0);
 
-        // Weather: every piece in season; a coat or jacket when it is cool, cold or raining.
-        String season = DailyRules.season(weather); String outOfSeason = "";
+        // Weather: every piece in season; a coat or jacket when the weather calls for one (WeatherRules).
+        String outOfSeason = "";
         boolean outerwear = false;
         for (WardrobeRules.Piece p : look) {
-            if (outOfSeason.isEmpty() && !WardrobeRules.compatibleSeasons(p.season, season)) outOfSeason = p.id;
+            if (outOfSeason.isEmpty() && !WeatherRules.inSeason(p.season, weather, temperature)) outOfSeason = p.id;
             if (p.category.equals("outerwear")) outerwear = true;
         }
-        boolean chilly = weather.equals("cold") || weather.equals("cool") || weather.equals("rain");
+        boolean chilly = WeatherRules.outerwear(weather, temperature);
         String weatherCode = !outOfSeason.isEmpty() ? OUT_OF_SEASON : chilly && !outerwear ? NO_OUTERWEAR : WEATHER_OK;
         int weatherPoints = weatherCode.equals(WEATHER_OK) ? 2 : weatherCode.equals(NO_OUTERWEAR) ? 1 : 0;
 
@@ -246,10 +248,13 @@ public final class StyleRules {
      */
     public static Swap better(List<WardrobeRules.Piece> look, List<WardrobeRules.Piece> candidates, String weather, String target,
                               Set<String> fixed, Set<String> rejected) {
-        Rating before = rate(look, weather, target);
+        return better(look, candidates, weather, target, fixed, rejected, null);
+    }
+    public static Swap better(List<WardrobeRules.Piece> look, List<WardrobeRules.Piece> candidates, String weather, String target,
+                              Set<String> fixed, Set<String> rejected, Double temperature) {
+        Rating before = rate(look, weather, target, temperature);
         Set<String> inLook = new HashSet<>();
         for (WardrobeRules.Piece p : look) inLook.add(p.id);
-        String season = DailyRules.season(weather);
         Swap best = null;
         List<WardrobeRules.Piece> sorted = new ArrayList<>(candidates);
         sorted.sort(Comparator.comparing(p -> p.id));
@@ -258,7 +263,7 @@ public final class StyleRules {
             if (fixed.contains(old.id)) continue;
             for (WardrobeRules.Piece next : sorted) {
                 if (!next.category.equals(old.category) || inLook.contains(next.id) || !next.wardrobe.equals(old.wardrobe)) continue;
-                if (!WardrobeRules.ready(next) || !WardrobeRules.compatibleSeasons(next.season, season)) continue;
+                if (!WardrobeRules.ready(next) || !WeatherRules.inSeason(next.season, weather, temperature)) continue;
                 List<WardrobeRules.Piece> changed = new ArrayList<>(look);
                 changed.set(index, next);
                 boolean seasons = true; List<String> ids = new ArrayList<>();
@@ -267,7 +272,7 @@ public final class StyleRules {
                     if (p != next && !WardrobeRules.compatibleSeasons(p.season, next.season)) seasons = false;
                 }
                 if (!seasons || rejected.contains(DailyRules.signature(ids))) continue;
-                Rating after = rate(changed, weather, target);
+                Rating after = rate(changed, weather, target, temperature);
                 if (after.score <= before.score) continue;
                 // Ties: better colours, then fewer bright colours — a neutral base is the safe choice [S2].
                 boolean wins = best == null || after.score > best.after.score || (after.score == best.after.score &&

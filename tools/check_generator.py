@@ -15,7 +15,7 @@ if 'Collections.sort(taken);' not in rules: failures.append('the chosen variants
 # «Показати інші варіанти» skips what was already shown and starts again when nothing new is left.
 daily = (source / 'DailyScreen.kt').read_text()
 if 'var skipped by rememberSaveable(wardrobe, occasion, weather, today)' not in daily: failures.append('shown variants are remembered per conditions')
-if 'DailyOutfits.daily(s, wardrobe, occasion, weather, today, "$today:$revision", skip, allowed, fixed, choices)' not in daily:
+if 'DailyOutfits.daily(s, wardrobe, occasion, weather, today, "$today:$revision", skip, allowed, fixed, choices, temperature = temperature)' not in daily:
     failures.append('the next variants skip the ones already shown')
 if 'if (skip.isEmpty() || other.looks.isNotEmpty() && !other.hiddenShown) other to false' not in daily:
     failures.append('when nothing new is left the best variants return (never the hidden ones instead)')
@@ -26,7 +26,7 @@ for folder in ('values', 'values-uk', 'values-en', 'values-pl'):
     if not strings.get('daily_other_variants', '').strip(): failures.append(f'{folder}: daily_other_variants missing')
 if failures: raise SystemExit('FAIL generator:\n' + '\n'.join(failures))
 with tempfile.TemporaryDirectory(prefix='wardrobe-generator-') as output:
-    files = [source / name for name in ('WardrobeRules.java', 'DailyRules.java', 'PreferenceRules.java', 'PreferenceProfile.java', 'StyleRules.java')]
+    files = [source / name for name in ('WardrobeRules.java', 'DailyRules.java', 'PreferenceRules.java', 'PreferenceProfile.java', 'StyleRules.java', 'WeatherRules.java')]
     files.append(root / 'app/src/test/java/com/familywardrobe/app/GeneratorRulesCases.java')
     subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, *map(str, files)], check=True)
     subprocess.run([java, '-cp', output, 'com.familywardrobe.app.GeneratorRulesCases'], check=True)

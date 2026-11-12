@@ -29,13 +29,13 @@ check('personalChoices.clear(wardrobe)' in vm.split('fun resetPreferences', 1)[1
 # Effects: scores only, through the same generator entry points; «Краще» never offers a colour worn less.
 daily = read('DailyOutfits.kt')
 check('pieces(s, wardrobe), choices.avoided)' in daily, 'colours worn less are penalties (capped with the others)')
-check('skip, fixed, 3, scores, target, liked)' in daily, 'the daily variants get the liked-colour bonus')
-check('style(s, wardrobe, occasion, choices).style, bonus(s, wardrobe, choices))' in daily, 'replacing one piece gets the bonus too')
+check('skip, fixed, 3, scores, target, liked, temperature)' in daily, 'the daily variants get the liked-colour bonus')
+check('style(s, wardrobe, occasion, choices).style, bonus(s, wardrobe, choices), temperature)' in daily, 'replacing one piece gets the bonus too')
 rules = read('DailyRules.java')
 check('+ Math.min(PreferenceProfile.PALETTE_LIKED, Math.max(0, bonus.getOrDefault(item.piece.id, 0)))' in rules, 'the bonus is capped per item')
 style = read('OutfitStyle.kt')
 check('it.color !in choices.avoided' in style, '«Краще» skips colours worn less')
-check('StyleRules.rate(look.map { it.rulePiece() }, weather, target)' in style, 'the 0–10 rating stays the colour theory’s')
+check('StyleRules.rate(look.map { it.rulePiece() }, weather, target, temperature)' in style, 'the 0–10 rating stays the colour theory’s')
 
 # Screens: the card says why a variant moved; «Мої вподобання» set both lists.
 screen = read('DailyScreen.kt')

@@ -15,8 +15,8 @@ android {
         applicationId = "com.familywardrobe.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 67
-        versionName = "0.14.37-cutout-protect"
+        versionCode = 68
+        versionName = "0.14.38-weather-layers"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {

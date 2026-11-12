@@ -58,7 +58,10 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
     val choices = remember(wardrobe, choiceRevision) { vm.personalChoices.read(wardrobe) }
     val warmth = remember(wardrobe, s.feedback, choices) { DailyOutfits.warmth(s, wardrobe, choices) }
     val forecastWeather = if (weatherEnabled) forecast?.mode(today) else null
-    val weather = forecastWeather?.let { PreferenceProfile.apply(it, warmth.shift) } ?: manualWeather
+    // WTH-01: the forecast's temperature as this person feels it travels with the mode and decides the coat, the
+    // second layer and the seasons; a weather chosen by hand has no temperature.
+    val temperature = if (weatherEnabled) forecast?.temperature(today)?.let { WeatherRules.shifted(it, warmth.shift) } else null
+    val weather = temperature?.let { RoadmapRules.weatherMode(it) } ?: manualWeather
     val busy by vm.busy.collectAsStateWithLifecycle()
     // Both generated and manually replaced variants survive a detail/back transition.
     var generatedFor by rememberSaveable { mutableStateOf("") }
@@ -67,8 +70,8 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
     // GEN-02: «Інші варіанти» skips the outfits already shown for these conditions, until every one has been seen.
     var skipped by rememberSaveable(wardrobe, occasion, weather, today) { mutableStateOf(arrayListOf<String>()) }
     var skippedAll by remember { mutableStateOf(false) }
-    val input = remember(wardrobe, occasion, weather, today, s.garments, s.wears, s.feedback, s.wardrobes, allowed, fixed, revision, refresh, choices, skipped) {
-        stateToken(listOf(wardrobe, occasion, weather, today, s.garments, s.wears, s.feedback, s.wardrobes, allowed?.sorted(), fixed.toSortedMap(), revision, refresh, choices, skipped).toString())
+    val input = remember(wardrobe, occasion, weather, temperature, today, s.garments, s.wears, s.feedback, s.wardrobes, allowed, fixed, revision, refresh, choices, skipped) {
+        stateToken(listOf(wardrobe, occasion, weather, temperature, today, s.garments, s.wears, s.feedback, s.wardrobes, allowed?.sorted(), fixed.toSortedMap(), revision, refresh, choices, skipped).toString())
     }
     val fullCapsule = capsule?.let { c -> s.capsuleItems.filter { it.capsuleId == c.id }.map { it.garmentId }.toSet() }
     val currentRules = s.wardrobes.find { it.id == wardrobe }?.noRepeatDays ?: 0
@@ -82,10 +85,11 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
         if (generatedFor != input) {
             val skip = skipped.toSet()
             val (result, exhausted) = withContext(Dispatchers.Default) {
-                val other = DailyOutfits.daily(s, wardrobe, occasion, weather, today, "$today:$revision", skip, allowed, fixed, choices)
+                val other = DailyOutfits.daily(s, wardrobe, occasion, weather, today, "$today:$revision", skip, allowed, fixed, choices, temperature = temperature)
                 // Nothing new is left (or only combinations the person hid): start again from the best ones.
                 if (skip.isEmpty() || other.looks.isNotEmpty() && !other.hiddenShown) other to false
-                else DailyOutfits.daily(s, wardrobe, occasion, weather, today, "$today:$revision", allowed = allowed, fixed = fixed, choices = choices) to true
+                else DailyOutfits.daily(s, wardrobe, occasion, weather, today, "$today:$revision", allowed = allowed, fixed = fixed, choices = choices,
+                    temperature = temperature) to true
             }
             skippedAll = exhausted
             ids = ArrayList(result.looks.map { it.joinToString(",") { g -> g.id } })
@@ -118,7 +122,7 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
         if (rotationInput.isEmpty() || rotationFor == rotationInput) return@LaunchedEffect
         delay(80)
         val result = withContext(Dispatchers.Default) {
-            RotationOutfits.suggest(s, wardrobe, occasion, weather, today, rotationAfter, anchor, fixed, choices, rotationState)
+            RotationOutfits.suggest(s, wardrobe, occasion, weather, today, rotationAfter, anchor, fixed, choices, rotationState, temperature)
         }
         rotationAnchorId = result?.anchor?.id.orEmpty(); rotationIds = result?.look.orEmpty().joinToString(",") { it.id }
         rotationOthers = result?.others ?: 0; rotationProblem = result?.problem.orEmpty(); rotationFor = rotationInput
@@ -138,10 +142,10 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
         delay(80)
         betters = withContext(Dispatchers.Default) {
             buildMap {
-                variants.forEach { look -> OutfitStyle.better(s, wardrobe, occasion, weather, today, look, pins, allowed, choices)
+                variants.forEach { look -> OutfitStyle.better(s, wardrobe, occasion, weather, today, look, pins, allowed, choices, temperature)
                     ?.let { put(DailyRules.signature(look.map { g -> g.id }), it) } }
                 // The item of «Давно не вдягали» stays: that is the point of the card.
-                if (rotationNow.isNotEmpty()) OutfitStyle.better(s, wardrobe, occasion, weather, today, rotationNow, pins + anchorId, allowed, choices)
+                if (rotationNow.isNotEmpty()) OutfitStyle.better(s, wardrobe, occasion, weather, today, rotationNow, pins + anchorId, allowed, choices, temperature)
                     ?.let { put(ROTATION_KEY + DailyRules.signature(rotationNow.map { g -> g.id }), it) }
             }
         }
@@ -220,8 +224,9 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                 if (capsule != null) Text(capsule.name, style = MaterialTheme.typography.titleMedium)
                 // STYLE-03: the conditions as chips: the occasion is picked right here, the weather opens the conditions.
                 val occasionDescription = stringResource(R.string.style_occasion_chip, stringResource(label(occasion)))
-                val temperature = forecast?.takeIf { weatherEnabled }?.let { f -> if (f.currentDate == today) f.feelsLike else f.days.find { it.date == today }?.high }
-                val weatherText = stringResource(label(weather)) + (temperature?.let { " · ${it.roundToInt()}°" } ?: "")
+                // WTH-01: the chip shows the temperature the outfits are chosen for (the day and how it feels now), as forecast.
+                val forecastTemperature = if (weatherEnabled) forecast?.temperature(today) else null
+                val weatherText = stringResource(label(weather)) + (forecastTemperature?.let { " · ${it.roundToInt()}°" } ?: "")
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Box {
                         AssistChip(onClick = { occasionMenu = true }, enabled = !busy, label = { Text(stringResource(label(occasion))) },
@@ -310,7 +315,7 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                     Text(if (last != null) stringResource(R.string.rotation_reason_worn, rotationItem.name, dateLabel(last), idle)
                         else stringResource(R.string.rotation_reason_never, rotationItem.name, dateLabel(added), idle), style = MaterialTheme.typography.bodyMedium)
                     if (rotationLook.isNotEmpty()) {
-                        val rating = remember(rotationLook, weather, target) { OutfitStyle.rate(rotationLook, weather, target) }
+                        val rating = remember(rotationLook, weather, target, temperature) { OutfitStyle.rate(rotationLook, weather, target, temperature) }
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             ColourDots(OutfitStyle.colours(rotationLook)); ScoreBadge(rating)
                         }
@@ -370,7 +375,7 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
         itemsIndexed(looks, key = { index, _ -> index }) { index, items ->
             val autoName = stringResource(R.string.daily_saved_variant, dateText, index + 1)
             // STYLE-01–03: score, colours, the items as tiles, why, and «Добре → Краще».
-            val rating = remember(items, weather, target) { OutfitStyle.rate(items, weather, target) }
+            val rating = remember(items, weather, target, temperature) { OutfitStyle.rate(items, weather, target, temperature) }
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -435,7 +440,7 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                     actionItem = ""
                     scope.launch {
                         // ROT-01: the other pieces stay, so the item not worn for a long time stays in its outfit.
-                        val replacement = withContext(Dispatchers.Default) { DailyOutfits.replace(s, wardrobe, occasion, weather, today, items, category, others, allowed, choices) }
+                        val replacement = withContext(Dispatchers.Default) { DailyOutfits.replace(s, wardrobe, occasion, weather, today, items, category, others, allowed, choices, temperature) }
                         // Apply only to the same variants the user acted on.
                         if (rotation) {
                             if (rotationIds != beforeRotation) return@launch

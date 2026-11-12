@@ -79,11 +79,13 @@ public final class RotationRules {
      * Why [item] cannot be the centre of today's outfit, or null when it can (the outfit may still need other items).
      * Order matters: the first reason that applies is the one the person can act on.
      */
-    public static String problem(Item item, String weather) {
+    public static String problem(Item item, String weather) { return problem(item, weather, null); }
+    /** [temperature]: the forecast's temperature behind [weather], or null (WTH-01, see WeatherRules). */
+    public static String problem(Item item, String weather, Double temperature) {
         if (!WardrobeRules.ready(item.piece)) return UNAVAILABLE;
         if (item.excluded) return EXCLUDED;
         if (item.uncomfortable) return UNCOMFORTABLE;
-        if (!WardrobeRules.compatibleSeasons(item.piece.season, DailyRules.season(weather))) return WEATHER;
+        if (!WeatherRules.inSeason(item.piece.season, weather, temperature)) return WEATHER;
         return null;
     }
 
@@ -94,9 +96,12 @@ public final class RotationRules {
      * wait; ties by ID, so the order is stable.
      */
     public static List<String> candidates(List<Item> items, String wardrobe, String weather, String style, String today) {
+        return candidates(items, wardrobe, weather, style, today, null);
+    }
+    public static List<String> candidates(List<Item> items, String wardrobe, String weather, String style, String today, Double temperature) {
         List<Item> picked = new ArrayList<>();
         for (Item item : items) {
-            if (!wardrobe.equals(item.piece.wardrobe) || problem(item, weather) != null) continue;
+            if (!wardrobe.equals(item.piece.wardrobe) || problem(item, weather, temperature) != null) continue;
             if (snoozed(item.snoozedUntil, today)) continue;
             if (forgotten(item.lastWear, item.added, today)) picked.add(item);
         }

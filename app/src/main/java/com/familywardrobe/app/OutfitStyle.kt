@@ -9,8 +9,8 @@ object OutfitStyle {
     fun target(s: Snapshot, wardrobe: String, occasion: String, choices: PersonalChoices = PersonalChoices()): String =
         DailyOutfits.style(s, wardrobe, occasion, choices).style
 
-    fun rate(look: List<Garment>, weather: String, target: String): StyleRules.Rating =
-        StyleRules.rate(look.map { it.rulePiece() }, weather, target)
+    fun rate(look: List<Garment>, weather: String, target: String, temperature: Double? = null): StyleRules.Rating =
+        StyleRules.rate(look.map { it.rulePiece() }, weather, target, temperature)
 
     /**
      * Candidates are what the daily suggestions may use (ready, not excluded, not held back by the wardrobe's repeat
@@ -19,13 +19,14 @@ object OutfitStyle {
      * [fixed]: pinned pieces (and the item of «Давно не вдягали»), never replaced.
      */
     fun better(s: Snapshot, wardrobe: String, occasion: String, weather: String, date: String, look: List<Garment>,
-        fixed: Set<String> = emptySet(), allowed: Set<String>? = null, choices: PersonalChoices = PersonalChoices()): BetterSwap? {
+        fixed: Set<String> = emptySet(), allowed: Set<String>? = null, choices: PersonalChoices = PersonalChoices(),
+        temperature: Double? = null): BetterSwap? {
         if (look.isEmpty()) return null
         val uncomfortable = s.feedback.filter { it.wardrobeId == wardrobe && !it.signature.contains('|') && it.reason == PreferenceRules.DISLIKE }
             .map { it.signature }.toSet()
         val candidates = DailyOutfits.items(s, date, allowed).map { it.piece }.filter { it.wardrobe == wardrobe && it.id !in uncomfortable && it.color !in choices.avoided }
         val swap = StyleRules.better(look.map { it.rulePiece() }, candidates, weather, target(s, wardrobe, occasion, choices), fixed,
-            DailyOutfits.rejected(s, wardrobe, occasion, weather)) ?: return null
+            DailyOutfits.rejected(s, wardrobe, occasion, weather), temperature) ?: return null
         val byId = s.garments.associateBy { it.id }
         return BetterSwap(byId[swap.oldId] ?: return null, byId[swap.newId] ?: return null, swap.before, swap.after)
     }

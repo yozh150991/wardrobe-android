@@ -75,7 +75,7 @@ if failures:
     raise SystemExit('FAIL style:\n' + '\n'.join(failures))
 
 with tempfile.TemporaryDirectory(prefix='wardrobe-style-') as output:
-    files = [source / name for name in ('WardrobeRules.java', 'DailyRules.java', 'PreferenceRules.java', 'PreferenceProfile.java', 'StyleRules.java')]
+    files = [source / name for name in ('WardrobeRules.java', 'DailyRules.java', 'PreferenceRules.java', 'PreferenceProfile.java', 'StyleRules.java', 'WeatherRules.java')]
     files.append(root / 'app/src/test/java/com/familywardrobe/app/StyleRulesCases.java')
     subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, *map(str, files)], check=True)
     subprocess.run([java, '-cp', output, 'com.familywardrobe.app.StyleRulesCases'], check=True)
