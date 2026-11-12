@@ -115,7 +115,7 @@
   - якщо прибрати дані, копія знову має формат 10.
 - **Firebase emulator `rules.test.mjs`:** 11 приймається, 10 після 11 і 12 відхиляються.
 - Host checks — pass (37 наборів). На телефоні не перевірено.
-- **CI** — див. журнал роадмапу.
+- **CI** — 4/4 jobs pass для push і PR (runs 43257611450, 43257621822): JVM 319, instrumentation 201 (5 skipped), Firebase emulators, Source and Git safety.
 
 ## Що можна змінити
 

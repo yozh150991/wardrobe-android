@@ -21,7 +21,7 @@ Live functions deploy попередніх 0.14.13–14 не підтвердж�
 Погоджений порядок: спрощення каталогу та імпорт → помічник покупки → сімейний доступ.
 Нова пряма вказівка користувача має перевагу над цим планом.
 
-**Актуальна контрольна точка:** 0.14.44/code74, Claude, 12.11.2026 (TRIP-01 — місто й нагода поїздки, формат 11; PR → main, містить #36–#42; CI — див. журнал; перед оновленням телефонів — `cloud/deploy-rules.ps1`).
+**Актуальна контрольна точка:** 0.14.44/code74, Claude, 12.11.2026 (TRIP-01 — місто й нагода поїздки, формат 11; PR #43 → main, містить #36–#42; CI — 4/4 jobs pass; перед оновленням телефонів — `cloud/deploy-rules.ps1`).
 **0.14.43:** UX-04 — вкладка «Сьогодні», PR #42; CI — 4/4 jobs pass.
 **0.14.42:** TRIP-03 — компактний набір, PR #41; CI — 4/4 jobs pass.
 **0.14.41:** TRIP-02 — дні поїздки, PR #40; CI — 4/4 jobs pass.
@@ -807,4 +807,5 @@ and device acceptance remain pending; no live Firebase deployment is included.
 - Екрани: місто в редагуванні поїздки (пошук `WeatherController.cities`), прогноз для міста поїздки (`forecastFor`, 16 днів, лише з увімкненою погодою), нагода зберігається з капсулою («Щодня» не зберігається).
 - Схема `11.json` без Android SDK: identityHash рахує `tools/room_identity.py` за алгоритмом Room (відтворює всі експортовані схеми 1–10; перевіряє `check_trip_details.py`). CI при розбіжності схеми друкує згенерований файл. Збірка CI підтвердила, що схема збігається з сутностями.
 - Перевірки тут: новий набір `check_trip_details.py` (37-й), host 37 pass; JVM `RoomMigrationSchemaTest` (10→11, рядки капсул); instrumentation `TripDetailsPersistenceTest`. Збірка й емулятори — у CI. Пристрій не перевірено. Деталі: TRIP-DETAILS-0.14.44.md.
+- CI PR #43: 4/4 jobs pass для push і PR (runs 43257611450, 43257621822): JVM 319, instrumentation 201 (5 skipped), Firebase emulators, Source and Git safety.
 
