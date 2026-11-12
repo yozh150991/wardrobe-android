@@ -16,9 +16,20 @@ data class WeatherCity(val name: String, val latitude: Double, val longitude: Do
 data class ForecastDay(val date: String, val low: Double, val high: Double, val rain: Int?)
 data class Forecast(val city: WeatherCity, val fetchedAt: Long, val currentDate: String, val feelsLike: Double,
     val days: List<ForecastDay>) {
-    fun mode(date: String): String? = if (date == currentDate && System.currentTimeMillis() - fetchedAt < 6 * 60 * 60 * 1000L)
-        RoadmapRules.weatherMode(feelsLike) else if (System.currentTimeMillis() - fetchedAt < 24 * 60 * 60 * 1000L)
-            days.find { it.date == date }?.let { RoadmapRules.weatherMode((it.low + it.high) / 2) } else null
+    /**
+     * WTH-01: the temperature to dress for on [date] (see WeatherRules), or null when the forecast is too old or has
+     * no such day. Today, while the forecast is fresh, how it feels right now counts as much as the day's range.
+     */
+    fun temperature(date: String): Double? {
+        val age = System.currentTimeMillis() - fetchedAt
+        val day = days.find { it.date == date }
+        return when {
+            date == currentDate && age < 6 * 60 * 60 * 1000L -> day?.let { WeatherRules.today(it.low, it.high, feelsLike) } ?: feelsLike
+            age < 24 * 60 * 60 * 1000L -> day?.let { WeatherRules.day(it.low, it.high) }
+            else -> null
+        }
+    }
+    fun mode(date: String): String? = temperature(date)?.let { RoadmapRules.weatherMode(it) }
 }
 
 /** Optional city search; no device location permission. Cache and settings are account-private. */

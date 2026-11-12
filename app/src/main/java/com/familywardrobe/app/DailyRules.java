@@ -31,8 +31,8 @@ public final class DailyRules {
             return key;
         }
         int tie(String seed) { if (!tied) { tie = Objects.hash(seed, key()); tied = true; } return tie; }
-        int rating(String weather, String style) {
-            if (rating < 0) { List<WardrobeRules.Piece> pieces = new ArrayList<>(); for (Item i : items) pieces.add(i.piece); rating = StyleRules.rate(pieces, weather, style).score; }
+        int rating(String weather, String style, Double temperature) {
+            if (rating < 0) { List<WardrobeRules.Piece> pieces = new ArrayList<>(); for (Item i : items) pieces.add(i.piece); rating = StyleRules.rate(pieces, weather, style, temperature).score; }
             return rating;
         }
         /**
@@ -42,9 +42,9 @@ public final class DailyRules {
          * counted a whole one, so a dress almost never reached the three variants; an outfit with a coat (six pairs
          * for four items) counted one and a half. For three items the value is the same as before.
          */
-        int rank(String weather, String style) {
+        int rank(String weather, String style, Double temperature) {
             int size = Math.max(1, items.size()), pairCount = Math.max(1, items.size() * (items.size() - 1) / 2);
-            return (score - pairs) * 1000 / size + pairs * 1000 / pairCount + RATING_WEIGHT * rating(weather, style);
+            return (score - pairs) * 1000 / size + pairs * 1000 / pairCount + RATING_WEIGHT * rating(weather, style, temperature);
         }
     }
     /**
@@ -91,13 +91,25 @@ public final class DailyRules {
     public static List<List<String>> generate(List<Item> items, String wardrobe, String occasion, String weather,
             String date, String seed, Set<String> rejected, Map<String, String> fixed, int limit, Map<String, Integer> penalty,
             String targetStyle, Map<String, Integer> bonus) {
+        return generate(items, wardrobe, occasion, weather, date, seed, rejected, fixed, limit, penalty, targetStyle, bonus, null);
+    }
+    /**
+     * [temperature]: the forecast's temperature behind [weather] (WTH-01, see WeatherRules), or null when the weather
+     * was chosen by hand. It decides the coat, the second layer, tights and which seasons' items suit.
+     * GEN-04: the pieces weather adds are optional — without a ready one the outfit is still suggested.
+     */
+    static final List<String> WEATHER_PIECES = Collections.unmodifiableList(Arrays.asList("outerwear", "layer", "tights"));
+    public static List<List<String>> generate(List<Item> items, String wardrobe, String occasion, String weather,
+            String date, String seed, Set<String> rejected, Map<String, String> fixed, int limit, Map<String, Integer> penalty,
+            String targetStyle, Map<String, Integer> bonus, Double temperature) {
         if (limit < 1 || limit > 20) throw new IllegalArgumentException();
-        String season = season(weather);
         String style = targetStyle != null ? targetStyle : PreferenceProfile.defaultStyle(occasion);
         List<Candidate> all = new ArrayList<>();
         for (List<String> layout : WardrobeRules.baseLayouts(fixed.keySet())) {
         List<String> categories = new ArrayList<>(layout);
-        if (weather.equals("cold") || weather.equals("cool") || weather.equals("rain")) categories.add("outerwear");
+        if (WeatherRules.layer(weather, temperature)) categories.add("layer");
+        if (layout.contains("dress") && WeatherRules.tights(weather, temperature)) categories.add("tights");
+        if (WeatherRules.outerwear(weather, temperature)) categories.add("outerwear");
         if (!WardrobeRules.CATEGORIES.containsAll(fixed.keySet())) return Collections.emptyList();
         for (String category : WardrobeRules.CATEGORIES) if (fixed.containsKey(category) && !categories.contains(category)) categories.add(category);
         List<Candidate> beam = new ArrayList<>(); beam.add(new Candidate(Collections.emptyList(), 0, 0));
@@ -106,13 +118,13 @@ public final class DailyRules {
             for (Item item : items) {
                 WardrobeRules.Piece p = item.piece;
                 if (wardrobe.equals(p.wardrobe) && category.equals(p.category) && WardrobeRules.ready(p) &&
-                    WardrobeRules.compatibleSeasons(p.season, season) &&
+                    WeatherRules.inSeason(p.season, weather, temperature) &&
                     (!fixed.containsKey(category) || fixed.get(category).equals(p.id))) choices.add(item);
             }
             if (choices.isEmpty()) {
-                // Weather outerwear is a preferred layer, not a base piece: without a ready, season-compatible
-                // coat or jacket the look is still suggested. A pinned outerwear piece stays mandatory.
-                if (category.equals("outerwear") && !fixed.containsKey("outerwear")) continue;
+                // What the weather adds is preferred, not a base piece: without a ready, season-compatible coat,
+                // jumper or tights the look is still suggested. A pinned piece stays mandatory.
+                if (WEATHER_PIECES.contains(category) && !fixed.containsKey(category)) continue;
                 beam = Collections.emptyList(); break;
             }
             choices.sort(Comparator.<Item>comparingInt(i -> itemScore(i, style, date, penalty, bonus)).reversed()
@@ -137,7 +149,7 @@ public final class DailyRules {
         }
         all.addAll(beam);
         }
-        all.sort(Comparator.<Candidate>comparingInt(c -> c.rank(weather, style)).reversed()
+        all.sort(Comparator.<Candidate>comparingInt(c -> c.rank(weather, style, temperature)).reversed()
             .thenComparingInt(c -> c.tie(seed)).thenComparing(DailyRules::key));
         List<Candidate> shown = new ArrayList<>(); Set<String> seen = new HashSet<>();
         for (Candidate c : all) if (!rejected.contains(c.key()) && seen.add(c.key())) shown.add(c);
@@ -207,6 +219,11 @@ public final class DailyRules {
     public static List<String> replace(List<Item> items, String wardrobe, String occasion, String weather, String date,
             List<String> selected, String category, Set<String> rejected, Map<String, Integer> penalty, String targetStyle,
             Map<String, Integer> bonus) {
+        return replace(items, wardrobe, occasion, weather, date, selected, category, rejected, penalty, targetStyle, bonus, null);
+    }
+    public static List<String> replace(List<Item> items, String wardrobe, String occasion, String weather, String date,
+            List<String> selected, String category, Set<String> rejected, Map<String, Integer> penalty, String targetStyle,
+            Map<String, Integer> bonus, Double temperature) {
         Map<String, String> fixed = new HashMap<>(); String old = "";
         for (String id : selected) {
             Item item = null; for (Item candidate : items) if (candidate.piece.id.equals(id)) { item = candidate; break; }
@@ -215,7 +232,7 @@ public final class DailyRules {
         }
         final String excluded = old;
         List<Item> candidates = new ArrayList<>(); for (Item i : items) if (!i.piece.id.equals(excluded)) candidates.add(i);
-        List<List<String>> result = generate(candidates, wardrobe, occasion, weather, date, "replace", rejected, fixed, 1, penalty, targetStyle, bonus);
+        List<List<String>> result = generate(candidates, wardrobe, occasion, weather, date, "replace", rejected, fixed, 1, penalty, targetStyle, bonus, temperature);
         return result.isEmpty() ? Collections.emptyList() : result.get(0);
     }
     private static String key(Candidate c) { return c.key(); }

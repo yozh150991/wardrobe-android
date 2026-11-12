@@ -13,6 +13,30 @@ class DailyOutfitsPreferenceTest {
     private fun reason(ids: List<String>, occasion: String, weather: String, reason: String) =
         OutfitFeedback(wardrobeId = "home", signature = DailyRules.signature(ids), weather = weather, occasion = occasion, reason = reason)
 
+    /** WTH-01 / GEN-04: the forecast's temperature reaches the generator, the rating and «Давно не вдягали» through the app's entry points. */
+    @Test fun theTemperatureDecidesTheCoatAndTheLayer() {
+        val s = base.copy(garments = listOf(garment("top", "top"), garment("trousers", "bottom"), garment("shoes", "shoes"),
+            garment("coat", "outerwear"), garment("cardigan", "layer"), garment("tee", "top").copy(season = "summer")))
+        fun first(temperature: Double?) = DailyOutfits.generate(s, "home", "everyday", "cool", date, temperature = temperature).first().map { it.id }.toSet()
+        // By hand «прохолодно»: the coat, as before. From the forecast: no coat at +21, the coat at +12, a second layer at +5.
+        assertTrue("coat" in first(null) && "cardigan" !in first(null))
+        assertTrue("coat" !in first(21.0) && "cardigan" !in first(21.0))
+        assertTrue("coat" in first(12.0) && "cardigan" !in first(12.0))
+        assertEquals(setOf("coat", "cardigan"), DailyOutfits.generate(s, "home", "everyday", "cold", date, temperature = 5.0).first().map { it.id }.toSet() - setOf("top", "trousers", "shoes"))
+        // The summer tee is offered at +21 only.
+        assertTrue(DailyOutfits.generate(s, "home", "everyday", "cool", date, temperature = 21.0).any { look -> look.any { it.id == "tee" } })
+        assertTrue(DailyOutfits.generate(s, "home", "everyday", "cool", date, temperature = 12.0).none { look -> look.any { it.id == "tee" } })
+        assertTrue(DailyOutfits.generate(s, "home", "everyday", "cool", date).none { look -> look.any { it.id == "tee" } })
+        // The rating and replacing a piece agree with it.
+        val plain = s.garments.filter { it.id in setOf("top", "trousers", "shoes") }
+        assertEquals(StyleRules.WEATHER_OK, OutfitStyle.rate(plain, "cool", "casual", 21.0).weatherCode)
+        assertEquals(StyleRules.NO_OUTERWEAR, OutfitStyle.rate(plain, "cool", "casual", 12.0).weatherCode)
+        assertEquals(StyleRules.NO_OUTERWEAR, OutfitStyle.rate(plain, "cool", "casual").weatherCode)
+        assertTrue(DailyOutfits.replace(s, "home", "everyday", "cool", date, plain, "top", temperature = 21.0).none { it.id == "coat" })
+        assertEquals("tee", RotationOutfits.suggest(s, "home", "everyday", "cool", date, anchor = "tee", temperature = 21.0)!!.also { assertNull(it.problem) }.anchor.id)
+        assertEquals(RotationRules.WEATHER, RotationOutfits.suggest(s, "home", "everyday", "cool", date, anchor = "tee", temperature = 12.0)!!.problem)
+    }
+
     @Test fun withoutHistoryTheOccasionDecides() {
         assertTrue(DailyOutfits.generate(base, "home", "work", "warm", date).first().any { it.id == "formal" })
         assertTrue(DailyOutfits.generate(base, "home", "everyday", "warm", date).first().any { it.id == "casual" })

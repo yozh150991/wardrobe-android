@@ -33,8 +33,8 @@ object RotationOutfits {
 
     /** Items not worn for 90 days that suit today, in the order they are suggested. */
     fun candidates(s: Snapshot, wardrobe: String, occasion: String, weather: String, today: String,
-        choices: PersonalChoices = PersonalChoices(), state: RotationState = RotationState()): List<String> =
-        RotationRules.candidates(items(s, wardrobe, today, state), wardrobe, weather, DailyOutfits.style(s, wardrobe, occasion, choices).style, today)
+        choices: PersonalChoices = PersonalChoices(), state: RotationState = RotationState(), temperature: Double? = null): List<String> =
+        RotationRules.candidates(items(s, wardrobe, today, state), wardrobe, weather, DailyOutfits.style(s, wardrobe, occasion, choices).style, today, temperature)
 
     /**
      * The first candidate after [after] (wrapping around) that makes a whole outfit for today, keeping the person's
@@ -42,10 +42,10 @@ object RotationOutfits {
      */
     fun suggest(s: Snapshot, wardrobe: String, occasion: String, weather: String, today: String,
         after: String = "", anchor: String = "", fixed: Map<String, String> = emptyMap(),
-        choices: PersonalChoices = PersonalChoices(), state: RotationState = RotationState()): RotationLook? {
+        choices: PersonalChoices = PersonalChoices(), state: RotationState = RotationState(), temperature: Double? = null): RotationLook? {
         val byId = s.garments.filter { it.wardrobeId == wardrobe }.associateBy { it.id }
         val items = items(s, wardrobe, today, state).associateBy { it.piece.id }
-        val candidates = candidates(s, wardrobe, occasion, weather, today, choices, state)
+        val candidates = candidates(s, wardrobe, occasion, weather, today, choices, state, temperature)
         fun result(g: Garment, look: List<Garment>, problem: String? = null): RotationLook {
             val item = items.getValue(g.id)
             return RotationLook(g, look, item.lastWear.ifEmpty { null }, item.added, RotationRules.idleDays(item.lastWear, item.added, today),
@@ -53,12 +53,12 @@ object RotationOutfits {
         }
         fun outfit(g: Garment, pins: Map<String, String>): List<Garment>? =
             DailyOutfits.generate(s, wardrobe, occasion, weather, today, "rotation:$today",
-                fixed = pins + (g.category to g.id), choices = choices).firstOrNull()
+                fixed = pins + (g.category to g.id), choices = choices, temperature = temperature).firstOrNull()
         if (anchor.isNotEmpty()) {
             val g = byId[anchor] ?: return null
             val item = items.getValue(g.id)
             // Chosen by the person: «Незручно» does not stop it, and it replaces a pin of its own category.
-            val problem = RotationRules.problem(item, weather)?.takeIf { it != RotationRules.UNCOMFORTABLE }
+            val problem = RotationRules.problem(item, weather, temperature)?.takeIf { it != RotationRules.UNCOMFORTABLE }
                 ?: RotationRules.REPEAT.takeIf { !RecommendationRules.allowed(false, item.lastWear, today,
                     s.wardrobes.find { it.id == wardrobe }?.noRepeatDays ?: 0) }
             return result(g, if (problem == null) outfit(g, fixed.filterKeys { it != g.category }).orEmpty() else emptyList(), problem)
