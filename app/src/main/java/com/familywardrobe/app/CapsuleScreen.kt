@@ -16,6 +16,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.LocalDate
+import kotlin.math.roundToInt
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun CapsuleListScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, open: (String) -> Unit) {
@@ -44,7 +47,8 @@ fun CapsuleListScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, open
 }
 
 @Composable
-fun CapsuleDetailScreen(capsule: Capsule, s: Snapshot, vm: WardrobeViewModel, open: (Garment) -> Unit, openOutfit: (String) -> Unit, removed: () -> Unit, generate: () -> Unit, initialPickItems: Boolean = false) {
+fun CapsuleDetailScreen(capsule: Capsule, s: Snapshot, vm: WardrobeViewModel, open: (Garment) -> Unit, openOutfit: (String) -> Unit, removed: () -> Unit, generate: () -> Unit, initialPickItems: Boolean = false,
+    today: String = LocalDate.now().toString()) {
     var editing by remember { mutableStateOf(false) }
     var selectingOutfits by remember { mutableStateOf(false) }
     var selectingItems by rememberSaveable { mutableStateOf(initialPickItems) }
@@ -54,6 +58,18 @@ fun CapsuleDetailScreen(capsule: Capsule, s: Snapshot, vm: WardrobeViewModel, op
     val linked = s.capsuleOutfits.filter { it.capsuleId == capsule.id }.map { it.outfitId }.toSet()
     val packing = s.capsuleItems.filter { it.capsuleId == capsule.id }.sortedWith(compareBy<CapsuleItem> { it.packed }.thenBy { row -> s.garments.find { it.id == row.garmentId }?.category.orEmpty() })
     val missing = packing.count { row -> s.garments.find { it.id == row.garmentId }?.let { !WardrobeRules.ready(it.rulePiece()) } != false }
+    // TRIP-02: does the packing cover every day? Computed off the UI thread, never saved.
+    val forecast by vm.weather.forecast.collectAsStateWithLifecycle()
+    val weatherEnabled by vm.weather.enabled.collectAsStateWithLifecycle()
+    val choiceRevision by vm.personalChoices.revision.collectAsStateWithLifecycle()
+    val choices = remember(capsule.wardrobeId, choiceRevision) { vm.personalChoices.read(capsule.wardrobeId) }
+    var tripOccasion by rememberSaveable(capsule.id) { mutableStateOf("everyday") }
+    val tripForecast = forecast.takeIf { weatherEnabled }
+    val dated = capsule.startDate.isNotBlank()
+    val coverage by produceState<TripCoverage?>(null, dated, capsule, s.garments, s.capsuleItems, s.wears, s.feedback, s.wardrobes,
+        tripOccasion, tripForecast, choices, today) {
+        value = if (!dated) null else withContext(Dispatchers.Default) { TripPlan.coverage(s, capsule, tripOccasion, today, tripForecast, choices) }
+    }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -72,6 +88,38 @@ fun CapsuleDetailScreen(capsule: Capsule, s: Snapshot, vm: WardrobeViewModel, op
                     if (s.ideas.any { it.outfitId == outfit.id }) Text(stringResource(R.string.capsule_planned_warning), color = MaterialTheme.colorScheme.error)
                 }
                 Text(stringResource(R.string.capsule_unique_hint), style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        if (dated) item(key = "trip-days") {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.trip_days_title), style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.trip_days_hint), style = MaterialTheme.typography.bodySmall)
+                Choice(tripOccasion, LookRules.OCCASIONS, { tripOccasion = it }, R.string.look_occasion, enabled = !busy)
+                Text(tripForecast?.let { stringResource(R.string.trip_forecast_city, it.city.name) } ?: stringResource(R.string.trip_no_weather),
+                    style = MaterialTheme.typography.bodySmall)
+                when (val c = coverage) {
+                    null -> LinearProgressIndicator(Modifier.fillMaxWidth())
+                    else -> {
+                        if (c.days.isEmpty()) Text(stringResource(R.string.trip_over))
+                        else Text(stringResource(R.string.trip_covered, c.covered, c.days.size), style = MaterialTheme.typography.titleMedium)
+                        if (c.past > 0 && c.days.isNotEmpty()) Text(stringResource(R.string.trip_past, c.past), style = MaterialTheme.typography.bodySmall)
+                        if (c.truncated) Text(stringResource(R.string.trip_truncated, TripPlan.MAX_DAYS), style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        }
+        if (dated) items(coverage?.days.orEmpty(), key = { "trip:" + it.date }) { day ->
+            OutlinedCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(dateLabel(day.date), style = MaterialTheme.typography.titleMedium)
+                    Text(day.temperature?.let { stringResource(R.string.trip_weather_known, stringResource(label(day.weather)), it.roundToInt()) }
+                        ?: stringResource(R.string.trip_weather_unknown), style = MaterialTheme.typography.bodySmall)
+                    if (day.look.isNotEmpty()) OutfitGrid(day.look, vm, emptySet(), !busy) { g -> open(g) }
+                    else Text(stringResource(dailyReasonLabel(day.reason ?: DailyDiagnostics.Reason.CONSTRAINTS)), color = MaterialTheme.colorScheme.error)
+                    if (day.repeated) Text(stringResource(R.string.trip_repeated), style = MaterialTheme.typography.bodySmall)
+                    if (day.noOuterwear) Text(stringResource(R.string.trip_no_outerwear), color = MaterialTheme.colorScheme.error)
+                    day.rain?.takeIf { it >= TripPlan.RAIN_NOTE }?.let { Text(stringResource(R.string.trip_rain, it), style = MaterialTheme.typography.bodySmall) }
+                }
             }
         }
         if (packing.isEmpty()) item { Text(stringResource(R.string.capsule_no_items)) }

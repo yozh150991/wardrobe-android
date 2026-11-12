@@ -603,7 +603,7 @@ private fun reasonScope(reason: FeedbackReason, context: String, lighter: String
         if (lighter.isNotEmpty()) " " + stringResource(R.string.feedback_warm_step, stringResource(label(lighter))) else ""
 }
 
-private fun dailyReasonLabel(reason: DailyDiagnostics.Reason): Int = when (reason) {
+internal fun dailyReasonLabel(reason: DailyDiagnostics.Reason): Int = when (reason) {
     DailyDiagnostics.Reason.NO_ITEMS -> R.string.daily_empty_items; DailyDiagnostics.Reason.CAPSULE_EMPTY -> R.string.daily_empty_capsule
     DailyDiagnostics.Reason.PACKED -> R.string.daily_empty_packed; DailyDiagnostics.Reason.UNAVAILABLE -> R.string.daily_empty_availability
     DailyDiagnostics.Reason.SHOES -> R.string.daily_empty_shoes; DailyDiagnostics.Reason.BASE -> R.string.daily_empty_base

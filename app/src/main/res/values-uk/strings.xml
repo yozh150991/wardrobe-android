@@ -1425,4 +1425,17 @@
     <string name="rare_hint">Річ, яку ви свідомо носите рідко (костюм, лижний одяг): вона не потрапляє в «Давно не вдягали» й до забутих у статистиці.</string>
     <string name="style_why_show">Чому така оцінка</string>
     <string name="style_why_hide">Сховати пояснення</string>
+    <string name="trip_days_title">Дні поїздки</string>
+    <string name="trip_days_hint">Один образ на день із речей цієї капсули — за тими самими правилами, що й «Що вдягнути сьогодні». Нічого не зберігається й не вважається вдягненим.</string>
+    <string name="trip_covered">Покрито днів: %1$d з %2$d</string>
+    <string name="trip_forecast_city">Погода — за прогнозом для міста %1$s. Якщо їдете в інше місто, умови там можуть бути іншими.</string>
+    <string name="trip_no_weather">Погоду не ввімкнено: образи підібрано без неї.</string>
+    <string name="trip_weather_known">%1$s · %2$d°</string>
+    <string name="trip_weather_unknown">Прогнозу на цей день ще немає — погоду не враховано.</string>
+    <string name="trip_repeated">Нових образів не лишилося — повтор одного з попередніх днів.</string>
+    <string name="trip_no_outerwear">Для такої погоди в капсулі немає готового верхнього одягу.</string>
+    <string name="trip_rain">Імовірність дощу %1$d%%: прогноз не гарантує, що речі водостійкі.</string>
+    <string name="trip_past">Минулі дні поїздки не показано: %1$d.</string>
+    <string name="trip_over">Поїздка вже минула.</string>
+    <string name="trip_truncated">Показано перші %1$d днів.</string>
 </resources>
