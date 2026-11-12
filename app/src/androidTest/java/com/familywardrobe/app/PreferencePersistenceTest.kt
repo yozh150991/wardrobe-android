@@ -88,8 +88,15 @@ class PreferencePersistenceTest {
             assertTrue(store.read("home").liked.isEmpty())
             try { store.setPalette("home", "other", PersonalChoices.LIKED); fail("«Інший» is no single colour") } catch (_: IllegalArgumentException) { }
             try { store.setPalette("home", "navy", "maybe"); fail("Unknown palette value") } catch (_: IllegalArgumentException) { }
+            // UX-05: the last occasion opens the screen; per wardrobe and account; not a preference, so a reset keeps it.
+            assertEquals("everyday", store.lastOccasion("home"))
+            store.rememberOccasion("home", "work")
+            assertEquals("work", PersonalChoiceStore(first).lastOccasion("home"))
+            assertEquals("everyday", PersonalChoiceStore(first).lastOccasion("child")); assertEquals("everyday", PersonalChoiceStore(second).lastOccasion("home"))
+            try { store.rememberOccasion("home", "party"); fail("Unknown occasion") } catch (_: IllegalArgumentException) { }
             store.clear("home")
             assertEquals(PersonalChoices(), PersonalChoiceStore(first).read("home"))
+            assertEquals("work", PersonalChoiceStore(first).lastOccasion("home"))
         } finally {
             listOf(first, second).forEach { context.deleteSharedPreferences("account-${it.location.key}-preferences") }
         }

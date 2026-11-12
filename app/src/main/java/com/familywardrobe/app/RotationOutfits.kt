@@ -27,7 +27,7 @@ object RotationOutfits {
             .map { it.signature }.toSet()
         return s.garments.filter { it.wardrobeId == wardrobe }.map { g ->
             RotationRules.Item(g.rulePiece(), last[g.id].orEmpty(), added(g), g.suggestionExcluded, g.id in uncomfortable,
-                state.snoozes[g.id]?.until.orEmpty(), state.seen[g.id].orEmpty())
+                state.snoozes[g.id]?.until.orEmpty(), state.seen[g.id].orEmpty(), g.rarelyWorn)
         }
     }
 

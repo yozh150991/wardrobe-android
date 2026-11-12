@@ -1422,4 +1422,5 @@
     <string name="calendar_worn_empty">Носіння за цей день не відмічено.</string>
     <string name="calendar_wear_item">Відмітити вдягнені речі</string>
     <string name="daily_other_variants">Показати інші варіанти</string>
+    <string name="rare_hint">Річ, яку ви свідомо носите рідко (костюм, лижний одяг): вона не потрапляє в «Давно не вдягали» й до забутих у статистиці.</string>
 </resources>

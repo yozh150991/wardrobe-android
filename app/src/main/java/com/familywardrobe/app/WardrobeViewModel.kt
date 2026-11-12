@@ -537,6 +537,8 @@ class WardrobeViewModel internal constructor(application: Application, private v
     fun setStyleChoice(wardrobe: String, occasion: String, value: String) = personalChoices.setStyle(wardrobe, occasion, value)
     fun setWarmthChoice(wardrobe: String, value: String) = personalChoices.setWarmth(wardrobe, value)
     fun setPaletteColour(wardrobe: String, colour: String, value: String) = personalChoices.setPalette(wardrobe, colour, value)
+    fun lastOccasion(wardrobe: String) = personalChoices.lastOccasion(wardrobe)
+    fun rememberOccasion(wardrobe: String, occasion: String) = personalChoices.rememberOccasion(wardrobe, occasion)
     /** ROT-02: «Давно не вдягали» frequency, postponed items and history; this account's own, like the choices. */
     internal val rotation = RotationStore(accountContext)
     /** Everything the preferences screen shows for [wardrobe]: reasons, choices and the «Давно не вдягали» card. */

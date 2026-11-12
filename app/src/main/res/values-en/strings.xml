@@ -1422,4 +1422,5 @@ Your current wardrobe is unchanged.</string>
     <string name="calendar_worn_empty">No wear recorded for this day.</string>
     <string name="calendar_wear_item">Mark worn items</string>
     <string name="daily_other_variants">Show other options</string>
+    <string name="rare_hint">An item you wear rarely on purpose (a suit, ski wear): it is not offered in “Not worn for a while” or counted as forgotten in the statistics.</string>
 </resources>

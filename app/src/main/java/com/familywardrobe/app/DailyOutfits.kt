@@ -6,7 +6,8 @@ data class DailyLooks(val looks: List<List<Garment>>, val hiddenShown: Boolean =
 object DailyOutfits {
     fun rawItems(s: Snapshot, date: String): List<DailyRules.Item> {
         val wear = s.wears.filter { it.date <= date }.groupBy { it.garmentId }
-        return s.garments.map { g -> DailyRules.Item(g.rulePiece(), wear[g.id]?.map { it.date }?.distinct()?.size ?: 0,
+        // GEN-03: only the last 30 days' wear counts against an item; the last wear still drives the repeat rule.
+        return s.garments.map { g -> DailyRules.Item(g.rulePiece(), wear[g.id]?.let { rows -> DailyRules.recentWears(rows.map { it.date }, date) } ?: 0,
             g.favorite, wear[g.id]?.maxOfOrNull { it.date }.orEmpty()) }
     }
     fun items(s: Snapshot, date: String, allowed: Set<String>? = null): List<DailyRules.Item> {

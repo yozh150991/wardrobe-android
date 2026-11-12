@@ -1422,4 +1422,5 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="calendar_worn_empty">Brak zapisanego noszenia tego dnia.</string>
     <string name="calendar_wear_item">Oznacz noszone rzeczy</string>
     <string name="daily_other_variants">Pokaż inne warianty</string>
+    <string name="rare_hint">Rzecz, którą celowo nosisz rzadko (garnitur, odzież narciarska): nie trafia do „Dawno nienoszone” ani do zapomnianych w statystykach.</string>
 </resources>

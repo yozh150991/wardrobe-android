@@ -21,7 +21,8 @@ object WardrobeStats {
             val dates = actual[g.id].orEmpty().map { it.date }.distinct()
             val last = dates.maxOrNull()
             // ROT-01: the same rule as the daily suggestion (90 days since the last wear, or since it was added).
-            ItemUsage(g, dates.size, last, RotationRules.forgotten(last.orEmpty(), RotationOutfits.added(g), today))
+            // UX-06: an item marked «Ношу рідко» is idle on purpose, not forgotten.
+            ItemUsage(g, dates.size, last, !g.rarelyWorn && RotationRules.forgotten(last.orEmpty(), RotationOutfits.added(g), today))
         }
     }
 }
