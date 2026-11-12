@@ -805,6 +805,6 @@ and device acceptance remain pending; no live Firebase deployment is included.
 - Хмара: `CloudHead.format` 8–11; запис `max(хмара, архів)` — формат не знижується; `firestore.rules` приймають 11, `rules.test.mjs` оновлено. **Користувач розгортає `cloud/deploy-rules.ps1` до оновлення телефонів.**
 - Спільні гардероби: усі копії для сервера — формат 10 без даних поїздки; family functions не змінюються.
 - Екрани: місто в редагуванні поїздки (пошук `WeatherController.cities`), прогноз для міста поїздки (`forecastFor`, 16 днів, лише з увімкненою погодою), нагода зберігається з капсулою («Щодня» не зберігається).
-- CI: при розбіжності схеми Room друкує згенерований файл; `11.json` спершу з тимчасовим identityHash, замінюється згенерованим CI.
+- Схема `11.json` без Android SDK: identityHash рахує `tools/room_identity.py` за алгоритмом Room (відтворює всі експортовані схеми 1–10; перевіряє `check_trip_details.py`). CI при розбіжності схеми друкує згенерований файл. Збірка CI підтвердила, що схема збігається з сутностями.
 - Перевірки тут: новий набір `check_trip_details.py` (37-й), host 37 pass; JVM `RoomMigrationSchemaTest` (10→11, рядки капсул); instrumentation `TripDetailsPersistenceTest`. Збірка й емулятори — у CI. Пристрій не перевірено. Деталі: TRIP-DETAILS-0.14.44.md.
 

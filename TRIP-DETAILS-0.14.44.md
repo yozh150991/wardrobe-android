@@ -83,7 +83,9 @@
 - **Спільні гардероби:** `FamilyEnvelope.kt`, `FamilyAddArchive.kt`, `FamilyOutfitStore.kt`.
 - **Погода й екрани:** `Weather.kt`, `CapsuleScreen.kt`.
 - **Хмара (розгортає користувач):** `cloud/firestore.rules`, `cloud/rules.test.mjs`.
-- **CI:** якщо схема Room розходиться, крок «Exported Room schema matches the entities» тепер друкує згенерований файл.
+- **Схема Room:** `11.json` записано без Android SDK. Його identityHash рахує `tools/room_identity.py` за алгоритмом
+  Room; той самий розрахунок відтворює всі експортовані схеми 1–10. Якщо схема Room розходиться, крок CI «Exported
+  Room schema matches the entities» тепер друкує згенерований файл.
 - **Тексти й перевірки:**
   - `tools/trip_details_strings.py` (UA/EN/PL, 12 рядків);
   - `tools/check_trip_details.py` (новий, 37-й набір);

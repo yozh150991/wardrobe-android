@@ -24,6 +24,11 @@ schema = json.loads((root / 'app/schemas/com.familywardrobe.app.WardrobeDatabase
 capsules = next(e for e in schema['database']['entities'] if e['tableName'] == 'capsules')
 check([f['columnName'] for f in capsules['fields']][-4:] == ['city', 'latitude', 'longitude', 'occasion'], 'schema 11 has the capsule columns')
 check(schema['database']['version'] == 11, 'schema 11 is version 11')
+from room_identity import identity_hash
+for exported in sorted((root / 'app/schemas/com.familywardrobe.app.WardrobeDatabase').glob('*.json')):
+    database = json.loads(exported.read_text(encoding='utf-8'))['database']
+    check(identity_hash(database) == database['identityHash'], f'{exported.name}: identityHash is not the one Room computes')
+    check(any(database['identityHash'] in q for q in database['setupQueries']), f'{exported.name}: room_master_table hash differs')
 
 # Backup: format 11 only with details; the readers accept it; validation on save and restore.
 backup = read('Backup.kt')

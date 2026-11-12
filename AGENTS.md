@@ -8,7 +8,8 @@ writes max(existing, archive) because the rules forbid lowering it. cloud/firest
 deploys cloud/deploy-rules.ps1 before phones get 0.14.44**. Every family/server-bound encode passes
 FamilyRules.CONTENT_VERSION (10): trip details never reach shared wardrobes; schema.py and functions unchanged.
 WeatherController.cities/forecastFor serve the trip city (16 days, memory cache) without touching the daily city.
-If CI's schema step reports drift, copy the printed 11.json (Room's identityHash) into app/schemas.
+Schema 11.json was written without an SDK; tools/room_identity.py recomputes Room's identityHash (it reproduces
+every exported schema) and check_trip_details.py verifies all of them. On drift CI prints the generated schema.
 
 ## Current handoff — UX-04 «Сьогодні» tab, 12 November 2026
 
