@@ -63,7 +63,14 @@ class PhotoAnalyzer(private val context: Context, private val photos: PhotoStore
 
     override suspend fun analyze(photoId: String, stronger: Boolean): PhotoAnalysis = withContext(Dispatchers.Default) {
         val bitmap = withContext(Dispatchers.IO) { photos.analysisBitmap(photoId) }
-        val input = InputImage.fromBitmap(bitmap, 0) // Current photo is already EXIF-normalized and includes user edits.
+        val sourcePixels = IntArray(bitmap.width * bitmap.height)
+        bitmap.getPixels(sourcePixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+        val workContext = coroutineContext
+        // A photo that already has transparency (a cutout cleaned again, manual erasing) is shown to the model on a
+        // backdrop that contrasts with the garment: transparent pixels have no colour, and on black a dark garment is lost.
+        val shown = PhotoCutoutRules.modelInput(sourcePixels) { workContext.ensureActive() }
+            ?.let { Bitmap.createBitmap(it, bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888) }
+        val input = InputImage.fromBitmap(shown ?: bitmap, 0) // Current photo is already EXIF-normalized and includes user edits.
         var category: String? = null
         var labelFailed = false
         try {
@@ -82,9 +89,6 @@ class PhotoAnalyzer(private val context: Context, private val photos: PhotoStore
             val result = withTimeout(30_000) { segmenter.process(input).await() }
             val confidence = result.foregroundConfidenceMask?.duplicate()?.apply { rewind() }
                 ?: return@withContext PhotoAnalysis(photoId, category = category, cutoutStatus = CutoutStatus.NOT_FOUND, labelFailed = labelFailed)
-            val sourcePixels = IntArray(bitmap.width * bitmap.height)
-            bitmap.getPixels(sourcePixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-            val workContext = coroutineContext
             val pixels = PhotoCutoutRules.refine(sourcePixels, bitmap.width, bitmap.height, confidence, stronger) { workContext.ensureActive() }
             if (!PhotoRules.usableCutout(pixels)) return@withContext PhotoAnalysis(photoId, category = category,
                 cutoutStatus = CutoutStatus.NOT_FOUND, labelFailed = labelFailed)
