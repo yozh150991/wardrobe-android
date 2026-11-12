@@ -561,6 +561,7 @@ class WardrobeViewModel internal constructor(application: Application, private v
     fun removeCapsule(id: String, done: () -> Unit) = perform { repo.removeCapsule(id); done() }
     fun linkCapsule(capsule: String, outfit: String, selected: Boolean) = perform(OperationKind.CAPSULE) { repo.linkCapsuleOutfit(capsule, outfit, selected) }
     fun manualCapsule(capsule: String, item: String, selected: Boolean) = perform(OperationKind.CAPSULE) { repo.manualCapsuleItem(capsule, item, selected) }
+    fun addCapsuleItems(capsule: String, items: List<String>) = perform(OperationKind.CAPSULE) { repo.addCapsuleItems(capsule, items) }
     fun pack(capsule: String, item: String, packed: Boolean) = perform(OperationKind.CAPSULE) { repo.packCapsuleItem(capsule, item, packed) }
     fun resetPacking(capsule: String) = perform { repo.resetPacking(capsule) }
     fun addCustomColor(wardrobe: String, name: String, base: String, done: (CustomColor) -> Unit) = perform {

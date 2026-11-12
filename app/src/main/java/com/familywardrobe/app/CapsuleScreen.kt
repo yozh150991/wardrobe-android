@@ -18,6 +18,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.LocalDate
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
@@ -64,6 +65,10 @@ fun CapsuleDetailScreen(capsule: Capsule, s: Snapshot, vm: WardrobeViewModel, op
     val choiceRevision by vm.personalChoices.revision.collectAsStateWithLifecycle()
     val choices = remember(capsule.wardrobeId, choiceRevision) { vm.personalChoices.read(capsule.wardrobeId) }
     var tripOccasion by rememberSaveable(capsule.id) { mutableStateOf("everyday") }
+    // TRIP-03: a compact packing suggestion, computed on request.
+    var suggestion by remember(capsule.id) { mutableStateOf<PackingSuggestion?>(null) }
+    var suggesting by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val tripForecast = forecast.takeIf { weatherEnabled }
     val dated = capsule.startDate.isNotBlank()
     val coverage by produceState<TripCoverage?>(null, dated, capsule, s.garments, s.capsuleItems, s.wears, s.feedback, s.wardrobes,
@@ -104,6 +109,13 @@ fun CapsuleDetailScreen(capsule: Capsule, s: Snapshot, vm: WardrobeViewModel, op
                         else Text(stringResource(R.string.trip_covered, c.covered, c.days.size), style = MaterialTheme.typography.titleMedium)
                         if (c.past > 0 && c.days.isNotEmpty()) Text(stringResource(R.string.trip_past, c.past), style = MaterialTheme.typography.bodySmall)
                         if (c.truncated) Text(stringResource(R.string.trip_truncated, TripPlan.MAX_DAYS), style = MaterialTheme.typography.bodySmall)
+                        if (c.days.isNotEmpty()) OutlinedButton(onClick = {
+                            suggesting = true
+                            scope.launch {
+                                suggestion = withContext(Dispatchers.Default) { TripPlan.packing(s, capsule, tripOccasion, today, tripForecast, choices) }
+                                suggesting = false
+                            }
+                        }, enabled = !busy && !suggesting) { Text(stringResource(R.string.trip_suggest)) }
                     }
                 }
             }
@@ -147,6 +159,21 @@ fun CapsuleDetailScreen(capsule: Capsule, s: Snapshot, vm: WardrobeViewModel, op
             TextButton(onClick = { resetting = true }, enabled = !busy && packing.any { it.packed }) { Text(stringResource(R.string.capsule_reset)) }
             TextButton(onClick = { deleting = true }, enabled = !busy) { Text(stringResource(R.string.delete)) }
         } }
+    }
+    suggestion?.let { proposal ->
+        AlertDialog(onDismissRequest = { suggestion = null }, title = { Text(stringResource(R.string.trip_suggest)) }, text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(if (proposal.add.isEmpty()) R.string.trip_suggest_enough else R.string.trip_suggest_add,
+                    proposal.add.size, proposal.covered, proposal.days))
+                proposal.add.forEach { g -> Text("• " + g.name + " — " + (s.customCategory(g)?.name ?: stringResource(label(g.category)))) }
+                if (proposal.covered < proposal.days) Text(stringResource(R.string.trip_suggest_gaps), color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.trip_suggest_hint), style = MaterialTheme.typography.bodySmall)
+            }
+        }, confirmButton = {
+            if (proposal.add.isNotEmpty()) TextButton(onClick = { vm.addCapsuleItems(capsule.id, proposal.add.map { it.id }); suggestion = null }, enabled = !busy) {
+                Text(stringResource(R.string.trip_suggest_confirm, proposal.add.size)) }
+            else TextButton(onClick = { suggestion = null }) { Text(stringResource(R.string.feedback_ok)) }
+        }, dismissButton = { if (proposal.add.isNotEmpty()) TextButton(onClick = { suggestion = null }) { Text(stringResource(R.string.cancel)) } })
     }
     if (editing) CapsuleEditor(capsule, capsule.wardrobeId, vm, { editing = false }) { editing = false }
     if (selectingOutfits) {

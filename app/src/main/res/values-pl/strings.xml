@@ -1438,4 +1438,10 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="trip_past">Minione dni wyjazdu nie są pokazane: %1$d.</string>
     <string name="trip_over">Wyjazd już się skończył.</string>
     <string name="trip_truncated">Pokazano pierwsze %1$d dni.</string>
+    <string name="trip_suggest">Zaproponuj rzeczy</string>
+    <string name="trip_suggest_add">Dodaj %1$d rzeczy — wtedy zestaw będzie na %2$d z %3$d dni, z ponownym użyciem rzeczy:</string>
+    <string name="trip_suggest_enough">Nie trzeba nic dodawać: rzeczy w kapsule wystarczą na %2$d z %3$d dni.</string>
+    <string name="trip_suggest_gaps">Niektórym dniom brakuje zestawu nawet z całej szafy — powody widać na kartach dni.</string>
+    <string name="trip_suggest_hint">Rzeczy są dodawane do kapsuły jako dodane ręcznie; spakowanie zaznacza się osobno.</string>
+    <string name="trip_suggest_confirm">Dodaj %1$d</string>
 </resources>

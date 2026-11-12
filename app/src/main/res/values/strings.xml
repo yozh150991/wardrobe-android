@@ -1438,4 +1438,10 @@
     <string name="trip_past">Минулі дні поїздки не показано: %1$d.</string>
     <string name="trip_over">Поїздка вже минула.</string>
     <string name="trip_truncated">Показано перші %1$d днів.</string>
+    <string name="trip_suggest">Запропонувати речі</string>
+    <string name="trip_suggest_add">Додати %1$d речей — тоді образ буде на %2$d з %3$d днів, з повторним використанням речей:</string>
+    <string name="trip_suggest_enough">Додавати нічого не треба: речей у капсулі вистачає на %2$d з %3$d днів.</string>
+    <string name="trip_suggest_gaps">Деяким дням образу бракує навіть з усього гардероба — причини видно в картках днів.</string>
+    <string name="trip_suggest_hint">Речі додаються до капсули як додані вручну; зібране позначається окремо.</string>
+    <string name="trip_suggest_confirm">Додати %1$d</string>
 </resources>
