@@ -1484,4 +1484,14 @@
     <string name="settings_suggestions">Підбір образів</string>
     <string name="settings_suggestions_hint">Для гардероба, який зараз відкрито.</string>
     <string name="settings_weather">Погода й місто</string>
+    <string name="item_delete">Видалити річ</string>
+    <string name="item_delete_title">Видалити «%1$s» назавжди?</string>
+    <string name="item_delete_hint">Річ і її фото зникнуть із гардероба й капсул. Скасувати це не можна.</string>
+    <string name="item_delete_confirm">Видалити</string>
+    <string name="item_delete_blocked_title">Цю річ можна лише перенести до архіву</string>
+    <string name="item_delete_worn">Її відмічено як вдягнену, днів: %1$d. Видалення стерло б цю історію.</string>
+    <string name="item_delete_outfits">Вона є у збережених образах: %1$d. Щоб видалити річ, спершу прибери її з них або видали ці образи.</string>
+    <string name="item_delete_purchase">Її куплено зі списку бажань, і запис про покупку посилається на неї.</string>
+    <string name="item_delete_archive_instead">В архіві річ не потрапляє в підбір, а історія зберігається.</string>
+    <string name="item_delete_archived">Річ уже в архіві й не потрапляє в підбір.</string>
 </resources>

@@ -1,3 +1,10 @@
+## Current handoff — UX-15 item deletion, 14 November 2026
+
+0.14.49-item-delete/code 79, Room 11 and backup formats unchanged. Read ITEM-DELETE-0.14.49.md. The user's decision:
+delete only items without wear and outfits, archive the rest. Stacked on 0.14.48 (PR #47 ⊃ #46 ⊃ #45 ⊃ #44, CI green,
+not merged); its PR targets main and contains them. ItemRemovalRules.blocker (wear, outfits, bought from a wish) is
+used by the item page and enforced again in Repository.removeGarment. Open from the UX review: findings 10–15 (UX-12).
+
 ## Current handoff — UX-13 bulk style, UX-14 preferences and weather in Settings, 14 November 2026
 
 0.14.48-bulk-style/code 78, Room 11 and backup formats unchanged. Read BULK-STYLE-0.14.48.md. Stacked on the UX

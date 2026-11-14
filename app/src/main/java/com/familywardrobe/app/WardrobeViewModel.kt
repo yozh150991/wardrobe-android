@@ -506,6 +506,12 @@ class WardrobeViewModel internal constructor(application: Application, private v
     /** [date]: today when null; an earlier day for wear noticed later (WEAR-01). Never a future day. */
     fun wear(item: Garment, date: String? = null) = perform { repo.toggleItemWear(item.id, wearDate(date)) }
     fun wearOutfit(id: String, date: String? = null) = perform { repo.toggleOutfitWear(id, wearDate(date)) }
+    /** UX-15: deletes an item that was never worn and is in no outfit; others are archived (ItemRemovalRules). */
+    fun removeItem(id: String, done: () -> Unit) = perform {
+        repo.removeGarment(id, photos)
+        if (savedItem.value?.id == id) savedItem.value = null
+        done()
+    }
     /** UX-07: removes a saved outfit; the wear already recorded stays with the items. */
     fun removeOutfit(id: String, done: () -> Unit) = perform { repo.removeOutfit(id, photos); done() }
     private fun wearDate(date: String?): String {
