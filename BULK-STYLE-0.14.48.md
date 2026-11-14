@@ -51,7 +51,7 @@
   - після окремої правки стилю скасування відхиляється;
   - невідомий стиль відхиляється.
 - Host checks — pass (39 наборів). На телефоні не перевірено.
-- **CI** — див. журнал роадмапу.
+- **CI** — 4/4 jobs pass для push і PR (runs 43594684690, 43594688446): JVM 320, instrumentation 204 (5 skipped), Firebase emulators, Source and Git safety.
 
 ## Що лишилося з огляду UX
 

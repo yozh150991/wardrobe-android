@@ -21,7 +21,7 @@ Live functions deploy попередніх 0.14.13–14 не підтвердж�
 Погоджений порядок: спрощення каталогу та імпорт → помічник покупки → сімейний доступ.
 Нова пряма вказівка користувача має перевагу над цим планом.
 
-**Актуальна контрольна точка:** 0.14.48/code78, Claude, 14.11.2026 (UX-13, UX-14; PR → main, містить #44–#46; CI — див. журнал).
+**Актуальна контрольна точка:** 0.14.48/code78, Claude, 14.11.2026 (UX-13, UX-14; PR #47 → main, містить #44–#46; CI — 4/4 jobs pass).
 **0.14.47:** огляд UX, UX-07–UX-11, PR #46; CI — 4/4 jobs pass.
 **0.14.46:** PHOTO-17 — поділитися фото файлом, PR #45; CI — 4/4 jobs pass.
 **0.14.45:** WTH-02 — дощ за прогнозом, PR #44; CI — 4/4 jobs pass.
@@ -851,3 +851,4 @@ and device acceptance remain pending; no live Firebase deployment is included.
 - Без окремого запиту: дві відкриті знахідки огляду UX (8, 9), про які я повідомив після 0.14.47. Гілка від огляду UX (PR #44–#46 ще не злиті), PR одразу в main. Версія 0.14.48-bulk-style/code78; Room і формати копії без змін.
 - `bulkChange`/`undoBulk`: дія `style`; каталог — «Змінити стиль» із поясненням. `Settings`: розділ «Підбір образів» відкриває `PreferencesDialog` і `WeatherPanel` для відкритого гардероба.
 - Перевірки тут: `check_ux_review.py` доповнено; instrumentation `bulkStyleChangesOnlyTheStyleAndCanBeUndone`; host 39 pass. Збірка — у CI. Пристрій не перевірено. Деталі: BULK-STYLE-0.14.48.md.
+- CI PR #47: 4/4 jobs pass для push і PR (runs 43594684690, 43594688446): JVM 320, instrumentation 204 (5 skipped), Firebase emulators, Source and Git safety.
