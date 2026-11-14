@@ -1,3 +1,10 @@
+## Current handoff — UX-13 bulk style, UX-14 preferences and weather in Settings, 14 November 2026
+
+0.14.48-bulk-style/code 78, Room 11 and backup formats unchanged. Read BULK-STYLE-0.14.48.md. Stacked on the UX
+review (PR #46 ⊃ #45 ⊃ #44, CI green, not merged); its PR targets main and contains them. bulkChange/undoBulk take
+the action "style"; Settings opens PreferencesDialog and WeatherPanel for the wardrobe on screen. Open from the UX
+review: findings 7 and 10–15 (UX-12); item deletion waits for the user's decision.
+
 ## Current handoff — UX review and UX-07–UX-11, 14 November 2026
 
 0.14.47-ux-review/code 77, Room 11 and backup formats unchanged. Read UX-REVIEW-0.14.47.md (15 findings; 7–15 are

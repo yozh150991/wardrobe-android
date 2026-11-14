@@ -488,8 +488,8 @@ class WardrobeViewModel internal constructor(application: Application, private v
         nextReviewId.value = ImportReviewRules.next(nextIds, ready, emptySet(), id)
         done()
     }
-    fun bulk(ids: Set<String>, action: String, season: String = "all") = perform {
-        bulkUndo.value = repo.bulkChange(active.value, ids, action, season)
+    fun bulk(ids: Set<String>, action: String, season: String = "all", style: String = "casual") = perform {
+        bulkUndo.value = repo.bulkChange(active.value, ids, action, season, style)
     }
     fun undoBulk(change: BulkChange) = perform {
         if (!repo.undoBulk(change)) notice.value = R.string.undo_availability_conflict

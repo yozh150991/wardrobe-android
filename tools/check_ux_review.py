@@ -54,7 +54,18 @@ order = [detail.index(x) for x in ('R.string.match', 'R.string.undo_wear else R.
 check(order == sorted(order), 'everyday actions, then facts and history, then rare decisions')
 check(detail.count('if (g.subcategory.isNotBlank())') == 1 and detail.index('g.subcategory') < detail.index('StatusLabel('), 'the subcategory sits under the name')
 
-from ux_review_strings import STRINGS
+# UX-13 (0.14.48): one style for several items, with undo. UX-14: preferences and weather are in Settings too.
+ops = read('ImportOperations.kt')
+check('"style" -> g.copy(style = style)' in ops and '&& style in Matching.styles)' in ops, 'bulk style changes only the style, to a known one')
+check('g.season != expected.season || g.style != expected.style' in ops and 'season = old.season, style = old.style))' in ops, 'undo restores the style and refuses a later edit')
+check('applyBulk("style", styleValue = chosenStyle)' in catalog and 'R.string.bulk_style_hint' in catalog, 'the catalog offers it and says what a style does')
+settings = ui.split('\nfun Settings(', 1)[1].split('internal val LocalLookPhotos', 1)[0]
+check('PreferencesDialog(snapshot, wardrobe, vm, today)' in settings and 'WeatherPanel(vm.weather, today)' in settings, 'Settings open the preferences and the weather')
+check('snapshot = snapshot, wardrobe = current.id, today = today)' in ui, 'for the wardrobe that is open')
+
+from ux_review_strings import STRINGS as _FIRST
+from bulk_style_strings import STRINGS as _SECOND
+STRINGS = {**_FIRST, **_SECOND}
 placeholders = {}
 for folder in ('values', 'values-uk', 'values-en', 'values-pl'):
     strings = {s.get('name'): ''.join(s.itertext()) for s in E.parse(root / 'app/src/main/res' / folder / 'strings.xml').getroot().iter('string')}
@@ -62,7 +73,7 @@ for folder in ('values', 'values-uk', 'values-en', 'values-pl'):
         check(bool(strings.get(key, '').strip()), f'{folder}: {key} missing')
         found = sorted(re.findall(r'%\d\$[sd]', strings.get(key, '')))
         check(placeholders.setdefault(key, found) == found, f'{folder}: {key} placeholders {found} differ')
-for key in STRINGS: check(f'R.string.{key}' in ui, f'{key} is used')
+for key in STRINGS: check(f'R.string.{key}' in ui + catalog, f'{key} is used')
 if failures: raise SystemExit('FAIL UX review:\n' + '\n'.join(failures))
 
 java = shutil.which('java') or 'java'

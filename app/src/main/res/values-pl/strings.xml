@@ -1479,4 +1479,9 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="item_name_optional">Nazwa — opcjonalnie</string>
     <string name="item_name_auto">Bez nazwy rzecz będzie się nazywać „%1$s”.</string>
     <string name="item_season_style_hint">Sezon i styl decydują, kiedy rzecz jest proponowana: według pogody i okazji.</string>
+    <string name="bulk_style">Zmień styl</string>
+    <string name="bulk_style_hint">Styl decyduje, na jakie okazje rzecz jest proponowana: formalny do pracy i na wydarzenia, sportowy na aktywny dzień.</string>
+    <string name="settings_suggestions">Dobór zestawów</string>
+    <string name="settings_suggestions_hint">Dla garderoby, która jest teraz otwarta.</string>
+    <string name="settings_weather">Pogoda i miasto</string>
 </resources>
