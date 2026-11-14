@@ -30,7 +30,9 @@ data class Forecast(val city: WeatherCity, val fetchedAt: Long, val currentDate:
             else -> null
         }
     }
-    fun mode(date: String): String? = temperature(date)?.let { RoadmapRules.weatherMode(it) }
+    /** WTH-02: the chance of rain on [date], %, while the forecast for it is still used (see [temperature]). */
+    fun rain(date: String): Int? = if (temperature(date) == null) null else days.find { it.date == date }?.rain
+    fun mode(date: String): String? = temperature(date)?.let { WeatherRules.mode(it, rain(date)) }
 }
 
 /** Optional city search; no device location permission. Cache and settings are account-private. */
