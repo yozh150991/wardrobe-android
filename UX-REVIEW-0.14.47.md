@@ -154,7 +154,7 @@
   - результат проходить перевірку резервної копії (`BackupStateRules.validate`);
   - повторне видалення відхиляється.
 - Host checks — pass (39 наборів). На телефоні не перевірено.
-- **CI** — див. журнал роадмапу.
+- **CI** — 4/4 jobs pass для push і PR (runs 43593463920, 43593468829): JVM 320, instrumentation 203 (5 skipped), Firebase emulators, Source and Git safety.
 
 ## Питання, що лишилися
 

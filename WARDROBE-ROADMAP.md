@@ -21,7 +21,7 @@ Live functions deploy попередніх 0.14.13–14 не підтвердж�
 Погоджений порядок: спрощення каталогу та імпорт → помічник покупки → сімейний доступ.
 Нова пряма вказівка користувача має перевагу над цим планом.
 
-**Актуальна контрольна точка:** 0.14.47/code77, Claude, 14.11.2026 (огляд UX, UX-07–UX-11; PR → main, містить #44 і #45; CI — див. журнал).
+**Актуальна контрольна точка:** 0.14.47/code77, Claude, 14.11.2026 (огляд UX, UX-07–UX-11; PR #46 → main, містить #44 і #45; CI — 4/4 jobs pass).
 **0.14.46:** PHOTO-17 — поділитися фото файлом, PR #45; CI — 4/4 jobs pass.
 **0.14.45:** WTH-02 — дощ за прогнозом, PR #44; CI — 4/4 jobs pass.
 **0.14.44:** TRIP-01 — місто й нагода поїздки, формат 11, PR #43 (злито); CI — 4/4 jobs pass; перед оновленням телефонів — `cloud/deploy-rules.ps1`.
@@ -841,3 +841,4 @@ and device acceptance remain pending; no live Firebase deployment is included.
 - UX-08: сезон і стиль в основній формі речі. UX-11: `ItemNameRules` — назва необов’язкова.
 - UX-09: гардероб без речей стартує з каталогу; кнопки «Що вдягнути сьогодні» прибрано з каталогу й образів. UX-10: порядок сторінки речі, мітки замість чіпів.
 - Перевірки тут: новий набір `check_ux_review.py` (39-й), `ItemNameRulesCases` 12; instrumentation `removingAnOutfitKeepsTheWearHistory`; host 39 pass. Збірка — у CI. Пристрій не перевірено. Деталі: UX-REVIEW-0.14.47.md.
+- CI PR #46: 4/4 jobs pass для push і PR (runs 43593463920, 43593468829): JVM 320, instrumentation 203 (5 skipped), Firebase emulators, Source and Git safety.
