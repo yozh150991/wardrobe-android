@@ -42,17 +42,19 @@ suspend fun Repository.skipImport(id: String, photos: PhotoStore) = writes.withL
     photos.remove(candidates - referencedPhotos())
 }
 
-suspend fun Repository.bulkChange(wardrobe: String, ids: Set<String>, action: String, season: String = "all"): BulkChange = writes.withLock {
+/** UX-13 (0.14.48): "style" sets one style for the chosen items, like "season" — both decide when an item is suggested. */
+suspend fun Repository.bulkChange(wardrobe: String, ids: Set<String>, action: String, season: String = "all", style: String = "casual"): BulkChange = writes.withLock {
     db.withTransaction {
         require(ids.isNotEmpty() && ids.size <= 10_000)
         val before = ids.map { requireNotNull(dao.garment(it)) }
         require(before.all { it.wardrobeId == wardrobe })
-        require(action in setOf("laundry", "available", "archive", "restore", "season") && season in Matching.seasons)
+        require(action in setOf("laundry", "available", "archive", "restore", "season", "style") && season in Matching.seasons && style in Matching.styles)
         val after = before.map { g -> when (action) {
             "laundry" -> g.copy(availability = "laundry")
             "available" -> g.copy(availability = "available")
             "archive" -> g.copy(archived = true)
             "restore" -> g.copy(archived = false)
+            "style" -> g.copy(style = style)
             else -> g.copy(season = season)
         } }
         after.forEach { dao.saveGarment(it) }
@@ -65,9 +67,9 @@ suspend fun Repository.undoBulk(change: BulkChange): Boolean = writes.withLock {
         val current = change.after.map { dao.garment(it.id) ?: return@withTransaction false }
         if (current.zip(change.after).any { (g, expected) ->
             g.wardrobeId != expected.wardrobeId || g.availability != expected.availability ||
-                g.archived != expected.archived || g.season != expected.season }) return@withTransaction false
+                g.archived != expected.archived || g.season != expected.season || g.style != expected.style }) return@withTransaction false
         current.zip(change.before).forEach { (g, old) ->
-            dao.saveGarment(g.copy(availability = old.availability, archived = old.archived, season = old.season))
+            dao.saveGarment(g.copy(availability = old.availability, archived = old.archived, season = old.season, style = old.style))
         }
         true
     }

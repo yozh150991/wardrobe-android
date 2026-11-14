@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.FitScreen
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.ZoomIn
 import androidx.compose.material.icons.outlined.ZoomOut
 import androidx.compose.material3.*
@@ -62,6 +63,7 @@ internal fun ZoomableItemPhoto(photoId: String, photos: PhotoStore, modifier: Mo
 private fun PhotoViewer(photoId: String, title: String, photos: PhotoStore, onDismiss: () -> Unit, garmentColour: String?) {
     var retry by remember(photoId, photos) { mutableIntStateOf(0) }
     var loading by remember(photoId, photos) { mutableStateOf(true) }
+    var exporting by remember(photoId, photos) { mutableStateOf(false) }
     val bitmap by produceState<Bitmap?>(null, photoId, photos, retry) {
         loading = true
         value = photos.bitmap(photoId, detailed = true)
@@ -74,6 +76,10 @@ private fun PhotoViewer(photoId: String, title: String, photos: PhotoStore, onDi
                 Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(title, Modifier.weight(1f).padding(start = 8.dp), style = MaterialTheme.typography.titleMedium,
                         maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    // PHOTO-17: share the photo as a file (PNG or JPEG on a real background).
+                    IconButton(onClick = { exporting = true }, enabled = bitmap != null, modifier = Modifier.size(48.dp)) {
+                        Icon(Icons.Outlined.Share, stringResource(R.string.photo_export_open))
+                    }
                     IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp)) {
                         Icon(Icons.Outlined.Close, stringResource(R.string.close))
                     }
@@ -88,6 +94,7 @@ private fun PhotoViewer(photoId: String, title: String, photos: PhotoStore, onDi
                 } else key(photoId, photos, ready) {
                     ZoomedPhoto(ready, title, Modifier.weight(1f).fillMaxWidth(), garmentColour)
                 }
+                if (exporting) PhotoExportDialog(photoId, title, photos, onDismiss = { exporting = false })
             }
         }
     }

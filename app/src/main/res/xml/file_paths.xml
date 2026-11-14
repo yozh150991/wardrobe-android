@@ -1,3 +1,5 @@
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <cache-path name="camera" path="camera/" />
+    <!-- PHOTO-17: one exported photo per share, removed after a day; never the saved photos themselves. -->
+    <cache-path name="share" path="share/" />
 </paths>

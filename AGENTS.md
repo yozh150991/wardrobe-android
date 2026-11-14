@@ -1,3 +1,51 @@
+## Where documents live — 14 November 2026
+
+The user asked for an orderly structure instead of everything in one folder. Release documents (`NAME-version.md`,
+hotfix notes) are in `docs/releases/`; guides are in `docs/guides/`; validation reports are in
+`release-evidence/validation/`. The root keeps only README.md, README-UK.md, AGENTS.md, CHANGELOG.md and
+WARDROBE-ROADMAP.md. **Write every new release document to `docs/releases/`.** Older notes below and in the roadmap
+name these documents without a folder — they are in `docs/releases/` unless a path says otherwise.
+
+## Current handoff — UX-15 item deletion, 14 November 2026
+
+0.14.49-item-delete/code 79, Room 11 and backup formats unchanged. Read ITEM-DELETE-0.14.49.md. The user's decision:
+delete only items without wear and outfits, archive the rest. Stacked on 0.14.48 (PR #47 ⊃ #46 ⊃ #45 ⊃ #44, CI green,
+not merged); its PR targets main and contains them. ItemRemovalRules.blocker (wear, outfits, bought from a wish) is
+used by the item page and enforced again in Repository.removeGarment. Open from the UX review: findings 10–15 (UX-12).
+
+## Current handoff — UX-13 bulk style, UX-14 preferences and weather in Settings, 14 November 2026
+
+0.14.48-bulk-style/code 78, Room 11 and backup formats unchanged. Read BULK-STYLE-0.14.48.md. Stacked on the UX
+review (PR #46 ⊃ #45 ⊃ #44, CI green, not merged); its PR targets main and contains them. bulkChange/undoBulk take
+the action "style"; Settings opens PreferencesDialog and WeatherPanel for the wardrobe on screen. Open from the UX
+review: findings 7 and 10–15 (UX-12); item deletion waits for the user's decision.
+
+## Current handoff — UX review and UX-07–UX-11, 14 November 2026
+
+0.14.47-ux-review/code 77, Room 11 and backup formats unchanged. Read UX-REVIEW-0.14.47.md (15 findings; 7–15 are
+open as UX-12, item deletion needs the user's decision). Stacked on PHOTO-17 (PR #45 ⊃ #44, CI green, not merged);
+its PR targets main and contains them. Repository.removeOutfit turns wear recorded through the outfit or its plans
+into the items' own wear before deleting (a wear's source must exist — BackupStateRules), then reconciles capsules.
+ItemNameRules makes the item name optional. Season and style are in the main item form. A wardrobe without items
+starts on the catalog (startChecked in WardrobeApp).
+
+## Current handoff — PHOTO-17 share a photo as a file, 14 November 2026
+
+0.14.46-photo-export/code 76, Room 11 and backup formats unchanged. Read PHOTO-EXPORT-0.14.46.md. Stacked on WTH-02
+(PR #44, CI green, not merged); its PR targets main and contains it. PhotoExportRules (sizes never enlarge, source-over
+blend onto white/cream, safe file names); PhotoStore.export writes a new pixel-only file under cache/share/<account>/
+<id>/ (expires after a day) and returns a FileProvider URI; PhotoExportDialog shares it via ACTION_SEND. FileProvider
+exposes only camera/ and share/ — never the saved photos. Every FileProvider URI goes through
+PhotoStore.sharedUri with the application context: the provider keeps the roots of its first caller, and the account
+context has its own cache folder (camera URIs could fail before).
+
+## Current handoff — WTH-02 rain from the forecast, 14 November 2026
+
+0.14.45-rain/code 75, Room 11 and backup formats unchanged. Read RAIN-0.14.45.md. PRs #36–#43 are merged; this
+branch is from main. WeatherRules.mode(temperature, rain): a mild day (+8…+22) with a rain chance from RAIN_FROM = 60%
+is "rain"; WeatherRules.outerwear adds a jacket in "rain" up to +22. Forecast.rain/mode, DailyScreen and TripPlan use
+it; a manual weather choice is never overridden.
+
 ## Current handoff — TRIP-01 trip city and occasion, 12 November 2026
 
 0.14.44-trip-details/code 74, **Room 11, backup format 11** (only when a capsule has trip details; otherwise 10).

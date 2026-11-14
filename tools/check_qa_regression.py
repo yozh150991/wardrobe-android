@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""QA regression suites (QA-REPORT-0.14.13.md) on the host, without the Android SDK.
+"""QA regression suites (docs/releases/QA-REPORT-0.14.13.md) on the host, without the Android SDK.
 
 1. Compiles every production Java rule and the technique-tagged Qa*Cases, then runs each suite
    (equivalence classes, boundary values, state transitions, pairwise, error guessing).
@@ -33,7 +33,7 @@ def known_bug(bug, reproduces, message):
     if reproduces:
         reproduced.add(bug)
     else:
-        failures.append(f'{bug} no longer reproduces ({message}); promote it to a regular check and update QA-REPORT-0.14.13.md')
+        failures.append(f'{bug} no longer reproduces ({message}); promote it to a regular check and update docs/releases/QA-REPORT-0.14.13.md')
 
 
 env = dict(os.environ)

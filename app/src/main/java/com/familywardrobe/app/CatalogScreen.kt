@@ -40,12 +40,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String, initialCategory: String,
     onOpen: (Garment) -> Unit, onAdd: (String) -> Unit, onFirstOutfit: () -> Unit, onCategoryConsumed: () -> Unit, onBatch: () -> Unit,
-    onDaily: () -> Unit, onStatistics: () -> Unit, onAddMethods: () -> Unit, onReprocess: () -> Unit) {
+    onStatistics: () -> Unit, onAddMethods: () -> Unit, onReprocess: () -> Unit) {
     var selecting by rememberSaveable { mutableStateOf(false) }
     var selectedIds by rememberSaveable { mutableStateOf(listOf<String>()) }
     var bulkMenu by remember { mutableStateOf(false) }
     var seasonMenu by remember { mutableStateOf(false) }
     var chosenSeason by rememberSaveable { mutableStateOf("all") }
+    var styleMenu by remember { mutableStateOf(false) }
+    var chosenStyle by rememberSaveable { mutableStateOf("casual") }
     var query by rememberSaveable(wardrobe) { mutableStateOf("") }
     var category by rememberSaveable(wardrobe) { mutableStateOf("") }
     var subcategory by rememberSaveable(wardrobe) { mutableStateOf("") }
@@ -99,8 +101,8 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
         else -> rows.sortedByDescending { it.createdAt }
     } }
     LaunchedEffect(wardrobe, found.map { it.id }) { selectedIds = selectedIds.filter { id -> found.any { it.id == id } } }
-    fun applyBulk(action: String, seasonValue: String = "all") {
-        vm.bulk(selectedIds.toSet(), action, seasonValue); bulkMenu = false; seasonMenu = false; selectedIds = emptyList(); selecting = false
+    fun applyBulk(action: String, seasonValue: String = "all", styleValue: String = "casual") {
+        vm.bulk(selectedIds.toSet(), action, seasonValue, styleValue); bulkMenu = false; seasonMenu = false; styleMenu = false; selectedIds = emptyList(); selecting = false
     }
     val hasFilters = query.isNotBlank() || subcategory.isNotEmpty() || category.isNotEmpty() || color.isNotEmpty() || season.isNotEmpty() ||
         size.isNotEmpty() || location.isNotEmpty() || favorites
@@ -112,11 +114,9 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
             horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item(key = "catalog_header", span = { GridItemSpan(maxLineSpan) }) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = onDaily, enabled = !busy) { Text(stringResource(R.string.daily_title)) }
-                        if (reprocessing.entries.isNotEmpty() || reprocessing.unreadable) OutlinedButton(onClick = onReprocess,
-                            enabled = !busy) { Text(stringResource(R.string.photo_reprocess_return)) }
-                    }
+                    // UX-09: «Що вдягнути сьогодні» lived here as a button; it is the first tab now.
+                    if (reprocessing.entries.isNotEmpty() || reprocessing.unreadable) OutlinedButton(onClick = onReprocess,
+                        enabled = !busy) { Text(stringResource(R.string.photo_reprocess_return)) }
                     saved?.takeIf { it.wardrobe == wardrobe }?.let { message ->
                         SavedItemConfirmation(message, onOpen = { byId[message.id]?.let(onOpen) },
                             onAddNext = { vm.savedItem.value = null; onAdd(message.category) },
@@ -217,6 +217,8 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
                 TextButton(onClick = { applyBulk(action) }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(title)) }
             }
             TextButton(onClick = { bulkMenu = false; seasonMenu = true }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.bulk_season)) }
+            // UX-13: items added before 0.14.47 are all «Повсякденний»; one step sets the style for many.
+            TextButton(onClick = { bulkMenu = false; styleMenu = true }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.bulk_style)) }
             TextButton(onClick = {
                 bulkMenu = false
                 if (reprocessing.entries.isNotEmpty() || reprocessing.unreadable) onReprocess()
@@ -229,6 +231,13 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
         text = { Choice(chosenSeason, Matching.seasons, { chosenSeason = it }, R.string.season) },
         confirmButton = { TextButton(onClick = { applyBulk("season", chosenSeason) }, enabled = !busy) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = { seasonMenu = false }) { Text(stringResource(R.string.cancel)) } })
+    if (styleMenu) AlertDialog(onDismissRequest = { styleMenu = false }, title = { Text(stringResource(R.string.bulk_style)) },
+        text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Choice(chosenStyle, Matching.styles, { chosenStyle = it }, R.string.style)
+            Text(stringResource(R.string.bulk_style_hint), style = MaterialTheme.typography.bodySmall)
+        } },
+        confirmButton = { TextButton(onClick = { applyBulk("style", styleValue = chosenStyle) }, enabled = !busy) { Text(stringResource(R.string.save)) } },
+        dismissButton = { TextButton(onClick = { styleMenu = false }) { Text(stringResource(R.string.cancel)) } })
     if (filters) AlertDialog(onDismissRequest = { filters = false }, title = { Text(stringResource(R.string.filter)) },
         text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             WardrobeCategoryChoice(category.takeIf { it in Matching.categories }.orEmpty(),
