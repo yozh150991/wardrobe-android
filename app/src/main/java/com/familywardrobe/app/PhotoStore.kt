@@ -44,6 +44,50 @@ class PhotoStore(private val context: Context) {
         require(ID.matches(id) && extension in ALL_EXTENSIONS)
         return File(directory, "$id.$extension")
     }
+    /** PHOTO-17: what an export can offer for the saved photo [id]; null when it can not be read. */
+    suspend fun exportInfo(id: String): PhotoExportInfo? = withContext(Dispatchers.IO) {
+        runCatching {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(currentFile(id).path, bounds)
+            require(bounds.outWidth > 0 && bounds.outHeight > 0)
+            PhotoExportInfo(bounds.outWidth, bounds.outHeight, file(id, "png").isFile)
+        }.getOrNull()
+    }
+    /**
+     * PHOTO-17: the saved photo [id] as a new file to share ([PhotoExportRules]): PNG as saved, or JPEG on a real white
+     * or cream background; at most [size] on the longest side, never enlarged; encoded from pixels only, so no EXIF.
+     * Files live under cache/share/ (the only other folder FileProvider exposes) and are removed after a day.
+     */
+    suspend fun export(id: String, format: String, size: Int, title: String): Uri = withContext(Dispatchers.IO) {
+        val source = currentFile(id)
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(source.path, bounds)
+        val (width, height) = PhotoExportRules.size(bounds.outWidth, bounds.outHeight, size).let { it[0] to it[1] }
+        var sample = 1
+        while (bounds.outWidth / (sample * 2) >= width && bounds.outHeight / (sample * 2) >= height) sample *= 2
+        val decoded = BitmapFactory.decodeFile(source.path, BitmapFactory.Options().apply {
+            inSampleSize = sample; inPreferredConfig = Bitmap.Config.ARGB_8888
+        }) ?: error("The photo can not be read")
+        val scaled = if (decoded.width == width && decoded.height == height) decoded else Bitmap.createScaledBitmap(decoded, width, height, true)
+        val output = if (!PhotoExportRules.jpeg(format)) scaled else Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { canvas ->
+            // Source-over on an opaque background, as PhotoExportRules.blend: the garment's opaque pixels stay as they are.
+            Canvas(canvas).apply { drawColor(PhotoExportRules.background(format)); drawBitmap(scaled, 0f, 0f, Paint(Paint.FILTER_BITMAP_FLAG)) }
+        }
+        val namespace = (context as? AccountContext)?.location?.key ?: "local"
+        val root = File(context.applicationContext.cacheDir, "share/$namespace").apply { mkdirs() }
+        root.listFiles()?.filter { System.currentTimeMillis() - it.lastModified() > 86_400_000L }?.forEach { it.deleteRecursively() }
+        val folder = File(root, newId()).apply { mkdirs() }
+        val file = File(folder, PhotoExportRules.fileName(title, format))
+        try {
+            file.outputStream().use { stream ->
+                val written = if (PhotoExportRules.jpeg(format)) output.compress(Bitmap.CompressFormat.JPEG, PhotoExportRules.JPEG_QUALITY, stream)
+                    else output.compress(Bitmap.CompressFormat.PNG, 100, stream)
+                check(written) { "The photo can not be encoded" }
+            }
+        } catch (e: Throwable) { folder.deleteRecursively(); throw e }
+        finally { if (output !== scaled) output.recycle(); if (scaled !== decoded) scaled.recycle(); decoded.recycle() }
+        FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+    }
     fun newCapture(): Uri {
         // Only camera/ is exposed by FileProvider, never the private account cache.
         val namespace = (context as? AccountContext)?.location?.key ?: "local"
@@ -295,3 +339,6 @@ class PhotoStore(private val context: Context) {
         }
     }
 }
+
+/** PHOTO-17: the saved photo's size and whether it is a cut-out with transparency. */
+data class PhotoExportInfo(val width: Int, val height: Int, val transparent: Boolean)

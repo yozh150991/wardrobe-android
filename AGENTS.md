@@ -1,3 +1,11 @@
+## Current handoff — PHOTO-17 share a photo as a file, 14 November 2026
+
+0.14.46-photo-export/code 76, Room 11 and backup formats unchanged. Read PHOTO-EXPORT-0.14.46.md. Stacked on WTH-02
+(PR #44, CI green, not merged); its PR targets main and contains it. PhotoExportRules (sizes never enlarge, source-over
+blend onto white/cream, safe file names); PhotoStore.export writes a new pixel-only file under cache/share/<account>/
+<id>/ (expires after a day) and returns a FileProvider URI; PhotoExportDialog shares it via ACTION_SEND. FileProvider
+exposes only camera/ and share/ — never the saved photos.
+
 ## Current handoff — WTH-02 rain from the forecast, 14 November 2026
 
 0.14.45-rain/code 75, Room 11 and backup formats unchanged. Read RAIN-0.14.45.md. PRs #36–#43 are merged; this
