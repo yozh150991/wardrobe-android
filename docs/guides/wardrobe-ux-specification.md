@@ -413,7 +413,7 @@ Android flow test are prepared but not executed. Gradle bootstrap remains
 blocked by network access; Kotlin/Compose, lint, APK and native acceptance have
 not been completed. No new APK is included in wardrobe-release-update-0.13.0.zip.
 
-[WARDROBE-ROADMAP.md](WARDROBE-ROADMAP.md), revision 3, remains the authoritative
+[WARDROBE-ROADMAP.md](../../WARDROBE-ROADMAP.md), revision 3, remains the authoritative
 backlog with all 40 IDs and agent handoff. R1 and R2 are verify, not done. Next:
 REL-01/QA-01–02 and the R1/R2 native matrices; then complete FAM-01 infrastructure
 and cost decisions before family roles/invitations. Older sections below are
@@ -434,7 +434,7 @@ remain unexecuted because Gradle bootstrap was unavailable. Eight new Android
 regression tests are prepared, not claimed as executed. Historical results below
 apply only to their named releases.
 
-The authoritative backlog remains [WARDROBE-ROADMAP.md](WARDROBE-ROADMAP.md),
+The authoritative backlog remains [WARDROBE-ROADMAP.md](../../WARDROBE-ROADMAP.md),
 revision 2, bundled with AGENTS.md in wardrobe-release-update-0.12.0.zip.
 Next: REL-01/QA-01 and R1 acceptance, then SHOP-01–03. Direct image Share,
 network fixtures and full UI/process-death acceptance remain recorded there.
@@ -448,7 +448,7 @@ The current source package is `wardrobe-release-update-0.11.2.zip` (Android
 is labelled “Категорії”. The 0.11.2 build and native layout acceptance remain
 unverified; successful 0.11.1 tests below are historical evidence.
 
-[WARDROBE-ROADMAP.md](WARDROBE-ROADMAP.md) is the authoritative backlog for
+[WARDROBE-ROADMAP.md](../../WARDROBE-ROADMAP.md) is the authoritative backlog for
 future priorities, status, dependencies, acceptance criteria and agent handoff.
 The package includes it plus `wardrobe-android/AGENTS.md`, installed by the
 updater. The roadmap records the approved sequence: compact catalogue and

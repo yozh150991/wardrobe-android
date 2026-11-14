@@ -5,7 +5,7 @@ import json
 import sys
 path=Path(__file__).resolve().parents[1]/'app/google-services.json'
 if not path.is_file():
-    print('NOT CONFIGURED: add the Firebase Android client file at app/google-services.json. See AUTHENTICATION.md.')
+    print('NOT CONFIGURED: add the Firebase Android client file at app/google-services.json. See docs/guides/AUTHENTICATION.md.')
     sys.exit(2)
 try:
     data=json.loads(path.read_text())

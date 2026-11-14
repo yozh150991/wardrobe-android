@@ -1,3 +1,11 @@
+## Where documents live — 14 November 2026
+
+The user asked for an orderly structure instead of everything in one folder. Release documents (`NAME-version.md`,
+hotfix notes) are in `docs/releases/`; guides are in `docs/guides/`; validation reports are in
+`release-evidence/validation/`. The root keeps only README.md, README-UK.md, AGENTS.md, CHANGELOG.md and
+WARDROBE-ROADMAP.md. **Write every new release document to `docs/releases/`.** Older notes below and in the roadmap
+name these documents without a folder — they are in `docs/releases/` unless a path says otherwise.
+
 ## Current handoff — UX-15 item deletion, 14 November 2026
 
 0.14.49-item-delete/code 79, Room 11 and backup formats unchanged. Read ITEM-DELETE-0.14.49.md. The user's decision:

@@ -27,7 +27,7 @@ release = re.search(r'versionName\s*=\s*"([0-9]+\.[0-9]+\.[0-9]+[^"/]*)"', (root
 report = {'release': release, 'checked_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
           'source_only': True, 'checks': results,
           'android': 'Not executed by this runner. Consult the release-specific validation report; historical results do not validate the current source.',
-          'updater': 'See archive package-validation.json for actual PowerShell updater validation; Windows filesystem is not exercised by Linux checks.'}
+          'updater': 'See release-evidence/validation/package-validation.json for actual PowerShell updater validation; Windows filesystem is not exercised by Linux checks.'}
 report_dir = root / 'release-evidence/host-runs'
 report_dir.mkdir(parents=True, exist_ok=True)
 stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
