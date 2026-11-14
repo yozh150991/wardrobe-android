@@ -22,7 +22,7 @@ Live functions deploy попередніх 0.14.13–14 не підтвердж�
 Погоджений порядок: спрощення каталогу та імпорт → помічник покупки → сімейний доступ.
 Нова пряма вказівка користувача має перевагу над цим планом.
 
-**Актуальна контрольна точка:** 0.14.50/code80, Claude, 14.11.2026 (DEV-03 — пакети; PR → main, містить #44–#49; CI — див. журнал).
+**Актуальна контрольна точка:** 0.14.50/code80, Claude, 14.11.2026 (DEV-03 — пакети; PR #50 → main, містить #44–#49; CI — 4/4 jobs pass).
 **0.14.49:** UX-15 — видалення речі, PR #48; упорядкування документів, PR #49; CI — 4/4 jobs pass для обох.
 **0.14.48:** UX-13, UX-14 — стиль для кількох речей, вподобання й погода в налаштуваннях, PR #47; CI — 4/4 jobs pass.
 **0.14.47:** огляд UX, UX-07–UX-11, PR #46; CI — 4/4 jobs pass.
@@ -874,3 +874,4 @@ and device acceptance remain pending; no live Firebase deployment is included.
 - 0.14.50-packages/code80: `com.familywardrobe.app` розділено на `rules` (уся Java), `family`, `ui`, `photo`, `data`, `outfits`, `auth`, `backup`, `cloud`, `importing`; у корені — MainActivity, TodayWidget, Data, BackupHealth, CloudSync, FamilySyncSchedule (імена класів знає система). 1537 явних імпортів згенеровано скриптом і перевірено; `tools/` оновлено.
 - Git Safety: новий хеш винятку для `CloudEmulatorTest.kt` (змінилися лише імпорти; тестові дані емулятора ті самі).
 - Перевірки тут: host 39 pass, Git Safety pass. Kotlin компілює лише CI. Пристрій не перевірено. Деталі: PACKAGES-0.14.50.md.
+- CI 0.14.50: 4/4 jobs pass (push run 43622801249): збірка й lint, JVM 320, instrumentation 205 (5 skipped), Firebase emulators, Source and Git safety. Kotlin скомпілювався з першої спроби.
