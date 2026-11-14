@@ -22,6 +22,12 @@ public final class WeatherRules {
     public static final double TIGHTS_BELOW = 12;
     /** Near a band's limit the neighbouring season's items are allowed too. */
     public static final double OVERLAP = 3;
+    /**
+     * WTH-02 (0.14.45): from this chance of rain (%, the forecast's daily maximum) a mild day is «Дощ» by itself — it
+     * was only ever chosen by hand. A warm day stays warm (a summer shower needs no coat) and a cold one stays cold (it
+     * has a coat already).
+     */
+    public static final int RAIN_FROM = 60;
     /** PERS-02 «легше» / «тепліше»: the forecast as this person feels it. */
     public static final double SHIFT = 4;
 
@@ -41,9 +47,19 @@ public final class WeatherRules {
         double value = valid(temperature) + ("lighter".equals(shift) ? SHIFT : "warmer".equals(shift) ? -SHIFT : 0);
         return Math.max(-90, Math.min(65, value));
     }
+    public static boolean rainy(Integer chance) { return chance != null && chance >= RAIN_FROM && chance <= 100; }
+    /** The mode for a forecast day: the temperature's band (as RoadmapRules#weatherMode), mild and rainy days «Дощ». */
+    public static String mode(double temperature, Integer rainChance) {
+        double t = valid(temperature);
+        String band = t >= WARM_FROM ? "warm" : t < COLD_BELOW ? "cold" : "cool";
+        return band.equals("cool") && rainy(rainChance) ? "rain" : band;
+    }
     private static boolean chilly(String weather) { return weather.equals("cold") || weather.equals("cool") || weather.equals("rain"); }
+    /** A coat below {@link #OUTERWEAR_BELOW}; on a rainy day (WTH-02) a jacket up to the warm band. */
     public static boolean outerwear(String weather, Double temperature) {
-        return temperature == null ? chilly(weather) : valid(temperature) < OUTERWEAR_BELOW;
+        if (temperature == null) return chilly(weather);
+        double t = valid(temperature);
+        return t < OUTERWEAR_BELOW || weather.equals("rain") && t < WARM_FROM;
     }
     public static boolean layer(String weather, Double temperature) {
         return temperature == null ? weather.equals("cold") : valid(temperature) < LAYER_BELOW;
