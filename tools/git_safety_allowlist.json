@@ -4,7 +4,13 @@
       "path": "app/src/androidTest/java/com/familywardrobe/app/CloudEmulatorTest.kt",
       "sha256": "82522ddf0b07e04fd82fba595668b156d9411011b5f08e8bbb4e7960cb56e04a",
       "reason": "possible hardcoded password/token; review the literal",
-      "justification": "Reviewed fake credentials for demo-wardrobe; SDK test requires an explicit loopback/Android-emulator host. Any file change invalidates this exemption."
+      "justification": "Since 0.14.50 (only imports changed in the package split). Reviewed fake credentials for demo-wardrobe; SDK test requires an explicit loopback/Android-emulator host. Any file change invalidates this exemption."
+    },
+    {
+      "path": "app/src/androidTest/java/com/familywardrobe/app/CloudEmulatorTest.kt",
+      "sha256": "c2b0f77a406d57c466cfaf9651c87b78a1655256b03659419d1697c9b8493762",
+      "reason": "possible hardcoded password/token; review the literal",
+      "justification": "The same file before the package split (0.14.50), kept for the history audit: Reviewed fake credentials for demo-wardrobe; SDK test requires an explicit loopback/Android-emulator host. Any file change invalidates this exemption."
     },
     {
       "path": "cloud/auth.test.mjs",

@@ -1,6 +1,6 @@
 # Wardrobe Android
 
-Поточна база: **0.14.49-item-delete**, code **79**, Room **11**, формат копії **11** (лише з даними поїздки; інакше 10).
+Поточна база: **0.14.50-packages**, code **80**, Room **11**, формат копії **11** (лише з даними поїздки; інакше 10).
 Останні зміни: [CHANGELOG.md](CHANGELOG.md); документи релізів — у [docs/releases](docs/releases).
 Підтверджені пакети всіх сімейних черг і opt-in фонове надсилання — [FAMILY-SYNC-0.14.19.md](docs/releases/FAMILY-SYNC-0.14.19.md).
 Черга спільних образів та атомарне збереження форми/публікації — [FAMILY-OUTFIT-QUEUE-0.14.18.md](docs/releases/FAMILY-OUTFIT-QUEUE-0.14.18.md).
@@ -34,6 +34,7 @@ FAM-03: додавання копії власної речі з фото до �
 | `docs/history/` | Історичні звіти до 0.13.5 |
 | `release-evidence/` | Звіти перевірок: `host-runs/` (кожен запуск host checks), `validation/` (звіти релізів і старого оновлювача) |
 | `app/` | Android-застосунок: код, ресурси, тести, схеми Room |
+| `app/src/main/java/com/familywardrobe/app/` | Код за пакетами: `rules` (правила на Java), `family`, `ui`, `photo`, `data`, `outfits`, `auth`, `backup`, `cloud`, `importing`; у корені — лише точки входу, база Room і фонові задачі. Докладно: [docs/releases/PACKAGES-0.14.50.md](docs/releases/PACKAGES-0.14.50.md) |
 | `cloud/` | Правила Firebase і family functions |
 | `tools/` | Host-перевірки, тексти інтерфейсу, Git Safety |
 

@@ -1,3 +1,16 @@
+## Current handoff — DEV-03 packages, 14 November 2026
+
+0.14.50-packages/code 80, no behaviour change. Read docs/releases/PACKAGES-0.14.50.md. The user chose real packages.
+`com.familywardrobe.app` is split: `rules` (all Java rules; their Java tests are in the test source set's `rules`),
+`family`, `ui`, `photo`, `data`, `outfits`, `auth`, `backup`, `cloud`, `importing`. **The root package keeps only
+what is known by class name outside the code — do not move or rename these:** MainActivity.kt (with
+WardrobeApplication), TodayWidget.kt (provider and receiver), Data.kt (Room database; the schema folder is named
+after it), BackupHealth.kt, CloudSync.kt and FamilySyncSchedule.kt (WorkManager workers). New Kotlin files go to the
+package of their area with explicit imports; new Java rules go to `rules`. Kotlin tests stay in the root package.
+tools/check_*.py read sources by `package/Name.kt`. Changing CloudEmulatorTest.kt or cloud/auth.test.mjs needs a
+new hash in tools/git_safety_allowlist.json and `python3 tools/git_safety.py install` (the hook uses its own copy).
+Stacked on PR #49 ⊃ … ⊃ #44 (CI green, not merged; the user merges them one by one).
+
 ## Where documents live — 14 November 2026
 
 The user asked for an orderly structure instead of everything in one folder. Release documents (`NAME-version.md`,
