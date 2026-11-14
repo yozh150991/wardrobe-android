@@ -21,7 +21,7 @@ Live functions deploy попередніх 0.14.13–14 не підтвердж�
 Погоджений порядок: спрощення каталогу та імпорт → помічник покупки → сімейний доступ.
 Нова пряма вказівка користувача має перевагу над цим планом.
 
-**Актуальна контрольна точка:** 0.14.46/code76, Claude, 14.11.2026 (PHOTO-17 — поділитися фото файлом; PR → main, містить #44; CI — див. журнал).
+**Актуальна контрольна точка:** 0.14.46/code76, Claude, 14.11.2026 (PHOTO-17 — поділитися фото файлом; PR #45 → main, містить #44; CI — 4/4 jobs pass).
 **0.14.45:** WTH-02 — дощ за прогнозом, PR #44; CI — 4/4 jobs pass.
 **0.14.44:** TRIP-01 — місто й нагода поїздки, формат 11, PR #43 (злито); CI — 4/4 jobs pass; перед оновленням телефонів — `cloud/deploy-rules.ps1`.
 **0.14.43:** UX-04 — вкладка «Сьогодні», PR #42; CI — 4/4 jobs pass.
@@ -825,3 +825,4 @@ and device acceptance remain pending; no live Firebase deployment is included.
 - `PhotoExportRules` (розміри без збільшення, накладання на фон, безпечна назва), `PhotoStore.export` (новий файл у `cache/share/<акаунт>/<id>/`, без EXIF, видалення через добу), `PhotoExportDialog` (формат, розмір, системне меню), кнопка в `PhotoViewer`; FileProvider — лише `camera/` і `share/`.
 - Знайдено першим запуском CI: FileProvider брав корені з контексту акаунта (свій кеш), тож URI камери й «Поділитися» могли падати («Failed to find configured root»); `PhotoStore.sharedUri` тепер завжди з контекстом застосунку; камеру перевіряє `PhotoExportTest`.
 - Перевірки тут: новий набір `check_photo_export.py` (38-й), `PhotoExportRulesCases` 48 820, мутації 6/7 (сьома рівнозначна); instrumentation `PhotoExportTest`. Збірка — у CI. Пристрій не перевірено. Деталі: PHOTO-EXPORT-0.14.46.md.
+- CI PR #45: 4/4 jobs pass для push і PR (runs 43590962492, 43590967076): JVM 320, instrumentation 202 (5 skipped), Firebase emulators, Source and Git safety.
