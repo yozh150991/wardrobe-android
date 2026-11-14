@@ -175,6 +175,14 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
     LaunchedEffect(Unit) { while (true) { today = LocalDate.now().toString(); delay(30_000) } }
     val current = snapshot.wardrobes.find { it.id == active } ?: snapshot.wardrobes.firstOrNull()
     val garment = snapshot.garments.find { it.id == selected }
+    // UX-09: a wardrobe without items opens on the catalog, where the first steps are — «Сьогодні» has nothing to offer yet.
+    var startChecked by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(initialized, current?.id) {
+        if (initialized && current != null && !startChecked) {
+            startChecked = true
+            if (route == "daily" && returnStack.isEmpty() && snapshot.garments.none { it.wardrobeId == current.id }) { route = "catalog"; entryKey = "catalog" }
+        }
+    }
     val nested = route in setOf("detail", "edit", "look", "saved", "manage", "appearance", "wishdetail", "wishedit", "batch", "importedit", "calendar", "statistics", "capsules", "capsule", "capsuledaily", "compatibility", "shop", "reprocess")
     // UX-04 (0.14.43): «Сьогодні» is a tab of its own and the app opens on it.
     val roots = setOf("daily", "catalog", "shopping", "outfits", "settings")
@@ -331,7 +339,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                 "catalog" -> {
                     Catalog(snapshot, current.id, vm, today, requestedCategory, ::openItem, ::addItem, ::firstOutfit,
                         onCategoryConsumed = { requestedCategory = "" }, onBatch = { go("batch") },
-                        onDaily = { openDaily() }, onStatistics = { go("statistics") }, onAddMethods = { addMethods = true },
+                        onStatistics = { go("statistics") }, onAddMethods = { addMethods = true },
                         onReprocess = { go("reprocess") })
                 }
                 "reprocess" -> PhotoReprocessScreen(snapshot, vm)
@@ -415,8 +423,8 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                 } ?: MissingSelection { go("__back") }
 
                 "outfits" -> OutfitList(snapshot, current.id, vm, ::firstOutfit,
-                    daily = { openDaily() }, calendar = { calendarDate = today; go("calendar") }, capsules = { go("capsules") }) { outfitId = it; go("saved") }
-                "saved" -> snapshot.outfits.find { it.id == outfitId }?.let { SavedOutfit(it, snapshot, vm, today, ::openItem, openWish = { id -> wishReturn = "saved"; wishId = id; go("wishdetail") }, schedule = { schedulingId = it.id }) { vm.clearDraft(); lookId = it.id; lookAnchor = ""; editorDirty = false; go("look") } } ?: MissingSelection { go("__back") }
+                    calendar = { calendarDate = today; go("calendar") }, capsules = { go("capsules") }) { outfitId = it; go("saved") }
+                "saved" -> snapshot.outfits.find { it.id == outfitId }?.let { SavedOutfit(it, snapshot, vm, today, ::openItem, openWish = { id -> wishReturn = "saved"; wishId = id; go("wishdetail") }, schedule = { schedulingId = it.id }, removed = { go("__back") }) { vm.clearDraft(); lookId = it.id; lookAnchor = ""; editorDirty = false; go("look") } } ?: MissingSelection { go("__back") }
 
                 "shopping" -> Wishlist(snapshot, current.id, vm, ::addWish, foundProduct = { editWish(it, true) }, importProduct = { openShop() }) { wishReturn = "shopping"; wishId = it; go("wishdetail") }
                 "wishdetail" -> snapshot.wishes.find { it.id == wishId }?.let { w ->
@@ -441,7 +449,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                     else { selected = wish.ownedId; navigate("detail") }
                 })
                 "settings" -> Settings(vm, appearance, accountEmail, onSignOut, onNewWardrobe = { newWardrobe = true }, onManageWardrobes = { go("manage") }, onAppearance = { go("appearance") },
-                    onAccountDeleted = onAccountDeleted)
+                    onAccountDeleted = onAccountDeleted, snapshot = snapshot, wardrobe = current.id, today = today)
                 "appearance" -> AppearanceScreen(appearance, onBrowse = { go("catalog") })
                 "manage" -> ManageWardrobes(snapshot, current.id, vm) { id ->
                     vm.select(id); go("catalog"); requestedCategory = ""
@@ -531,14 +539,30 @@ fun Detail(g: Garment, s: Snapshot, vm: WardrobeViewModel, today: String, onEdit
             }
             IconButton(onClick = onEdit, enabled = !busy) { Icon(Icons.Outlined.Edit, stringResource(R.string.edit)) }
         }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            AssistChip(onClick = {}, label = { Text(s.customCategory(g)?.name ?: stringResource(label(g.category))) })
-            AssistChip(onClick = {}, label = { Text(stringResource(if (g.archived) R.string.archived else label(g.availability))) })
+        if (g.subcategory.isNotBlank()) Text(g.subcategory, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // UX-10: plain labels (they are not buttons); «Ношу рідко» is the only switch here.
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            StatusLabel(s.customCategory(g)?.name ?: stringResource(label(g.category)))
+            StatusLabel(stringResource(if (g.archived) R.string.archived else label(g.availability)))
             FilterChip(g.rarelyWorn, { vm.update(g) { it.copy(rarelyWorn = !it.rarelyWorn) } }, enabled = !busy, label = { Text(stringResource(R.string.rare)) })
         }
         // UX-06: what «Ношу рідко» does, so the chip is not a mystery.
         if (g.rarelyWorn) Text(stringResource(R.string.rare_hint), style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // UX-10: the everyday actions first — build an outfit, mark as worn, send to the laundry.
+        Button(onClick = onMatch, enabled = !busy && !g.archived && g.availability == "available", modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Outlined.AutoAwesome, null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.match))
+        }
+        OutlinedButton(onClick = { vm.wear(g) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(if (today in dates) R.string.undo_wear else R.string.wear))
+        }
+        if (!g.archived && g.availability in setOf("available", "laundry")) OutlinedButton(
+            onClick = { vm.changeAvailability(g, availability = if (g.availability == "laundry") "available" else "laundry") },
+            enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(if (g.availability == "laundry") R.string.return_after_wash else R.string.mark_laundry))
+        }
+        TextButton(onClick = { wearOtherDay = true }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.wear_other_day)) }
+        HorizontalDivider()
         s.wishes.find { it.ownedId == g.id }?.let { PurchaseHistory(it, vm) }
         Info(R.string.size, g.size.ifBlank { "—" }); Info(R.string.color, s.customColor(g)?.name ?: stringResource(label(g.color)))
         Info(R.string.location, g.location.ifBlank { "—" }); Info(R.string.season, stringResource(label(g.season)))
@@ -547,23 +571,6 @@ fun Detail(g: Garment, s: Snapshot, vm: WardrobeViewModel, today: String, onEdit
         Info(R.string.last_worn, dates.firstOrNull()?.let { dateLabel(it) }
             ?: stringResource(R.string.never_worn))
         Text(stringResource(R.string.wear_days, dates.size), style = MaterialTheme.typography.bodySmall)
-        if (!g.archived && g.availability in setOf("available", "laundry")) OutlinedButton(
-            onClick = { vm.changeAvailability(g, availability = if (g.availability == "laundry") "available" else "laundry") },
-            enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(if (g.availability == "laundry") R.string.return_after_wash else R.string.mark_laundry))
-        }
-        if (g.subcategory.isNotBlank()) Text(g.subcategory)
-        OutlinedButton(onClick = { vm.excludeFromRecommendations(g.id, !g.suggestionExcluded) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(if (g.suggestionExcluded) R.string.rules_include else R.string.rules_exclude))
-        }
-        if (g.suggestionExcluded) Text(stringResource(R.string.rules_manual_allowed), style = MaterialTheme.typography.bodySmall)
-        Button(onClick = onMatch, enabled = !busy && !g.archived && g.availability == "available", modifier = Modifier.fillMaxWidth()) {
-            Icon(Icons.Outlined.AutoAwesome, null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.match))
-        }
-        OutlinedButton(onClick = { vm.wear(g) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(if (today in dates) R.string.undo_wear else R.string.wear))
-        }
-        TextButton(onClick = { wearOtherDay = true }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.wear_other_day)) }
         if (dates.isNotEmpty()) {
             Text(stringResource(R.string.wear_history_title), style = MaterialTheme.typography.titleSmall)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -575,6 +582,12 @@ fun Detail(g: Garment, s: Snapshot, vm: WardrobeViewModel, today: String, onEdit
                 }
             }
         }
+        HorizontalDivider()
+        // Rare decisions last: out of the suggestions, into the archive.
+        OutlinedButton(onClick = { vm.excludeFromRecommendations(g.id, !g.suggestionExcluded) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(if (g.suggestionExcluded) R.string.rules_include else R.string.rules_exclude))
+        }
+        if (g.suggestionExcluded) Text(stringResource(R.string.rules_manual_allowed), style = MaterialTheme.typography.bodySmall)
         TextButton(onClick = { if (g.archived) vm.changeAvailability(g, archived = false) else confirmArchive = true }, enabled = !busy) {
             Text(stringResource(if (g.archived) R.string.restore_item else R.string.archive))
         }
@@ -663,9 +676,16 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
     val editorScope = rememberCoroutineScope()
     val importReports by vm.batchImporter.diagnostics.reports.collectAsStateWithLifecycle()
     val savedPhotoReport = imported?.let { importReports[it.id] }?.takeIf { it.sourceId == photo }
+    // UX-11: the name is optional — without one the item is called by its (sub)category and colour.
+    val categoryTitle = catalog.customCategories.find { it.id == customCategoryId }?.name
+        ?: category.takeIf { it in Matching.categories }?.let { stringResource(label(it)) }.orEmpty()
+    val colourTitle = catalog.customColors.find { it.id == customColorId }?.name
+        ?: color.takeIf { it in Matching.colors && it != "other" }?.let { stringResource(label(it)) }.orEmpty()
+    val autoName = ItemNameRules.suggest(subcategory, categoryTitle, colourTitle)
+    val effectiveName = ItemNameRules.effective(name, autoName)
     fun showRequiredFields() { editorScope.launch {
-        if (!TextLimits.hasVisibleText(name)) { fieldsView.bringIntoView(); nameFocus.requestFocus() }
-        else { categoryView.bringIntoView(); categoryFocus.requestFocus() }
+        if (category !in Matching.categories) { categoryView.bringIntoView(); categoryFocus.requestFocus() }
+        else { fieldsView.bringIntoView(); nameFocus.requestFocus() }
     } }
     LaunchedEffect(validation, advanced, moneyValid) {
         if (validation && advanced && !moneyValid) { priceView.bringIntoView(); priceFocus.requestFocus() }
@@ -673,8 +693,8 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
     val saveBlocker = when {
         hasPhotoSession -> R.string.photo_session_finish
         photo.isBlank() -> R.string.photo_save_missing
-        !TextLimits.hasVisibleText(name) -> R.string.wish_name_required
         category !in Matching.categories -> R.string.photo_save_category
+        !TextLimits.hasVisibleText(effectiveName) -> R.string.wish_name_required
         !moneyValid -> R.string.wish_amount_error
         shopImported && !WishRules.validLink(shopLink) -> R.string.wish_link_error
         else -> null
@@ -697,10 +717,10 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
     fun saveItem(addNext: Boolean, confirmedDuplicate: Boolean = false) {
         if (vm.hasPhotoSession(editorPhotoKey, photo)) { editingPhoto = true; return }
         val finalPhoto = vm.latestEditorPhoto(editorPhotoKey) ?: photo
-        validation = !TextLimits.hasVisibleText(name) || finalPhoto.isBlank() || category !in Matching.categories || !moneyValid || (shopImported && !WishRules.validLink(shopLink))
+        validation = !TextLimits.hasVisibleText(effectiveName) || finalPhoto.isBlank() || category !in Matching.categories || !moneyValid || (shopImported && !WishRules.validLink(shopLink))
         when {
             finalPhoto.isBlank() -> editorScope.launch { photoView.bringIntoView() }
-            !TextLimits.hasVisibleText(name) || category !in Matching.categories -> showRequiredFields()
+            !TextLimits.hasVisibleText(effectiveName) || category !in Matching.categories -> showRequiredFields()
             !moneyValid -> {
                 if (advanced) editorScope.launch { priceView.bringIntoView(); priceFocus.requestFocus() }
                 else advanced = true
@@ -708,8 +728,8 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
             shopImported && !WishRules.validLink(shopLink) -> editorScope.launch { linkView.bringIntoView() }
             !validation -> {
                 if (duplicates.isNotEmpty() && !confirmedDuplicate) { duplicateConfirmation = addNext; return }
-                val next = (seed ?: Garment(id = id, wardrobeId = wardrobe, name = name.trim(), category = category, color = color, photoId = finalPhoto))
-                    .copy(name = name.trim(), category = category, color = color, size = size.trim(), location = location.trim(),
+                val next = (seed ?: Garment(id = id, wardrobeId = wardrobe, name = effectiveName, category = category, color = color, photoId = finalPhoto))
+                    .copy(name = effectiveName, category = category, color = color, size = size.trim(), location = location.trim(),
                         description = description.trim(), photoId = finalPhoto, season = season, style = style,
                         availability = if (purchase == null) availability else "available", archived = if (purchase == null) seed?.archived ?: false else false,
                         priceMinor = WishRules.money(price), currency = currency, subcategory = CategoryRules.clean(subcategory),
@@ -772,8 +792,10 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
             if (duplicates.isNotEmpty()) Text(stringResource(R.string.import_duplicate_hint, duplicates.first().name), color = MaterialTheme.colorScheme.primary)
             if (original == null && purchase == null && previousItem != null) TextButton(onClick = { copyingPrevious = true },
                 enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.import_copy_previous)) }
-            OutlinedTextField(name, { name = TextLimits.input(it, 120) }, label = { Text(stringResource(R.string.name_required)) }, singleLine = true,
-                enabled = !busy, isError = validation && !TextLimits.hasVisibleText(name), supportingText = { if (validation && !TextLimits.hasVisibleText(name)) Text(stringResource(R.string.wish_name_required)) },
+            OutlinedTextField(name, { name = TextLimits.input(it, 120) }, label = { Text(stringResource(R.string.item_name_optional)) }, singleLine = true,
+                enabled = !busy, isError = validation && !TextLimits.hasVisibleText(effectiveName), supportingText = {
+                    if (validation && !TextLimits.hasVisibleText(effectiveName)) Text(stringResource(R.string.wish_name_required))
+                    else if (!TextLimits.hasVisibleText(name) && autoName.isNotEmpty()) Text(stringResource(R.string.item_name_auto, autoName)) },
                 modifier = Modifier.fillMaxWidth().bringIntoViewRequester(fieldsView).focusRequester(nameFocus))
             WardrobeCategoryChoice(category, customCategoryId, catalog, wardrobe, vm, { base, custom ->
                 if (base != category || custom != customCategoryId) subcategory = ""
@@ -788,6 +810,10 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
             WardrobeColorChoice(color, customColorId, catalog, wardrobe, vm, { base, custom ->
                 color = base; customColorId = custom
             }, enabled = !busy)
+            // UX-08: season and style decide when the item is suggested (weather, occasion), so they are not "additional".
+            Choice(season, Matching.seasons, { season = it }, R.string.season, enabled = !busy)
+            Choice(style, Matching.styles, { style = it }, R.string.style, enabled = !busy)
+            Text(stringResource(R.string.item_season_style_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             TextButton(onClick = { advanced = !advanced }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Text(stringResource(R.string.additional_details)); Icon(if (advanced) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, null) }
             if (shopImported) OutlinedTextField(shopLink, { shopLink = TextLimits.input(it, 2000) }, label = { Text(stringResource(R.string.wish_link_optional)) },
@@ -800,8 +826,6 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
                 }
                 Field(size, { size = TextLimits.input(it, 40) }, R.string.size, enabled = !busy)
                 Field(location, { location = TextLimits.input(it, 200) }, R.string.location, enabled = !busy, placeholder = stringResource(R.string.location_hint))
-                Choice(season, Matching.seasons, { season = it }, R.string.season, enabled = !busy)
-                Choice(style, Matching.styles, { style = it }, R.string.style, enabled = !busy)
                 if (purchase == null && !shopImported) Choice(availability, Matching.availability, { availability = it }, R.string.availability, enabled = !busy)
                 OutlinedTextField(description, { description = TextLimits.input(it, 1000) }, label = { Text(stringResource(R.string.description)) }, modifier = Modifier.fillMaxWidth(), minLines = 2, enabled = !busy)
             }
@@ -852,12 +876,11 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
 }
 
 @Composable
-fun OutfitList(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, add: () -> Unit, daily: () -> Unit, calendar: () -> Unit, capsules: () -> Unit, open: (String) -> Unit) {
+fun OutfitList(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, add: () -> Unit, calendar: () -> Unit, capsules: () -> Unit, open: (String) -> Unit) {
     val found = s.outfits.filter { it.wardrobeId == wardrobe }
     val busy by vm.busy.collectAsStateWithLifecycle()
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = daily, enabled = !busy) { Text(stringResource(R.string.daily_title)) }
             OutlinedButton(onClick = calendar, enabled = !busy) { Text(stringResource(R.string.calendar_title)) }
             OutlinedButton(onClick = capsules, enabled = !busy) { Text(stringResource(R.string.capsules_title)) }
         } }
@@ -876,8 +899,9 @@ fun OutfitList(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, add: () -> 
 }
 
 @Composable
-fun SavedOutfit(outfit: Outfit, s: Snapshot, vm: WardrobeViewModel, today: String, open: (Garment) -> Unit, openWish: (String) -> Unit, schedule: () -> Unit, edit: () -> Unit) {
+fun SavedOutfit(outfit: Outfit, s: Snapshot, vm: WardrobeViewModel, today: String, open: (Garment) -> Unit, openWish: (String) -> Unit, schedule: () -> Unit, removed: () -> Unit = {}, edit: () -> Unit) {
     var ideaDetails by remember { mutableStateOf<LookPiece?>(null) }
+    var deleting by rememberSaveable { mutableStateOf(false) }
     val pieces = LookRules.saved(s, outfit)
     val owned = pieces.mapNotNull { it.ownedId }
     val marked = owned.isNotEmpty() && owned.all { id -> s.wears.any { it.garmentId == id && it.date == today && it.source == "outfit:${outfit.id}" } }
@@ -909,6 +933,18 @@ fun SavedOutfit(outfit: Outfit, s: Snapshot, vm: WardrobeViewModel, today: Strin
         OutlinedButton(onClick = schedule, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.calendar_plan)) }
         if (pieces.any { it.ownedId == null }) Text(stringResource(R.string.planned_wear_hint), style = MaterialTheme.typography.bodySmall)
         Text(stringResource(R.string.outfit_hint), style = MaterialTheme.typography.bodySmall)
+        // UX-07: a saved outfit could never be removed; the list only grew.
+        TextButton(onClick = { deleting = true }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.outfit_delete)) }
+    }
+    if (deleting) {
+        val plans = s.plans.count { it.outfitId == outfit.id }
+        AlertDialog(onDismissRequest = { deleting = false }, title = { Text(stringResource(R.string.outfit_delete_title, outfit.name)) },
+            text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.outfit_delete_hint))
+                if (plans > 0) Text(stringResource(R.string.outfit_delete_plans, plans))
+            } },
+            confirmButton = { TextButton(onClick = { deleting = false; vm.removeOutfit(outfit.id, removed) }, enabled = !busy) { Text(stringResource(R.string.delete)) } },
+            dismissButton = { TextButton(onClick = { deleting = false }) { Text(stringResource(R.string.cancel)) } })
     }
     ideaDetails?.let { p -> AlertDialog(onDismissRequest = { ideaDetails = null }, title = { Text(p.name) }, text = {
         Column { Text(stringResource(ownershipLabel(p))); Text(stringResource(label(p.category))); ItemPhoto(p.photoId, vm, Modifier.fillMaxWidth().height(180.dp), description = p.name, fit = true) }
@@ -918,10 +954,13 @@ fun SavedOutfit(outfit: Outfit, s: Snapshot, vm: WardrobeViewModel, today: Strin
 
 @Composable
 fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEmail: String, onSignOut: () -> Unit, onNewWardrobe: () -> Unit, onManageWardrobes: () -> Unit, onAppearance: () -> Unit,
-    onAccountDeleted: () -> Unit = {}) {
+    onAccountDeleted: () -> Unit = {}, snapshot: Snapshot? = null, wardrobe: String = "", today: String = LocalDate.now().toString()) {
     val busy by vm.busy.collectAsStateWithLifecycle()
     val appearance by appearanceVm.appearance.collectAsStateWithLifecycle()
     var signOutDialog by remember { mutableStateOf(false) }
+    // UX-14: the preferences and the weather's city were reachable only through the weather chip on «Сьогодні».
+    var preferencesOpen by rememberSaveable { mutableStateOf(false) }
+    var weatherOpen by rememberSaveable { mutableStateOf(false) }
     var languageMenu by remember { mutableStateOf(false) }
     val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri -> if (uri != null) vm.export(uri) }
     val restore = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.previewRestore(uri) }
@@ -957,6 +996,14 @@ fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEm
                 }) }
             }
         }
+        if (snapshot != null && wardrobe.isNotEmpty()) {
+            HorizontalDivider()
+            Text(stringResource(R.string.settings_suggestions), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_suggestions_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedButton(onClick = { preferencesOpen = true }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.prefs_open)) }
+            OutlinedButton(onClick = { weatherOpen = true }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.settings_weather)) }
+            HorizontalDivider()
+        }
         OutlinedButton(onClick = onNewWardrobe, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.new_wardrobe)) }
         OutlinedButton(onClick = onManageWardrobes, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.manage_wardrobes)) }
         HorizontalDivider()
@@ -977,6 +1024,10 @@ fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEm
         HorizontalDivider()
         AccountDeletionControl(vm, accountEmail, onAccountDeleted)
     }
+    if (preferencesOpen && snapshot != null) PreferencesDialog(snapshot, wardrobe, vm, today) { preferencesOpen = false }
+    if (weatherOpen) AlertDialog(onDismissRequest = { weatherOpen = false }, title = { Text(stringResource(R.string.settings_weather)) },
+        text = { Column(Modifier.verticalScroll(rememberScrollState())) { WeatherPanel(vm.weather, today) } },
+        confirmButton = { TextButton(onClick = { weatherOpen = false }) { Text(stringResource(R.string.close)) } })
     if (signOutDialog) AlertDialog(onDismissRequest = { signOutDialog = false },
         title = { Text(stringResource(R.string.auth_logout_title)) },
         text = { Text(stringResource(R.string.auth_logout_hint)) },
@@ -1033,6 +1084,14 @@ fun Choice(value: String, options: List<String>, change: (String) -> Unit, title
 fun Field(value: String, change: (String) -> Unit, title: Int, enabled: Boolean = true, placeholder: String = "") {
     OutlinedTextField(value, change, label = { Text(stringResource(title)) }, placeholder = { Text(placeholder) },
         singleLine = true, enabled = enabled, modifier = Modifier.fillMaxWidth())
+}
+
+/** A fact about the item; not a button, so it does not look like one. */
+@Composable
+private fun StatusLabel(text: String) {
+    Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+        Text(text, Modifier.padding(horizontal = 10.dp, vertical = 6.dp), style = MaterialTheme.typography.labelLarge)
+    }
 }
 
 @Composable

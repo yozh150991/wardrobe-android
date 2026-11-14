@@ -64,7 +64,9 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
     // WTH-01: the forecast's temperature as this person feels it travels with the mode and decides the coat, the
     // second layer and the seasons; a weather chosen by hand has no temperature.
     val temperature = if (weatherEnabled) forecast?.temperature(today)?.let { WeatherRules.shifted(it, warmth.shift) } else null
-    val weather = temperature?.let { RoadmapRules.weatherMode(it) } ?: manualWeather
+    // WTH-02: a mild day with a likely rain is «Дощ» by itself (a jacket is added); a manual choice stays as chosen.
+    val rainChance = if (temperature != null) forecast?.rain(today) else null
+    val weather = temperature?.let { WeatherRules.mode(it, rainChance) } ?: manualWeather
     val busy by vm.busy.collectAsStateWithLifecycle()
     // Both generated and manually replaced variants survive a detail/back transition.
     var generatedFor by rememberSaveable { mutableStateOf("") }
@@ -248,6 +250,7 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                 }
                 if (forecastWeather != null && forecastWeather != weather) Text(stringResource(R.string.prefs_weather_shifted,
                     stringResource(label(forecastWeather)), stringResource(label(weather))), style = MaterialTheme.typography.bodySmall)
+                if (weather == "rain" && rainChance != null) Text(stringResource(R.string.weather_rain_auto, rainChance), style = MaterialTheme.typography.bodySmall)
                 if (WeatherRules.outerwear(weather, temperature) && s.garments.none { it.wardrobeId == wardrobe && it.category == "outerwear" && WardrobeRules.ready(it.rulePiece()) })
                     Text(stringResource(R.string.daily_no_outerwear), style = MaterialTheme.typography.bodySmall)
             }

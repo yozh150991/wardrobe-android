@@ -488,8 +488,8 @@ class WardrobeViewModel internal constructor(application: Application, private v
         nextReviewId.value = ImportReviewRules.next(nextIds, ready, emptySet(), id)
         done()
     }
-    fun bulk(ids: Set<String>, action: String, season: String = "all") = perform {
-        bulkUndo.value = repo.bulkChange(active.value, ids, action, season)
+    fun bulk(ids: Set<String>, action: String, season: String = "all", style: String = "casual") = perform {
+        bulkUndo.value = repo.bulkChange(active.value, ids, action, season, style)
     }
     fun undoBulk(change: BulkChange) = perform {
         if (!repo.undoBulk(change)) notice.value = R.string.undo_availability_conflict
@@ -506,6 +506,8 @@ class WardrobeViewModel internal constructor(application: Application, private v
     /** [date]: today when null; an earlier day for wear noticed later (WEAR-01). Never a future day. */
     fun wear(item: Garment, date: String? = null) = perform { repo.toggleItemWear(item.id, wearDate(date)) }
     fun wearOutfit(id: String, date: String? = null) = perform { repo.toggleOutfitWear(id, wearDate(date)) }
+    /** UX-07: removes a saved outfit; the wear already recorded stays with the items. */
+    fun removeOutfit(id: String, done: () -> Unit) = perform { repo.removeOutfit(id, photos); done() }
     private fun wearDate(date: String?): String {
         val today = LocalDate.now().toString()
         require(date == null || RoadmapRules.validDate(date) && date <= today)
