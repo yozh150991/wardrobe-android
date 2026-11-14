@@ -1472,4 +1472,11 @@ Your current wardrobe is unchanged.</string>
     <string name="photo_export_share">Share</string>
     <string name="photo_export_failed">Could not prepare the file. Try again.</string>
     <string name="photo_export_no_app">No app can receive the file.</string>
+    <string name="outfit_delete">Delete outfit</string>
+    <string name="outfit_delete_title">Delete the outfit “%1$s”?</string>
+    <string name="outfit_delete_hint">The items stay in the wardrobe and the wear already marked stays in their history. The outfit leaves capsules and trips.</string>
+    <string name="outfit_delete_plans">Calendar plans with this outfit are deleted too: %1$d.</string>
+    <string name="item_name_optional">Name — optional</string>
+    <string name="item_name_auto">Without a name the item is called “%1$s”.</string>
+    <string name="item_season_style_hint">Season and style decide when the item is suggested: by the weather and the occasion.</string>
 </resources>

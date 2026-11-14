@@ -40,7 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String, initialCategory: String,
     onOpen: (Garment) -> Unit, onAdd: (String) -> Unit, onFirstOutfit: () -> Unit, onCategoryConsumed: () -> Unit, onBatch: () -> Unit,
-    onDaily: () -> Unit, onStatistics: () -> Unit, onAddMethods: () -> Unit, onReprocess: () -> Unit) {
+    onStatistics: () -> Unit, onAddMethods: () -> Unit, onReprocess: () -> Unit) {
     var selecting by rememberSaveable { mutableStateOf(false) }
     var selectedIds by rememberSaveable { mutableStateOf(listOf<String>()) }
     var bulkMenu by remember { mutableStateOf(false) }
@@ -112,11 +112,9 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
             horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item(key = "catalog_header", span = { GridItemSpan(maxLineSpan) }) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = onDaily, enabled = !busy) { Text(stringResource(R.string.daily_title)) }
-                        if (reprocessing.entries.isNotEmpty() || reprocessing.unreadable) OutlinedButton(onClick = onReprocess,
-                            enabled = !busy) { Text(stringResource(R.string.photo_reprocess_return)) }
-                    }
+                    // UX-09: «Що вдягнути сьогодні» lived here as a button; it is the first tab now.
+                    if (reprocessing.entries.isNotEmpty() || reprocessing.unreadable) OutlinedButton(onClick = onReprocess,
+                        enabled = !busy) { Text(stringResource(R.string.photo_reprocess_return)) }
                     saved?.takeIf { it.wardrobe == wardrobe }?.let { message ->
                         SavedItemConfirmation(message, onOpen = { byId[message.id]?.let(onOpen) },
                             onAddNext = { vm.savedItem.value = null; onAdd(message.category) },
