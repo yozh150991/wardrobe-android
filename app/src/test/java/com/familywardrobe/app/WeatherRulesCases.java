@@ -133,6 +133,26 @@ public final class WeatherRulesCases {
         // «Тепліше» and «легше» move the temperature, so they move the coat too.
         check(!WeatherRules.outerwear("cool", WeatherRules.shifted(17, "forecast")) && WeatherRules.outerwear("cool", WeatherRules.shifted(17, "warmer")), "«тепліше» at +17 adds a coat");
         check(WeatherRules.outerwear("cool", WeatherRules.shifted(13, "forecast")) && !WeatherRules.outerwear("cool", WeatherRules.shifted(13, "lighter")), "«легше» at +13 leaves it out");
-        System.out.println("PASS: " + checks + " weather assertions (temperature, limits, by hand as before, layers, rating, rotation).");
+        // WTH-02: a mild day with a likely rain is «Дощ» by itself; warm and cold days keep their band.
+        check(WeatherRules.mode(14, 60).equals("rain") && WeatherRules.mode(14, 59).equals("cool") && WeatherRules.mode(14, null).equals("cool"),
+            "rain from 60%, not below, not without a chance");
+        check(WeatherRules.mode(8, 90).equals("rain") && WeatherRules.mode(7.9, 90).equals("cold") && WeatherRules.mode(21.9, 90).equals("rain")
+            && WeatherRules.mode(22, 90).equals("warm"), "only the mild band turns into rain");
+        for (double t = -30; t <= 40; t += 0.5)
+            check(WeatherRules.mode(t, null).equals(RoadmapRules.weatherMode(t)), "without rain the mode is the band of " + t);
+        check(WeatherRules.mode(14, 100).equals("rain") && WeatherRules.mode(14, 101).equals("cool") && WeatherRules.mode(14, -1).equals("cool"),
+            "an impossible chance is ignored");
+        check(WeatherRules.outerwear("rain", 21.9) && !WeatherRules.outerwear("rain", 22.0) && !WeatherRules.outerwear("cool", 18.0)
+            && WeatherRules.outerwear("rain", 18.0), "a rainy day gets a jacket up to +22; a dry one only below +15");
+        check(!WeatherRules.layer("rain", 14.0) && !WeatherRules.tights("rain", 14.0)
+            && WeatherRules.inSeason("midseason", "rain", 14.0) == WeatherRules.inSeason("midseason", "cool", 14.0)
+            && WeatherRules.inSeason("summer", "rain", 20.0) == WeatherRules.inSeason("summer", "cool", 20.0),
+            "rain changes only the jacket: layers, tights and seasons follow the temperature");
+        List<DailyRules.Item> rainy = List.of(it("tee", "top", "all"), it("jeans", "bottom", "all"), it("trainers", "shoes", "all"),
+            it("mac", "outerwear", "midseason"));
+        check(every(run(rainy, "rain", 18.0, Map.of(), 3), "mac") && !any(run(rainy, "cool", 18.0, Map.of(), 3), "mac"),
+            "+18: the raincoat comes with the rain, not on a dry day");
+        check(!run(rainy.subList(0, 3), "rain", 18.0, Map.of(), 3).isEmpty(), "without a jacket a rainy day still gets an outfit");
+        System.out.println("PASS: " + checks + " weather assertions (temperature, limits, by hand as before, layers, rating, rotation, rain).");
     }
 }

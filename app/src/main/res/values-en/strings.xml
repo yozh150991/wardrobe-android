@@ -1457,4 +1457,19 @@ Your current wardrobe is unchanged.</string>
     <string name="trip_city_loading">Loading the forecast for %1$s…</string>
     <string name="trip_city_unavailable">The forecast for %1$s is not available right now: outfits are chosen without the weather.</string>
     <string name="trip_city_weather_off">The weather is off: the forecast for %1$s is not loaded and outfits are chosen without it.</string>
+    <string name="weather_rain_auto">Chance of rain %1$d%%, so «Rain»: a jacket or raincoat is added. You can change it in the conditions.</string>
+    <string name="photo_export_open">Share photo</string>
+    <string name="photo_export_format">Format</string>
+    <string name="photo_export_png">PNG — transparent background</string>
+    <string name="photo_export_white">JPEG — white background</string>
+    <string name="photo_export_cream">JPEG — cream background</string>
+    <string name="photo_export_no_alpha">This photo’s background was not removed, so the PNG has no transparency.</string>
+    <string name="photo_export_size">Size</string>
+    <string name="photo_export_original">As saved — %1$d × %2$d</string>
+    <string name="photo_export_pixels">%1$d × %2$d</string>
+    <string name="photo_export_note">The photo is never enlarged. The file holds only the image — no location or other camera data.</string>
+    <string name="photo_export_preparing">Preparing the file…</string>
+    <string name="photo_export_share">Share</string>
+    <string name="photo_export_failed">Could not prepare the file. Try again.</string>
+    <string name="photo_export_no_app">No app can receive the file.</string>
 </resources>

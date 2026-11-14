@@ -1,3 +1,20 @@
+## Current handoff — PHOTO-17 share a photo as a file, 14 November 2026
+
+0.14.46-photo-export/code 76, Room 11 and backup formats unchanged. Read PHOTO-EXPORT-0.14.46.md. Stacked on WTH-02
+(PR #44, CI green, not merged); its PR targets main and contains it. PhotoExportRules (sizes never enlarge, source-over
+blend onto white/cream, safe file names); PhotoStore.export writes a new pixel-only file under cache/share/<account>/
+<id>/ (expires after a day) and returns a FileProvider URI; PhotoExportDialog shares it via ACTION_SEND. FileProvider
+exposes only camera/ and share/ — never the saved photos. Every FileProvider URI goes through
+PhotoStore.sharedUri with the application context: the provider keeps the roots of its first caller, and the account
+context has its own cache folder (camera URIs could fail before).
+
+## Current handoff — WTH-02 rain from the forecast, 14 November 2026
+
+0.14.45-rain/code 75, Room 11 and backup formats unchanged. Read RAIN-0.14.45.md. PRs #36–#43 are merged; this
+branch is from main. WeatherRules.mode(temperature, rain): a mild day (+8…+22) with a rain chance from RAIN_FROM = 60%
+is "rain"; WeatherRules.outerwear adds a jacket in "rain" up to +22. Forecast.rain/mode, DailyScreen and TripPlan use
+it; a manual weather choice is never overridden.
+
 ## Current handoff — TRIP-01 trip city and occasion, 12 November 2026
 
 0.14.44-trip-details/code 74, **Room 11, backup format 11** (only when a capsule has trip details; otherwise 10).
