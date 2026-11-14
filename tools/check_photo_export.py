@@ -10,7 +10,7 @@ def check(condition, message):
     if not condition: failures.append(message)
 def read(name): return (source / name).read_text(encoding='utf-8')
 
-store = read('PhotoStore.kt')
+store = read('photo/PhotoStore.kt')
 body = store.split('suspend fun export(', 1)[1].split('fun newCapture', 1)[0]
 check('PhotoExportRules.size(bounds.outWidth, bounds.outHeight, size)' in body, 'the size follows the rules (never enlarged)')
 check('drawColor(PhotoExportRules.background(format))' in body, 'JPEG gets a real background')
@@ -21,11 +21,11 @@ check('FileProvider.getUriForFile(app, "${app.packageName}.files", file)' in sto
       and store.count('sharedUri(') == 3, 'every URI is made with the application context (the roots are its cache)')
 check('<cache-path name="share" path="share/" />' in (root / 'app/src/main/res/xml/file_paths.xml').read_text(encoding='utf-8'), 'FileProvider exposes share/')
 check('<files-path' not in (root / 'app/src/main/res/xml/file_paths.xml').read_text(encoding='utf-8'), 'saved photos are never exposed')
-dialog = read('PhotoExportDialog.kt')
+dialog = read('photo/PhotoExportDialog.kt')
 check('Intent.FLAG_GRANT_READ_URI_PERMISSION' in dialog and 'ClipData.newRawUri' in dialog and 'Intent.createChooser' in dialog, 'shared through the system chooser with a read grant')
 check('PhotoExportRules.offered(ready.width, ready.height)' in dialog and 'R.string.photo_export_no_alpha' in dialog, 'only smaller sizes; says when PNG has no transparency')
 check('ActivityNotFoundException' in dialog and 'R.string.photo_export_failed' in dialog, 'failures are explained')
-viewer = read('PhotoViewer.kt')
+viewer = read('photo/PhotoViewer.kt')
 check('PhotoExportDialog(photoId, title, photos' in viewer and 'Icons.Outlined.Share' in viewer, 'the viewer has the share button')
 
 from photo_export_strings import STRINGS
@@ -42,7 +42,7 @@ if failures: raise SystemExit('FAIL photo export:\n' + '\n'.join(failures))
 
 java = shutil.which('java') or 'java'
 with tempfile.TemporaryDirectory(prefix='wardrobe-export-') as output:
-    subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, str(source / 'PhotoExportRules.java'),
-                    str(root / 'app/src/test/java/com/familywardrobe/app/PhotoExportRulesCases.java')], check=True)
-    subprocess.run([java, '-cp', output, 'com.familywardrobe.app.PhotoExportRulesCases'], check=True)
+    subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, str(source / 'rules/PhotoExportRules.java'),
+                    str(root / 'app/src/test/java/com/familywardrobe/app/rules/PhotoExportRulesCases.java')], check=True)
+    subprocess.run([java, '-cp', output, 'com.familywardrobe.app.rules.PhotoExportRulesCases'], check=True)
 print(f'PASS photo-export guards: store, FileProvider share/, chooser, {len(STRINGS)} strings × 4 locales')

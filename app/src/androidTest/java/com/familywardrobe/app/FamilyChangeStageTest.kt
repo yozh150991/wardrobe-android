@@ -3,13 +3,28 @@ package com.familywardrobe.app
 import android.graphics.Bitmap
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.auth.AuthIdentity
+import com.familywardrobe.app.data.CustomCategory
+import com.familywardrobe.app.family.FamilyAddArchive
+import com.familywardrobe.app.family.FamilyAddStore
+import com.familywardrobe.app.family.FamilyArchive
+import com.familywardrobe.app.family.FamilyArchiveIdentity
+import com.familywardrobe.app.family.FamilyChange
+import com.familywardrobe.app.family.FamilyHead
+import com.familywardrobe.app.family.FamilyPhotoArchive
+import com.familywardrobe.app.family.FamilyProblem
+import com.familywardrobe.app.family.FamilyRemote
+import com.familywardrobe.app.family.FamilyTransferException
+import com.familywardrobe.app.photo.PhotoStore
+import java.io.File
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
-import java.io.File
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
 
 /** Delta model v1 drafts on real storage: one stored photo entry, change JSON rows from Backup, preview round trip. */
 class FamilyChangeStageTest {

@@ -1,4 +1,5 @@
 package com.familywardrobe.app
+import com.familywardrobe.app.rules.PhotoGeometryCases
 import org.junit.Test
 
 class PhotoGeometryTest {

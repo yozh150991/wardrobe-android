@@ -1,5 +1,6 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.family.familyUploadProgress
 import org.junit.Assert.*
 import org.junit.Test
 

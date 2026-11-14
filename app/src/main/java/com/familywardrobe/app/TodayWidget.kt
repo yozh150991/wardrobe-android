@@ -15,13 +15,20 @@ import android.graphics.Rect
 import android.view.View
 import android.widget.RemoteViews
 import androidx.room.Room
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountErasure
+import com.familywardrobe.app.auth.AuthIdentity
+import com.familywardrobe.app.data.markPlanWorn
+import com.familywardrobe.app.outfits.TodayWidgetModel
+import com.familywardrobe.app.outfits.TodayWidgetState
+import com.familywardrobe.app.photo.PhotoStore
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /** WID-01: a widget tap that the open app turns into navigation, only for the account that is signed in. */
 data class WidgetRequest(val kind: String, val outfitId: String = "") {

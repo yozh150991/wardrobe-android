@@ -8,11 +8,18 @@ import android.widget.TextView
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.backup.BackupStateRules
+import com.familywardrobe.app.data.markPlanWorn
+import com.familywardrobe.app.data.scheduleOutfit
+import com.familywardrobe.app.data.togglePlanWorn
+import com.familywardrobe.app.outfits.LookRules
+import com.familywardrobe.app.outfits.TodayWidgetState
+import com.familywardrobe.app.photo.PhotoStore
+import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.time.LocalDate
 
 /** WID-01: «Одягнув сьогодні» from the widget and the widget's views on a real Android. */
 @RunWith(AndroidJUnit4::class)

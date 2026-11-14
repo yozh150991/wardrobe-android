@@ -1,10 +1,13 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.auth.AccountDirectories
+import com.familywardrobe.app.auth.AccountFiles
+import com.familywardrobe.app.auth.AccountLocation
+import java.io.File
+import java.nio.file.Files
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Test
-import java.io.File
-import java.nio.file.Files
 
 /** FAM-04 (0.14.25): erasing one account's data leaves other accounts and app-wide files untouched. */
 class AccountFilesTest {

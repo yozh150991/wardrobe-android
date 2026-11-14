@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'app/src/main/java/com/familywardrobe/app'
 
 def install_triggers(db):
-    text = (SOURCE / 'ScenarioData.kt').read_text()
+    text = (SOURCE / 'data/ScenarioData.kt').read_text()
     tables = re.findall(r'"(\w+)"', text.split('val portableTables = listOf(', 1)[1].split(')', 1)[0])
     template = re.search(r'db.execSQL\("(CREATE TRIGGER [^"\n]+)"\)', text).group(1)
     db.execute('INSERT OR IGNORE INTO cloud_sync_meta (id) VALUES (1)')
@@ -26,14 +26,14 @@ def migrate(db, start=2, target=10):
     for version in range(start, target):
         body = text.split(f'val MIGRATION_{version}_{version+1}', 1)[1].split('val MIGRATION_', 1)[0]
         if version == 7:
-            body = (SOURCE / 'ScenarioData.kt').read_text().split('fun create(', 1)[1].split('fun installTriggers', 1)[0]
+            body = (SOURCE / 'data/ScenarioData.kt').read_text().split('fun create(', 1)[1].split('fun installTriggers', 1)[0]
         for sql in re.findall(r'db.execSQL\("([^"\n]+)"\)', body):
             if not sql.startswith('UPDATE cloud_sync_meta'): db.execute(sql)
         if version == 8:
-            category_body = (SOURCE / 'CategoryData.kt').read_text()
+            category_body = (SOURCE / 'data/CategoryData.kt').read_text()
             for sql in re.findall(r'db.execSQL\("([^"\n]+)"\)', category_body): db.execute(sql)
         if version == 9:
-            color_body = (SOURCE / "ColorData.kt").read_text()
+            color_body = (SOURCE / "data/ColorData.kt").read_text()
             for sql in re.findall(r'db.execSQL\("([^"\n]+)"\)', color_body): db.execute(sql)
         if version == 7:
             install_triggers(db)

@@ -2,6 +2,11 @@ package com.familywardrobe.app
 
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.data.bulkChange
+import com.familywardrobe.app.data.enqueueImports
+import com.familywardrobe.app.data.saveImported
+import com.familywardrobe.app.data.undoBulk
+import com.familywardrobe.app.photo.PhotoStore
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test

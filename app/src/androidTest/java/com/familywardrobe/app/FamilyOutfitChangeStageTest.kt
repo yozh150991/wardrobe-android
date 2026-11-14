@@ -3,11 +3,29 @@ package com.familywardrobe.app
 import android.graphics.Bitmap
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.auth.AuthIdentity
+import com.familywardrobe.app.family.FamilyArchiveIdentity
+import com.familywardrobe.app.family.FamilyChange
+import com.familywardrobe.app.family.FamilyHead
+import com.familywardrobe.app.family.FamilyOutfitChange
+import com.familywardrobe.app.family.FamilyOutfitForm
+import com.familywardrobe.app.family.FamilyOutfitStore
+import com.familywardrobe.app.family.FamilyProblem
+import com.familywardrobe.app.family.FamilyReadCache
+import com.familywardrobe.app.family.FamilyReadView
+import com.familywardrobe.app.family.FamilyRemote
+import com.familywardrobe.app.family.FamilyTransferException
+import com.familywardrobe.app.outfits.LookPiece
+import com.familywardrobe.app.photo.PhotoStore
+import com.familywardrobe.app.rules.FamilyReadLease
+import com.familywardrobe.app.rules.FamilyRules
+import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
-import java.io.File
 
 /** Outfit changes applied by the server (0.14.22): the draft is only the outfit's own rows, nothing is archived. */
 class FamilyOutfitChangeStageTest {

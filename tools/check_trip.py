@@ -10,7 +10,7 @@ def check(condition, message):
     if not condition: failures.append(message)
 def read(name): return (source / name).read_text(encoding='utf-8')
 
-plan = read('TripPlan.kt')
+plan = read('outfits/TripPlan.kt')
 check('val allowed = s.capsuleItems.filter { it.capsuleId == capsule.id }.map { it.garmentId }.toSet()' in plan, "only the trip's items")
 check('DailyOutfits.daily(s, wardrobe, occasion, weather, date, seed, skip, allowed,' in plan, 'the same generator as the daily screen')
 check('forecast?.temperature(date)?.let { WeatherRules.shifted(it, warmth.shift) }' in plan and '?: "any_weather"' in plan,
@@ -18,7 +18,7 @@ check('forecast?.temperature(date)?.let { WeatherRules.shifted(it, warmth.shift)
 check('val fresh = first(used)' in plan and 'first(emptySet())' in plan, 'a different outfit each day while there is one')
 check('DailyDiagnostics.explain(' in plan, 'a day without an outfit says why')
 check(not re.search(r'\b(save|insert|wear|schedule|toggle)\w*\(', plan.replace('DailyOutfits.daily', '')), 'nothing is saved or recorded as worn')
-screen = read('CapsuleScreen.kt')
+screen = read('ui/CapsuleScreen.kt')
 check('withContext(Dispatchers.Default) { TripPlan.coverage(s, capsule, tripOccasion, today, tripForecast, choices) }' in screen, 'computed off the UI thread')
 check('val tripForecast = if (tripCity != null) cityForecast.takeIf { weatherEnabled } else forecast.takeIf { weatherEnabled }' in screen, 'the forecast only when weather is on (TRIP-01: the trip city’s own when it has one)')
 check('R.string.trip_forecast_city' in screen and 'R.string.trip_weather_unknown' in screen and 'R.string.trip_rain' in screen,
@@ -37,7 +37,7 @@ for folder in ('values', 'values-uk', 'values-en', 'values-pl'):
 check('val pick = options.minByOrNull { look -> look.count { it !in chosen } } ?: continue' in plan and '.take(REUSE_CHOICES)' in plan,
       'among the best variants the one needing the fewest new items wins')
 check('val chosen = inCapsule.toMutableSet()' in plan, 'items already in the capsule count as packed')
-ops = read('CapsuleOperations.kt')
+ops = read('data/CapsuleOperations.kt')
 check('suspend fun Repository.addCapsuleItems' in ops and 'require(garmentIds.all { dao.garment(it)?.wardrobeId == capsule.wardrobeId })' in ops,
       'suggested items are added at once, only from this wardrobe')
 check('vm.addCapsuleItems(capsule.id, proposal.add.map { it.id })' in screen, 'added only when the person confirms')

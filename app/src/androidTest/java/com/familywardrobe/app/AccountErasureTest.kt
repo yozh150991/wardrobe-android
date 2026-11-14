@@ -3,13 +3,20 @@ package com.familywardrobe.app
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountDirectories
+import com.familywardrobe.app.auth.AccountErasure
+import com.familywardrobe.app.auth.AccountFiles
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.photo.PhotoStore
+import com.familywardrobe.app.rules.AuthRules
+import java.io.File
+import java.util.UUID
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
-import java.util.UUID
 
 /**
  * FAM-04 (0.14.25): the local erasure after an account deletion, including the marker that finishes it after a crash.

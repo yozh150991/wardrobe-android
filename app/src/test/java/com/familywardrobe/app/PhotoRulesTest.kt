@@ -1,5 +1,6 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.rules.PhotoRulesCases
 import org.junit.Test
 
 class PhotoRulesTest {

@@ -1,5 +1,9 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.data.CustomColor
+import com.familywardrobe.app.family.FamilyColors
+import com.familywardrobe.app.outfits.Matching
+import com.familywardrobe.app.rules.ColorRules
 import org.junit.Assert.*
 import org.junit.Test
 

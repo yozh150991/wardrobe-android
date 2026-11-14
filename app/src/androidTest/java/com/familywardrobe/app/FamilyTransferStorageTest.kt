@@ -3,12 +3,24 @@ package com.familywardrobe.app
 import android.graphics.Bitmap
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.auth.AuthIdentity
+import com.familywardrobe.app.backup.Backup
+import com.familywardrobe.app.backup.WardrobeSnapshots
+import com.familywardrobe.app.family.FamilyArchive
+import com.familywardrobe.app.family.FamilyEnvelope
+import com.familywardrobe.app.family.FamilyMigrationPhase
+import com.familywardrobe.app.family.FamilyMigrationStore
+import com.familywardrobe.app.family.FamilyProblem
+import com.familywardrobe.app.family.FamilyTransferException
+import com.familywardrobe.app.photo.PhotoStore
+import java.io.File
+import java.util.zip.ZipFile
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
-import java.io.File
-import java.util.zip.ZipFile
 
 /** Native storage integration; run with the other deferred Android acceptance tests. */
 class FamilyTransferStorageTest {

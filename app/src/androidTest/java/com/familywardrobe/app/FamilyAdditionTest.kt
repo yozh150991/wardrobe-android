@@ -1,5 +1,8 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.data.CustomCategory
+import com.familywardrobe.app.data.CustomColor
+import com.familywardrobe.app.family.FamilyAddition
 import org.junit.Assert.*
 import org.junit.Test
 

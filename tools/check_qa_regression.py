@@ -41,11 +41,11 @@ env['JAVA_TOOL_OPTIONS'] = (env.get('JAVA_TOOL_OPTIONS', '') + ' -XX:-UsePerfDat
 java = ['java']
 
 with tempfile.TemporaryDirectory(prefix='wardrobe-qa-') as output:
-    sources = sorted(str(p) for p in main.glob('*.java')) + sorted(str(p) for p in tests.glob('Qa*.java'))
+    sources = sorted(str(p) for p in (main / 'rules').glob('*.java')) + sorted(str(p) for p in (tests / 'rules').glob('Qa*.java'))
     subprocess.run(java + ['-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-nowarn', '-encoding', 'UTF-8',
                            '-d', output, *sources], check=True, env=env)
     for suite in SUITES:
-        completed = subprocess.run(java + ['-cp', output, f'com.familywardrobe.app.{suite}'], env=env, text=True,
+        completed = subprocess.run(java + ['-cp', output, f'com.familywardrobe.app.rules.{suite}'], env=env, text=True,
                                    capture_output=True, encoding='utf-8')
         print((completed.stdout + completed.stderr).strip())
         if completed.returncode != 0:
@@ -70,7 +70,7 @@ with tempfile.TemporaryDirectory(prefix='wardrobe-qa-') as output:
               'a' * 64 + '@b.co', 'a@' + 'b' * 63 + '.co', 'a@' + 'b' * 64 + '.co']
     corpus = names + emails
     lines = '\n'.join(' '.join(format(ord(c), 'x') for c in value) for value in corpus) + '\n'
-    completed = subprocess.run(java + ['-cp', output, 'com.familywardrobe.app.QaParityDump'], input=lines.encode('utf-8'),
+    completed = subprocess.run(java + ['-cp', output, 'com.familywardrobe.app.rules.QaParityDump'], input=lines.encode('utf-8'),
                                capture_output=True, env=env, check=True)
     rows = completed.stdout.decode('utf-8').splitlines()
     assert len(rows) == len(corpus), (len(rows), len(corpus))
@@ -124,40 +124,40 @@ def body(name, signature):
     return text[start:min(ends) if ends else len(text)]
 
 name_rules = {
-    'wish form': source('WishlistScreen.kt'), 'wish save': body('Data.kt', 'suspend fun saveWish(value: Wish, converting'),
-    'item form': body('Ui.kt', 'validation = '), 'look editor': source('OutfitEditor.kt'), 'daily look dialog': source('DailyScreen.kt'),
-    'look save': body('Data.kt', 'suspend fun saveLook('), 'capsule form': source('CapsuleScreen.kt'),
-    'capsule save': body('CapsuleOperations.kt', 'suspend fun Repository.saveCapsule('),
-    'wardrobe rename form': source('WardrobeManagement.kt'), 'wardrobe rename': body('Data.kt', 'suspend fun renameWardrobe(id: String, name: String) = writes'),
-    'new wardrobe dialog': body('Ui.kt', 'fun NameDialog('), 'new wardrobe': body('Data.kt', 'suspend fun addWardrobe('),
+    'wish form': source('ui/WishlistScreen.kt'), 'wish save': body('Data.kt', 'suspend fun saveWish(value: Wish, converting'),
+    'item form': body('ui/Ui.kt', 'validation = '), 'look editor': source('ui/OutfitEditor.kt'), 'daily look dialog': source('ui/DailyScreen.kt'),
+    'look save': body('Data.kt', 'suspend fun saveLook('), 'capsule form': source('ui/CapsuleScreen.kt'),
+    'capsule save': body('data/CapsuleOperations.kt', 'suspend fun Repository.saveCapsule('),
+    'wardrobe rename form': source('ui/WardrobeManagement.kt'), 'wardrobe rename': body('Data.kt', 'suspend fun renameWardrobe(id: String, name: String) = writes'),
+    'new wardrobe dialog': body('ui/Ui.kt', 'fun NameDialog('), 'new wardrobe': body('Data.kt', 'suspend fun addWardrobe('),
 }
 missing = [label for label, text in name_rules.items() if 'hasVisibleText' not in text]
 if missing:
     failures.append(f'names saved without TextLimits.hasVisibleText (QA-03 regression): {missing}')
 # Regular guard: the forms already fixed in 0.14.13 keep the visibility rule.
-for file in ['FamilyAddition.kt', 'FamilyEditDialog.kt', 'FamilyAccessControl.kt']:
+for file in ['family/FamilyAddition.kt', 'family/FamilyEditDialog.kt', 'family/FamilyAccessControl.kt']:
     if 'hasVisibleText' not in source(file):
         failures.append(f'{file} lost TextLimits.hasVisibleText (BUG-12 regression)')
 if 'hasVisibleText(garment.name)' not in source('Data.kt'):
     failures.append('Data.kt garment save lost the visible-name rule (BUG-12 regression)')
 # QA-09 (fixed in 0.14.14): prefilled custom label names go through TextLimits.input, not String.take.
-raw_take = [f for f in ['CategoryControls.kt', 'ColorControls.kt'] if re.search(r'\bquery\.take\(', source(f))]
+raw_take = [f for f in ['ui/CategoryControls.kt', 'ui/ColorControls.kt'] if re.search(r'\bquery\.take\(', source(f))]
 if raw_take:
     failures.append(f'custom label prefill uses String.take (QA-09 regression): {raw_take}')
 # Regular guard: no text field change handler goes back to it.take(N) (BUG-05 regression).
-for path in sorted(main.glob('*.kt')):
+for path in sorted(main.rglob('*.kt')):
     if re.search(r'\{\s*\w+\s*=\s*it\.take\(\d+\)', path.read_text(encoding='utf-8')):
         failures.append(f'{path.name}: text field uses it.take(N) instead of TextLimits.input (BUG-05 regression)')
 # QA-04 (fixed in 0.14.14): the phone waits as long as the server may work on commit and edit (540 s).
 # 0.14.21: family_apply_change builds a new snapshot too and has the same server timeout.
 # 0.14.25: the ownership transfer rewrites the head; account deletion may handle up to 100 wardrobes.
-backend_source = source('FamilyBackend.kt')
+backend_source = source('family/FamilyBackend.kt')
 long_calls = re.search(r'LONG_CALLS = setOf\(([^)]*)\)', backend_source) if 'name in LONG_CALLS) 540' in backend_source else None
 missing = {'family_commit', 'family_edit_item', 'family_apply_change', 'family_transfer_owner', 'family_delete_account'} - set(re.findall(r'"(\w+)"', long_calls.group(1) if long_calls else ''))
 if missing:
     failures.append(f'FamilyBackend callable timeout is shorter than the server timeout for {sorted(missing)} (QA-04 regression)')
 # QA-06 (fixed in 0.14.14): a shared message used as the product name is cleaned like page metadata.
-if 'ShopMetadata.cleanName(sharedText' not in source('ShopImportScreen.kt'):
+if 'ShopMetadata.cleanName(sharedText' not in source('ui/ShopImportScreen.kt'):
     failures.append('ShopImportScreen shared-text name is not cleaned with ShopMetadata.cleanName (QA-06 regression)')
 
 print(f'PASS: source guards; open bugs still reproduced: {", ".join(sorted(reproduced, key=lambda b: (len(b), b))) or "none"}')

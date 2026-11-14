@@ -1,9 +1,12 @@
 package com.familywardrobe.app
 
 import androidx.compose.ui.graphics.Color
+import com.familywardrobe.app.ui.AppearanceMode
+import com.familywardrobe.app.ui.WardrobePalette
+import com.familywardrobe.app.ui.wardrobeColorScheme
+import kotlin.math.pow
 import org.junit.Assert.*
 import org.junit.Test
-import kotlin.math.pow
 
 class ThemeTest {
     private fun luminance(color: Color): Double {

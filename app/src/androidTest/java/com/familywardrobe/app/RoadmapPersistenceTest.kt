@@ -4,11 +4,29 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.backup.Backup
+import com.familywardrobe.app.backup.BackupStateRules
+import com.familywardrobe.app.data.Capsule
+import com.familywardrobe.app.data.OutfitFeedback
+import com.familywardrobe.app.data.linkCapsuleOutfit
+import com.familywardrobe.app.data.manualCapsuleItem
+import com.familywardrobe.app.data.movePlan
+import com.familywardrobe.app.data.packCapsuleItem
+import com.familywardrobe.app.data.recordFeedback
+import com.familywardrobe.app.data.removeCapsule
+import com.familywardrobe.app.data.removePlan
+import com.familywardrobe.app.data.saveCapsule
+import com.familywardrobe.app.data.scheduleOutfit
+import com.familywardrobe.app.data.togglePlanWorn
+import com.familywardrobe.app.outfits.LookRules
+import com.familywardrobe.app.photo.PhotoStore
+import com.familywardrobe.app.rules.DailyRules
+import com.familywardrobe.app.ui.WardrobeStats
+import java.io.File
+import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
-import java.io.File
-import java.time.LocalDate
 
 class RoadmapPersistenceTest {
     private fun scenario(test: suspend (Repository, PhotoStore, List<Garment>, String) -> Unit) = runBlocking {

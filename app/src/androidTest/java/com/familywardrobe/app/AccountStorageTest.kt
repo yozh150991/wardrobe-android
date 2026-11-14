@@ -5,13 +5,18 @@ import android.content.ContextWrapper
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.auth.AccountRegistry
+import com.familywardrobe.app.photo.PhotoStore
+import com.familywardrobe.app.rules.AuthRules
+import java.io.File
+import java.util.UUID
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
-import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class AccountStorageTest {

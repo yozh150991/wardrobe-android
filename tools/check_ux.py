@@ -7,10 +7,10 @@ source=root/'app/src/main/java/com/familywardrobe/app'
 java=shutil.which('java')
 if not java: raise SystemExit('Java 17 with jdk.compiler required')
 with tempfile.TemporaryDirectory(prefix='wardrobe-ux-') as output:
-    sources=[source/name for name in ('PhotoWorkGate.java','PhotoPresentationGeometry.java')]
-    sources.append(root/'app/src/test/java/com/familywardrobe/app/UXRulesCases.java')
+    sources=[source/name for name in ('rules/PhotoWorkGate.java','rules/PhotoPresentationGeometry.java')]
+    sources.append(root/'app/src/test/java/com/familywardrobe/app/rules/UXRulesCases.java')
     subprocess.run([java,'-m','jdk.compiler/com.sun.tools.javac.Main','--release','17','-d',output,*map(str,sources)],check=True)
-    subprocess.run([java,'-cp',output,'com.familywardrobe.app.UXRulesCases'],check=True)
+    subprocess.run([java,'-cp',output,'com.familywardrobe.app.rules.UXRulesCases'],check=True)
 schema=json.loads((root/'app/schemas/com.familywardrobe.app.WardrobeDatabase/2.json').read_text())['database']
 data=(source/'Data.kt').read_text()
 def migration(name):
@@ -32,7 +32,7 @@ assert after[:-1]==before and after[-1]==''
 assert not db.execute('PRAGMA foreign_key_check').fetchall()
 print('PASS: real Room migration 3->4 executed on migrated exported schema 2; every existing wish field retained.')
 # Delimiter validation helps catch editing mistakes; it is not a Kotlin compiler.
-for path in source.glob('*.kt'):
+for path in source.rglob('*.kt'):
     s=path.read_text();stack=[];i=0;state='code'
     while i<len(s):
         ch=s[i];pair=s[i:i+2]

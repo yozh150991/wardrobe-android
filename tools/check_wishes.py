@@ -6,11 +6,11 @@ root=Path(__file__).resolve().parents[1]
 java=shutil.which('java')
 if not java: raise SystemExit('JDK 17 required')
 with tempfile.TemporaryDirectory(prefix='wardrobe-wish-') as output:
-    sources=[root/'app/src/main/java/com/familywardrobe/app'/name for name in ('WishRules.java','WardrobeRules.java','LookSelection.java')]
-    sources += [root/'app/src/test/java/com/familywardrobe/app'/name for name in ('WishRulesCases.java','LookSelectionCases.java')]
+    sources=[root/'app/src/main/java/com/familywardrobe/app'/name for name in ('rules/WishRules.java','rules/WardrobeRules.java','rules/LookSelection.java')]
+    sources += [root/'app/src/test/java/com/familywardrobe/app'/name for name in ('rules/WishRulesCases.java','rules/LookSelectionCases.java')]
     subprocess.run([java,'-m','jdk.compiler/com.sun.tools.javac.Main','--release','17','-d',output,*map(str,sources)],check=True)
-    subprocess.run([java,'-cp',output,'com.familywardrobe.app.WishRulesCases'],check=True)
-    subprocess.run([java,'-cp',output,'com.familywardrobe.app.LookSelectionCases'],check=True)
+    subprocess.run([java,'-cp',output,'com.familywardrobe.app.rules.WishRulesCases'],check=True)
+    subprocess.run([java,'-cp',output,'com.familywardrobe.app.rules.LookSelectionCases'],check=True)
 schema=json.loads((root/'app/schemas/com.familywardrobe.app.WardrobeDatabase/2.json').read_text())['database']
 source=(root/'app/src/main/java/com/familywardrobe/app/Data.kt').read_text().split('val MIGRATION_2_3',1)[1]
 sql=re.findall(r'db.execSQL\("([^"\n]+)"\)',source)

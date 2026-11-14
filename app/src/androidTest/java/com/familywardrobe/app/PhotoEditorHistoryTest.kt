@@ -1,6 +1,11 @@
 package com.familywardrobe.app
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.familywardrobe.app.photo.decodePhotoHistory
+import com.familywardrobe.app.photo.encodePhotoHistory
+import com.familywardrobe.app.photo.maskHistoryState
+import com.familywardrobe.app.photo.maskStrokes
+import com.familywardrobe.app.rules.PhotoEditHistory
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test

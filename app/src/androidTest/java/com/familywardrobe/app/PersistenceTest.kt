@@ -1,19 +1,22 @@
 package com.familywardrobe.app
 
 import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import android.graphics.Bitmap
 import android.net.Uri
-import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.familywardrobe.app.backup.Backup
+import com.familywardrobe.app.outfits.LookRules
+import com.familywardrobe.app.photo.PhotoStore
+import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class PersistenceTest {

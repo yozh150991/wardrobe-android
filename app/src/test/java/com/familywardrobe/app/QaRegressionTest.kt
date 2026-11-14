@@ -1,5 +1,11 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.rules.QaFamilyClientCases
+import com.familywardrobe.app.rules.QaPairwiseCases
+import com.familywardrobe.app.rules.QaShopImportCases
+import com.familywardrobe.app.rules.QaStateTransitionCases
+import com.familywardrobe.app.rules.QaTextInputCases
+import com.familywardrobe.app.rules.QaWardrobeDomainCases
 import org.junit.Test
 
 /**

@@ -1,5 +1,6 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.rules.PhotoSessionCases
 import org.junit.Test
 
 class PhotoSessionTest {

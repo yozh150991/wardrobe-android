@@ -5,6 +5,12 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.ui.AppearanceMode
+import com.familywardrobe.app.ui.AppearanceSettings
+import com.familywardrobe.app.ui.AppearanceStore
+import com.familywardrobe.app.ui.WardrobePalette
+import java.io.File
+import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -13,8 +19,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
-import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class AppearancePersistenceTest {

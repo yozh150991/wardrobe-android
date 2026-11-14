@@ -9,8 +9,8 @@ import re
 
 root = Path(__file__).resolve().parents[1]
 main = root / 'app/src/main/java/com/familywardrobe/app'
-erasure = (main / 'AccountDeletion.kt').read_text(encoding='utf-8')
-files_source = (main / 'AccountFiles.kt').read_text(encoding='utf-8')
+erasure = (main / 'auth/AccountDeletion.kt').read_text(encoding='utf-8')
+files_source = (main / 'auth/AccountFiles.kt').read_text(encoding='utf-8')
 def listed(name):
     match = re.search(rf'val {name} = listOf\(([^)]*)\)', files_source, re.S)
     assert match, name
@@ -19,7 +19,7 @@ preferences, files, prefixes = listed('LEGACY_PREFERENCES'), listed('LEGACY_FILE
 APP_PREFERENCES = {'shop-share-inbox'}  # app-wide inbox of shared shop links, not tied to an account
 APP_FILES = {'account-storage-v1.json', 'account-erasure-v1.json'}  # the registry and the erasure marker
 failures = []
-sources = {path.name: path.read_text(encoding='utf-8') for path in sorted(main.glob('*.kt'))}
+sources = {path.name: path.read_text(encoding='utf-8') for path in sorted(main.rglob('*.kt'))}
 constants = {}
 for text in sources.values():
     constants.update(dict(re.findall(r'const val (\w+) = "([^"]+)"', text)))

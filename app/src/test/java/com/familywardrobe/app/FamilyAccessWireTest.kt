@@ -1,5 +1,6 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.family.FamilyAccessWire
 import org.junit.Assert.*
 import org.junit.Test
 

@@ -3,6 +3,11 @@ package com.familywardrobe.app
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.photo.PhotoStore
+import com.familywardrobe.app.rules.AuthRules
+import com.familywardrobe.app.rules.PhotoResolutionRules
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test

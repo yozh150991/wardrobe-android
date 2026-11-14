@@ -1,4 +1,6 @@
 package com.familywardrobe.app
+import com.familywardrobe.app.outfits.LookPiece
+import com.familywardrobe.app.outfits.LookRules
 import org.junit.Assert.*
 import org.junit.Test
 

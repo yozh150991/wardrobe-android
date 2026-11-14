@@ -1,5 +1,15 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.data.OutfitFeedback
+import com.familywardrobe.app.data.PersonalChoices
+import com.familywardrobe.app.outfits.DailyOutfits
+import com.familywardrobe.app.outfits.OutfitStyle
+import com.familywardrobe.app.outfits.RotationOutfits
+import com.familywardrobe.app.rules.DailyRules
+import com.familywardrobe.app.rules.PreferenceProfile
+import com.familywardrobe.app.rules.PreferenceRules
+import com.familywardrobe.app.rules.RotationRules
+import com.familywardrobe.app.rules.StyleRules
 import org.junit.Assert.*
 import org.junit.Test
 

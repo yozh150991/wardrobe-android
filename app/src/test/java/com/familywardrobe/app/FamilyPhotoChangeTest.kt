@@ -1,5 +1,8 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.family.FamilyPhotoChange
+import com.familywardrobe.app.family.FamilyProblem
+import com.familywardrobe.app.family.FamilyTransferException
 import org.junit.Assert.*
 import org.junit.Test
 

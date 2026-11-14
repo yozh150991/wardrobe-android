@@ -4,8 +4,8 @@ from pathlib import Path
 import re
 
 root = Path(__file__).resolve().parents[1]
-text = (root / 'app/src/main/java/com/familywardrobe/app/Theme.kt').read_text()
-appearance = (root / 'app/src/main/java/com/familywardrobe/app/Appearance.kt').read_text()
+text = (root / 'app/src/main/java/com/familywardrobe/app/ui/Theme.kt').read_text()
+appearance = (root / 'app/src/main/java/com/familywardrobe/app/ui/Appearance.kt').read_text()
 names = re.findall(r'^    (\w+)\("[a-z_]+", R.string.palette_', appearance, re.M)
 full = re.findall(r'WardrobePalette\.(\w+) -> if \(dark\) PaletteTokens\(\n(.*?)\n    \) else PaletteTokens\(\n(.*?)\n    \)', text, re.S)
 legacy = re.findall(r'WardrobePalette\.(\w+) -> if \(dark\) legacyPaletteTokens\((.*?)\n        else legacyPaletteTokens\((.*?)\n', text)

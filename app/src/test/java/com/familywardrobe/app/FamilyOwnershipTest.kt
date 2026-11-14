@@ -1,5 +1,10 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.family.FamilyArchiveIdentity
+import com.familywardrobe.app.family.FamilyDeletionResult
+import com.familywardrobe.app.family.FamilyMember
+import com.familywardrobe.app.family.FamilyOwnedWardrobe
+import com.familywardrobe.app.family.FamilyOwnership
 import org.junit.Assert.*
 import org.junit.Test
 

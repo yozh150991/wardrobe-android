@@ -6,10 +6,10 @@ from host_schema import SOURCE, migrate, install_triggers
 ROOT=Path(__file__).resolve().parents[1]
 with tempfile.TemporaryDirectory(prefix='wardrobe-scenarios-') as output:
     java=shutil.which('java')
-    files=[SOURCE/(name+'.java') for name in ('WardrobeRules','LookSelection','InspirationCatalog','CloudSyncRules')]
-    files.append(ROOT/'app/src/test/java/com/familywardrobe/app/ScenarioRulesCases.java')
+    files=[SOURCE/'rules'/(name+'.java') for name in ('WardrobeRules','LookSelection','InspirationCatalog','CloudSyncRules')]
+    files.append(ROOT/'app/src/test/java/com/familywardrobe/app/rules/ScenarioRulesCases.java')
     subprocess.run([java,'-m','jdk.compiler/com.sun.tools.javac.Main','--release','17','-d',output,*map(str,files)],check=True)
-    subprocess.run([java,'-cp',output,'com.familywardrobe.app.ScenarioRulesCases'],check=True)
+    subprocess.run([java,'-cp',output,'com.familywardrobe.app.rules.ScenarioRulesCases'],check=True)
     path=Path(output)/'wardrobe.db'
     db=sqlite3.connect(path,isolation_level=None);db.execute('PRAGMA foreign_keys=ON');migrate(db,target=7)
     db.execute("INSERT INTO wardrobes VALUES ('home','Home',1,0,7)")

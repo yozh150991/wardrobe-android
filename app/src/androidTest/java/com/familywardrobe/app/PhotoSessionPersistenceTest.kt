@@ -5,6 +5,13 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.familywardrobe.app.photo.PhotoStore
+import com.familywardrobe.app.photo.decodePhotoHistory
+import com.familywardrobe.app.photo.encodePhotoHistory
+import com.familywardrobe.app.photo.maskStrokes
+import com.familywardrobe.app.photo.photoSessionPlan
+import com.familywardrobe.app.photo.renderPhotoSession
+import com.familywardrobe.app.rules.PhotoEditHistory
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject

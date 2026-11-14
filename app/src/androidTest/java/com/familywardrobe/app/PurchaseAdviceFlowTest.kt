@@ -2,6 +2,11 @@ package com.familywardrobe.app
 
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.data.purchaseWish
+import com.familywardrobe.app.data.undoPurchase
+import com.familywardrobe.app.outfits.LookRules
+import com.familywardrobe.app.outfits.PurchaseCompatibility
+import com.familywardrobe.app.photo.PhotoStore
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test

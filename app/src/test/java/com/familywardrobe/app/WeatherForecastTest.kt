@@ -1,5 +1,9 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.outfits.Forecast
+import com.familywardrobe.app.outfits.ForecastDay
+import com.familywardrobe.app.outfits.WeatherCity
+import com.familywardrobe.app.rules.RoadmapRules
 import org.junit.Assert.*
 import org.junit.Test
 
