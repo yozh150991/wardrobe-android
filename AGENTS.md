@@ -4,7 +4,9 @@
 (PR #44, CI green, not merged); its PR targets main and contains it. PhotoExportRules (sizes never enlarge, source-over
 blend onto white/cream, safe file names); PhotoStore.export writes a new pixel-only file under cache/share/<account>/
 <id>/ (expires after a day) and returns a FileProvider URI; PhotoExportDialog shares it via ACTION_SEND. FileProvider
-exposes only camera/ and share/ — never the saved photos.
+exposes only camera/ and share/ — never the saved photos. Every FileProvider URI goes through
+PhotoStore.sharedUri with the application context: the provider keeps the roots of its first caller, and the account
+context has its own cache folder (camera URIs could fail before).
 
 ## Current handoff — WTH-02 rain from the forecast, 14 November 2026
 

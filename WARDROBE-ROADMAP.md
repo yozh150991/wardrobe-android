@@ -823,4 +823,5 @@ and device acceptance remain pending; no live Firebase deployment is included.
 
 - Запит користувача: «Продовж». Гілка від WTH-02 (PR #44 ще не злитий), PR одразу в main. Версія 0.14.46-photo-export/code76; Room і формати копії без змін.
 - `PhotoExportRules` (розміри без збільшення, накладання на фон, безпечна назва), `PhotoStore.export` (новий файл у `cache/share/<акаунт>/<id>/`, без EXIF, видалення через добу), `PhotoExportDialog` (формат, розмір, системне меню), кнопка в `PhotoViewer`; FileProvider — лише `camera/` і `share/`.
+- Знайдено першим запуском CI: FileProvider брав корені з контексту акаунта (свій кеш), тож URI камери й «Поділитися» могли падати («Failed to find configured root»); `PhotoStore.sharedUri` тепер завжди з контекстом застосунку; камеру перевіряє `PhotoExportTest`.
 - Перевірки тут: новий набір `check_photo_export.py` (38-й), `PhotoExportRulesCases` 48 820, мутації 6/7 (сьома рівнозначна); instrumentation `PhotoExportTest`. Збірка — у CI. Пристрій не перевірено. Деталі: PHOTO-EXPORT-0.14.46.md.

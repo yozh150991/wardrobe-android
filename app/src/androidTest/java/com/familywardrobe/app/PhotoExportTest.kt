@@ -57,6 +57,9 @@ class PhotoExportTest {
             assertArrayEquals(before, saved.readBytes())
             assertTrue(png.toString().contains("/share/") && png.authority == "${base.packageName}.files")
             assertNotEquals(png, photos.export(id, PhotoExportRules.PNG, 0, "Червона сукня"))
+            // The camera's file is reachable through the same provider from an account context (it used to fail).
+            val capture = photos.newCapture()
+            assertTrue(capture.toString().contains("/camera/") && capture.authority == "${base.packageName}.files")
         } finally { photos.remove(setOf(id)); File(context.applicationContext.cacheDir, "share").deleteRecursively(); context.filesDir.deleteRecursively() }
     }
 

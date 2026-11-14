@@ -86,7 +86,15 @@ class PhotoStore(private val context: Context) {
             }
         } catch (e: Throwable) { folder.deleteRecursively(); throw e }
         finally { if (output !== scaled) output.recycle(); if (scaled !== decoded) scaled.recycle(); decoded.recycle() }
-        FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+        sharedUri(file)
+    }
+    /**
+     * FileProvider builds its roots from the Context of its first call and keeps them for the process. The account
+     * context has its own cache folder, so a first call through it made every later camera or share URI fail
+     * ("Failed to find configured root"). The files live in the application's cache, so the roots must too.
+     */
+    private fun sharedUri(file: File): Uri = context.applicationContext.let { app ->
+        FileProvider.getUriForFile(app, "${app.packageName}.files", file)
     }
     fun newCapture(): Uri {
         // Only camera/ is exposed by FileProvider, never the private account cache.
@@ -94,7 +102,7 @@ class PhotoStore(private val context: Context) {
         val dir = File(context.applicationContext.cacheDir, "camera/$namespace").apply { mkdirs() }
         // Pending camera files only; saved item photographs are never deleted here.
         dir.listFiles()?.filter { System.currentTimeMillis() - it.lastModified() > 7 * 86_400_000L }?.forEach { it.delete() }
-        return FileProvider.getUriForFile(context, "${context.packageName}.files", File(dir, "${newId()}.jpg"))
+        return sharedUri(File(dir, "${newId()}.jpg"))
     }
     suspend fun import(uri: Uri): String = candidate {
         val workContext = coroutineContext
