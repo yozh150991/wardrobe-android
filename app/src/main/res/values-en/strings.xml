@@ -1457,4 +1457,5 @@ Your current wardrobe is unchanged.</string>
     <string name="trip_city_loading">Loading the forecast for %1$s…</string>
     <string name="trip_city_unavailable">The forecast for %1$s is not available right now: outfits are chosen without the weather.</string>
     <string name="trip_city_weather_off">The weather is off: the forecast for %1$s is not loaded and outfits are chosen without it.</string>
+    <string name="weather_rain_auto">Chance of rain %1$d%%, so «Rain»: a jacket or raincoat is added. You can change it in the conditions.</string>
 </resources>
