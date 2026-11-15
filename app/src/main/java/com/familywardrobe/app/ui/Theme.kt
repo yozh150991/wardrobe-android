@@ -49,6 +49,132 @@ private fun legacyPaletteTokens(primary: Color, onPrimary: Color, selected: Colo
 )
 
 internal fun paletteTokens(palette: WardrobePalette, dark: Boolean): PaletteTokens = when (palette) {
+    // UI-01 (0.14.51): light palettes — a near-white canvas and white cards, so garment photos carry the colour.
+    // LIGHT_OLIVE is the default; the earlier, richer palettes stay for those who chose them.
+    WardrobePalette.LIGHT_OLIVE -> if (dark) PaletteTokens(
+        primary = Color(0xFFA9D6B8),
+        onPrimary = Color(0xFF12301F),
+        selected = Color(0xFF2C4A39),
+        secondary = Color(0xFFF0B8A2),
+        onSecondary = Color(0xFF4A2416),
+        details = Color(0xFFD9C27E),
+        onDetails = Color(0xFF3A2D0C),
+        canvas = Color(0xFF171C18),
+        paper = Color(0xFF1F2620),
+        ink = Color(0xFFEDF1EA),
+        muted = Color(0xFFB7C0B4),
+        soft = Color(0xFF2A332B),
+        outline = Color(0xFF86927F),
+        outlineVariant = Color(0xFF3B463C)
+    ) else PaletteTokens(
+        primary = Color(0xFF38704F),
+        onPrimary = Color(0xFFFFFFFF),
+        selected = Color(0xFFE3EFE4),
+        secondary = Color(0xFFA94F38),
+        onSecondary = Color(0xFFFFFFFF),
+        details = Color(0xFFF2E2B3),
+        onDetails = Color(0xFF4A3A12),
+        canvas = Color(0xFFFAFAF5),
+        paper = Color(0xFFFFFFFF),
+        ink = Color(0xFF1E2A23),
+        muted = Color(0xFF5B6459),
+        soft = Color(0xFFEFF1E8),
+        outline = Color(0xFF7B8578),
+        outlineVariant = Color(0xFFE3E6DA)
+    )
+    WardrobePalette.MONO -> if (dark) PaletteTokens(
+        primary = Color(0xFFF2F2F0),
+        onPrimary = Color(0xFF18181A),
+        selected = Color(0xFF3A3A3D),
+        secondary = Color(0xFFC9C9CE),
+        onSecondary = Color(0xFF222225),
+        details = Color(0xFF45454A),
+        onDetails = Color(0xFFF0F0F2),
+        canvas = Color(0xFF161617),
+        paper = Color(0xFF1F1F21),
+        ink = Color(0xFFF2F2F0),
+        muted = Color(0xFFBDBDC2),
+        soft = Color(0xFF2B2B2E),
+        outline = Color(0xFF8C8C92),
+        outlineVariant = Color(0xFF3D3D41)
+    ) else PaletteTokens(
+        primary = Color(0xFF18181A),
+        onPrimary = Color(0xFFFFFFFF),
+        selected = Color(0xFFE9E9E6),
+        secondary = Color(0xFF5A5A5F),
+        onSecondary = Color(0xFFFFFFFF),
+        details = Color(0xFFE6E6E2),
+        onDetails = Color(0xFF2A2A2C),
+        canvas = Color(0xFFF7F7F5),
+        paper = Color(0xFFFFFFFF),
+        ink = Color(0xFF18181A),
+        muted = Color(0xFF5F5F64),
+        soft = Color(0xFFEDEDEA),
+        outline = Color(0xFF808084),
+        outlineVariant = Color(0xFFE4E4E0)
+    )
+    WardrobePalette.SKY -> if (dark) PaletteTokens(
+        primary = Color(0xFFA9C7FF),
+        onPrimary = Color(0xFF0E2A5E),
+        selected = Color(0xFF26406F),
+        secondary = Color(0xFFFFB59E),
+        onSecondary = Color(0xFF55200F),
+        details = Color(0xFFF0C9A0),
+        onDetails = Color(0xFF43290C),
+        canvas = Color(0xFF141A24),
+        paper = Color(0xFF1B2330),
+        ink = Color(0xFFEAF0FA),
+        muted = Color(0xFFB4C0D4),
+        soft = Color(0xFF263042),
+        outline = Color(0xFF8492AA),
+        outlineVariant = Color(0xFF36435A)
+    ) else PaletteTokens(
+        primary = Color(0xFF2560D0),
+        onPrimary = Color(0xFFFFFFFF),
+        selected = Color(0xFFE3ECFC),
+        secondary = Color(0xFFB5472F),
+        onSecondary = Color(0xFFFFFFFF),
+        details = Color(0xFFFBE3C8),
+        onDetails = Color(0xFF5A3A1E),
+        canvas = Color(0xFFF5F8FC),
+        paper = Color(0xFFFFFFFF),
+        ink = Color(0xFF17233A),
+        muted = Color(0xFF56627A),
+        soft = Color(0xFFE8EEF7),
+        outline = Color(0xFF7A869C),
+        outlineVariant = Color(0xFFDCE4F0)
+    )
+    WardrobePalette.LILAC -> if (dark) PaletteTokens(
+        primary = Color(0xFFCDBDFF),
+        onPrimary = Color(0xFF2F1C73),
+        selected = Color(0xFF3F3170),
+        secondary = Color(0xFF9FD6CC),
+        onSecondary = Color(0xFF0E3A34),
+        details = Color(0xFFEFC1D6),
+        onDetails = Color(0xFF4A1F35),
+        canvas = Color(0xFF19161F),
+        paper = Color(0xFF221E2B),
+        ink = Color(0xFFF1ECFA),
+        muted = Color(0xFFC2BAD4),
+        soft = Color(0xFF2E2940),
+        outline = Color(0xFF9189A8),
+        outlineVariant = Color(0xFF423B58)
+    ) else PaletteTokens(
+        primary = Color(0xFF6A4BD6),
+        onPrimary = Color(0xFFFFFFFF),
+        selected = Color(0xFFEDE7FB),
+        secondary = Color(0xFF2F6F68),
+        onSecondary = Color(0xFFFFFFFF),
+        details = Color(0xFFF6DFEA),
+        onDetails = Color(0xFF55263F),
+        canvas = Color(0xFFF9F7FD),
+        paper = Color(0xFFFFFFFF),
+        ink = Color(0xFF231C3A),
+        muted = Color(0xFF615A78),
+        soft = Color(0xFFEEE9FA),
+        outline = Color(0xFF857E9C),
+        outlineVariant = Color(0xFFE2DCF2)
+    )
     WardrobePalette.OLIVE_TERRA -> if (dark) PaletteTokens(
         primary = Color(0xFFBDD3B6),
         onPrimary = Color(0xFF233626),

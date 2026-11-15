@@ -52,6 +52,26 @@ class ThemeTest {
         }
     }
 
+    /** UI-01 (0.14.51): the light palettes are really light — a near-white canvas, white cards — and tell apart. */
+    @Test fun lightPalettesHaveANearWhiteCanvasAndWhiteCards() {
+        assertEquals(WardrobePalette.LIGHT_OLIVE, WardrobePalette.DEFAULT)
+        assertEquals(WardrobePalette.DEFAULT, com.familywardrobe.app.ui.AppearanceSettings().palette)
+        val light = WardrobePalette.LIGHT.map { wardrobeColorScheme(it, false) }
+        light.forEach { c ->
+            assertTrue(luminance(c.background) >= 0.92); assertEquals(Color.White, c.surface)
+            assertNotEquals(c.primary, c.secondary); assertNotEquals(c.surface, c.background)
+        }
+        // The palette people found too dark, for comparison: its canvas is clearly below that.
+        assertTrue(luminance(wardrobeColorScheme(WardrobePalette.OLIVE_TERRA, false).background) < 0.88)
+        for (dark in listOf(false, true)) {
+            val colours = WardrobePalette.LIGHT.map { wardrobeColorScheme(it, dark) }
+            assertEquals(4, colours.map { it.background }.distinct().size)
+            assertEquals(4, colours.map { it.primary }.distinct().size)
+        }
+        // A stored choice of an earlier palette is kept.
+        assertEquals(WardrobePalette.OLIVE_TERRA, WardrobePalette.fromKey("olive_terra"))
+    }
+
     @Test fun photoBackgroundsAndErrorsAreIndependentOfPalette() {
         for (dark in listOf(false, true)) {
             val reference = wardrobeColorScheme(WardrobePalette.BLUE, dark)
@@ -76,7 +96,7 @@ class ThemeTest {
         WardrobePalette.entries.forEach { assertEquals(it, WardrobePalette.fromKey(it.key)) }
         AppearanceMode.entries.forEach { assertEquals(it, AppearanceMode.fromKey(it.key)) }
         for (value in listOf(null, "", "future-value")) {
-            assertEquals(WardrobePalette.OLIVE_TERRA, WardrobePalette.fromKey(value))
+            assertEquals(WardrobePalette.LIGHT_OLIVE, WardrobePalette.fromKey(value))
             assertEquals(AppearanceMode.SYSTEM, AppearanceMode.fromKey(value))
         }
     }

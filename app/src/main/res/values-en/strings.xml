@@ -1494,4 +1494,14 @@ Your current wardrobe is unchanged.</string>
     <string name="item_delete_purchase">It was bought from the wish list, and the purchase record refers to it.</string>
     <string name="item_delete_archive_instead">In the archive the item is not suggested, and its history is kept.</string>
     <string name="item_delete_archived">The item is already archived and is not suggested.</string>
+    <string name="appearance_group_light">Light</string>
+    <string name="appearance_group_rich">Rich</string>
+    <string name="palette_light_olive">Light olive</string>
+    <string name="palette_light_olive_hint">Near-white canvas, green buttons and a terracotta accent</string>
+    <string name="palette_mono">Black and white</string>
+    <string name="palette_mono_hint">Neutral canvas and black buttons: garment colours without a tint</string>
+    <string name="palette_sky">Sky</string>
+    <string name="palette_sky_hint">A hint of blue in the canvas, blue buttons and a coral accent</string>
+    <string name="palette_lilac">Lilac</string>
+    <string name="palette_lilac_hint">A hint of lilac in the canvas, violet buttons and a teal accent</string>
 </resources>

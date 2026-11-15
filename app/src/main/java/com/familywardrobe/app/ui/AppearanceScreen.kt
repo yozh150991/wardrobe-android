@@ -57,6 +57,10 @@ fun AppearanceScreen(vm: AppearanceViewModel, onBrowse: () -> Unit) {
         Text(stringResource(R.string.appearance_palette), style = MaterialTheme.typography.titleMedium)
         Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             WardrobePalette.entries.forEach { palette ->
+                if (palette == WardrobePalette.LIGHT_OLIVE || palette == WardrobePalette.OLIVE_TERRA) {
+                    Text(stringResource(if (palette == WardrobePalette.LIGHT_OLIVE) R.string.appearance_group_light else R.string.appearance_group_rich),
+                        style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
+                }
                 if (palette == WardrobePalette.BLUE) {
                     Text(stringResource(R.string.appearance_classic), style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(top = 12.dp))

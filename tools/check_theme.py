@@ -9,7 +9,7 @@ appearance = (root / 'app/src/main/java/com/familywardrobe/app/ui/Appearance.kt'
 names = re.findall(r'^    (\w+)\("[a-z_]+", R.string.palette_', appearance, re.M)
 full = re.findall(r'WardrobePalette\.(\w+) -> if \(dark\) PaletteTokens\(\n(.*?)\n    \) else PaletteTokens\(\n(.*?)\n    \)', text, re.S)
 legacy = re.findall(r'WardrobePalette\.(\w+) -> if \(dark\) legacyPaletteTokens\((.*?)\n        else legacyPaletteTokens\((.*?)\n', text)
-assert len(names) == 11 and len(full) == 6 and len(legacy) == 5
+assert len(names) == 15 and len(full) == 10 and len(legacy) == 5
 assert set(names) == {x[0] for x in full + legacy}
 
 def luminance(value):
@@ -65,10 +65,16 @@ for (name, dark), t in palettes.items():
     if ratio < 4.5: failures.append((name, dark, 'onError', round(ratio, 3)))
 for dark in (False, True):
     values = [palettes[name, dark] for name, _, _ in full]
-    assert len({v['canvas'] for v in values}) == 6
+    assert len({v['canvas'] for v in values}) == 10
     assert all(v['primary'] != v['secondary'] and v['paper'] != v['canvas'] for v in values)
+# UI-01 (0.14.51): the default is a light palette — a near-white canvas and white cards.
+assert 'val DEFAULT = LIGHT_OLIVE' in appearance and 'WardrobePalette = WardrobePalette.DEFAULT' in appearance
+for name in ('LIGHT_OLIVE', 'MONO', 'SKY', 'LILAC'):
+    light = palettes[name, False]
+    assert luminance(light['canvas']) >= 0.92 and light['paper'] == 'FFFFFF', (name, 'not a light palette')
+assert luminance(palettes['OLIVE_TERRA', False]['canvas']) < 0.88
 if failures:
     for failure in failures: print('FAIL:', failure)
     raise AssertionError('Unreadable palette colour roles')
-print(f'PASS: {len(checks)} production text colour pairings in 11 palettes × 2 modes; minimum {min(checks):.2f}:1; 22 outline checks ≥3:1.')
+print(f'PASS: {len(checks)} production text colour pairings in 15 palettes × 2 modes; minimum {min(checks):.2f}:1; 30 outline checks ≥3:1.')
 print('NOT RUN: Kotlin/Compose compilation, Android rendering, TalkBack and on-device persistence.')

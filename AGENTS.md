@@ -1,3 +1,11 @@
+## Current handoff — UI-01 light palettes, 15 November 2026
+
+0.14.51-light-palettes/code 81. Read docs/releases/LIGHT-PALETTES-0.14.51.md. Feedback said the colours were too
+dark; the user approved the new design mockups and four light palettes. WardrobePalette gains LIGHT_OLIVE (the new
+DEFAULT), MONO, SKY, LILAC with light and dark tokens; a stored earlier choice is kept. Every palette must pass
+tools/check_theme.py (text ≥ 4.5:1). Next (UI-02): the approved screen designs — «Сьогодні», «Каталог», the item
+page, the new-item form — one screen per PR. Stacked on PR #50 ⊃ … ⊃ #44 (CI green, not merged).
+
 ## Current handoff — DEV-03 packages, 14 November 2026
 
 0.14.50-packages/code 80, no behaviour change. Read docs/releases/PACKAGES-0.14.50.md. The user chose real packages.
