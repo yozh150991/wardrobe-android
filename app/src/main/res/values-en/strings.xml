@@ -1484,4 +1484,14 @@ Your current wardrobe is unchanged.</string>
     <string name="settings_suggestions">Outfit suggestions</string>
     <string name="settings_suggestions_hint">For the wardrobe that is open now.</string>
     <string name="settings_weather">Weather and city</string>
+    <string name="item_delete">Delete item</string>
+    <string name="item_delete_title">Delete “%1$s” for good?</string>
+    <string name="item_delete_hint">The item and its photo leave the wardrobe and capsules. This cannot be undone.</string>
+    <string name="item_delete_confirm">Delete</string>
+    <string name="item_delete_blocked_title">This item can only be archived</string>
+    <string name="item_delete_worn">It is marked as worn, days: %1$d. Deleting it would erase that history.</string>
+    <string name="item_delete_outfits">It is in saved outfits: %1$d. To delete the item, first take it out of them or delete those outfits.</string>
+    <string name="item_delete_purchase">It was bought from the wish list, and the purchase record refers to it.</string>
+    <string name="item_delete_archive_instead">In the archive the item is not suggested, and its history is kept.</string>
+    <string name="item_delete_archived">The item is already archived and is not suggested.</string>
 </resources>

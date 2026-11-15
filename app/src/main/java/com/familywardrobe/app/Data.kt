@@ -519,6 +519,24 @@ class Repository(val db: WardrobeDatabase, val writes: Mutex = Mutex()) {
         }
         photos?.remove(oldPhotos - referencedPhotos())
     }
+    /**
+     * UX-15 (0.14.49): deletes an item for good — only one that was never worn, is in no saved outfit and was not
+     * bought from the wish list ([ItemRemovalRules]); anything else is archived instead. It leaves the capsules it was
+     * added to by hand, and the reactions to outfits with it go, since they name an item that no longer exists. The
+     * photo is removed after the commit when nothing else uses it.
+     */
+    suspend fun removeGarment(id: String, photos: PhotoStore? = null) = writes.withLock {
+        val photo = db.withTransaction {
+            val garment = requireNotNull(dao.garment(id))
+            require(ItemRemovalRules.blocker(dao.allWears().count { it.garmentId == id }, dao.allParts().count { it.garmentId == id },
+                dao.allWishes().any { it.ownedId == id }) == null)
+            dao.allCapsuleItems().filter { it.garmentId == id }.forEach { dao.deleteCapsuleItem(it.capsuleId, id) }
+            dao.allFeedback().filter { id in it.signature.split('|') }.forEach { dao.deleteFeedback(it.id) }
+            dao.deleteGarment(id)
+            garment.photoId
+        }
+        if (photo.isNotBlank()) photos?.remove(setOf(photo) - referencedPhotos())
+    }
     suspend fun toggleItemWear(id: String, date: String = LocalDate.now().toString()) = writes.withLock {
         db.withTransaction {
             if (dao.itemCount(id, date) > 0) dao.clearItemDay(id, date)

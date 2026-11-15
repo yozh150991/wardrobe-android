@@ -373,7 +373,8 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                     }
                 }
                 "detail" -> if (garment != null) Detail(garment, snapshot, vm, today,
-                    onEdit = { buyingWishId = ""; editId = garment.id; editorCategory = ""; editorSequence++; editorDirty = false; go("edit") }, onMatch = ::buildOutfit)
+                    onEdit = { buyingWishId = ""; editId = garment.id; editorCategory = ""; editorSequence++; editorDirty = false; go("edit") }, onMatch = ::buildOutfit,
+                    removed = { go("__back") })
                     else MissingSelection { go("__back") }
                 "edit" -> key(editId, current.id, buyingWishId, editorSequence) {
                     if (buyingWishId.isNotBlank() && snapshot.wishes.none { it.id == buyingWishId && it.ownedId.isBlank() }) {
@@ -523,9 +524,13 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
 }
 
 @Composable
-fun Detail(g: Garment, s: Snapshot, vm: WardrobeViewModel, today: String, onEdit: () -> Unit, onMatch: () -> Unit) {
+fun Detail(g: Garment, s: Snapshot, vm: WardrobeViewModel, today: String, onEdit: () -> Unit, onMatch: () -> Unit, removed: () -> Unit = {}) {
     val busy by vm.busy.collectAsStateWithLifecycle()
     var confirmArchive by remember { mutableStateOf(false) }
+    // UX-15: delete for good only what nothing was built on; the rest is archived.
+    var deleting by rememberSaveable { mutableStateOf(false) }
+    val outfitCount = s.parts.count { it.garmentId == g.id }
+    val deleteBlocker = ItemRemovalRules.blocker(s.wears.count { it.garmentId == g.id }, outfitCount, s.wishes.any { it.ownedId == g.id })
     // WEAR-01: wear noticed later (another day), and a day's wear recorded by mistake.
     var wearOtherDay by rememberSaveable { mutableStateOf(false) }
     var removingWear by rememberSaveable { mutableStateOf("") }
@@ -591,6 +596,25 @@ fun Detail(g: Garment, s: Snapshot, vm: WardrobeViewModel, today: String, onEdit
         TextButton(onClick = { if (g.archived) vm.changeAvailability(g, archived = false) else confirmArchive = true }, enabled = !busy) {
             Text(stringResource(if (g.archived) R.string.restore_item else R.string.archive))
         }
+        TextButton(onClick = { deleting = true }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.item_delete)) }
+    }
+    if (deleting) {
+        if (deleteBlocker == null) AlertDialog(onDismissRequest = { deleting = false }, title = { Text(stringResource(R.string.item_delete_title, g.name)) },
+            text = { Text(stringResource(R.string.item_delete_hint)) },
+            confirmButton = { TextButton(onClick = { deleting = false; vm.removeItem(g.id, removed) }, enabled = !busy) { Text(stringResource(R.string.item_delete_confirm)) } },
+            dismissButton = { TextButton(onClick = { deleting = false }) { Text(stringResource(R.string.cancel)) } })
+        else AlertDialog(onDismissRequest = { deleting = false }, title = { Text(stringResource(R.string.item_delete_blocked_title)) },
+            text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(when (deleteBlocker) {
+                    ItemRemovalRules.Blocker.WORN -> stringResource(R.string.item_delete_worn, dates.size)
+                    ItemRemovalRules.Blocker.OUTFITS -> stringResource(R.string.item_delete_outfits, outfitCount)
+                    else -> stringResource(R.string.item_delete_purchase)
+                })
+                Text(stringResource(if (g.archived) R.string.item_delete_archived else R.string.item_delete_archive_instead))
+            } },
+            confirmButton = { if (g.archived) TextButton(onClick = { deleting = false }) { Text(stringResource(R.string.close)) }
+                else TextButton(onClick = { deleting = false; vm.changeAvailability(g, archived = true) }, enabled = !busy) { Text(stringResource(R.string.archive)) } },
+            dismissButton = { if (!g.archived) TextButton(onClick = { deleting = false }) { Text(stringResource(R.string.cancel)) } })
     }
     if (wearOtherDay) DateChoiceDialog(today, { wearOtherDay = false }, latest = today) { day ->
         wearOtherDay = false; vm.wearItems(g.wardrobeId, listOf(g), day)

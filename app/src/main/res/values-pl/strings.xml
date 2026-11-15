@@ -1484,4 +1484,14 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="settings_suggestions">Dobór zestawów</string>
     <string name="settings_suggestions_hint">Dla garderoby, która jest teraz otwarta.</string>
     <string name="settings_weather">Pogoda i miasto</string>
+    <string name="item_delete">Usuń rzecz</string>
+    <string name="item_delete_title">Usunąć „%1$s” na zawsze?</string>
+    <string name="item_delete_hint">Rzecz i jej zdjęcie znikną z garderoby i kapsuł. Tego nie można cofnąć.</string>
+    <string name="item_delete_confirm">Usuń</string>
+    <string name="item_delete_blocked_title">Tę rzecz można tylko przenieść do archiwum</string>
+    <string name="item_delete_worn">Jest oznaczona jako noszona, dni: %1$d. Usunięcie wymazałoby tę historię.</string>
+    <string name="item_delete_outfits">Jest w zapisanych zestawach: %1$d. Aby usunąć rzecz, najpierw wyjmij ją z nich albo usuń te zestawy.</string>
+    <string name="item_delete_purchase">Została kupiona z listy życzeń i zapis zakupu się do niej odnosi.</string>
+    <string name="item_delete_archive_instead">W archiwum rzecz nie trafia do doboru, a historia zostaje.</string>
+    <string name="item_delete_archived">Rzecz jest już w archiwum i nie trafia do doboru.</string>
 </resources>

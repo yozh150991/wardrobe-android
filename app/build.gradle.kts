@@ -15,8 +15,8 @@ android {
         applicationId = "com.familywardrobe.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 78
-        versionName = "0.14.48-bulk-style"
+        versionCode = 79
+        versionName = "0.14.49-item-delete"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {

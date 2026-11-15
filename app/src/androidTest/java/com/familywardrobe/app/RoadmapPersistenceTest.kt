@@ -56,6 +56,38 @@ class RoadmapPersistenceTest {
         repo.removeOutfit(other, photos)
         assertTrue(repo.snapshot().outfits.isEmpty()); BackupStateRules.validate(repo.snapshot())
     }
+    /** UX-15 (0.14.49): only an item that was never worn and is in no outfit can be deleted; the rest is archived. */
+    @Test fun onlyAnUnusedItemCanBeDeleted() = scenario { repo, photos, items, look ->
+        val wardrobe = Repository.DEFAULT_WARDROBE
+        val extra = items.first().copy(id = newId(), name = "Extra", category = "other_item", photoId = newId()); repo.save(extra)
+        val trip = repo.saveCapsule(Capsule(wardrobeId = wardrobe, name = "Trip", kind = "trip"))
+        repo.manualCapsuleItem(trip, extra.id, true); repo.manualCapsuleItem(trip, items.first().id, true)
+        // Reactions that name the item go with it; the one about other items stays.
+        repo.dao.saveFeedback(OutfitFeedback(wardrobeId = wardrobe, signature = DailyRules.signature(listOf(extra.id, items.first().id)), weather = "any_weather", occasion = "everyday", reason = "dislike"))
+        repo.dao.saveFeedback(OutfitFeedback(wardrobeId = wardrobe, signature = DailyRules.signature(listOf(items[0].id, items[1].id)), weather = "any_weather", occasion = "everyday", reason = "dislike"))
+        photos.file(extra.photoId).writeBytes(byteArrayOf(1, 2, 3))
+
+        // In a saved outfit: refused.
+        try { repo.removeGarment(items.first().id, photos); fail("An item of a saved outfit is archived, not deleted") } catch (_: IllegalArgumentException) { }
+        // Worn once: refused, also after the outfit is gone.
+        repo.toggleItemWear(extra.id)
+        try { repo.removeGarment(extra.id, photos); fail("A worn item is archived, not deleted") } catch (_: IllegalArgumentException) { }
+        repo.toggleItemWear(extra.id)
+
+        repo.removeGarment(extra.id, photos)
+
+        val s = repo.snapshot()
+        assertEquals(items.map { it.id }.toSet(), s.garments.map { it.id }.toSet())
+        assertEquals(listOf(items.first().id), s.capsuleItems.map { it.garmentId })
+        assertEquals(1, s.feedback.size); assertFalse(s.feedback.single().signature.contains(extra.id))
+        assertEquals(listOf(look), s.outfits.map { it.id }); assertEquals(3, s.parts.size)
+        assertFalse(photos.file(extra.photoId).exists())
+        BackupStateRules.validate(s)
+        try { repo.removeGarment(extra.id, photos); fail("A deleted item cannot be deleted again") } catch (_: IllegalArgumentException) { }
+        // Once its outfit is removed and it was never worn, an item can go too.
+        repo.removeOutfit(look, photos); repo.removeGarment(items.last().id, photos)
+        assertEquals(2, repo.snapshot().garments.size); BackupStateRules.validate(repo.snapshot())
+    }
     @Test fun planningAndMovingNeverCreateWear() = scenario { repo, _, _, look ->
         val day = LocalDate.now().plusDays(1).toString(); val plan = repo.scheduleOutfit(look, day)
         assertEquals(plan, repo.scheduleOutfit(look, day)); assertTrue(repo.dao.allWears().isEmpty())

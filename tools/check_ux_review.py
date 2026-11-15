@@ -63,9 +63,23 @@ settings = ui.split('\nfun Settings(', 1)[1].split('internal val LocalLookPhotos
 check('PreferencesDialog(snapshot, wardrobe, vm, today)' in settings and 'WeatherPanel(vm.weather, today)' in settings, 'Settings open the preferences and the weather')
 check('snapshot = snapshot, wardrobe = current.id, today = today)' in ui, 'for the wardrobe that is open')
 
+# UX-15 (0.14.49), the user's decision: delete only an item that was never worn and is in no outfit; the rest is archived.
+removal = data.split('suspend fun removeGarment', 1)[1].split('suspend fun toggleItemWear', 1)[0]
+check('require(ItemRemovalRules.blocker(dao.allWears().count { it.garmentId == id }, dao.allParts().count { it.garmentId == id },' in removal
+      and 'dao.allWishes().any { it.ownedId == id }) == null)' in removal, 'the data layer refuses a used item itself')
+check(removal.index('dao.deleteCapsuleItem(it.capsuleId, id)') < removal.index('dao.deleteGarment(id)') and
+      removal.index('dao.deleteFeedback(it.id)') < removal.index('dao.deleteGarment(id)'), 'capsule rows and reactions go before the item')
+check('photos?.remove(setOf(photo) - referencedPhotos())' in removal and removal.index('photos?.remove') > removal.index('db.withTransaction'), 'the photo only after the commit, when unused')
+detail_all = ui.split('fun Detail(', 1)[1].split('\nfun EditItem(', 1)[0]
+check('ItemRemovalRules.blocker(s.wears.count { it.garmentId == g.id }, outfitCount, s.wishes.any { it.ownedId == g.id })' in detail_all, 'the page uses the same rule')
+check('if (deleteBlocker == null) AlertDialog' in detail_all and 'vm.removeItem(g.id, removed)' in detail_all and 'R.string.item_delete_hint' in detail_all, 'deleting asks first')
+check('vm.changeAvailability(g, archived = true)' in detail_all.split('else AlertDialog', 1)[1], 'a used item is offered the archive instead')
+check(detail_all.index('R.string.restore_item else R.string.archive') < detail_all.index('R.string.item_delete)'), '«Видалити річ» is the last action')
+
 from ux_review_strings import STRINGS as _FIRST
 from bulk_style_strings import STRINGS as _SECOND
-STRINGS = {**_FIRST, **_SECOND}
+from item_delete_strings import STRINGS as _THIRD
+STRINGS = {**_FIRST, **_SECOND, **_THIRD}
 placeholders = {}
 for folder in ('values', 'values-uk', 'values-en', 'values-pl'):
     strings = {s.get('name'): ''.join(s.itertext()) for s in E.parse(root / 'app/src/main/res' / folder / 'strings.xml').getroot().iter('string')}
@@ -81,4 +95,7 @@ with tempfile.TemporaryDirectory(prefix='wardrobe-ux-') as output:
     subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, str(source / 'ItemNameRules.java'),
                     str(source / 'TextLimits.java'), str(root / 'app/src/test/java/com/familywardrobe/app/ItemNameRulesCases.java')], check=True)
     subprocess.run([java, '-cp', output, 'com.familywardrobe.app.ItemNameRulesCases'], check=True)
+    subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, str(source / 'ItemRemovalRules.java'),
+                    str(root / 'app/src/test/java/com/familywardrobe/app/ItemRemovalRulesCases.java')], check=True)
+    subprocess.run([java, '-cp', output, 'com.familywardrobe.app.ItemRemovalRulesCases'], check=True)
 print(f'PASS UX-review guards: outfit removal, editor, start screen, item page, {len(STRINGS)} strings × 4 locales')
