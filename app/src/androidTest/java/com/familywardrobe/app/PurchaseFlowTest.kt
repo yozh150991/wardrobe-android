@@ -3,9 +3,14 @@ package com.familywardrobe.app
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
-import java.io.File
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.backup.Backup
+import com.familywardrobe.app.data.purchaseWish
+import com.familywardrobe.app.data.undoPurchase
+import com.familywardrobe.app.outfits.LookRules
+import com.familywardrobe.app.photo.PhotoStore
+import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test

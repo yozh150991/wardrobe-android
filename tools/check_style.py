@@ -12,19 +12,19 @@ def check(condition, message):
     if not condition: failures.append(message)
 
 # The cases cover every base colour of the app.
-matching = (source / 'Matching.kt').read_text()
+matching = (source / 'outfits/Matching.kt').read_text()
 colours = matching.split('val colors = listOf(', 1)[1].split(')', 1)[0]
-cases = (root / 'app/src/test/java/com/familywardrobe/app/StyleRulesCases.java').read_text()
+cases = (root / 'app/src/test/java/com/familywardrobe/app/rules/StyleRulesCases.java').read_text()
 check(re.findall(r'"(\w+)"', colours) == re.findall(r'"(\w+)"', cases.split('List<String> COLOURS = List.of(', 1)[1].split(')', 1)[0]),
       'StyleRulesCases.COLOURS must equal Matching.colors')
-rules = (source / 'StyleRules.java').read_text()
+rules = (source / 'rules/StyleRules.java').read_text()
 for colour in re.findall(r'"(\w+)"', colours):
     check(colour == 'other' or f'COLOURS.put("{colour}"' in rules, f'StyleRules has no attributes for {colour}')
-views = (source / 'OutfitStyleViews.kt').read_text()
+views = (source / 'ui/OutfitStyleViews.kt').read_text()
 for colour in re.findall(r'"(\w+)"', colours):
     check(colour == 'other' or f'"{colour}" -> Color(' in views, f'no swatch for {colour}')
 
-daily = (source / 'DailyScreen.kt').read_text()
+daily = (source / 'ui/DailyScreen.kt').read_text()
 check('OutfitComposition(' not in daily, 'Daily cards use the tile grid (STYLE-03)')
 check(daily.count('ScoreBadge(rating)') == 2 and daily.count('StyleReasons(rating') == 2 and
       # The third grid is WEAR-01's «Сьогодні вдягнено» card (no score: it is a record, not a suggestion).
@@ -33,7 +33,7 @@ check(daily.count('ScoreBadge(rating)') == 2 and daily.count('StyleReasons(ratin
 check('withContext(Dispatchers.Default) {\n            buildMap {' in daily, '«Краще» is computed off the UI thread')
 check('pins + anchorId' in daily, 'the item of «Давно не вдягали» is never swapped away')
 check('LookRules.OCCASIONS.forEach { code ->' in daily and 'occasion = code' in daily, 'the occasion chip picks the occasion')
-style = (source / 'OutfitStyle.kt').read_text()
+style = (source / 'outfits/OutfitStyle.kt').read_text()
 check('DailyOutfits.items(s, date, allowed)' in style, 'swaps use only what the daily suggestions may use')
 check('DailyOutfits.rejected(s, wardrobe, occasion, weather)' in style, 'swaps keep hidden combinations hidden')
 check("it.reason == PreferenceRules.DISLIKE" in style, 'swaps skip items marked «Незручно»')
@@ -81,8 +81,8 @@ if failures:
     raise SystemExit('FAIL style:\n' + '\n'.join(failures))
 
 with tempfile.TemporaryDirectory(prefix='wardrobe-style-') as output:
-    files = [source / name for name in ('WardrobeRules.java', 'DailyRules.java', 'PreferenceRules.java', 'PreferenceProfile.java', 'StyleRules.java', 'WeatherRules.java')]
-    files.append(root / 'app/src/test/java/com/familywardrobe/app/StyleRulesCases.java')
+    files = [source / name for name in ('rules/WardrobeRules.java', 'rules/DailyRules.java', 'rules/PreferenceRules.java', 'rules/PreferenceProfile.java', 'rules/StyleRules.java', 'rules/WeatherRules.java')]
+    files.append(root / 'app/src/test/java/com/familywardrobe/app/rules/StyleRulesCases.java')
     subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, *map(str, files)], check=True)
-    subprocess.run([java, '-cp', output, 'com.familywardrobe.app.StyleRulesCases'], check=True)
+    subprocess.run([java, '-cp', output, 'com.familywardrobe.app.rules.StyleRulesCases'], check=True)
 print(f'PASS style guards: {len(keys)} strings × 4 locales, every colour rated and drawn, grid/score/reasons on Daily')

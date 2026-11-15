@@ -1,14 +1,26 @@
 package com.familywardrobe.app
 
-import com.familywardrobe.app.QaCheck.Technique.BVA
-import com.familywardrobe.app.QaCheck.Technique.EG
-import com.familywardrobe.app.QaCheck.Technique.EP
-import com.familywardrobe.app.QaCheck.Technique.ST
+import com.familywardrobe.app.rules.QaCheck.Technique.BVA
+import com.familywardrobe.app.rules.QaCheck.Technique.EG
+import com.familywardrobe.app.rules.QaCheck.Technique.EP
+import com.familywardrobe.app.rules.QaCheck.Technique.ST
+import com.familywardrobe.app.family.FamilyAccessWire
+import com.familywardrobe.app.family.FamilyArchiveIdentity
+import com.familywardrobe.app.family.FamilyHead
+import com.familywardrobe.app.family.FamilyPublication
+import com.familywardrobe.app.family.FamilyReadEngine
+import com.familywardrobe.app.family.FamilyReadTransport
+import com.familywardrobe.app.family.FamilyRemote
+import com.familywardrobe.app.family.FamilyTransferException
+import com.familywardrobe.app.family.FamilyWire
+import com.familywardrobe.app.family.familyUploadProgress
+import com.familywardrobe.app.rules.FamilyRules
+import com.familywardrobe.app.rules.QaCheck
+import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
 
 /**
  * Family wire parsing and read/publish coordinators on the phone: boundary values of every server field,

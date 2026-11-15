@@ -4,12 +4,24 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
-import kotlinx.coroutines.runBlocking
-import org.junit.Assert.*
-import org.junit.Test
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.auth.AuthIdentity
+import com.familywardrobe.app.backup.Backup
+import com.familywardrobe.app.family.FamilyArchiveIdentity
+import com.familywardrobe.app.family.FamilyEnvelope
+import com.familywardrobe.app.family.FamilyHead
+import com.familywardrobe.app.family.FamilyReadCache
+import com.familywardrobe.app.family.FamilyRemote
+import com.familywardrobe.app.photo.PhotoStore
+import com.familywardrobe.app.rules.FamilyCacheZip
+import com.familywardrobe.app.rules.FamilyRules
 import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.*
+import org.junit.Test
 
 /** Native cache/decoder/photo/backup integration. Must run on Android; host tests do not replace this. */
 class FamilyReadCacheTest {

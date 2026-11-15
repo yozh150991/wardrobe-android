@@ -31,7 +31,7 @@ for language, values in translations.items():
     check(values.keys() == base.keys(), f'Complete resource coverage in {language}')
     for key, value in values.items():
         check(re.findall(r'%\d+\$[ds]', value) == re.findall(r'%\d+\$[ds]', base[key]), f'Format parameters: {language}/{key}')
-all_kotlin = '\n'.join(p.read_text() for p in source.glob('*.kt'))
+all_kotlin = '\n'.join(p.read_text() for p in source.rglob('*.kt'))
 refs = set(re.findall(r'R\.string\.(\w+)', all_kotlin))
 check(refs <= base.keys(), f'All {len(refs)} Kotlin string references exist')
 

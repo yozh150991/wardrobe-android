@@ -5,6 +5,16 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.auth.AuthIdentity
+import com.familywardrobe.app.backup.Backup
+import com.familywardrobe.app.backup.BackupStateRules
+import com.familywardrobe.app.cloud.CloudBackend
+import com.familywardrobe.app.cloud.CloudHead
+import com.familywardrobe.app.cloud.CloudTransport
+import com.familywardrobe.app.photo.PhotoStore
+import com.familywardrobe.app.rules.AuthRules
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseAuth
@@ -12,13 +22,13 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.MemoryCacheSettings
 import com.google.firebase.storage.FirebaseStorage
+import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import org.junit.Assert.*
 import org.junit.Assume.assumeTrue
 import org.junit.Test
-import java.io.File
-import java.io.IOException
 
 /** Real SDK + Room tests. Fake credentials and named apps use only demo-wardrobe emulators. */
 class CloudEmulatorTest {

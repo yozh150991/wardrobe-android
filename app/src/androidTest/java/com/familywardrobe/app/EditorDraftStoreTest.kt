@@ -2,6 +2,10 @@ package com.familywardrobe.app
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.data.EditorDraftStore
+import com.familywardrobe.app.rules.AuthRules
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test

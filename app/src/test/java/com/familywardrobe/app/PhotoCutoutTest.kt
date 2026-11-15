@@ -1,5 +1,6 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.rules.PhotoCutoutCases
 import org.junit.Test
 
 class PhotoCutoutTest {

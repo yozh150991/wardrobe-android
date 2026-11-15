@@ -7,10 +7,10 @@ from host_schema import migrate
 root = Path(__file__).resolve().parents[1]
 source = root / 'app/src/main/java/com/familywardrobe/app'
 with tempfile.TemporaryDirectory(prefix='wardrobe-photo-resolution-') as output:
-    files = [source / name for name in ['PhotoResolutionRules.java', 'PhotoPresentationGeometry.java', 'PhotoCutoutRules.java']]
-    files += [root / 'app/src/test/java/com/familywardrobe/app/PhotoResolutionCases.java']
+    files = [source / name for name in ['rules/PhotoResolutionRules.java', 'rules/PhotoPresentationGeometry.java', 'rules/PhotoCutoutRules.java']]
+    files += [root / 'app/src/test/java/com/familywardrobe/app/rules/PhotoResolutionCases.java']
     subprocess.run(['java', '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, *map(str, files)], check=True)
-    subprocess.run(['java', '-Xmx256m', '-cp', output, 'com.familywardrobe.app.PhotoResolutionCases'], check=True)
+    subprocess.run(['java', '-Xmx256m', '-cp', output, 'com.familywardrobe.app.rules.PhotoResolutionCases'], check=True)
 
 sql = re.search(r'@Query\("([^"\n]+)"\)\s*suspend fun replaceProcessedPhoto', (source / 'Data.kt').read_text()).group(1)
 checks = 0

@@ -4,7 +4,7 @@ from pathlib import Path
 import xml.etree.ElementTree as E
 
 root = Path(__file__).resolve().parents[1]
-ui = (root / 'app/src/main/java/com/familywardrobe/app/Ui.kt').read_text(encoding='utf-8')
+ui = (root / 'app/src/main/java/com/familywardrobe/app/ui/Ui.kt').read_text(encoding='utf-8')
 failures = []
 def check(condition, message):
     if not condition: failures.append(message)

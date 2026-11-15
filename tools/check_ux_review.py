@@ -11,7 +11,7 @@ failures = []
 def check(condition, message):
     if not condition: failures.append(message)
 def read(name): return (source / name).read_text(encoding='utf-8')
-ui = read('Ui.kt'); data = read('Data.kt'); catalog = read('CatalogScreen.kt')
+ui = read('ui/Ui.kt'); data = read('Data.kt'); catalog = read('ui/CatalogScreen.kt')
 
 # UX-07: removing an outfit keeps the wear history and the backup invariants (a wear's source must exist).
 body = data.split('suspend fun removeOutfit', 1)[1].split('suspend fun toggleItemWear', 1)[0]
@@ -55,7 +55,7 @@ check(order == sorted(order), 'everyday actions, then facts and history, then ra
 check(detail.count('if (g.subcategory.isNotBlank())') == 1 and detail.index('g.subcategory') < detail.index('StatusLabel('), 'the subcategory sits under the name')
 
 # UX-13 (0.14.48): one style for several items, with undo. UX-14: preferences and weather are in Settings too.
-ops = read('ImportOperations.kt')
+ops = read('data/ImportOperations.kt')
 check('"style" -> g.copy(style = style)' in ops and '&& style in Matching.styles)' in ops, 'bulk style changes only the style, to a known one')
 check('g.season != expected.season || g.style != expected.style' in ops and 'season = old.season, style = old.style))' in ops, 'undo restores the style and refuses a later edit')
 check('applyBulk("style", styleValue = chosenStyle)' in catalog and 'R.string.bulk_style_hint' in catalog, 'the catalog offers it and says what a style does')
@@ -92,10 +92,10 @@ if failures: raise SystemExit('FAIL UX review:\n' + '\n'.join(failures))
 
 java = shutil.which('java') or 'java'
 with tempfile.TemporaryDirectory(prefix='wardrobe-ux-') as output:
-    subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, str(source / 'ItemNameRules.java'),
-                    str(source / 'TextLimits.java'), str(root / 'app/src/test/java/com/familywardrobe/app/ItemNameRulesCases.java')], check=True)
-    subprocess.run([java, '-cp', output, 'com.familywardrobe.app.ItemNameRulesCases'], check=True)
-    subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, str(source / 'ItemRemovalRules.java'),
-                    str(root / 'app/src/test/java/com/familywardrobe/app/ItemRemovalRulesCases.java')], check=True)
-    subprocess.run([java, '-cp', output, 'com.familywardrobe.app.ItemRemovalRulesCases'], check=True)
+    subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, str(source / 'rules/ItemNameRules.java'),
+                    str(source / 'rules/TextLimits.java'), str(root / 'app/src/test/java/com/familywardrobe/app/rules/ItemNameRulesCases.java')], check=True)
+    subprocess.run([java, '-cp', output, 'com.familywardrobe.app.rules.ItemNameRulesCases'], check=True)
+    subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, str(source / 'rules/ItemRemovalRules.java'),
+                    str(root / 'app/src/test/java/com/familywardrobe/app/rules/ItemRemovalRulesCases.java')], check=True)
+    subprocess.run([java, '-cp', output, 'com.familywardrobe.app.rules.ItemRemovalRulesCases'], check=True)
 print(f'PASS UX-review guards: outfit removal, editor, start screen, item page, {len(STRINGS)} strings × 4 locales')

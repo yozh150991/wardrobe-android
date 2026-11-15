@@ -11,20 +11,20 @@ def check(condition, message):
 def read(name): return (source / name).read_text(encoding='utf-8')
 
 # Data: plain item rows only (no new wear source, so backup format 10 and the cloud copy stay as they are).
-ops = read('CalendarOperations.kt')
+ops = read('data/CalendarOperations.kt')
 wear = ops.split('suspend fun Repository.wearItems', 1)[1].split('suspend fun Repository.forgetWears', 1)[0]
 check('require(RoadmapRules.validDate(date) && RoadmapRules.validDate(today) && date <= today)' in wear, 'wear is never recorded for a future day')
 check('require(ids.all { dao.garment(it)?.wardrobeId == wardrobe })' in wear, 'only this wardrobe\'s items')
 check('ids.filter { dao.itemCount(it, date) == 0 }' in wear and 'Wear(it, date, "item:$it")' in wear, 'only adds item rows where the day has no wear yet')
 forget = ops.split('suspend fun Repository.forgetWears', 1)[1].split('suspend fun', 1)[0]
 check('dao.clearWear(it, date, "item:$it")' in forget and 'clearItemDay' not in forget, 'the undo removes only the rows it added')
-backup = read('Backup.kt')
+backup = read('backup/Backup.kt')
 check(sorted(set(re.findall(r'wear\.source\.startsWith\("(\w+):"\)', backup))) == ['item', 'outfit', 'plan'], 'backup knows exactly three wear sources')
-vm = read('WardrobeViewModel.kt')
+vm = read('ui/WardrobeViewModel.kt')
 check('require(date == null || RoadmapRules.validDate(date) && date <= today)' in vm, 'the view model refuses a future day')
 
 # Daily: one tap on a variant and on «Давно не вдягали»; the card of what was worn; an exact undo.
-daily = read('DailyScreen.kt')
+daily = read('ui/DailyScreen.kt')
 check(daily.count('Button(onClick = { wearNow(') == 2, '«Вдягаю сьогодні» on the variants and on the rotation card')
 check('fun wearNow(items: List<Garment>) = vm.wearItems(wardrobe, items, today)' in daily, 'the variant is worn today, without saving an outfit')
 check('if (wornToday.isNotEmpty()) item(key = "worn-today")' in daily and 'R.string.wear_today_title' in daily, 'the screen shows what was worn today')
@@ -33,11 +33,11 @@ check('val undo = wornAdded.filter { id -> wornToday.any { it.id == id } }' in d
 check(daily.count('OutlinedButton(onClick = { beginSave(') == 4, 'saving and planning stay available as secondary actions')
 
 # Another day: the item's page and the calendar; never a future day.
-ui = read('Ui.kt')
+ui = read('ui/Ui.kt')
 check('DateChoiceDialog(today, { wearOtherDay = false }, latest = today)' in ui and 'vm.wearItems(g.wardrobeId, listOf(g), day)' in ui,
       'an earlier day can be marked from the item, only adding')
 check('if (day in dates) vm.wear(g, day)' in ui and 'R.string.wear_remove_day' in ui, 'a day recorded by mistake can be removed after a confirmation')
-calendar = read('CalendarScreen.kt')
+calendar = read('ui/CalendarScreen.kt')
 check('!Instant.ofEpochMilli(utcTimeMillis).atZone(ZoneOffset.UTC).toLocalDate().isAfter(limit)' in calendar, 'the date picker stops at the limit')
 check('val wornIds = s.wears.filter { it.date == date }.map { it.garmentId }.toSet()' in calendar and 'R.string.calendar_worn_title' in calendar,
       'the calendar shows what was worn that day, from any source')

@@ -2,6 +2,13 @@ package com.familywardrobe.app
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.data.RotationSnooze
+import com.familywardrobe.app.data.RotationState
+import com.familywardrobe.app.data.RotationStore
+import com.familywardrobe.app.rules.AuthRules
+import com.familywardrobe.app.rules.RotationRules
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith

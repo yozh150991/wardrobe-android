@@ -8,6 +8,14 @@ import android.net.Uri
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.familywardrobe.app.backup.Backup
+import com.familywardrobe.app.photo.PhotoStore
+import com.familywardrobe.app.rules.PhotoGeometry
+import com.familywardrobe.app.rules.PhotoResolutionRules
+import java.io.File
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -16,10 +24,6 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
-import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
-import java.util.zip.ZipOutputStream
 
 @RunWith(AndroidJUnit4::class)
 class PhotoPersistenceTest {

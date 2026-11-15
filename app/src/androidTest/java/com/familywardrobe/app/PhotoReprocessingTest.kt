@@ -3,12 +3,22 @@ package com.familywardrobe.app
 import android.graphics.Bitmap
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.photo.CutoutStatus
+import com.familywardrobe.app.photo.PhotoAnalysis
+import com.familywardrobe.app.photo.PhotoAnalysisEngine
+import com.familywardrobe.app.photo.PhotoReprocessState
+import com.familywardrobe.app.photo.PhotoReprocessStore
+import com.familywardrobe.app.photo.PhotoReprocessor
+import com.familywardrobe.app.photo.PhotoStore
+import com.familywardrobe.app.rules.AuthRules
+import java.io.File
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import org.junit.Assert.*
 import org.junit.Test
-import java.io.File
 
 /** Prepared for the combined Android acceptance run; fake inference, real Room/PNG/AtomicFile. */
 class PhotoReprocessingTest {

@@ -3,6 +3,12 @@ package com.familywardrobe.app
 import android.content.Context
 import android.content.Intent
 import androidx.test.core.app.ApplicationProvider
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.data.EditorDraftStore
+import com.familywardrobe.app.importing.SharedImportInbox
+import com.familywardrobe.app.rules.AuthRules
+import com.familywardrobe.app.rules.ShopImportRules
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test

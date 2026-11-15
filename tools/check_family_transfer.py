@@ -13,9 +13,9 @@ src=root/'app/src/main/java/com/familywardrobe/app'
 env=dict(os.environ,JAVA_TOOL_OPTIONS=(os.environ.get('JAVA_TOOL_OPTIONS','')+' -XX:-UsePerfData').strip())
 with tempfile.TemporaryDirectory(prefix='wardrobe-transfer-') as output:
  cp=os.pathsep.join([output,*map(str,jars)])
- subprocess.run(['java','-m','jdk.compiler/com.sun.tools.javac.Main','--release','17','-d',output,str(src/'FamilyRules.java')],check=True,env=env)
+ subprocess.run(['java','-m','jdk.compiler/com.sun.tools.javac.Main','--release','17','-d',output,str(src/'rules/FamilyRules.java')],check=True,env=env)
  subprocess.run(['java','-cp',cp,'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler','-no-stdlib','-no-reflect','-jvm-target','17','-classpath',cp,'-d',output,
-                 str(src/'FamilyAccess.kt'),str(src/'FamilyReadEngine.kt'),str(src/'FamilyTransferModels.kt'),str(src/'FamilyTransfer.kt'),str(src/'FamilyTransferProgress.kt'),
+                 str(src/'family/FamilyAccess.kt'),str(src/'family/FamilyReadEngine.kt'),str(src/'family/FamilyTransferModels.kt'),str(src/'family/FamilyTransfer.kt'),str(src/'family/FamilyTransferProgress.kt'),
                  str(root/'app/src/test/java/com/familywardrobe/app/FamilyAccessWireTest.kt'),
                  str(root/'app/src/test/java/com/familywardrobe/app/FamilyReadEngineTest.kt'),
                  str(root/'app/src/test/java/com/familywardrobe/app/FamilyTransferTest.kt'),

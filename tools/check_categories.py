@@ -7,9 +7,9 @@ from host_schema import SOURCE, migrate
 ROOT = Path(__file__).resolve().parents[1]
 with tempfile.TemporaryDirectory(prefix='wardrobe-categories-') as output:
     subprocess.run(['java', '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output,
-                    str(SOURCE / 'CategoryRules.java'), str(SOURCE / 'TextLimits.java'),
-                    str(ROOT / 'app/src/test/java/com/familywardrobe/app/CategoryCases.java')], check=True)
-    subprocess.run(['java', '-cp', output, 'com.familywardrobe.app.CategoryCases'], check=True)
+                    str(SOURCE / 'rules/CategoryRules.java'), str(SOURCE / 'rules/TextLimits.java'),
+                    str(ROOT / 'app/src/test/java/com/familywardrobe/app/rules/CategoryCases.java')], check=True)
+    subprocess.run(['java', '-cp', output, 'com.familywardrobe.app.rules.CategoryCases'], check=True)
     path = Path(output) / 'migration.db'
     db = sqlite3.connect(path, isolation_level=None)
     db.execute('PRAGMA foreign_keys=ON')

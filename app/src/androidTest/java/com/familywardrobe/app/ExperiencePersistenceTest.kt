@@ -6,13 +6,36 @@ import android.graphics.Color
 import android.net.Uri
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
-import kotlinx.coroutines.runBlocking
-import org.junit.Assert.*
-import org.junit.Test
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.backup.Backup
+import com.familywardrobe.app.backup.BackupStateRules
+import com.familywardrobe.app.data.Capsule
+import com.familywardrobe.app.data.applyImportTemplate
+import com.familywardrobe.app.data.enqueueCapturedImport
+import com.familywardrobe.app.data.manualCapsuleItem
+import com.familywardrobe.app.data.packCapsuleItem
+import com.familywardrobe.app.data.saveCapsule
+import com.familywardrobe.app.data.saveCapsuleDaily
+import com.familywardrobe.app.data.saveImported
+import com.familywardrobe.app.data.scheduleOutfit
+import com.familywardrobe.app.outfits.DailyOutfits
+import com.familywardrobe.app.outfits.LookRules
+import com.familywardrobe.app.outfits.Matching
+import com.familywardrobe.app.outfits.OutfitCanvasState
+import com.familywardrobe.app.photo.PhotoStore
+import com.familywardrobe.app.rules.AuthRules
+import com.familywardrobe.app.rules.ImportReviewRules
+import com.familywardrobe.app.rules.PhotoMaskRules
+import com.familywardrobe.app.rules.PhotoViewportRules
+import com.familywardrobe.app.ui.BackupChangedException
 import java.io.File
 import java.time.LocalDate
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.*
+import org.junit.Test
 
 /** Device checks: real Room, Android bitmap/URI APIs and portable backup serialization. */
 class ExperiencePersistenceTest {

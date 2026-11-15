@@ -5,12 +5,18 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.familywardrobe.app.photo.PhotoStore
+import com.familywardrobe.app.photo.decodePhotoHistory
+import com.familywardrobe.app.photo.encodePhotoHistory
+import com.familywardrobe.app.photo.renderPhotoSession
+import com.familywardrobe.app.rules.PhotoEditHistory
+import com.familywardrobe.app.rules.PhotoRegionRules
+import java.nio.ByteBuffer
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.nio.ByteBuffer
 
 @RunWith(AndroidJUnit4::class)
 class PhotoRegionPersistenceTest {

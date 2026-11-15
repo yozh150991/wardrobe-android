@@ -1,5 +1,16 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.data.Capsule
+import com.familywardrobe.app.data.CapsuleItem
+import com.familywardrobe.app.data.CapsuleOutfit
+import com.familywardrobe.app.data.DayPlan
+import com.familywardrobe.app.family.FamilyOutfitChange
+import com.familywardrobe.app.family.FamilyProblem
+import com.familywardrobe.app.family.FamilyTransferException
+import com.familywardrobe.app.outfits.CanvasPlacement
+import com.familywardrobe.app.outfits.LookPiece
+import com.familywardrobe.app.outfits.LookRules
+import com.familywardrobe.app.outfits.OutfitCanvasState
 import org.junit.Assert.*
 import org.junit.Test
 

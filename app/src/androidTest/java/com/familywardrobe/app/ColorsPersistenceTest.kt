@@ -3,6 +3,16 @@ package com.familywardrobe.app
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.auth.AuthIdentity
+import com.familywardrobe.app.backup.Backup
+import com.familywardrobe.app.backup.BackupStateRules
+import com.familywardrobe.app.data.addCustomColor
+import com.familywardrobe.app.family.FamilyArchiveIdentity
+import com.familywardrobe.app.family.FamilyEnvelope
+import com.familywardrobe.app.photo.PhotoStore
+import com.familywardrobe.app.rules.ColorRules
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test

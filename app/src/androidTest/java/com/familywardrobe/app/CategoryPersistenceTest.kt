@@ -7,11 +7,27 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.backup.Backup
+import com.familywardrobe.app.backup.BackupStateRules
+import com.familywardrobe.app.cloud.CloudArchive
+import com.familywardrobe.app.cloud.CloudHead
+import com.familywardrobe.app.data.CustomCategory
+import com.familywardrobe.app.data.GarmentReceipt
+import com.familywardrobe.app.data.addCustomCategory
+import com.familywardrobe.app.data.customCategory
+import com.familywardrobe.app.data.purchaseUndoReason
+import com.familywardrobe.app.data.purchaseWish
+import com.familywardrobe.app.data.subcategoryOptions
+import com.familywardrobe.app.outfits.rulePiece
+import com.familywardrobe.app.photo.PhotoStore
+import com.familywardrobe.app.rules.AuthRules
+import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
-import java.io.File
 
 /** Native migration/backup/cloud acceptance. Must be run on Android; host checks do not run this. */
 class CategoryPersistenceTest {

@@ -1,9 +1,18 @@
 package com.familywardrobe.app
 
-import org.junit.Assert.*
-import org.junit.Test
+import com.familywardrobe.app.data.OutfitFeedback
+import com.familywardrobe.app.data.RotationSnooze
+import com.familywardrobe.app.data.RotationState
+import com.familywardrobe.app.outfits.RotationOutfits
+import com.familywardrobe.app.rules.DailyRules
+import com.familywardrobe.app.rules.PreferenceRules
+import com.familywardrobe.app.rules.RotationRules
+import com.familywardrobe.app.rules.RotationRulesCases
+import com.familywardrobe.app.ui.WardrobeStats
 import java.time.LocalDate
 import java.time.ZoneId
+import org.junit.Assert.*
+import org.junit.Test
 
 /** ROT-01 on the app's own entry point: what is suggested, why, and what is never suggested. */
 class RotationOutfitsTest {

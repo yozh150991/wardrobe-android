@@ -1,5 +1,7 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.rules.PreferenceProfileCases
+import com.familywardrobe.app.rules.PreferenceRulesCases
 import org.junit.Test
 
 class PreferenceRulesTest {

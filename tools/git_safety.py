@@ -412,7 +412,7 @@ class Repo:
         if self.findings:
             say("No files were deleted, unstaged or removed from history. Secret values are not printed.")
             say("An ignore rule cannot remove a tracked file or a secret in an earlier commit.")
-            say("Read GIT-SAFETY.md: untrack local files or fix/rewrite the affected unpublished commits, then retry.")
+            say("Read docs/guides/GIT-SAFETY.md: untrack local files or fix/rewrite the affected unpublished commits, then retry.")
         if self.findings or changed:
             return 1
         say("PASS: " + str(len(self.seen)) + " file versions checked; " + str(self.commits_checked) + " commit snapshots.")
@@ -429,7 +429,7 @@ def install(repo):
     hook_setting = installed_hooks.as_posix()
     existing = repo.git("config", "--get", "core.hooksPath", ok=(0, 1)).decode().strip()
     if existing and existing != hook_setting:
-        raise GuardError("Another core.hooksPath is configured. Keep it and integrate the guard manually; see GIT-SAFETY.md.")
+        raise GuardError("Another core.hooksPath is configured. Keep it and integrate the guard manually; see docs/guides/GIT-SAFETY.md.")
     if not existing:
         default = repo.git("rev-parse", "--git-path", "hooks").decode().strip()
         default_path = Path(default)
@@ -437,7 +437,7 @@ def install(repo):
             default_path = repo.root / default_path
         # Switching hooksPath would disable every active hook, not just our two hooks.
         if default_path.exists() and any(p.is_file() and not p.name.endswith(".sample") for p in default_path.iterdir()):
-            raise GuardError("Existing Git hooks found. They were preserved; integrate the guard manually (GIT-SAFETY.md).")
+            raise GuardError("Existing Git hooks found. They were preserved; integrate the guard manually (docs/guides/GIT-SAFETY.md).")
     for name in ("pre-commit", "pre-push"):
         hook = hooks / name
         if not hook.is_file() or hook.is_symlink():

@@ -1,5 +1,17 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.family.FamilyArchiveIdentity
+import com.familywardrobe.app.family.FamilyChange
+import com.familywardrobe.app.family.FamilyOutfitChange
+import com.familywardrobe.app.family.FamilyOutfitDraft
+import com.familywardrobe.app.family.FamilyOutfitForm
+import com.familywardrobe.app.family.FamilyOutfitJournal
+import com.familywardrobe.app.family.FamilyOutfitQueue
+import com.familywardrobe.app.family.FamilyProblem
+import com.familywardrobe.app.family.FamilyPublication
+import com.familywardrobe.app.family.FamilyTransferException
+import com.familywardrobe.app.family.FamilyWire
+import com.familywardrobe.app.outfits.LookPiece
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test

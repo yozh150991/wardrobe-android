@@ -5,11 +5,17 @@ import android.graphics.BitmapFactory
 import android.graphics.Color
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.auth.AuthIdentity
+import com.familywardrobe.app.photo.PhotoExportInfo
+import com.familywardrobe.app.photo.PhotoStore
+import com.familywardrobe.app.rules.PhotoExportRules
+import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 
 /** PHOTO-17 (0.14.46) on a device: PNG keeps transparency, JPEG gets a real background, sizes shrink only, no originals exposed. */
 @RunWith(AndroidJUnit4::class)

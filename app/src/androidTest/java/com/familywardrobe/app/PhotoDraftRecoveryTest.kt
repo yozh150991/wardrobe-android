@@ -4,6 +4,14 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.data.EditorDraftStore
+import com.familywardrobe.app.photo.PhotoSessionDraft
+import com.familywardrobe.app.photo.PhotoStore
+import com.familywardrobe.app.photo.renderPhotoSession
+import com.familywardrobe.app.rules.AuthRules
+import com.familywardrobe.app.rules.PhotoEditHistory
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.*

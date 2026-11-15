@@ -12,12 +12,12 @@ def check(condition, message):
     if not condition: failures.append(message)
 
 # One definition of «давно не вдягали» for the statistics and the daily suggestion.
-stats = (source / 'StatisticsScreen.kt').read_text()
+stats = (source / 'ui/StatisticsScreen.kt').read_text()
 check('RotationRules.forgotten(' in stats, 'WardrobeStats must use RotationRules.forgotten')
 check(not re.search(r'>=\s*90\b|\b90\s*<=', stats), 'no separate 90-day literal in the statistics')
 check('pickToday(g)' in stats and 'WardrobeRules.ready(g.rulePiece())) TextButton(onClick = { pickToday(g) }' in stats,
       'statistics offer «Підібрати на сьогодні» only for ready items')
-outfits = (source / 'RotationOutfits.kt').read_text()
+outfits = (source / 'outfits/RotationOutfits.kt').read_text()
 check('RotationRules.candidates(' in outfits and 'RotationRules.order(' in outfits and 'RotationRules.ATTEMPTS' in outfits,
       'suggest uses the shared candidates, order and attempt limit')
 check('it.date <= today' in outfits, 'only actual wears on or before today count')
@@ -25,13 +25,13 @@ check('it.reason == PreferenceRules.DISLIKE' in outfits and "!it.signature.conta
       'uncomfortable items come from PERS-01 item rows')
 check('if (fixed[g.category]?.let { it != g.id } == true) continue' in outfits, 'a pinned item of the same category wins')
 check('fixed.filterKeys { it != g.category }' in outfits, 'an item chosen in the statistics replaces a pin of its category')
-daily = (source / 'DailyScreen.kt').read_text()
+daily = (source / 'ui/DailyScreen.kt').read_text()
 check('val rotationInput = if (capsule != null || !rotationVisible) ""' in daily, 'no rotation card in capsules or when it is off/hidden')
 check('withContext(Dispatchers.Default) {\n            RotationOutfits.suggest(' in daily, 'the suggestion runs off the UI thread')
 check('!(rotation && item.id == rotationAnchorId)' in daily, 'the anchor item is not replaced (that is «Інша річ»)')
 check('if (anchor.isNotEmpty()) clearAnchor()' in daily, '«Інша річ» leaves the item chosen in the statistics')
 # ROT-02: postponing, reasons, frequency; account-private settings that never bump on a mere «shown».
-store = (source / 'RotationStore.kt').read_text()
+store = (source / 'data/RotationStore.kt').read_text()
 check('getSharedPreferences("preferences", Context.MODE_PRIVATE)' in store, 'settings live in the account preferences (erased with the account)')
 mark = store.split('fun markShown', 1)[1].split('fun hideToday', 1)[0]
 check('mutable.value++' not in mark, 'recording that the card was shown must not recompute the card')
@@ -46,12 +46,12 @@ check('record(rotationLook.takeIf' in daily and 'FeedbackReason.UNCOMFORTABLE)' 
 check('vm.changeAvailability(item, archived = true)' in daily and 'rotation_snooze_instead' in daily, 'archive only after confirmation, or postpone instead')
 check('postpone(item, RotationRules.reasonDays(RotationRules.NO_MATCH), RotationRules.NO_MATCH); buildWith(item)' in daily,
       '«Немає з чим поєднати» postpones a month and opens manual building')
-vm = (source / 'WardrobeViewModel.kt').read_text()
+vm = (source / 'ui/WardrobeViewModel.kt').read_text()
 check('rotation.clear(wardrobe)' in vm.split('fun resetPreferences', 1)[1].split('fun saveCanvasLook', 1)[0], '«Скинути всі вподобання» resets the card too')
-prefs = (source / 'PreferencesDialog.kt').read_text()
+prefs = (source / 'ui/PreferencesDialog.kt').read_text()
 check('vm.rotation.setFrequency(wardrobe, value)' in prefs and 'vm.rotation.restore(wardrobe, snooze.garmentId)' in prefs,
       '«Мої вподобання» change the frequency and bring postponed items back')
-ui = (source / 'Ui.kt').read_text()
+ui = (source / 'ui/Ui.kt').read_text()
 check('.put("rotationAnchor", rotationAnchor)' in ui and 'rotationAnchor = f.optString("rotationAnchor")' in ui,
       'the chosen item is part of the navigation frame')
 check('go("daily")' not in ui.replace('fun openDaily(anchor: String = "") { go("daily")', ''), 'every other way to Daily clears the chosen item')
@@ -79,8 +79,8 @@ if failures:
     raise SystemExit('FAIL rotation:\n' + '\n'.join(failures))
 
 with tempfile.TemporaryDirectory(prefix='wardrobe-rotation-') as output:
-    files = [source / name for name in ('WardrobeRules.java', 'DailyRules.java', 'PreferenceRules.java', 'PreferenceProfile.java', 'StyleRules.java', 'WeatherRules.java', 'RotationRules.java')]
-    files.append(root / 'app/src/test/java/com/familywardrobe/app/RotationRulesCases.java')
+    files = [source / name for name in ('rules/WardrobeRules.java', 'rules/DailyRules.java', 'rules/PreferenceRules.java', 'rules/PreferenceProfile.java', 'rules/StyleRules.java', 'rules/WeatherRules.java', 'rules/RotationRules.java')]
+    files.append(root / 'app/src/test/java/com/familywardrobe/app/rules/RotationRulesCases.java')
     subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, *map(str, files)], check=True)
-    subprocess.run([java, '-cp', output, 'com.familywardrobe.app.RotationRulesCases'], check=True)
+    subprocess.run([java, '-cp', output, 'com.familywardrobe.app.rules.RotationRulesCases'], check=True)
 print(f'PASS rotation guards: {len(keys)} strings × 4 locales, one 90-day rule, capsule/pin/anchor, postponing and frequency')

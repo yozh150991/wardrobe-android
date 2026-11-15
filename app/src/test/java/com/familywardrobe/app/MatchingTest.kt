@@ -1,5 +1,8 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.outfits.Matching
+import com.familywardrobe.app.outfits.rulePiece
+import com.familywardrobe.app.rules.DailyRules
 import org.junit.Assert.*
 import org.junit.Test
 

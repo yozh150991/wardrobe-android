@@ -1,5 +1,8 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.data.DayPlan
+import com.familywardrobe.app.outfits.TodayWidgetModel
+import com.familywardrobe.app.outfits.TodayWidgetState
 import org.junit.Assert.*
 import org.junit.Test
 

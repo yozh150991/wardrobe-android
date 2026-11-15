@@ -4,12 +4,22 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.auth.AuthIdentity
+import com.familywardrobe.app.backup.Backup
+import com.familywardrobe.app.backup.BackupStateRules
+import com.familywardrobe.app.backup.WardrobeSnapshots
+import com.familywardrobe.app.family.FamilyAddStore
+import com.familywardrobe.app.family.FamilyMigrationStore
+import com.familywardrobe.app.family.FamilySyncStore
+import com.familywardrobe.app.photo.PhotoStore
+import java.io.File
+import java.util.zip.ZipFile
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
-import java.io.File
-import java.util.zip.ZipFile
 
 /** FAM-04: the owner's portable copy of a shared wardrobe, written from a read view's files (not from Room). */
 class FamilyExportTest {

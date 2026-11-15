@@ -1,5 +1,13 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.family.FamilyAddDraft
+import com.familywardrobe.app.family.FamilyArchiveIdentity
+import com.familywardrobe.app.family.FamilyChange
+import com.familywardrobe.app.family.FamilyMediaQueue
+import com.familywardrobe.app.family.FamilyProblem
+import com.familywardrobe.app.family.FamilyPublication
+import com.familywardrobe.app.family.FamilyTransferException
+import com.familywardrobe.app.family.FamilyWire
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test

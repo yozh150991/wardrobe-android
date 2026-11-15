@@ -1,5 +1,13 @@
 package com.familywardrobe.app
 
+import com.familywardrobe.app.data.Capsule
+import com.familywardrobe.app.data.CapsuleItem
+import com.familywardrobe.app.outfits.Forecast
+import com.familywardrobe.app.outfits.ForecastDay
+import com.familywardrobe.app.outfits.TripPlan
+import com.familywardrobe.app.outfits.WeatherCity
+import com.familywardrobe.app.rules.DailyDiagnostics
+import com.familywardrobe.app.rules.DailyRules
 import org.junit.Assert.*
 import org.junit.Test
 

@@ -4,12 +4,34 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
+import com.familywardrobe.app.auth.AccountContext
+import com.familywardrobe.app.auth.AccountLocation
+import com.familywardrobe.app.auth.AuthIdentity
+import com.familywardrobe.app.backup.Backup
+import com.familywardrobe.app.backup.BackupStateRules
+import com.familywardrobe.app.backup.WardrobeSnapshots
+import com.familywardrobe.app.data.Capsule
+import com.familywardrobe.app.data.CapsuleItem
+import com.familywardrobe.app.data.CapsuleOutfit
+import com.familywardrobe.app.data.DayPlan
+import com.familywardrobe.app.data.GarmentReceipt
+import com.familywardrobe.app.data.OutfitFeedback
+import com.familywardrobe.app.data.addCustomCategory
+import com.familywardrobe.app.data.addCustomColor
+import com.familywardrobe.app.data.event
+import com.familywardrobe.app.data.purchaseWish
+import com.familywardrobe.app.data.saveCapsule
+import com.familywardrobe.app.family.FamilyArchiveIdentity
+import com.familywardrobe.app.family.FamilyEnvelope
+import com.familywardrobe.app.family.FamilyMigrationPhase
+import com.familywardrobe.app.family.FamilyMigrationStore
+import com.familywardrobe.app.photo.PhotoStore
+import java.io.File
+import java.util.zip.ZipFile
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
-import java.io.File
-import java.util.zip.ZipFile
 
 /** Native acceptance for actual Kotlin/Room/AtomicFile/ZIP paths. Not executed by host checks. */
 class FamilyFoundationTest {
