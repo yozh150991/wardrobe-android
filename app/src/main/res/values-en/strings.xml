@@ -1504,4 +1504,9 @@ Your current wardrobe is unchanged.</string>
     <string name="palette_sky_hint">A hint of blue in the canvas, blue buttons and a coral accent</string>
     <string name="palette_lilac">Lilac</string>
     <string name="palette_lilac_hint">A hint of lilac in the canvas, violet buttons and a teal accent</string>
+    <string name="today_other">Another</string>
+    <string name="today_variant_position">Option %1$d of %2$d</string>
+    <string name="today_note_rain">Outerwear for the rain</string>
+    <string name="today_rotation_idle">Not worn for a while · days: %1$d</string>
+    <string name="today_rotation_collapse">Collapse</string>
 </resources>

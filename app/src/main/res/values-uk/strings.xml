@@ -1504,4 +1504,9 @@
     <string name="palette_sky_hint">Ледь блакитний фон, сині кнопки й кораловий акцент</string>
     <string name="palette_lilac">Бузкова</string>
     <string name="palette_lilac_hint">Ледь бузковий фон, фіолетові кнопки й бірюзовий акцент</string>
+    <string name="today_other">Інший</string>
+    <string name="today_variant_position">Варіант %1$d із %2$d</string>
+    <string name="today_note_rain">Верхній одяг на дощ</string>
+    <string name="today_rotation_idle">Давно не вдягали · днів: %1$d</string>
+    <string name="today_rotation_collapse">Згорнути</string>
 </resources>
