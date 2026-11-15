@@ -58,7 +58,7 @@ object TripPlan {
         val used = mutableSetOf<String>()
         val days = dates.map { date ->
             val temperature = forecast?.temperature(date)?.let { WeatherRules.shifted(it, warmth.shift) }
-            val weather = temperature?.let { RoadmapRules.weatherMode(it) } ?: "any_weather"
+            val weather = temperature?.let { WeatherRules.mode(it, forecast?.rain(date)) } ?: "any_weather"
             val seed = "trip:${capsule.id}:$date"
             fun first(skip: Set<String>) = DailyOutfits.daily(s, wardrobe, occasion, weather, date, seed, skip, allowed,
                 choices = choices, temperature = temperature).looks.firstOrNull().orEmpty()
@@ -96,7 +96,7 @@ object TripPlan {
         var covered = 0
         for (date in dates) {
             val temperature = forecast?.temperature(date)?.let { WeatherRules.shifted(it, warmth.shift) }
-            val weather = temperature?.let { RoadmapRules.weatherMode(it) } ?: "any_weather"
+            val weather = temperature?.let { WeatherRules.mode(it, forecast?.rain(date)) } ?: "any_weather"
             val items = DailyOutfits.items(s, date).filter { it.piece.wardrobe == wardrobe }
             val hidden = DailyOutfits.rejected(s, wardrobe, occasion, weather)
             val scores = DailyOutfits.penalties(s, wardrobe, occasion, weather, choices)

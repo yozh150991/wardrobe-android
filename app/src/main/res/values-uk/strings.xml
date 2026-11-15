@@ -1457,4 +1457,5 @@
     <string name="trip_city_loading">Завантажуємо прогноз для %1$s…</string>
     <string name="trip_city_unavailable">Прогноз для %1$s зараз недоступний: образи підібрано без погоди.</string>
     <string name="trip_city_weather_off">Погоду не ввімкнено: прогноз для %1$s не завантажується, образи підібрано без неї.</string>
+    <string name="weather_rain_auto">Ймовірність дощу %1$d%% — тому «Дощ»: до образу додано куртку чи плащ. Змінити можна в умовах.</string>
 </resources>

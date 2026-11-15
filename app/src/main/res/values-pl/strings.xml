@@ -1457,4 +1457,5 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="trip_city_loading">Wczytujemy prognozę dla %1$s…</string>
     <string name="trip_city_unavailable">Prognoza dla %1$s jest teraz niedostępna: zestawy dobrano bez pogody.</string>
     <string name="trip_city_weather_off">Pogoda jest wyłączona: prognoza dla %1$s nie jest wczytywana, zestawy dobrano bez niej.</string>
+    <string name="weather_rain_auto">Szansa na deszcz %1$d%%, więc «Deszcz»: dodano kurtkę lub płaszcz. Możesz to zmienić w warunkach.</string>
 </resources>

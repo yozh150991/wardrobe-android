@@ -21,6 +21,17 @@ class WeatherForecastTest {
         assertEquals(7.0, f.copy(days = f.days.drop(1)).temperature(today)!!, 1e-9)
     }
 
+    /** WTH-02: the chance of rain makes a mild day «Дощ»; it follows the same freshness as the temperature. */
+    @Test fun rainFromTheForecast() {
+        val wet = forecast().let { f -> f.copy(days = f.days.map { if (it.date == today) it.copy(rain = 70) else it }) }
+        assertEquals(70, wet.rain(today)); assertEquals("rain", wet.mode(today))
+        assertEquals("cool", forecast().mode(today)); assertEquals(10, forecast().rain(today))
+        // +24 with 80%: still «тепло»; a day not in the forecast has no chance of rain.
+        assertEquals("warm", wet.mode("2026-11-14")); assertNull(wet.rain("2026-11-20"))
+        // An old forecast is not used for rain either.
+        assertNull(wet.copy(fetchedAt = System.currentTimeMillis() - 25 * 60 * 60 * 1000L).rain(today))
+    }
+
     @Test fun anOldForecastIsNotUsed() {
         // Older than six hours: "now" is no longer now, today is a day like the others. Older than a day: nothing.
         assertEquals(15.0, forecast(7 * 60 * 60 * 1000L).temperature(today)!!, 1e-9)
