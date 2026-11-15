@@ -1494,4 +1494,14 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="item_delete_purchase">Została kupiona z listy życzeń i zapis zakupu się do niej odnosi.</string>
     <string name="item_delete_archive_instead">W archiwum rzecz nie trafia do doboru, a historia zostaje.</string>
     <string name="item_delete_archived">Rzecz jest już w archiwum i nie trafia do doboru.</string>
+    <string name="appearance_group_light">Jasne</string>
+    <string name="appearance_group_rich">Nasycone</string>
+    <string name="palette_light_olive">Jasna oliwka</string>
+    <string name="palette_light_olive_hint">Prawie białe tło, zielone przyciski i akcent terakoty</string>
+    <string name="palette_mono">Czarno-biała</string>
+    <string name="palette_mono_hint">Neutralne tło i czarne przyciski: kolory ubrań bez obcego odcienia</string>
+    <string name="palette_sky">Błękitna</string>
+    <string name="palette_sky_hint">Lekko błękitne tło, niebieskie przyciski i koralowy akcent</string>
+    <string name="palette_lilac">Liliowa</string>
+    <string name="palette_lilac_hint">Lekko liliowe tło, fioletowe przyciski i turkusowy akcent</string>
 </resources>

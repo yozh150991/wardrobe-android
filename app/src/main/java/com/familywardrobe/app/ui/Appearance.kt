@@ -12,6 +12,10 @@ import com.familywardrobe.app.R
 import kotlinx.coroutines.flow.first
 
 enum class WardrobePalette(val key: String, val title: Int, val description: Int) {
+    LIGHT_OLIVE("light_olive", R.string.palette_light_olive, R.string.palette_light_olive_hint),
+    MONO("mono", R.string.palette_mono, R.string.palette_mono_hint),
+    SKY("sky", R.string.palette_sky, R.string.palette_sky_hint),
+    LILAC("lilac", R.string.palette_lilac, R.string.palette_lilac_hint),
     OLIVE_TERRA("olive_terra", R.string.palette_olive_terra, R.string.palette_olive_terra_hint),
     PLUM_SAGE("plum_sage", R.string.palette_plum_sage, R.string.palette_plum_sage_hint),
     INDIGO_APRICOT("indigo_apricot", R.string.palette_indigo_apricot, R.string.palette_indigo_apricot_hint),
@@ -25,7 +29,10 @@ enum class WardrobePalette(val key: String, val title: Int, val description: Int
     GRAPHITE("graphite", R.string.palette_graphite, R.string.palette_graphite_hint);
 
     companion object {
-        fun fromKey(key: String?) = entries.firstOrNull { it.key == key } ?: OLIVE_TERRA
+        /** UI-01: the default for a choice never made (or not understood) is the light olive palette. */
+        val DEFAULT = LIGHT_OLIVE
+        val LIGHT = listOf(LIGHT_OLIVE, MONO, SKY, LILAC)
+        fun fromKey(key: String?) = entries.firstOrNull { it.key == key } ?: DEFAULT
     }
 }
 
@@ -46,7 +53,7 @@ enum class AppearanceMode(val key: String, val title: Int) {
 }
 
 data class AppearanceSettings(
-    val palette: WardrobePalette = WardrobePalette.OLIVE_TERRA,
+    val palette: WardrobePalette = WardrobePalette.DEFAULT,
     val mode: AppearanceMode = AppearanceMode.SYSTEM
 )
 

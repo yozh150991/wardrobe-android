@@ -1494,4 +1494,14 @@
     <string name="item_delete_purchase">Її куплено зі списку бажань, і запис про покупку посилається на неї.</string>
     <string name="item_delete_archive_instead">В архіві річ не потрапляє в підбір, а історія зберігається.</string>
     <string name="item_delete_archived">Річ уже в архіві й не потрапляє в підбір.</string>
+    <string name="appearance_group_light">Світлі</string>
+    <string name="appearance_group_rich">Насичені</string>
+    <string name="palette_light_olive">Світла олива</string>
+    <string name="palette_light_olive_hint">Майже білий фон, зелені кнопки й теракотовий акцент</string>
+    <string name="palette_mono">Чорно-біла</string>
+    <string name="palette_mono_hint">Нейтральний фон і чорні кнопки: кольори одягу без стороннього відтінку</string>
+    <string name="palette_sky">Небесна</string>
+    <string name="palette_sky_hint">Ледь блакитний фон, сині кнопки й кораловий акцент</string>
+    <string name="palette_lilac">Бузкова</string>
+    <string name="palette_lilac_hint">Ледь бузковий фон, фіолетові кнопки й бірюзовий акцент</string>
 </resources>
