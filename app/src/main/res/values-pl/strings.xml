@@ -1458,4 +1458,18 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="trip_city_unavailable">Prognoza dla %1$s jest teraz niedostępna: zestawy dobrano bez pogody.</string>
     <string name="trip_city_weather_off">Pogoda jest wyłączona: prognoza dla %1$s nie jest wczytywana, zestawy dobrano bez niej.</string>
     <string name="weather_rain_auto">Szansa na deszcz %1$d%%, więc «Deszcz»: dodano kurtkę lub płaszcz. Możesz to zmienić w warunkach.</string>
+    <string name="photo_export_open">Udostępnij zdjęcie</string>
+    <string name="photo_export_format">Format</string>
+    <string name="photo_export_png">PNG — przezroczyste tło</string>
+    <string name="photo_export_white">JPEG — białe tło</string>
+    <string name="photo_export_cream">JPEG — kremowe tło</string>
+    <string name="photo_export_no_alpha">Tło tego zdjęcia nie zostało usunięte, więc PNG nie będzie przezroczysty.</string>
+    <string name="photo_export_size">Rozmiar</string>
+    <string name="photo_export_original">Jak zapisano — %1$d × %2$d</string>
+    <string name="photo_export_pixels">%1$d × %2$d</string>
+    <string name="photo_export_note">Zdjęcie nigdy nie jest powiększane. Plik zawiera tylko obraz — bez lokalizacji i innych danych aparatu.</string>
+    <string name="photo_export_preparing">Przygotowujemy plik…</string>
+    <string name="photo_export_share">Udostępnij</string>
+    <string name="photo_export_failed">Nie udało się przygotować pliku. Spróbuj ponownie.</string>
+    <string name="photo_export_no_app">Brak aplikacji, która może odebrać plik.</string>
 </resources>
