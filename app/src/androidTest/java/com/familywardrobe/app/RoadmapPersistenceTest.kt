@@ -24,6 +24,38 @@ class RoadmapPersistenceTest {
             test(repo, photos, items, look)
         } finally { items.forEach { photos.file(it.photoId).delete() }; db.close() }
     }
+    /** UX-07 (0.14.47): removing a saved outfit removes its plans and capsule links; what was worn stays worn. */
+    @Test fun removingAnOutfitKeepsTheWearHistory() = scenario { repo, photos, items, look ->
+        val today = LocalDate.now().toString(); val earlier = LocalDate.now().minusDays(3).toString()
+        val plan = repo.scheduleOutfit(look, earlier); repo.togglePlanWorn(plan)
+        repo.scheduleOutfit(look, LocalDate.now().plusDays(2).toString())
+        // The first item is worn twice today: by itself and with the outfit.
+        repo.toggleItemWear(items.first().id, today)
+        repo.toggleOutfitWear(look, today)
+        val extra = items.first().copy(id = newId(), name = "Extra", category = "other_item"); repo.save(extra)
+        val trip = repo.saveCapsule(Capsule(wardrobeId = extra.wardrobeId, name = "Trip", kind = "trip"))
+        repo.linkCapsuleOutfit(trip, look, true); repo.manualCapsuleItem(trip, extra.id, true)
+        val other = repo.saveLook(Repository.DEFAULT_WARDROBE, (items.drop(1) + extra).map(LookRules::owned), "Other", "everyday", "any_weather", "owned")
+        val daysBefore = repo.dao.allWears().map { it.garmentId to it.date }.toSet()
+        assertEquals(7, repo.dao.allWears().size)
+
+        repo.removeOutfit(look, photos)
+
+        val s = repo.snapshot()
+        assertEquals(listOf(other), s.outfits.map { it.id })
+        assertTrue(s.plans.isEmpty() && s.capsuleOutfits.isEmpty())
+        assertTrue(s.parts.all { it.outfitId == other })
+        // Only the item added by hand stays in the trip; the removed outfit no longer brings its items.
+        assertEquals(listOf(extra.id), s.capsuleItems.map { it.garmentId })
+        // The same items on the same days, now as the items' own wear (one row where two sources met).
+        assertEquals(daysBefore, s.wears.map { it.garmentId to it.date }.toSet())
+        assertEquals(6, s.wears.size)
+        assertTrue(s.wears.all { it.source == "item:${it.garmentId}" })
+        BackupStateRules.validate(s)
+        try { repo.removeOutfit(look, photos); fail("A removed outfit cannot be removed again") } catch (_: IllegalArgumentException) { }
+        repo.removeOutfit(other, photos)
+        assertTrue(repo.snapshot().outfits.isEmpty()); BackupStateRules.validate(repo.snapshot())
+    }
     @Test fun planningAndMovingNeverCreateWear() = scenario { repo, _, _, look ->
         val day = LocalDate.now().plusDays(1).toString(); val plan = repo.scheduleOutfit(look, day)
         assertEquals(plan, repo.scheduleOutfit(look, day)); assertTrue(repo.dao.allWears().isEmpty())

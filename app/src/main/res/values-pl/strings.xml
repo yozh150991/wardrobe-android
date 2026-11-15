@@ -1472,4 +1472,11 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="photo_export_share">Udostępnij</string>
     <string name="photo_export_failed">Nie udało się przygotować pliku. Spróbuj ponownie.</string>
     <string name="photo_export_no_app">Brak aplikacji, która może odebrać plik.</string>
+    <string name="outfit_delete">Usuń zestaw</string>
+    <string name="outfit_delete_title">Usunąć zestaw „%1$s”?</string>
+    <string name="outfit_delete_hint">Rzeczy zostaną w garderobie, a zaznaczone noszenia w ich historii. Zestaw zniknie z kapsuł i wyjazdów.</string>
+    <string name="outfit_delete_plans">Plany w kalendarzu z tym zestawem też zostaną usunięte: %1$d.</string>
+    <string name="item_name_optional">Nazwa — opcjonalnie</string>
+    <string name="item_name_auto">Bez nazwy rzecz będzie się nazywać „%1$s”.</string>
+    <string name="item_season_style_hint">Sezon i styl decydują, kiedy rzecz jest proponowana: według pogody i okazji.</string>
 </resources>

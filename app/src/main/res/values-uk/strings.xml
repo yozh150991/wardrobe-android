@@ -1472,4 +1472,11 @@
     <string name="photo_export_share">Поділитися</string>
     <string name="photo_export_failed">Не вдалося підготувати файл. Спробуй ще раз.</string>
     <string name="photo_export_no_app">Немає застосунку, щоб поділитися файлом.</string>
+    <string name="outfit_delete">Видалити образ</string>
+    <string name="outfit_delete_title">Видалити образ «%1$s»?</string>
+    <string name="outfit_delete_hint">Речі лишаться в гардеробі, а відмічені носіння — в історії речей. Образ зникне з капсул і поїздок.</string>
+    <string name="outfit_delete_plans">Плани в календарі з цим образом теж видаляться: %1$d.</string>
+    <string name="item_name_optional">Назва — необов’язково</string>
+    <string name="item_name_auto">Без назви річ називатиметься «%1$s».</string>
+    <string name="item_season_style_hint">Сезон і стиль визначають, коли річ пропонується: за погодою й нагодою.</string>
 </resources>

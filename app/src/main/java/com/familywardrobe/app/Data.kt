@@ -165,6 +165,8 @@ interface WardrobeDao {
     @Upsert suspend fun saveGarment(value: Garment)
     @Insert suspend fun insertOutfit(value: Outfit)
     @Upsert suspend fun saveOutfitRow(value: Outfit)
+    @Query("DELETE FROM outfits WHERE id=:id") suspend fun deleteOutfit(id: String)
+    @Query("DELETE FROM wears WHERE source=:source") suspend fun clearSource(source: String)
     @Query("DELETE FROM outfit_parts WHERE outfitId=:id") suspend fun deleteParts(id: String)
     @Query("DELETE FROM outfit_ideas WHERE outfitId=:id") suspend fun deleteIdeas(id: String)
     @Query("DELETE FROM outfit_parts WHERE outfitId=:outfitId AND garmentId=:garmentId")
@@ -496,6 +498,26 @@ class Repository(val db: WardrobeDatabase, val writes: Mutex = Mutex()) {
         }
         photos?.remove(oldPhotos - referencedPhotos())
         saved
+    }
+    /**
+     * UX-07 (0.14.47): removes a saved outfit — its parts, ideas, plans and capsule links go with it (foreign keys).
+     * What was worn stays worn: wear recorded through the outfit or its plans becomes the items' own wear of the same
+     * days, so the history, the statistics and «Давно не вдягали» do not change. Idea photos nobody uses are removed
+     * after the commit.
+     */
+    suspend fun removeOutfit(id: String, photos: PhotoStore? = null) = writes.withLock {
+        val oldPhotos = dao.allIdeas().filter { it.outfitId == id }.map { it.photoId }.filter { it.isNotBlank() }.toSet()
+        db.withTransaction {
+            requireNotNull(dao.outfit(id))
+            val sources = setOf("outfit:$id") + dao.allPlans().filter { it.outfitId == id }.map { "plan:${it.id}" }
+            val kept = dao.allWears().filter { it.source in sources }
+            sources.forEach { dao.clearSource(it) }
+            dao.insertWears(kept.map { Wear(it.garmentId, it.date, "item:${it.garmentId}") }.distinct())
+            val capsules = dao.allCapsuleOutfits().filter { it.outfitId == id }.map { it.capsuleId }
+            dao.deleteOutfit(id)
+            capsules.forEach { reconcileCapsule(it) }
+        }
+        photos?.remove(oldPhotos - referencedPhotos())
     }
     suspend fun toggleItemWear(id: String, date: String = LocalDate.now().toString()) = writes.withLock {
         db.withTransaction {

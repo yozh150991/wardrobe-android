@@ -1,3 +1,12 @@
+## Current handoff — UX review and UX-07–UX-11, 14 November 2026
+
+0.14.47-ux-review/code 77, Room 11 and backup formats unchanged. Read UX-REVIEW-0.14.47.md (15 findings; 7–15 are
+open as UX-12, item deletion needs the user's decision). Stacked on PHOTO-17 (PR #45 ⊃ #44, CI green, not merged);
+its PR targets main and contains them. Repository.removeOutfit turns wear recorded through the outfit or its plans
+into the items' own wear before deleting (a wear's source must exist — BackupStateRules), then reconciles capsules.
+ItemNameRules makes the item name optional. Season and style are in the main item form. A wardrobe without items
+starts on the catalog (startChecked in WardrobeApp).
+
 ## Current handoff — PHOTO-17 share a photo as a file, 14 November 2026
 
 0.14.46-photo-export/code 76, Room 11 and backup formats unchanged. Read PHOTO-EXPORT-0.14.46.md. Stacked on WTH-02
