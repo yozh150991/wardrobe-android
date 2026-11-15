@@ -59,4 +59,19 @@ class ImportFlowTest {
         assertEquals("repair", repo.dao.garment(g.id)!!.availability)
         assertTrue(repo.dao.garment(g.id)!!.archived)
     }
+    /** UX-13 (0.14.48): one style for several items; undo restores each item's own style and refuses a later edit. */
+    @Test fun bulkStyleChangesOnlyTheStyleAndCanBeUndone() = scenario { repo, _ ->
+        val shirt = Garment(wardrobeId = Repository.DEFAULT_WARDROBE, name = "Shirt", category = "top", color = "white", photoId = newId(), season = "summer")
+        val trainers = Garment(wardrobeId = Repository.DEFAULT_WARDROBE, name = "Trainers", category = "shoes", color = "white", photoId = newId(), style = "sport")
+        repo.save(shirt); repo.save(trainers)
+        val change = repo.bulkChange(shirt.wardrobeId, setOf(shirt.id, trainers.id), "style", style = "formal")
+        assertEquals(listOf("formal", "formal"), listOf(shirt, trainers).map { repo.dao.garment(it.id)!!.style })
+        assertEquals("summer", repo.dao.garment(shirt.id)!!.season)
+        assertTrue(repo.undoBulk(change))
+        assertEquals(listOf("casual", "sport"), listOf(shirt, trainers).map { repo.dao.garment(it.id)!!.style })
+        val next = repo.bulkChange(shirt.wardrobeId, setOf(shirt.id), "style", style = "sport")
+        repo.update(shirt.id) { it.copy(style = "formal") }
+        assertFalse(repo.undoBulk(next)); assertEquals("formal", repo.dao.garment(shirt.id)!!.style)
+        try { repo.bulkChange(shirt.wardrobeId, setOf(shirt.id), "style", style = "party"); fail("Unknown style") } catch (_: IllegalArgumentException) { }
+    }
 }

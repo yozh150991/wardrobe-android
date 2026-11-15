@@ -449,7 +449,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                     else { selected = wish.ownedId; navigate("detail") }
                 })
                 "settings" -> Settings(vm, appearance, accountEmail, onSignOut, onNewWardrobe = { newWardrobe = true }, onManageWardrobes = { go("manage") }, onAppearance = { go("appearance") },
-                    onAccountDeleted = onAccountDeleted)
+                    onAccountDeleted = onAccountDeleted, snapshot = snapshot, wardrobe = current.id, today = today)
                 "appearance" -> AppearanceScreen(appearance, onBrowse = { go("catalog") })
                 "manage" -> ManageWardrobes(snapshot, current.id, vm) { id ->
                     vm.select(id); go("catalog"); requestedCategory = ""
@@ -954,10 +954,13 @@ fun SavedOutfit(outfit: Outfit, s: Snapshot, vm: WardrobeViewModel, today: Strin
 
 @Composable
 fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEmail: String, onSignOut: () -> Unit, onNewWardrobe: () -> Unit, onManageWardrobes: () -> Unit, onAppearance: () -> Unit,
-    onAccountDeleted: () -> Unit = {}) {
+    onAccountDeleted: () -> Unit = {}, snapshot: Snapshot? = null, wardrobe: String = "", today: String = LocalDate.now().toString()) {
     val busy by vm.busy.collectAsStateWithLifecycle()
     val appearance by appearanceVm.appearance.collectAsStateWithLifecycle()
     var signOutDialog by remember { mutableStateOf(false) }
+    // UX-14: the preferences and the weather's city were reachable only through the weather chip on «Сьогодні».
+    var preferencesOpen by rememberSaveable { mutableStateOf(false) }
+    var weatherOpen by rememberSaveable { mutableStateOf(false) }
     var languageMenu by remember { mutableStateOf(false) }
     val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri -> if (uri != null) vm.export(uri) }
     val restore = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.previewRestore(uri) }
@@ -993,6 +996,14 @@ fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEm
                 }) }
             }
         }
+        if (snapshot != null && wardrobe.isNotEmpty()) {
+            HorizontalDivider()
+            Text(stringResource(R.string.settings_suggestions), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_suggestions_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedButton(onClick = { preferencesOpen = true }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.prefs_open)) }
+            OutlinedButton(onClick = { weatherOpen = true }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.settings_weather)) }
+            HorizontalDivider()
+        }
         OutlinedButton(onClick = onNewWardrobe, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.new_wardrobe)) }
         OutlinedButton(onClick = onManageWardrobes, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.manage_wardrobes)) }
         HorizontalDivider()
@@ -1013,6 +1024,10 @@ fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEm
         HorizontalDivider()
         AccountDeletionControl(vm, accountEmail, onAccountDeleted)
     }
+    if (preferencesOpen && snapshot != null) PreferencesDialog(snapshot, wardrobe, vm, today) { preferencesOpen = false }
+    if (weatherOpen) AlertDialog(onDismissRequest = { weatherOpen = false }, title = { Text(stringResource(R.string.settings_weather)) },
+        text = { Column(Modifier.verticalScroll(rememberScrollState())) { WeatherPanel(vm.weather, today) } },
+        confirmButton = { TextButton(onClick = { weatherOpen = false }) { Text(stringResource(R.string.close)) } })
     if (signOutDialog) AlertDialog(onDismissRequest = { signOutDialog = false },
         title = { Text(stringResource(R.string.auth_logout_title)) },
         text = { Text(stringResource(R.string.auth_logout_hint)) },

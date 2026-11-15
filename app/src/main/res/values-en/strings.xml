@@ -1479,4 +1479,9 @@ Your current wardrobe is unchanged.</string>
     <string name="item_name_optional">Name — optional</string>
     <string name="item_name_auto">Without a name the item is called “%1$s”.</string>
     <string name="item_season_style_hint">Season and style decide when the item is suggested: by the weather and the occasion.</string>
+    <string name="bulk_style">Change style</string>
+    <string name="bulk_style_hint">The style decides which occasions an item is suggested for: formal for work and events, sport for an active day.</string>
+    <string name="settings_suggestions">Outfit suggestions</string>
+    <string name="settings_suggestions_hint">For the wardrobe that is open now.</string>
+    <string name="settings_weather">Weather and city</string>
 </resources>
