@@ -1514,4 +1514,10 @@
     <string name="catalog_more">Ще дії з гардеробом</string>
     <string name="catalog_search_clear">Очистити пошук</string>
     <string name="catalog_filters_active">Фільтри й сортування, увімкнено: %1$d</string>
+    <string name="item_more">Ще: не пропонувати, архів, видалити</string>
+    <string name="item_size_short">розмір %1$s</string>
+    <string name="item_stat_wears">днів носіння</string>
+    <string name="item_stat_days">днів від носіння</string>
+    <string name="item_stat_outfits">в образах</string>
+    <string name="item_about">Про річ</string>
 </resources>

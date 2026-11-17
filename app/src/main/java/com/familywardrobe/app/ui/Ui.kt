@@ -323,7 +323,8 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             Column {
-                WardrobeTopBar(title, current, snapshot.wardrobes, nested, canNavigate,
+                // UI-04: the item page draws its own back button over the photo, as in the approved design.
+                if (!(route == "detail" && garment != null)) WardrobeTopBar(title, current, snapshot.wardrobes, nested, canNavigate,
                     back = ::back, select = { vm.select(it); go(if (route == "daily") "daily" else "catalog"); requestedCategory = "" },
                     // UI-03: the catalog shows statistics and imports on the screen itself, not under «⋮».
                     create = { newWardrobe = true }, manage = { go("manage") })
@@ -413,7 +414,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                         }
                     }
                 }
-                "detail" -> if (garment != null) Detail(garment, snapshot, vm, today,
+                "detail" -> if (garment != null) Detail(garment, snapshot, vm, today, onBack = ::back,
                     onEdit = { buyingWishId = ""; editId = garment.id; editorCategory = ""; editorSequence++; editorDirty = false; go("edit") }, onMatch = ::buildOutfit,
                     removed = { go("__back") })
                     else MissingSelection { go("__back") }
@@ -562,113 +563,6 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
         dismissButton = { if (problem.action != FailureAction.CLOSE) TextButton(onClick = vm::dismissFailure) { Text(stringResource(R.string.close)) } }) }
     notice?.let { id -> AlertDialog(onDismissRequest = { vm.notice.value = null }, text = { Text(stringResource(id)) },
         confirmButton = { TextButton(onClick = { vm.notice.value = null }) { Text(stringResource(R.string.close)) } }) }
-}
-
-@Composable
-fun Detail(g: Garment, s: Snapshot, vm: WardrobeViewModel, today: String, onEdit: () -> Unit, onMatch: () -> Unit, removed: () -> Unit = {}) {
-    val busy by vm.busy.collectAsStateWithLifecycle()
-    var confirmArchive by remember { mutableStateOf(false) }
-    // UX-15: delete for good only what nothing was built on; the rest is archived.
-    var deleting by rememberSaveable { mutableStateOf(false) }
-    val outfitCount = s.parts.count { it.garmentId == g.id }
-    val deleteBlocker = ItemRemovalRules.blocker(s.wears.count { it.garmentId == g.id }, outfitCount, s.wishes.any { it.ownedId == g.id })
-    // WEAR-01: wear noticed later (another day), and a day's wear recorded by mistake.
-    var wearOtherDay by rememberSaveable { mutableStateOf(false) }
-    var removingWear by rememberSaveable { mutableStateOf("") }
-    val dates = s.wears.filter { it.garmentId == g.id }.map { it.date }.distinct().sortedDescending()
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        ZoomableItemPhoto(g.photoId, vm, Modifier.fillMaxWidth().height(280.dp).clip(RoundedCornerShape(20.dp)), title = g.name, garmentColour = g.color)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(g.name, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
-            IconToggleButton(g.favorite, { vm.update(g) { it.copy(favorite = !it.favorite) } }, enabled = !busy) {
-                Icon(if (g.favorite) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder, stringResource(R.string.favorite))
-            }
-            IconButton(onClick = onEdit, enabled = !busy) { Icon(Icons.Outlined.Edit, stringResource(R.string.edit)) }
-        }
-        if (g.subcategory.isNotBlank()) Text(g.subcategory, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        // UX-10: plain labels (they are not buttons); «Ношу рідко» is the only switch here.
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            StatusLabel(s.customCategory(g)?.name ?: stringResource(label(g.category)))
-            StatusLabel(stringResource(if (g.archived) R.string.archived else label(g.availability)))
-            FilterChip(g.rarelyWorn, { vm.update(g) { it.copy(rarelyWorn = !it.rarelyWorn) } }, enabled = !busy, label = { Text(stringResource(R.string.rare)) })
-        }
-        // UX-06: what «Ношу рідко» does, so the chip is not a mystery.
-        if (g.rarelyWorn) Text(stringResource(R.string.rare_hint), style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
-        // UX-10: the everyday actions first — build an outfit, mark as worn, send to the laundry.
-        Button(onClick = onMatch, enabled = !busy && !g.archived && g.availability == "available", modifier = Modifier.fillMaxWidth()) {
-            Icon(Icons.Outlined.AutoAwesome, null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.match))
-        }
-        OutlinedButton(onClick = { vm.wear(g) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(if (today in dates) R.string.undo_wear else R.string.wear))
-        }
-        if (!g.archived && g.availability in setOf("available", "laundry")) OutlinedButton(
-            onClick = { vm.changeAvailability(g, availability = if (g.availability == "laundry") "available" else "laundry") },
-            enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(if (g.availability == "laundry") R.string.return_after_wash else R.string.mark_laundry))
-        }
-        TextButton(onClick = { wearOtherDay = true }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.wear_other_day)) }
-        HorizontalDivider()
-        s.wishes.find { it.ownedId == g.id }?.let { PurchaseHistory(it, vm) }
-        Info(R.string.size, g.size.ifBlank { "—" }); Info(R.string.color, s.customColor(g)?.name ?: stringResource(label(g.color)))
-        Info(R.string.location, g.location.ifBlank { "—" }); Info(R.string.season, stringResource(label(g.season)))
-        Info(R.string.style, stringResource(label(g.style)))
-        if (g.description.isNotBlank()) Info(R.string.description, g.description)
-        Info(R.string.last_worn, dates.firstOrNull()?.let { dateLabel(it) }
-            ?: stringResource(R.string.never_worn))
-        Text(stringResource(R.string.wear_days, dates.size), style = MaterialTheme.typography.bodySmall)
-        if (dates.isNotEmpty()) {
-            Text(stringResource(R.string.wear_history_title), style = MaterialTheme.typography.titleSmall)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                dates.take(8).forEach { day ->
-                    val remove = stringResource(R.string.wear_remove_day, dateLabel(day))
-                    InputChip(selected = false, onClick = { removingWear = day }, enabled = !busy, label = { Text(dateLabel(day)) },
-                        trailingIcon = { Icon(Icons.Outlined.Close, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                        modifier = Modifier.semantics { contentDescription = remove })
-                }
-            }
-        }
-        HorizontalDivider()
-        // Rare decisions last: out of the suggestions, into the archive.
-        OutlinedButton(onClick = { vm.excludeFromRecommendations(g.id, !g.suggestionExcluded) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(if (g.suggestionExcluded) R.string.rules_include else R.string.rules_exclude))
-        }
-        if (g.suggestionExcluded) Text(stringResource(R.string.rules_manual_allowed), style = MaterialTheme.typography.bodySmall)
-        TextButton(onClick = { if (g.archived) vm.changeAvailability(g, archived = false) else confirmArchive = true }, enabled = !busy) {
-            Text(stringResource(if (g.archived) R.string.restore_item else R.string.archive))
-        }
-        TextButton(onClick = { deleting = true }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.item_delete)) }
-    }
-    if (deleting) {
-        if (deleteBlocker == null) AlertDialog(onDismissRequest = { deleting = false }, title = { Text(stringResource(R.string.item_delete_title, g.name)) },
-            text = { Text(stringResource(R.string.item_delete_hint)) },
-            confirmButton = { TextButton(onClick = { deleting = false; vm.removeItem(g.id, removed) }, enabled = !busy) { Text(stringResource(R.string.item_delete_confirm)) } },
-            dismissButton = { TextButton(onClick = { deleting = false }) { Text(stringResource(R.string.cancel)) } })
-        else AlertDialog(onDismissRequest = { deleting = false }, title = { Text(stringResource(R.string.item_delete_blocked_title)) },
-            text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(when (deleteBlocker) {
-                    ItemRemovalRules.Blocker.WORN -> stringResource(R.string.item_delete_worn, dates.size)
-                    ItemRemovalRules.Blocker.OUTFITS -> stringResource(R.string.item_delete_outfits, outfitCount)
-                    else -> stringResource(R.string.item_delete_purchase)
-                })
-                Text(stringResource(if (g.archived) R.string.item_delete_archived else R.string.item_delete_archive_instead))
-            } },
-            confirmButton = { if (g.archived) TextButton(onClick = { deleting = false }) { Text(stringResource(R.string.close)) }
-                else TextButton(onClick = { deleting = false; vm.changeAvailability(g, archived = true) }, enabled = !busy) { Text(stringResource(R.string.archive)) } },
-            dismissButton = { if (!g.archived) TextButton(onClick = { deleting = false }) { Text(stringResource(R.string.cancel)) } })
-    }
-    if (wearOtherDay) DateChoiceDialog(today, { wearOtherDay = false }, latest = today) { day ->
-        wearOtherDay = false; vm.wearItems(g.wardrobeId, listOf(g), day)
-    }
-    if (removingWear.isNotEmpty()) AlertDialog(onDismissRequest = { removingWear = "" },
-        text = { Text(stringResource(R.string.wear_remove_day, dateLabel(removingWear))) },
-        confirmButton = { TextButton(onClick = { val day = removingWear; removingWear = ""; if (day in dates) vm.wear(g, day) }, enabled = !busy) {
-            Text(stringResource(R.string.delete)) } },
-        dismissButton = { TextButton(onClick = { removingWear = "" }) { Text(stringResource(R.string.cancel)) } })
-    if (confirmArchive) AlertDialog(onDismissRequest = { confirmArchive = false }, title = { Text(stringResource(R.string.archive_title)) },
-        text = { Text(stringResource(R.string.archive_hint)) }, confirmButton = { TextButton(onClick = {
-            vm.changeAvailability(g, archived = true); confirmArchive = false
-        }) { Text(stringResource(R.string.archive)) } }, dismissButton = { TextButton(onClick = { confirmArchive = false }) { Text(stringResource(R.string.cancel)) } })
 }
 
 @Composable
@@ -1152,13 +1046,6 @@ fun Field(value: String, change: (String) -> Unit, title: Int, enabled: Boolean 
 }
 
 /** A fact about the item; not a button, so it does not look like one. */
-@Composable
-private fun StatusLabel(text: String) {
-    Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
-        Text(text, Modifier.padding(horizontal = 10.dp, vertical = 6.dp), style = MaterialTheme.typography.labelLarge)
-    }
-}
-
 @Composable
 fun Info(title: Int, value: String) {
     Column { Text(stringResource(title), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant); Text(value) }

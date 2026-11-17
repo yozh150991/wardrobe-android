@@ -1514,4 +1514,10 @@ Your current wardrobe is unchanged.</string>
     <string name="catalog_more">More wardrobe actions</string>
     <string name="catalog_search_clear">Clear search</string>
     <string name="catalog_filters_active">Filters and sorting, on: %1$d</string>
+    <string name="item_more">More: do not suggest, archive, delete</string>
+    <string name="item_size_short">size %1$s</string>
+    <string name="item_stat_wears">days worn</string>
+    <string name="item_stat_days">days since worn</string>
+    <string name="item_stat_outfits">in outfits</string>
+    <string name="item_about">About the item</string>
 </resources>

@@ -1514,4 +1514,10 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="catalog_more">Więcej działań z garderobą</string>
     <string name="catalog_search_clear">Wyczyść wyszukiwanie</string>
     <string name="catalog_filters_active">Filtry i sortowanie, włączone: %1$d</string>
+    <string name="item_more">Więcej: nie proponuj, archiwum, usuń</string>
+    <string name="item_size_short">rozmiar %1$s</string>
+    <string name="item_stat_wears">dni noszenia</string>
+    <string name="item_stat_days">dni od noszenia</string>
+    <string name="item_stat_outfits">w stylizacjach</string>
+    <string name="item_about">O rzeczy</string>
 </resources>

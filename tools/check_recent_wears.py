@@ -20,7 +20,7 @@ rotation = read('rules/RotationRules.java')
 check('item.rare || problem(item, weather, temperature) != null' in rotation, '«Ношу рідко» is never offered as forgotten')
 check('state.seen[g.id].orEmpty(), g.rarelyWorn)' in read('outfits/RotationOutfits.kt'), 'the flag reaches the rotation rules')
 check('!g.rarelyWorn && RotationRules.forgotten(' in read('ui/StatisticsScreen.kt'), 'the statistics agree')
-check('if (g.rarelyWorn) Text(stringResource(R.string.rare_hint)' in read('ui/Ui.kt'), 'the chip says what it does')
+check('if (g.rarelyWorn) Text(stringResource(R.string.rare_hint)' in read('ui/ItemPage.kt'), 'the chip says what it does')
 screen = read('ui/DailyScreen.kt')
 check('var occasion by rememberSaveable(wardrobe) { mutableStateOf(vm.lastOccasion(wardrobe)) }' in screen
       and 'LaunchedEffect(wardrobe, occasion) { vm.rememberOccasion(wardrobe, occasion) }' in screen, 'the occasion is remembered per wardrobe')
