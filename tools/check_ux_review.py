@@ -30,8 +30,8 @@ check('removed = { go("__back") }' in ui, 'after deleting the screen goes back')
 editor = ui.split('fun EditItem(', 1)[1].split('\nfun OutfitList(', 1)[0]
 advanced = editor.split('if (advanced) {', 1)[1].split('if (validation && photo.isBlank())', 1)[0]
 check('Matching.seasons' not in advanced and 'Matching.styles' not in advanced, 'season and style are not under «Додаткові деталі»')
-check(editor.index('Choice(season, Matching.seasons') < editor.index('R.string.additional_details') and
-      editor.index('Choice(style, Matching.styles') < editor.index('R.string.additional_details') and 'R.string.item_season_style_hint' in editor,
+check(editor.index('ChipChoice(season, Matching.seasons') < editor.index('R.string.additional_details') and
+      editor.index('ChipChoice(style, Matching.styles') < editor.index('R.string.additional_details') and 'R.string.item_season_style_hint' in editor,
       'season and style are in the main form, with what they do')
 check('val effectiveName = ItemNameRules.effective(name, autoName)' in editor and editor.count('name = effectiveName') == 2, 'the saved name is the typed one or the suggestion')
 check('name.trim()' not in editor.split('fun saveItem', 1)[1].split('if (editingPhoto', 1)[0], 'no other name is saved')

@@ -1,3 +1,11 @@
+## Current handoff — UI-05 new-item form, 17 November 2026
+
+0.14.55-new-item/code 85, Room 11 and backup formats unchanged. Read docs/releases/NEW-ITEM-DESIGN-0.14.55.md. Stacked
+on PR #54 ⊃ #53; its PR targets main and contains them — merge the latest. EditItem: photo 260 dp, ChipChoice
+(ui/FormControls.kt) for season and style, «Зберегти й додати наступну» beside «Зберегти» at the bottom for a new
+item only. tools/check_new_item_design.py (43 host suites). All four approved screens are done (UI-02…05); open:
+device check, recolouring the canvas mockups, widget colours, fewer palettes (see LIGHT-PALETTES-0.14.51.md).
+
 ## Current handoff — UI-04 item page, 17 November 2026
 
 0.14.54-item-page/code 84, Room 11 and backup formats unchanged. Read docs/releases/ITEM-PAGE-0.14.54.md. Stacked on

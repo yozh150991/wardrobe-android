@@ -45,6 +45,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -730,7 +732,9 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
                     ItemPhoto(nextReviewPhoto, vm, Modifier.size(48.dp)); Text(stringResource(R.string.review_next_preview), Modifier.padding(start = 8.dp))
                 }
             }
-            ItemPhoto(photo, vm, Modifier.bringIntoViewRequester(photoView).fillMaxWidth().height(190.dp).clip(MaterialTheme.shapes.large), fit = true, garmentColour = color)
+            // UI-05: a larger photo on its own tile, as in the approved design.
+            ItemPhoto(photo, vm, Modifier.bringIntoViewRequester(photoView).fillMaxWidth().height(if (LocalConfiguration.current.screenHeightDp < 700) 200.dp else 260.dp)
+                .clip(RoundedCornerShape(24.dp)), fit = true, garmentColour = color)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, enabled = !busy && !hasPhotoSession, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
                     Icon(Icons.Outlined.PhotoLibrary, null); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.gallery)) }
@@ -770,8 +774,9 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
                 color = base; customColorId = custom
             }, enabled = !busy)
             // UX-08: season and style decide when the item is suggested (weather, occasion), so they are not "additional".
-            Choice(season, Matching.seasons, { season = it }, R.string.season, enabled = !busy)
-            Choice(style, Matching.styles, { style = it }, R.string.style, enabled = !busy)
+            // UI-05: few options, so every one is a chip on screen instead of a menu.
+            ChipChoice(season, Matching.seasons, { season = it }, R.string.season, enabled = !busy)
+            ChipChoice(style, Matching.styles, { style = it }, R.string.style, enabled = !busy)
             Text(stringResource(R.string.item_season_style_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             TextButton(onClick = { advanced = !advanced }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Text(stringResource(R.string.additional_details)); Icon(if (advanced) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, null) }
@@ -794,12 +799,24 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
                 TextButton(onClick = { if (dirty) confirmDefer = true else deferReview() }, enabled = !busy) { Text(stringResource(R.string.review_defer)) }
                 TextButton(onClick = reviewQueue, enabled = !busy) { Text(stringResource(R.string.review_queue)) }
             }
-            if (original == null && purchase == null && imported == null) TextButton(onClick = { saveItem(true) }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.save_add_next)) }
         }
         if (saveBlocker != null) Text(stringResource(saveBlocker), color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.bodySmall)
-        Button(onClick = { saveItem(imported != null) }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-            Text(stringResource(if (imported != null) R.string.review_save_next else if (purchase == null) R.string.save else R.string.purchase_confirm)) }
+        // UI-05: «Зберегти й додати ще» beside «Зберегти» at the bottom for a new item; they stack at a large font.
+        val addNextButton: @Composable (Modifier) -> Unit = { modifier ->
+            OutlinedButton(onClick = { saveItem(true) }, enabled = !busy, modifier = modifier.heightIn(min = 54.dp), shape = RoundedCornerShape(18.dp)) {
+                Text(stringResource(R.string.save_add_next), textAlign = TextAlign.Center) }
+        }
+        val saveButton: @Composable (Modifier) -> Unit = { modifier ->
+            Button(onClick = { saveItem(imported != null) }, enabled = !busy, modifier = modifier.heightIn(min = 54.dp), shape = RoundedCornerShape(18.dp)) {
+                Text(stringResource(if (imported != null) R.string.review_save_next else if (purchase == null) R.string.save else R.string.purchase_confirm),
+                    fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) }
+        }
+        val offerAddNext = original == null && purchase == null && imported == null
+        if (!offerAddNext) saveButton(Modifier.fillMaxWidth())
+        else if (LocalConfiguration.current.fontScale >= 1.3f) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            saveButton(Modifier.fillMaxWidth()); addNextButton(Modifier.fillMaxWidth())
+        } else Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { addNextButton(Modifier.weight(1f)); saveButton(Modifier.weight(1f)) }
     }
     if (confirmDefer) AlertDialog(onDismissRequest = { confirmDefer = false }, text = { Text(stringResource(R.string.review_defer_changes)) },
         confirmButton = { TextButton(onClick = { confirmDefer = false; deferReview() }) { Text(stringResource(R.string.review_defer)) } },
