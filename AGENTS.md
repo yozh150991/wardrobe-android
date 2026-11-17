@@ -1,3 +1,11 @@
+## Current handoff — UI-06 palette list and widget colours, 17 November 2026
+
+0.14.56-palette-tidy/code 86, Room 11 and backup formats unchanged. Read docs/releases/PALETTE-TIDY-0.14.56.md. Stacked
+on PR #55 ⊃ #54 ⊃ #53 — merge the latest. AppearanceScreen lists WardrobePalette.LIGHT, then the earlier palette in
+use (if any), the other 11 behind «Показати попередні палітри»; nothing is removed. Widget colours (values and
+values-night) are the LIGHT_OLIVE paper/ink/muted/primary/onPrimary tokens — tools/check_palette_tidy.py compares
+them with Theme.kt and checks contrast; change both together. The design canvas mockups are recoloured too.
+
 ## Current handoff — UI-05 new-item form, 17 November 2026
 
 0.14.55-new-item/code 85, Room 11 and backup formats unchanged. Read docs/releases/NEW-ITEM-DESIGN-0.14.55.md. Stacked
