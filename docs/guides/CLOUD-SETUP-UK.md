@@ -54,4 +54,9 @@
 
 З папки `cloud`: `deploy-rules.ps1` показує read-only план з project ID/bucket вашого наявного конфігу. Після `npm ci` і `npx firebase login` команда `deploy-rules.ps1 -Deploy` перевіряє наявність CLI-акаунта, запускає 6 локальних тестів і публікує лише правила Firestore/Storage в цей самий проєкт. Helper не створює баз, не вмикає provider і не змінює billing. У цій сесії read-only план пройшов, а deployment правильно заблокований відсутністю адміністративного входу.
 
+**Коли спільні гардероби вже працюють, `deploy-rules.ps1 -Deploy` не запускати.** Він розгортає `storage.rules` з
+`firebase.json`, а правила `familyWardrobes` є лише у `family-storage.rules`, тож доступ до спільних гардеробів може
+зламатися. Зміну лише правил Firestore розгортайте окремо: `npx firebase deploy --only firestore:rules --project
+<project>` або правкою в консолі, якщо там були власні зміни.
+
 Native CloudEmulatorTest відтворюйте тільки на окремому порожньому AVD за `SCENARIO-COVERAGE-0.11.1.md`. Без `firebaseEmulatorHost=10.0.2.2` п’ять тестів будуть пропущені.

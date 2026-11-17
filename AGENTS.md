@@ -124,7 +124,10 @@ Read TRIP-DETAILS-0.14.44.md. Stacked on UX-04 (PR #42 ⊃ … ⊃ #36, CI green
 contains them. Capsule gains city/latitude/longitude/occasion (MIGRATION_10_11, validTripDetails on save and
 restore). Backup.formatOf writes 11 only with details; encode(s, maximum) caps it. CloudHead.format (8–11); commit
 writes max(existing, archive) because the rules forbid lowering it. cloud/firestore.rules accept 11 — **the user
-deploys cloud/deploy-rules.ps1 before phones get 0.14.44**. Every family/server-bound encode passes
+deploys only the Firestore rule before phones get 0.14.44** (Console edit to `d.format in [8, 9, 10, 11]`, or
+`npx firebase deploy --only firestore:rules`). Never tell the user to run cloud/deploy-rules.ps1 once family
+sharing is live: without -Deploy it only prints a plan, with -Deploy it also deploys storage.rules, which has no
+familyWardrobes rules (those are only in family-storage.rules). Every family/server-bound encode passes
 FamilyRules.CONTENT_VERSION (10): trip details never reach shared wardrobes; schema.py and functions unchanged.
 WeatherController.cities/forecastFor serve the trip city (16 days, memory cache) without touching the daily city.
 Schema 11.json was written without an SDK; tools/room_identity.py recomputes Room's identityHash (it reproduces
