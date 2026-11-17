@@ -1520,4 +1520,7 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="item_stat_days">dni od noszenia</string>
     <string name="item_stat_outfits">w stylizacjach</string>
     <string name="item_about">O rzeczy</string>
+    <string name="appearance_current_older">Twoja wybrana paleta</string>
+    <string name="appearance_show_older">Pokaż wcześniejsze palety: %1$d</string>
+    <string name="appearance_hide_older">Ukryj wcześniejsze palety</string>
 </resources>

@@ -1520,4 +1520,7 @@
     <string name="item_stat_days">днів від носіння</string>
     <string name="item_stat_outfits">в образах</string>
     <string name="item_about">Про річ</string>
+    <string name="appearance_current_older">Ваша обрана палітра</string>
+    <string name="appearance_show_older">Показати попередні палітри: %1$d</string>
+    <string name="appearance_hide_older">Сховати попередні палітри</string>
 </resources>

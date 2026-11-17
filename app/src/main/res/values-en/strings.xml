@@ -1520,4 +1520,7 @@ Your current wardrobe is unchanged.</string>
     <string name="item_stat_days">days since worn</string>
     <string name="item_stat_outfits">in outfits</string>
     <string name="item_about">About the item</string>
+    <string name="appearance_current_older">Your chosen palette</string>
+    <string name="appearance_show_older">Show earlier palettes: %1$d</string>
+    <string name="appearance_hide_older">Hide earlier palettes</string>
 </resources>

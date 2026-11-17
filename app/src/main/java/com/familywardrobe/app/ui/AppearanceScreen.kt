@@ -11,8 +11,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,38 +58,51 @@ fun AppearanceScreen(vm: AppearanceViewModel, onBrowse: () -> Unit) {
             }
         }
         Text(stringResource(R.string.appearance_palette), style = MaterialTheme.typography.titleMedium)
-        Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            WardrobePalette.entries.forEach { palette ->
-                if (palette == WardrobePalette.LIGHT_OLIVE || palette == WardrobePalette.OLIVE_TERRA) {
-                    Text(stringResource(if (palette == WardrobePalette.LIGHT_OLIVE) R.string.appearance_group_light else R.string.appearance_group_rich),
-                        style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
-                }
-                if (palette == WardrobePalette.BLUE) {
-                    Text(stringResource(R.string.appearance_classic), style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(top = 12.dp))
-                }
-                key(palette) {
-                    val selected = settings.palette == palette
-                    val tokens = paletteTokens(palette, dark)
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().selectable(selected, role = Role.RadioButton, onClick = { vm.setPalette(palette) }),
-                        shape = MaterialTheme.shapes.medium,
-                        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)
-                    ) {
-                        Row(Modifier.heightIn(min = 72.dp).padding(12.dp), verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            RadioButton(selected = selected, onClick = null)
-                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(stringResource(palette.title), style = MaterialTheme.typography.titleMedium)
-                                Text(stringResource(palette.description), style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                PaletteSwatches(tokens)
-                            }
+        // UI-06: the four light palettes are the list; the eleven earlier ones fold away. One chosen earlier stays visible.
+        val older = WardrobePalette.entries.filter { it !in WardrobePalette.LIGHT }
+        val keptOlder = settings.palette.takeIf { it in older }
+        var showOlder by rememberSaveable { mutableStateOf(false) }
+        val option: @Composable (WardrobePalette) -> Unit = { palette ->
+            key(palette) {
+                val selected = settings.palette == palette
+                val tokens = paletteTokens(palette, dark)
+                Surface(
+                    modifier = Modifier.fillMaxWidth().selectable(selected, role = Role.RadioButton, onClick = { vm.setPalette(palette) }),
+                    shape = MaterialTheme.shapes.medium,
+                    color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)
+                ) {
+                    Row(Modifier.heightIn(min = 72.dp).padding(12.dp), verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        RadioButton(selected = selected, onClick = null)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(stringResource(palette.title), style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(palette.description), style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            PaletteSwatches(tokens)
                         }
                     }
                 }
             }
+        }
+        Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            WardrobePalette.LIGHT.forEach { option(it) }
+            if (keptOlder != null && !showOlder) {
+                Text(stringResource(R.string.appearance_current_older), style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 12.dp))
+                option(keptOlder)
+            }
+            if (showOlder) older.forEach { palette ->
+                if (palette == WardrobePalette.OLIVE_TERRA || palette == WardrobePalette.BLUE) {
+                    Text(stringResource(if (palette == WardrobePalette.OLIVE_TERRA) R.string.appearance_group_rich else R.string.appearance_classic),
+                        style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
+                }
+                option(palette)
+            }
+        }
+        TextButton(onClick = { showOlder = !showOlder }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            Text(if (showOlder) stringResource(R.string.appearance_hide_older) else stringResource(R.string.appearance_show_older, older.size))
+            Icon(if (showOlder) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, null)
         }
         if (failed) Surface(color = MaterialTheme.colorScheme.errorContainer, shape = MaterialTheme.shapes.medium) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
