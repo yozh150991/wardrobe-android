@@ -311,7 +311,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
     val title = when (route) {
         "reprocess" -> R.string.photo_reprocess_title
         "shop" -> R.string.shop_title
-        "capsuledaily" -> R.string.capsule_generate; "daily" -> R.string.daily_title; "calendar" -> R.string.calendar_title; "statistics" -> R.string.statistics_title
+        "capsuledaily" -> R.string.capsule_generate; "daily" -> R.string.today_tab; "catalog" -> R.string.catalog; "calendar" -> R.string.calendar_title; "statistics" -> R.string.statistics_title
         "capsules", "capsule" -> R.string.capsules_title; "compatibility" -> R.string.compatibility_title
         "batch" -> R.string.batch_title; "importedit" -> R.string.batch_review; "detail" -> R.string.item_details; "edit" -> if (buyingWishId.isNotBlank()) R.string.purchase_review else if (editId.isEmpty()) R.string.add_item else R.string.edit_item
         "look" -> if (lookSetup) R.string.look_setup else R.string.outfit_builder;
@@ -325,9 +325,8 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
             Column {
                 WardrobeTopBar(title, current, snapshot.wardrobes, nested, canNavigate,
                     back = ::back, select = { vm.select(it); go(if (route == "daily") "daily" else "catalog"); requestedCategory = "" },
-                    create = { newWardrobe = true }, manage = { go("manage") },
-                    statistics = if (route == "catalog") ({ go("statistics") }) else null,
-                    imports = if (route == "catalog") ({ go("batch") }) else null)
+                    // UI-03: the catalog shows statistics and imports on the screen itself, not under «⋮».
+                    create = { newWardrobe = true }, manage = { go("manage") })
                 if (incomingShares.isNotEmpty() && initialized) {
                     TextButton(onClick = { openShop(incomingShares.first().id) },
                         enabled = !busy && route !in setOf("edit", "importedit", "wishedit", "look", "shop"),

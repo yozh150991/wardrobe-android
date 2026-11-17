@@ -1509,4 +1509,9 @@ Your current wardrobe is unchanged.</string>
     <string name="today_note_rain">Outerwear for the rain</string>
     <string name="today_rotation_idle">Not worn for a while · days: %1$d</string>
     <string name="today_rotation_collapse">Collapse</string>
+    <string name="collection_all">All items</string>
+    <string name="catalog_in_wash">in the wash: %1$d</string>
+    <string name="catalog_more">More wardrobe actions</string>
+    <string name="catalog_search_clear">Clear search</string>
+    <string name="catalog_filters_active">Filters and sorting, on: %1$d</string>
 </resources>

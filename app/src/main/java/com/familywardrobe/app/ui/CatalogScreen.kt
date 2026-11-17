@@ -4,6 +4,7 @@ package com.familywardrobe.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -20,6 +21,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -33,6 +36,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -120,10 +124,16 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
         size.isNotEmpty() || location.isNotEmpty() || favorites
     fun resetFilters() { query = ""; category = ""; subcategory = ""; color = ""; season = ""; size = ""; location = ""; favorites = false }
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+    // UI-03: how many filters are on, so the button can say it; the sort counts once it is not the default.
+    val activeFilters = listOf(subcategory.isNotBlank(), color.isNotBlank(), season.isNotBlank(), size.isNotBlank(),
+        location.isNotBlank(), favorites, sort != "newest").count { it }
+    val inWash = found.count { !it.archived && it.availability == "laundry" }
+    var moreMenu by remember { mutableStateOf(false) }
+
+    Box(Modifier.fillMaxSize()) {
         LazyVerticalGrid(columns = if (largeText) GridCells.Adaptive(240.dp) else GridCells.Fixed(columns),
-            modifier = Modifier.weight(1f), contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), contentPadding = PaddingValues(top = 8.dp, bottom = 96.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item(key = "catalog_header", span = { GridItemSpan(maxLineSpan) }) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     // UX-09: «Що вдягнути сьогодні» lived here as a button; it is the first tab now.
@@ -143,28 +153,64 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
                             onNext = { if (nextCategory != null) onAdd(nextCategory) else onFirstOutfit() })
                     }
                     if (!newWardrobe) {
-                        TextButton(onClick = { selecting = !selecting; selectedIds = emptyList() }, enabled = !busy,
-                            modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(if (selecting) R.string.bulk_finish else R.string.bulk_select)) }
-                        if (selecting) {
-                            Text(stringResource(R.string.bulk_count, selectedIds.size))
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                TextButton(onClick = { selectedIds = found.map { it.id } }, enabled = !busy) { Text(stringResource(R.string.bulk_all)) }
-                                OutlinedButton(onClick = { bulkMenu = true }, enabled = !busy && selectedIds.isNotEmpty()) { Text(stringResource(R.string.bulk_actions)) }
+                        // UI-03: which items, how many, and the screen's tools in one row: selecting, statistics, «⋮».
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Box {
+                                    val currentTitle = when (collection) { "laundry" -> R.string.laundry; "archive" -> R.string.archive_collection; else -> R.string.collection_all }
+                                    TextButton(onClick = { collectionMenu = true }, enabled = !busy, contentPadding = PaddingValues(horizontal = 4.dp)) {
+                                        Text(stringResource(currentTitle), style = MaterialTheme.typography.titleSmall); Icon(Icons.Outlined.ArrowDropDown, null) }
+                                    DropdownMenu(collectionMenu, onDismissRequest = { collectionMenu = false }) {
+                                        listOf("wardrobe" to R.string.collection_all, "laundry" to R.string.laundry, "archive" to R.string.archive_collection).forEach { (code, title) ->
+                                            DropdownMenuItem(text = { Text(stringResource(title)) }, onClick = { collection = code; collectionMenu = false }) }
+                                    }
+                                }
+                                Text(stringResource(R.string.item_count, found.size) +
+                                    (if (collection == "wardrobe" && inWash > 0) " · " + stringResource(R.string.catalog_in_wash, inWash) else ""),
+                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 4.dp).semantics { liveRegion = LiveRegionMode.Polite })
+                            }
+                            ToolButton(if (selecting) Icons.Outlined.Done else Icons.Outlined.Checklist,
+                                stringResource(if (selecting) R.string.bulk_finish else R.string.bulk_select), !busy, selected = selecting) {
+                                selecting = !selecting; selectedIds = emptyList() }
+                            ToolButton(Icons.Outlined.BarChart, stringResource(R.string.statistics_title), !busy, onClick = onStatistics)
+                            Box {
+                                ToolButton(Icons.Outlined.MoreVert, stringResource(R.string.catalog_more), !busy) { moreMenu = true }
+                                DropdownMenu(moreMenu, onDismissRequest = { moreMenu = false }) {
+                                    DropdownMenuItem(text = { Text(stringResource(R.string.batch_title)) }, onClick = { moreMenu = false; onBatch() })
+                                    if (!largeText) DropdownMenuItem(text = { Text(stringResource(if (columns == 2) R.string.grid_three else R.string.grid_two)) },
+                                        leadingIcon = { Icon(if (columns == 2) Icons.Outlined.Apps else Icons.Outlined.GridView, null) },
+                                        onClick = { moreMenu = false; columns = if (columns == 2) 3 else 2 })
+                                }
                             }
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedTextField(query, { query = it }, modifier = Modifier.weight(1f), singleLine = true,
-                                placeholder = { Text(stringResource(R.string.catalog_search_hint)) },
-                                leadingIcon = { Icon(Icons.Outlined.Search, null) }, shape = MaterialTheme.shapes.medium,
-                                trailingIcon = {
-                                    IconButton(onClick = { filters = true }) {
-                                        BadgedBox(badge = { if (subcategory.isNotBlank() || color.isNotBlank() || season.isNotBlank() || size.isNotBlank() || location.isNotBlank() || favorites) Badge() }) {
-                                            Icon(Icons.Outlined.Tune, stringResource(R.string.filter)) }
-                                    }
-                                })
+                        if (selecting) FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp), itemVerticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(R.string.bulk_count, selectedIds.size), style = MaterialTheme.typography.bodyMedium)
+                            TextButton(onClick = { selectedIds = found.map { it.id } }, enabled = !busy) { Text(stringResource(R.string.bulk_all)) }
+                            Button(onClick = { bulkMenu = true }, enabled = !busy && selectedIds.isNotEmpty()) { Text(stringResource(R.string.bulk_actions)) }
                         }
-                        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        // UI-03: the search on a white field and the filters as a filled button with the number that are on.
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            TextField(query, { query = it }, modifier = Modifier.weight(1f), singleLine = true,
+                                placeholder = { Text(stringResource(R.string.catalog_search_hint)) },
+                                leadingIcon = { Icon(Icons.Outlined.Search, null) }, shape = RoundedCornerShape(16.dp),
+                                trailingIcon = if (query.isNotEmpty()) ({ IconButton(onClick = { query = "" }) {
+                                    Icon(Icons.Outlined.Close, stringResource(R.string.catalog_search_clear)) } }) else null,
+                                colors = TextFieldDefaults.colors(focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface, disabledContainerColor = MaterialTheme.colorScheme.surface,
+                                    focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent))
+                            val filterText = if (activeFilters > 0) stringResource(R.string.catalog_filters_active, activeFilters) else stringResource(R.string.filter)
+                            BadgedBox(badge = { if (activeFilters > 0) Badge(containerColor = MaterialTheme.colorScheme.secondary,
+                                contentColor = MaterialTheme.colorScheme.onSecondary) { Text("$activeFilters", Modifier.clearAndSetSemantics { }) } }) {
+                                FilledIconButton(onClick = { filters = true }, modifier = Modifier.size(56.dp), shape = RoundedCornerShape(16.dp)) {
+                                    Icon(Icons.Outlined.Tune, filterText) }
+                            }
+                        }
+                        // UI-03: categories in one row that scrolls sideways instead of wrapping.
+                        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically) {
                             CategoryChip(category.isEmpty(), stringResource(R.string.all)) { chooseCategory("") }
                             (owned.map { it.customCategoryId ?: it.category }.distinct().take(4) + listOf(category).filter { it.isNotBlank() }).distinct().forEach { c ->
                                 CategoryChip(category == c, categoryTitles[c] ?: c) { chooseCategory(c) }
@@ -175,23 +221,6 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
                                 allowAll = true, modifier = Modifier, showSelectedValue = false)
                         }
                         SubcategoryChoice(subcategory, subcategories, { subcategory = it })
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Box {
-                                val currentTitle = when (collection) { "laundry" -> R.string.laundry; "archive" -> R.string.archive_collection; else -> R.string.catalog }
-                                TextButton(onClick = { collectionMenu = true }, enabled = !busy) {
-                                    Text(stringResource(currentTitle)); Icon(Icons.Outlined.ArrowDropDown, null) }
-                                DropdownMenu(collectionMenu, onDismissRequest = { collectionMenu = false }) {
-                                    listOf("wardrobe" to R.string.catalog, "laundry" to R.string.laundry, "archive" to R.string.archive_collection).forEach { (code, title) ->
-                                        DropdownMenuItem(text = { Text(stringResource(title)) }, onClick = { collection = code; collectionMenu = false }) }
-                                }
-                            }
-                            Text(stringResource(R.string.item_count, found.size), style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Spacer(Modifier.weight(1f))
-                            if (!largeText) IconButton(onClick = { columns = if (columns == 2) 3 else 2 }) {
-                                Icon(if (columns == 2) Icons.Outlined.Apps else Icons.Outlined.GridView,
-                                    stringResource(if (columns == 2) R.string.grid_three else R.string.grid_two)) }
-                        }
                     }
                 }
             }
@@ -206,9 +235,11 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
                 }
             }
             items(found, key = { it.id }) { g ->
-                Box(Modifier.border(if (selecting && g.id in selectedIds) 2.dp else 0.dp,
-                    if (selecting && g.id in selectedIds) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface, MaterialTheme.shapes.medium)) {
-                    GarmentCard(g, vm, wearCounts[g.id] ?: 0, s.wears.any { it.garmentId == g.id && it.date == today }, largeText, categoryTitle = s.customCategory(g)?.name, selection = if (selecting) g.id in selectedIds else null, enabled = !selecting || !busy) {
+                val picked = selecting && g.id in selectedIds
+                Box(Modifier.border(if (picked) 3.dp else 0.dp, if (picked) MaterialTheme.colorScheme.primary else Color.Transparent, PhotoShape)) {
+                    GarmentCard(g, vm, wearCounts[g.id] ?: 0, s.wears.any { it.garmentId == g.id && it.date == today }, largeText,
+                        photoRatio = if (largeText || columns == 2) 0.9f else 0.8f, categoryTitle = s.customCategory(g)?.name,
+                        selection = if (selecting) g.id in selectedIds else null, enabled = !selecting || !busy) {
                         if (selecting) selectedIds = if (g.id in selectedIds) selectedIds - g.id else selectedIds + g.id else onOpen(g)
                     }
                     if (selecting) Checkbox(checked = g.id in selectedIds, enabled = !busy,
@@ -217,9 +248,13 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
                 }
             }
         }
-        Button(onClick = onAddMethods, enabled = !busy,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(bottom = 10.dp)) {
-            Icon(Icons.Outlined.Add, null); Spacer(Modifier.width(8.dp)); Text(stringResource(if (newWardrobe) R.string.add_first_item else R.string.add_item))
+        // UI-03: «Додати річ» floats over the grid at the bottom right; while choosing items it steps aside.
+        if (!selecting) Button(onClick = onAddMethods, enabled = !busy, shape = RoundedCornerShape(28.dp),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp, pressedElevation = 8.dp),
+            contentPadding = PaddingValues(start = 18.dp, end = 22.dp),
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp).heightIn(min = 56.dp)) {
+            Icon(Icons.Outlined.Add, null); Spacer(Modifier.width(8.dp))
+            Text(stringResource(if (newWardrobe) R.string.add_first_item else R.string.add_item), style = MaterialTheme.typography.titleSmall)
         }
     }
     if (bulkMenu) AlertDialog(onDismissRequest = { bulkMenu = false }, title = { Text(stringResource(R.string.bulk_count, selectedIds.size)) },
@@ -268,12 +303,28 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
         dismissButton = { TextButton(onClick = { resetFilters(); sort = "newest" }) { Text(stringResource(R.string.reset_filters)) } })
 }
 
+private val PhotoShape = RoundedCornerShape(22.dp)
+
+@Composable
+private fun ToolButton(icon: ImageVector, description: String, enabled: Boolean, selected: Boolean = false, onClick: () -> Unit) {
+    FilledIconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(48.dp),
+        colors = IconButtonDefaults.filledIconButtonColors(
+            containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+            contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)) {
+        Icon(icon, description, Modifier.size(22.dp))
+    }
+}
+
 @Composable
 private fun CategoryChip(selected: Boolean, title: String, click: () -> Unit) {
+    // UI-03: white chips on the background; the chosen one is dark, as in the approved design.
     FilterChip(selected, onClick = click, modifier = Modifier.heightIn(min = 48.dp),
-        shape = RoundedCornerShape(50), label = { Text(title) },
-        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary,
-            selectedLabelColor = MaterialTheme.colorScheme.onPrimary))
+        shape = RoundedCornerShape(50), border = null,
+        label = { Text(title, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium) },
+        colors = FilterChipDefaults.filterChipColors(containerColor = MaterialTheme.colorScheme.surface,
+            labelColor = MaterialTheme.colorScheme.onSurface,
+            selectedContainerColor = MaterialTheme.colorScheme.onSurface,
+            selectedLabelColor = MaterialTheme.colorScheme.surface))
 }
 
 @Composable
@@ -317,35 +368,38 @@ private fun FirstOutfitChecklist(ready: List<String>, required: List<String>, en
 }
 
 @Composable
-private fun GarmentCard(g: Garment, vm: WardrobeViewModel, wears: Int, wornToday: Boolean, largeText: Boolean, categoryTitle: String? = null, selection: Boolean? = null, enabled: Boolean = true, open: () -> Unit) {
-    Card(onClick = open, enabled = enabled, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.semantics { if (selection != null) { role = Role.Checkbox; toggleableState = if (selection) ToggleableState.On else ToggleableState.Off } }, shape = MaterialTheme.shapes.medium) {
-        Box(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium)) {
-            ZoomableItemPhoto(g.photoId, vm, Modifier.fillMaxWidth().aspectRatio(1.15f), title = g.name, enabled = enabled && selection == null, garmentColour = g.color)
-            FlowRow(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+private fun GarmentCard(g: Garment, vm: WardrobeViewModel, wears: Int, wornToday: Boolean, largeText: Boolean, photoRatio: Float = 0.9f, categoryTitle: String? = null, selection: Boolean? = null, enabled: Boolean = true, open: () -> Unit) {
+    // UI-03: the photo is the card: a rounded tile with the name and one line under it, no frame around them.
+    Card(onClick = open, enabled = enabled, colors = CardDefaults.cardColors(containerColor = Color.Transparent,
+            disabledContainerColor = Color.Transparent),
+        modifier = Modifier.semantics { if (selection != null) { role = Role.Checkbox; toggleableState = if (selection) ToggleableState.On else ToggleableState.Off } }, shape = PhotoShape) {
+        Box(Modifier.fillMaxWidth().clip(PhotoShape)) {
+            ZoomableItemPhoto(g.photoId, vm, Modifier.fillMaxWidth().aspectRatio(photoRatio), title = g.name, enabled = enabled && selection == null, garmentColour = g.color)
+            FlowRow(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (g.archived) PhotoBadge(R.string.archived)
                 else if (g.availability != "available") PhotoBadge(label(g.availability))
+                if (wornToday) PhotoBadge(R.string.wear)
             }
         }
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(g.name, maxLines = if (largeText) Int.MAX_VALUE else 2, overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                 if (g.favorite) Icon(Icons.Outlined.Favorite, stringResource(R.string.favorite), Modifier.size(18.dp))
             }
             Text("${categoryTitle ?: stringResource(label(g.category))} · ${stringResource(R.string.wear_count, wears)}",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (g.subcategory.isNotBlank()) Text(g.subcategory, style = MaterialTheme.typography.bodySmall)
-            if (wornToday) Text(stringResource(R.string.wear), style = MaterialTheme.typography.labelSmall)
+            if (g.subcategory.isNotBlank()) Text(g.subcategory, style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
 @Composable
 private fun PhotoBadge(title: Int) {
-    Text(stringResource(title), modifier = Modifier.background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.extraSmall)
-        .padding(horizontal = 6.dp, vertical = 4.dp), color = MaterialTheme.colorScheme.onSurface,
-        style = MaterialTheme.typography.labelSmall)
+    Text(stringResource(title), modifier = Modifier.background(MaterialTheme.colorScheme.surface, RoundedCornerShape(50))
+        .padding(horizontal = 10.dp, vertical = 5.dp), color = MaterialTheme.colorScheme.onSurface,
+        style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
 }
 
 @Composable

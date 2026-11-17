@@ -1509,4 +1509,9 @@
     <string name="today_note_rain">Верхній одяг на дощ</string>
     <string name="today_rotation_idle">Давно не вдягали · днів: %1$d</string>
     <string name="today_rotation_collapse">Згорнути</string>
+    <string name="collection_all">Усі речі</string>
+    <string name="catalog_in_wash">у пранні: %1$d</string>
+    <string name="catalog_more">Ще дії з гардеробом</string>
+    <string name="catalog_search_clear">Очистити пошук</string>
+    <string name="catalog_filters_active">Фільтри й сортування, увімкнено: %1$d</string>
 </resources>

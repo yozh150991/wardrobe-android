@@ -10,31 +10,46 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.familywardrobe.app.R
 import com.familywardrobe.app.Wardrobe
 
-/** Content-sized header: the wardrobe selector is the heading, including at 200% font scale. */
+/** Content-sized header: a tab shows its large title and the wardrobe pill (UI-03); a nested screen shows back and its title. */
 @Composable
 fun WardrobeTopBar(title: Int, current: Wardrobe?, wardrobes: List<Wardrobe>, nested: Boolean, enabled: Boolean,
     back: () -> Unit, select: (String) -> Unit, create: () -> Unit, manage: () -> Unit,
     statistics: (() -> Unit)? = null, imports: (() -> Unit)? = null) {
     var wardrobesOpen by remember { mutableStateOf(false) }
     var toolsOpen by remember { mutableStateOf(false) }
-    Surface(color = MaterialTheme.colorScheme.surface) {
-        Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (nested) {
-                IconButton(onClick = back, enabled = enabled) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back)) }
-                Text(stringResource(title), modifier = Modifier.weight(1f).padding(vertical = 8.dp), style = MaterialTheme.typography.titleLarge)
-            } else if (current != null) {
-                Box(Modifier.weight(1f)) {
-                    TextButton(onClick = { wardrobesOpen = true }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(stringResource(title), style = MaterialTheme.typography.labelMedium)
-                            Text(current.displayName(), style = MaterialTheme.typography.titleLarge)
+    val largeText = LocalConfiguration.current.fontScale >= 1.4f
+    // UI-03: a tab's header sits on the screen's own background, as in the approved design; nested screens keep a bar.
+    Surface(color = if (nested || current == null) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.background) {
+        if (nested) Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = back, enabled = enabled) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back)) }
+            Text(stringResource(title), modifier = Modifier.weight(1f).padding(vertical = 8.dp), style = MaterialTheme.typography.titleLarge)
+        } else if (current != null) {
+            // UI-03: a large title of the tab and the wardrobe as a pill on the right; at a large font they stack.
+            val titleText: @Composable (Modifier) -> Unit = { modifier ->
+                Text(stringResource(title), modifier = modifier.semantics { heading() },
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
+            }
+            val pill: @Composable () -> Unit = {
+                Box {
+                    Surface(onClick = { wardrobesOpen = true }, enabled = enabled, shape = RoundedCornerShape(50),
+                        color = MaterialTheme.colorScheme.surface, modifier = Modifier.heightIn(min = 48.dp).widthIn(max = if (largeText) 360.dp else 200.dp)) {
+                        Row(Modifier.padding(start = 16.dp, end = 10.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(current.displayName(), style = MaterialTheme.typography.titleSmall, maxLines = if (largeText) 3 else 1,
+                                overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                            Icon(Icons.Outlined.ExpandMore, null, Modifier.size(20.dp))
                         }
-                        Icon(Icons.Outlined.ArrowDropDown, null)
                     }
                     DropdownMenu(wardrobesOpen, onDismissRequest = { wardrobesOpen = false }) {
                         wardrobes.forEach { w -> DropdownMenuItem(text = { Text(w.displayName()) }, onClick = { wardrobesOpen = false; select(w.id) }) }
@@ -43,6 +58,8 @@ fun WardrobeTopBar(title: Int, current: Wardrobe?, wardrobes: List<Wardrobe>, ne
                         DropdownMenuItem(text = { Text(stringResource(R.string.manage_wardrobes)) }, onClick = { wardrobesOpen = false; manage() })
                     }
                 }
+            }
+            val tools: @Composable () -> Unit = {
                 if (statistics != null || imports != null) Box {
                     IconButton(onClick = { toolsOpen = true }, enabled = enabled) { Icon(Icons.Outlined.MoreVert, stringResource(R.string.shop_tools)) }
                     DropdownMenu(toolsOpen, onDismissRequest = { toolsOpen = false }) {
@@ -50,8 +67,18 @@ fun WardrobeTopBar(title: Int, current: Wardrobe?, wardrobes: List<Wardrobe>, ne
                         imports?.let { action -> DropdownMenuItem(text = { Text(stringResource(R.string.batch_title)) }, onClick = { toolsOpen = false; action() }) }
                     }
                 }
-            } else Text(stringResource(title), style = MaterialTheme.typography.titleLarge)
-        }
+            }
+            if (largeText) Column(Modifier.fillMaxWidth().statusBarsPadding().padding(start = 16.dp, end = 12.dp, top = 12.dp, bottom = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                titleText(Modifier.fillMaxWidth())
+                Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.weight(1f)) { pill() }; tools() }
+            } else Row(Modifier.fillMaxWidth().statusBarsPadding().padding(start = 16.dp, end = 12.dp, top = 12.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                titleText(Modifier.weight(1f))
+                pill(); tools()
+            }
+        } else Text(stringResource(title), modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 16.dp, vertical = 14.dp),
+            style = MaterialTheme.typography.titleLarge)
     }
 }
 
