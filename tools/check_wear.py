@@ -35,7 +35,7 @@ check('save = { beginSave(items, false, autoName) }, plan = { beginSave(items, t
       daily.count('OutlinedButton(onClick = { beginSave(rotationLook, ') == 2, 'saving and planning stay available as secondary actions')
 
 # Another day: the item's page and the calendar; never a future day.
-ui = read('ui/Ui.kt')
+ui = read('ui/Ui.kt') + read('ui/ItemPage.kt')
 check('DateChoiceDialog(today, { wearOtherDay = false }, latest = today)' in ui and 'vm.wearItems(g.wardrobeId, listOf(g), day)' in ui,
       'an earlier day can be marked from the item, only adding')
 check('if (day in dates) vm.wear(g, day)' in ui and 'R.string.wear_remove_day' in ui, 'a day recorded by mistake can be removed after a confirmation')

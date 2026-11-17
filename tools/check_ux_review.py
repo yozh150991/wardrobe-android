@@ -11,7 +11,7 @@ failures = []
 def check(condition, message):
     if not condition: failures.append(message)
 def read(name): return (source / name).read_text(encoding='utf-8')
-ui = read('ui/Ui.kt'); data = read('Data.kt'); catalog = read('ui/CatalogScreen.kt')
+ui = read('ui/Ui.kt'); data = read('Data.kt'); catalog = read('ui/CatalogScreen.kt'); item_page = read('ui/ItemPage.kt')
 
 # UX-07: removing an outfit keeps the wear history and the backup invariants (a wear's source must exist).
 body = data.split('suspend fun removeOutfit', 1)[1].split('suspend fun toggleItemWear', 1)[0]
@@ -47,12 +47,20 @@ check('R.string.daily_title' not in catalog and 'onDaily' not in catalog and 'on
 check('R.string.daily_title' not in ui.split('fun OutfitList(', 1)[1].split('fun SavedOutfit(', 1)[0], 'nor in the outfits list')
 
 # UX-10: the item page.
-detail = ui.split('fun Detail(', 1)[1].split('\nfun EditItem(', 1)[0]
-check('AssistChip(onClick = {}' not in ui, 'no chips that look like buttons and do nothing')
-order = [detail.index(x) for x in ('R.string.match', 'R.string.undo_wear else R.string.wear', 'R.string.mark_laundry', 'Info(R.string.size', 'R.string.wear_history_title',
-                                   'R.string.rules_exclude', 'R.string.restore_item else R.string.archive')]
-check(order == sorted(order), 'everyday actions, then facts and history, then rare decisions')
-check(detail.count('if (g.subcategory.isNotBlank())') == 1 and detail.index('g.subcategory') < detail.index('StatusLabel('), 'the subcategory sits under the name')
+# UI-04 (0.14.54) moved the page to ItemPage.kt: the everyday actions sit in the bar at the bottom (always on screen),
+# the rest of the everyday actions in a list above the facts, rare decisions under «⋮» of the photo.
+detail = item_page.split('fun Detail(', 1)[1].split('\nprivate fun RoundButton(', 1)[0]
+check('AssistChip(onClick = {}' not in ui + item_page, 'no chips that look like buttons and do nothing')
+page = detail.split('Column(Modifier.weight(1f).verticalScroll', 1)[1]
+menu = page.split('DropdownMenu(moreMenu', 1)[1].split('Column(Modifier.padding(start = 16.dp', 1)[0]
+body = page.split('Column(Modifier.padding(start = 16.dp', 1)[1].split('// UI-04: «Вдягнув сьогодні»', 1)[0]
+bar = page.split('// UI-04: «Вдягнув сьогодні»', 1)[1]
+check('R.string.match' in bar and 'R.string.undo_wear else R.string.wear' in bar, 'outfit and wear today are in the bar at the bottom')
+order = [body.index(x) for x in ('R.string.wear_other_day', 'R.string.mark_laundry', 'Info(R.string.size', 'R.string.wear_history_title')]
+check(order == sorted(order), 'everyday actions, then facts and history')
+check('R.string.rules_exclude' in menu and 'R.string.restore_item else R.string.archive' in menu and 'R.string.item_delete' in menu,
+      'rare decisions are under «⋮»')
+check('g.subcategory.takeIf { it.isNotBlank() }' in body and body.index('g.subcategory') < body.index('ItemLabel('), 'the subcategory sits under the name')
 
 # UX-13 (0.14.48): one style for several items, with undo. UX-14: preferences and weather are in Settings too.
 ops = read('data/ImportOperations.kt')
@@ -70,7 +78,7 @@ check('require(ItemRemovalRules.blocker(dao.allWears().count { it.garmentId == i
 check(removal.index('dao.deleteCapsuleItem(it.capsuleId, id)') < removal.index('dao.deleteGarment(id)') and
       removal.index('dao.deleteFeedback(it.id)') < removal.index('dao.deleteGarment(id)'), 'capsule rows and reactions go before the item')
 check('photos?.remove(setOf(photo) - referencedPhotos())' in removal and removal.index('photos?.remove') > removal.index('db.withTransaction'), 'the photo only after the commit, when unused')
-detail_all = ui.split('fun Detail(', 1)[1].split('\nfun EditItem(', 1)[0]
+detail_all = detail
 check('ItemRemovalRules.blocker(s.wears.count { it.garmentId == g.id }, outfitCount, s.wishes.any { it.ownedId == g.id })' in detail_all, 'the page uses the same rule')
 check('if (deleteBlocker == null) AlertDialog' in detail_all and 'vm.removeItem(g.id, removed)' in detail_all and 'R.string.item_delete_hint' in detail_all, 'deleting asks first')
 check('vm.changeAvailability(g, archived = true)' in detail_all.split('else AlertDialog', 1)[1], 'a used item is offered the archive instead')
@@ -87,7 +95,7 @@ for folder in ('values', 'values-uk', 'values-en', 'values-pl'):
         check(bool(strings.get(key, '').strip()), f'{folder}: {key} missing')
         found = sorted(re.findall(r'%\d\$[sd]', strings.get(key, '')))
         check(placeholders.setdefault(key, found) == found, f'{folder}: {key} placeholders {found} differ')
-for key in STRINGS: check(f'R.string.{key}' in ui + catalog, f'{key} is used')
+for key in STRINGS: check(f'R.string.{key}' in ui + catalog + item_page, f'{key} is used')
 if failures: raise SystemExit('FAIL UX review:\n' + '\n'.join(failures))
 
 java = shutil.which('java') or 'java'

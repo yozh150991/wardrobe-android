@@ -1,3 +1,13 @@
+## Current handoff — UI-04 item page, 17 November 2026
+
+0.14.54-item-page/code 84, Room 11 and backup formats unchanged. Read docs/releases/ITEM-PAGE-0.14.54.md. Stacked on
+PR #53 (0.14.53); its PR targets main and contains it — merge the latest. `Detail` now lives in ui/ItemPage.kt
+(Ui.kt hides WardrobeTopBar only for route "detail" with an item and passes onBack). Photo header with RoundButtons
+(back always enabled, share via PhotoExportDialog, edit, «⋮» = exclude/archive/delete), ItemLabels, three StatTiles,
+ActionRows (another day, laundry), «Про річ» facts and wear history, a bottom bar (wear today, build an outfit).
+tools/check_item_page.py guards every earlier action (42 host suites); check_ux_review/check_wear/check_recent_wears
+read ItemPage.kt. No device was used. Next: the new-item form (last screen of the design).
+
 ## Current handoff — UI-03 «Гардероб» and the tab header, 17 November 2026
 
 0.14.53-catalog-design/code 83, Room 11 and backup formats unchanged. Read docs/releases/CATALOG-DESIGN-0.14.53.md.
