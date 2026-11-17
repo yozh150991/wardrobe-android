@@ -1504,4 +1504,9 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="palette_sky_hint">Lekko błękitne tło, niebieskie przyciski i koralowy akcent</string>
     <string name="palette_lilac">Liliowa</string>
     <string name="palette_lilac_hint">Lekko liliowe tło, fioletowe przyciski i turkusowy akcent</string>
+    <string name="today_other">Inny</string>
+    <string name="today_variant_position">Wariant %1$d z %2$d</string>
+    <string name="today_note_rain">Okrycie na deszcz</string>
+    <string name="today_rotation_idle">Dawno nienoszone · dni: %1$d</string>
+    <string name="today_rotation_collapse">Zwiń</string>
 </resources>

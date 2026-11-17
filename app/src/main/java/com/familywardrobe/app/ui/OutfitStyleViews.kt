@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.*
@@ -113,6 +114,96 @@ internal fun OutfitGrid(items: List<Garment>, vm: WardrobeViewModel, locks: Set<
             }
         }
     }
+}
+
+/**
+ * UI-02: the outfit as one picture — the first piece large, the others beside it (in two columns from five pieces).
+ * A tap opens the item's actions; pinned items show a lock. Names are read aloud, not printed.
+ */
+@Composable
+internal fun OutfitCollage(items: List<Garment>, vm: WardrobeViewModel, locks: Set<String>, enabled: Boolean, height: Dp = 298.dp,
+    onSelect: (Garment) -> Unit) {
+    val sorted = items.sortedBy { Matching.categories.indexOf(it.category).let { i -> if (i < 0) Int.MAX_VALUE else i } }
+    if (sorted.isEmpty()) return
+    val lead = sorted.first()
+    val rest = sorted.drop(1)
+    val columns = if (rest.size > 3) 2 else 1
+    Row(Modifier.fillMaxWidth().height(height), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        CollageTile(lead, vm, lead.id in locks, enabled, Modifier.weight(if (columns == 1) 2f else 1f).fillMaxHeight(), onSelect)
+        if (rest.isNotEmpty()) Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            rest.chunked(columns).forEach { row ->
+                Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    row.forEach { g -> CollageTile(g, vm, g.id in locks, enabled, Modifier.weight(1f).fillMaxHeight(), onSelect) }
+                    repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CollageTile(g: Garment, vm: WardrobeViewModel, locked: Boolean, enabled: Boolean, modifier: Modifier, onSelect: (Garment) -> Unit) {
+    val lockedText = stringResource(R.string.look_locked)
+    Box(modifier.clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
+        .clickable(enabled = enabled, role = Role.Button) { onSelect(g) }
+        .semantics(mergeDescendants = true) { if (locked) contentDescription = "${g.name}, $lockedText" }) {
+        ItemPhoto(g.photoId, vm, Modifier.fillMaxSize(), description = g.name, garmentColour = g.color)
+        if (locked) Icon(Icons.Outlined.Lock, contentDescription = null, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).size(18.dp))
+    }
+}
+
+/** UI-02: the score on the outfit's picture — «9 / 10» on the accent colour, read aloud with its label. */
+@Composable
+internal fun ScorePill(rating: StyleRules.Rating, modifier: Modifier = Modifier) {
+    val description = stringResource(R.string.style_score_description, rating.score, stringResource(labelText(rating.label())))
+    Row(modifier.clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.primary).padding(horizontal = 10.dp, vertical = 6.dp)
+        .clearAndSetSemantics { contentDescription = description },
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text("${rating.score}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+        Text("/ 10", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onPrimary)
+    }
+}
+
+/** UI-02: a short note on the outfit's picture, e.g. that outerwear was added for the rain. */
+@Composable
+internal fun PhotoNote(text: String, modifier: Modifier = Modifier) {
+    Row(modifier.clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.surface).padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(Icons.Outlined.Cloud, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurface)
+        Text(text, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1,
+            overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** UI-02: which variant is on screen: a long dot for it, short ones for the others; read aloud as «Варіант 1 із 3». */
+@Composable
+internal fun PagerDots(count: Int, current: Int, description: String) {
+    val active = MaterialTheme.colorScheme.primary
+    val idle = MaterialTheme.colorScheme.outlineVariant
+    Row(Modifier.clearAndSetSemantics { contentDescription = description }, horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        repeat(count) { i ->
+            Box(Modifier.width(if (i == current) 18.dp else 6.dp).height(6.dp).clip(RoundedCornerShape(3.dp)).background(if (i == current) active else idle))
+        }
+    }
+}
+
+/** UI-02: the outfit's main colour pair as its title («Білий + темно-синій»); empty when the colours are not rated. */
+@Composable
+internal fun styleTitle(rating: StyleRules.Rating): String {
+    if (rating.pair.isEmpty() || rating.pairA.isEmpty() || rating.pairB.isEmpty()) return ""
+    val locale = uiLocale()
+    val second = stringResource(label(rating.pairB))
+    return stringResource(label(rating.pairA)) + " + " + second.replaceFirstChar { it.lowercase(locale) }
+}
+
+/** UI-02: one line under the title — why the colours work, or the style; the full list opens under «Чому така оцінка». */
+@Composable
+internal fun styleSummary(rating: StyleRules.Rating): String {
+    val locale = uiLocale()
+    val style = stringResource(R.string.style_one_style, stringResource(label(rating.dominant)))
+    val pair = stringResource(pairText(rating.pair))
+    return if (rating.pair.isEmpty()) style else pair.replaceFirstChar { it.titlecase(locale) }
 }
 
 private fun pairText(code: String): Int = when (code) {

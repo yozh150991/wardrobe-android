@@ -16,6 +16,12 @@ fun dateLabel(iso: String): String {
     val locale = uiLocale()
     return runCatching { LocalDate.parse(iso).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)) }.getOrDefault(iso)
 }
+/** UI-02: «неділя, 15 листопада» — the day as «Сьогодні» shows it under the tab's title. */
+@Composable
+fun dayLabel(iso: String): String {
+    val locale = uiLocale()
+    return runCatching { LocalDate.parse(iso).format(DateTimeFormatter.ofPattern("EEEE, d MMMM", locale)) }.getOrDefault(iso)
+}
 @Composable
 fun timestampLabel(millis: Long): String = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withLocale(uiLocale())
     .format(Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()))

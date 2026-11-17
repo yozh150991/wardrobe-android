@@ -25,12 +25,14 @@ check('require(date == null || RoadmapRules.validDate(date) && date <= today)' i
 
 # Daily: one tap on a variant and on «Давно не вдягали»; the card of what was worn; an exact undo.
 daily = read('ui/DailyScreen.kt')
-check(daily.count('Button(onClick = { wearNow(') == 2, '«Вдягаю сьогодні» on the variants and on the rotation card')
+check(daily.count('Button(onClick = { wearNow(') == 2, '«Вдягаю сьогодні» on the variant and on the rotation card')
 check('fun wearNow(items: List<Garment>) = vm.wearItems(wardrobe, items, today)' in daily, 'the variant is worn today, without saving an outfit')
 check('if (wornToday.isNotEmpty()) item(key = "worn-today")' in daily and 'R.string.wear_today_title' in daily, 'the screen shows what was worn today')
 check('val undo = wornAdded.filter { id -> wornToday.any { it.id == id } }' in daily and 'vm.undoWears(wardrobe, undo, today)' in daily,
       'the undo covers only what the last tap added')
-check(daily.count('OutlinedButton(onClick = { beginSave(') == 4, 'saving and planning stay available as secondary actions')
+# UI-02: the variant's saving and planning are in its row of secondary actions; the rotation card keeps its two buttons.
+check('save = { beginSave(items, false, autoName) }, plan = { beginSave(items, true, autoName) }' in daily and
+      daily.count('OutlinedButton(onClick = { beginSave(rotationLook, ') == 2, 'saving and planning stay available as secondary actions')
 
 # Another day: the item's page and the calendar; never a future day.
 ui = read('ui/Ui.kt')

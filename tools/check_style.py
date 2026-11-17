@@ -26,10 +26,12 @@ for colour in re.findall(r'"(\w+)"', colours):
 
 daily = (source / 'ui/DailyScreen.kt').read_text()
 check('OutfitComposition(' not in daily, 'Daily cards use the tile grid (STYLE-03)')
-check(daily.count('ScoreBadge(rating)') == 2 and daily.count('StyleReasons(rating') == 2 and
-      # The third grid is WEAR-01's «Сьогодні вдягнено» card (no score: it is a record, not a suggestion).
-      daily.count('OutfitGrid(') == 3 and 'OutfitGrid(wornToday, vm, emptySet(), !busy)' in daily,
-      'variants and «Давно не вдягали» both show the score, the reasons and the grid')
+# UI-02: the variant on screen is one picture with the score on it; «Давно не вдягали» keeps the badge and the grid.
+check(daily.count('ScorePill(rating') == 1 and daily.count('ScoreBadge(rating)') == 1 and daily.count('StyleReasons(rating') == 2 and
+      daily.count('OutfitCollage(') == 1 and
+      # The second grid is WEAR-01's «Сьогодні вдягнено» card (no score: it is a record, not a suggestion).
+      daily.count('OutfitGrid(') == 2 and 'OutfitGrid(wornToday, vm, emptySet(), !busy)' in daily,
+      'the variant and «Давно не вдягали» both show the score, the reasons and the items')
 check('withContext(Dispatchers.Default) {\n            buildMap {' in daily, '«Краще» is computed off the UI thread')
 check('pins + anchorId' in daily, 'the item of «Давно не вдягали» is never swapped away')
 check('LookRules.OCCASIONS.forEach { code ->' in daily and 'occasion = code' in daily, 'the occasion chip picks the occasion')
@@ -74,8 +76,8 @@ for code in re.findall(r'public static final String (\w+) = "\w+";', rules.split
 # UX-03: variants first, the explanation on request, «Давно не вдягали» after the variants unless an item was chosen.
 check("var why by rememberSaveable(index) { mutableStateOf(false) }" in daily and "if (why) StyleReasons(rating, items, weather, target, choices)" in daily,
       'the score explanation opens on request')
-check(daily.index('itemsIndexed(looks') < daily.index('        if (anchor.isEmpty()) rotationBlock()') and
-      daily.index('        if (anchor.isNotEmpty()) rotationBlock()') < daily.index('itemsIndexed(looks'),
+check(daily.index('item(key = "variant")') < daily.index('        if (anchor.isEmpty()) rotationBlock()') and
+      daily.index('        if (anchor.isNotEmpty()) rotationBlock()') < daily.index('item(key = "variant")'),
       '«Давно не вдягали» follows the variants, unless an item was chosen in the statistics')
 if failures:
     raise SystemExit('FAIL style:\n' + '\n'.join(failures))

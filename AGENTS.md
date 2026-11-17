@@ -1,3 +1,17 @@
+## Current handoff — UI-02 «Сьогодні» by the new design, 15 November 2026
+
+0.14.52-today-design/code 82, Room 11 and backup formats unchanged. Read docs/releases/TODAY-DESIGN-0.14.52.md.
+PRs #44–#51 are merged; this branch is from main. DailyScreen shows one variant at a time (`page`, PagerDots, a
+swipe, «Інший» → next variant, then `otherVariants()`); OutfitCollage + ScorePill replace the tile grid on the
+variant; VariantActions holds save / plan / «Не підходить…»; RotationRow is the compact «Давно не вдягали» and
+opens the earlier card. Every earlier action is kept — tools/check_today_design.py guards that (40 host suites).
+No UI tests cover this screen and no device was used. Next in UI-02: the shared top bar (large title, wardrobe
+pill) with «Каталог», then the item page and the new-item form — one screen per PR.
+**Lesson from merging #44–#51:** the Git Safety audit walks every branch. When a file listed in
+tools/git_safety_allowlist.json changes, older commits fail the audit while the newer branch exists, so merge the
+last PR of such a stack, not the PRs one by one. Do not push a branch at a commit that already has a PR and then
+add a commit a minute later: the cancelled run shows up as failing checks on the older PR.
+
 ## Current handoff — UI-01 light palettes, 15 November 2026
 
 0.14.51-light-palettes/code 81. Read docs/releases/LIGHT-PALETTES-0.14.51.md. Feedback said the colours were too
