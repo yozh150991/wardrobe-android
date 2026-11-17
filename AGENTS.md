@@ -1,3 +1,13 @@
+## Current handoff — UI-03 «Гардероб» and the tab header, 17 November 2026
+
+0.14.53-catalog-design/code 83, Room 11 and backup formats unchanged. Read docs/releases/CATALOG-DESIGN-0.14.53.md.
+PR #52 is merged; this branch is from main. WardrobeTopBar gives every tab a large heading and the wardrobe as a pill
+(same menu; stacked at font ≥1.4); nested screens are unchanged. CatalogScreen: collection + count row with
+ToolButtons (select, statistics, «⋮» = batch import + columns), a search field with clear, a filled filter button
+with the number of filters on (sort counts), one scrolling row of category chips, frameless photo cards, a floating
+«Додати річ» (hidden while selecting; the grid has 96 dp bottom padding). tools/check_catalog_design.py guards it
+(41 host suites). No device was used. Next in UI-02/03: the item page, then the new-item form.
+
 ## Current handoff — UI-02 «Сьогодні» by the new design, 15 November 2026
 
 0.14.52-today-design/code 82, Room 11 and backup formats unchanged. Read docs/releases/TODAY-DESIGN-0.14.52.md.

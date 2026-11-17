@@ -1509,4 +1509,9 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="today_note_rain">Okrycie na deszcz</string>
     <string name="today_rotation_idle">Dawno nienoszone · dni: %1$d</string>
     <string name="today_rotation_collapse">Zwiń</string>
+    <string name="collection_all">Wszystkie rzeczy</string>
+    <string name="catalog_in_wash">w praniu: %1$d</string>
+    <string name="catalog_more">Więcej działań z garderobą</string>
+    <string name="catalog_search_clear">Wyczyść wyszukiwanie</string>
+    <string name="catalog_filters_active">Filtry i sortowanie, włączone: %1$d</string>
 </resources>
