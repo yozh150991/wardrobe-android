@@ -1,3 +1,14 @@
+## Current handoff — TREND-01 seasonal trends, 20 November 2026
+
+0.14.57-trends/code 87, Room 11 and backup formats unchanged. Read docs/releases/TRENDS-0.14.57.md. Branched from main
+after PR #57. TrendRules.java holds a hand-kept journal (pairs + colours of the season) from screenshots the user sends
+of posts they liked; there is no expiry. A trend pair adds +1 to the pair's colour points in the generator only, never
+above the top tier (4); a colour of the season adds +2 per item under the same bonus cap, never for an avoided colour.
+pairScore (manual building) and the 0–10 rating stay the sourced table. PersonalChoices.trends is on when read from the
+store unless `pref.trends.<wardrobe>` = off, and off for choices built in code (tests). **Updating the journal:** change
+TrendRules.PAIRS/COLOURS/UPDATED, the table in TRENDS-0.14.57.md (tools/check_trends.py compares them), the pair count in
+TrendRulesCases, and bump the version. Every host tool compiling DailyRules must also compile TrendRules.java.
+
 ## Current handoff — UI-06 palette list and widget colours, 17 November 2026
 
 0.14.56-palette-tidy/code 86, Room 11 and backup formats unchanged. Read docs/releases/PALETTE-TIDY-0.14.56.md. Stacked

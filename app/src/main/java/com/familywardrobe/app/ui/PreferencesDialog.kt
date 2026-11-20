@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
@@ -25,6 +26,7 @@ import com.familywardrobe.app.outfits.LookRules
 import com.familywardrobe.app.rules.PreferenceProfile
 import com.familywardrobe.app.rules.PreferenceRules
 import com.familywardrobe.app.rules.RotationRules
+import com.familywardrobe.app.rules.TrendRules
 
 /**
  * PERS-02: everything that shapes the daily suggestions for [wardrobe], with where it comes from. Each preference can
@@ -45,7 +47,7 @@ internal fun PreferencesDialog(s: Snapshot, wardrobe: String, vm: WardrobeViewMo
     val uncomfortable = feedback.filter { !it.signature.contains('|') && it.reason == PreferenceRules.DISLIKE }
     val hidden = feedback.filter { it.signature.contains('|') }
     val warmth = DailyOutfits.warmth(s, wardrobe, choices)
-    val empty = feedback.isEmpty() && choices == PersonalChoices() && rotation.frequency == RotationRules.DAILY && postponed.isEmpty()
+    val empty = feedback.isEmpty() && choices == PersonalChoices(trends = true) && rotation.frequency == RotationRules.DAILY && postponed.isEmpty()
     Dialog(onDismissRequest = dismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -98,6 +100,17 @@ internal fun PreferencesDialog(s: Snapshot, wardrobe: String, vm: WardrobeViewMo
                             PaletteChoice(stringResource(R.string.prefs_colours_avoided), choices, PersonalChoices.AVOIDED, !busy) { colour, value ->
                                 vm.setPaletteColour(wardrobe, colour, value)
                             }
+                        }
+                    }
+                    // TREND-01: pairs and colours of the season from the posts the person picked; on unless switched off.
+                    item {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(stringResource(R.string.prefs_trends_title), style = MaterialTheme.typography.titleMedium)
+                                Text(stringResource(R.string.prefs_trends_hint, TrendRules.COLOURS.map { stringResource(label(it)) }.joinToString(", ")),
+                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Switch(checked = choices.trends, onCheckedChange = { vm.setTrends(wardrobe, it) }, enabled = !busy)
                         }
                     }
                     item { Text(stringResource(R.string.prefs_uncomfortable_title, uncomfortable.size), style = MaterialTheme.typography.titleMedium) }

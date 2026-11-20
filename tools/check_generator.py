@@ -29,7 +29,7 @@ if 'private val scorer = WardrobeRules.Scorer { a, b -> DailyRules.pairScore(a, 
     failures.append('manual building uses the sourced colour table (STYLE-04)')
 if failures: raise SystemExit('FAIL generator:\n' + '\n'.join(failures))
 with tempfile.TemporaryDirectory(prefix='wardrobe-generator-') as output:
-    files = [source / name for name in ('rules/WardrobeRules.java', 'rules/DailyRules.java', 'rules/PreferenceRules.java', 'rules/PreferenceProfile.java', 'rules/StyleRules.java', 'rules/WeatherRules.java')]
+    files = [source / name for name in ('rules/WardrobeRules.java', 'rules/DailyRules.java', 'rules/PreferenceRules.java', 'rules/PreferenceProfile.java', 'rules/StyleRules.java', 'rules/TrendRules.java', 'rules/WeatherRules.java')]
     files.append(root / 'app/src/test/java/com/familywardrobe/app/rules/GeneratorRulesCases.java')
     subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, *map(str, files)], check=True)
     subprocess.run([java, '-cp', output, 'com.familywardrobe.app.rules.GeneratorRulesCases'], check=True)

@@ -79,15 +79,17 @@ class PreferencePersistenceTest {
         val second = AccountContext(context, AccountLocation(AuthRules.accountKey("tests", "second-${newId()}"), false))
         try {
             val store = PersonalChoiceStore(first)
-            assertEquals(PersonalChoices(), store.read("home"))
+            // TREND-01: read from the store, «Сезонні тренди» are on until switched off.
+            val fresh = PersonalChoices(trends = true)
+            assertEquals(fresh, store.read("home"))
             store.setStyle("home", "work", "casual"); store.setWarmth("home", "lighter")
             val before = store.revision.value
             store.setStyle("home", "everyday", "formal")
             assertTrue(store.revision.value > before)
             // A new store (as after a restart) reads the same choices.
-            assertEquals(PersonalChoices(mapOf("work" to "casual", "everyday" to "formal"), "lighter"), PersonalChoiceStore(first).read("home"))
-            assertEquals(PersonalChoices(), PersonalChoiceStore(first).read("child"))
-            assertEquals(PersonalChoices(), PersonalChoiceStore(second).read("home"))
+            assertEquals(PersonalChoices(mapOf("work" to "casual", "everyday" to "formal"), "lighter", trends = true), PersonalChoiceStore(first).read("home"))
+            assertEquals(fresh, PersonalChoiceStore(first).read("child"))
+            assertEquals(fresh, PersonalChoiceStore(second).read("home"))
             store.setStyle("home", "work", PreferenceProfile.AUTO)
             assertEquals(PreferenceProfile.AUTO, store.read("home").style("work"))
             try { store.setStyle("home", "work", "pyjamas"); fail("Unknown style") } catch (_: IllegalArgumentException) { }
@@ -96,7 +98,7 @@ class PreferencePersistenceTest {
             store.setPalette("home", "orange", PersonalChoices.AVOIDED)
             assertEquals(setOf("navy"), PersonalChoiceStore(first).read("home").liked)
             assertEquals(setOf("orange"), PersonalChoiceStore(first).read("home").avoided)
-            assertEquals(PersonalChoices(), PersonalChoiceStore(first).read("child"))
+            assertEquals(fresh, PersonalChoiceStore(first).read("child"))
             assertTrue(PersonalChoiceStore(second).read("home").liked.isEmpty())
             store.setPalette("home", "navy", PersonalChoices.NONE)
             assertTrue(store.read("home").liked.isEmpty())
@@ -108,8 +110,12 @@ class PreferencePersistenceTest {
             assertEquals("work", PersonalChoiceStore(first).lastOccasion("home"))
             assertEquals("everyday", PersonalChoiceStore(first).lastOccasion("child")); assertEquals("everyday", PersonalChoiceStore(second).lastOccasion("home"))
             try { store.rememberOccasion("home", "party"); fail("Unknown occasion") } catch (_: IllegalArgumentException) { }
+            // TREND-01: the switch is per wardrobe and account; a reset turns trends back on.
+            store.setTrends("home", false)
+            assertFalse(PersonalChoiceStore(first).read("home").trends)
+            assertTrue(PersonalChoiceStore(first).read("child").trends); assertTrue(PersonalChoiceStore(second).read("home").trends)
             store.clear("home")
-            assertEquals(PersonalChoices(), PersonalChoiceStore(first).read("home"))
+            assertEquals(fresh, PersonalChoiceStore(first).read("home"))
             assertEquals("work", PersonalChoiceStore(first).lastOccasion("home"))
         } finally {
             listOf(first, second).forEach { context.deleteSharedPreferences("account-${it.location.key}-preferences") }

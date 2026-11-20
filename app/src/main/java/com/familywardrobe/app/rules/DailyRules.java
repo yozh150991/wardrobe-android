@@ -61,6 +61,11 @@ public final class DailyRules {
     public static int pairScore(WardrobeRules.Piece a, WardrobeRules.Piece b) {
         return StyleRules.pairPoints(StyleRules.pair(a.color, b.color)) + (a.style.equals(b.style) ? 4 : 0);
     }
+    /** TREND-01: what a trend pair adds to [pairScore] in the generator; 0 when [trends] does not list the two colours. */
+    static int trendScore(WardrobeRules.Piece a, WardrobeRules.Piece b, Set<String> trends) {
+        if (trends.isEmpty() || a.color.equals(b.color) || !trends.contains(TrendRules.key(a.color, b.color))) return 0;
+        return TrendRules.pairBonus(StyleRules.pairPoints(StyleRules.pair(a.color, b.color)));
+    }
     /** The item season that suits [weather]; "all" fits every season. */
     public static String season(String weather) {
         return weather.equals("warm") ? "summer" : weather.equals("cold") ? "winter" :
@@ -85,7 +90,8 @@ public final class DailyRules {
         return generate(items, wardrobe, occasion, weather, date, seed, rejected, fixed, limit, penalty, targetStyle, Collections.emptyMap());
     }
     /**
-     * [bonus]: score added per item ID (PERS-03 liked colours, see PreferenceProfile), at most
+     * [bonus]: score added per item ID (PERS-03 liked colours, see PreferenceProfile; TREND-01 colours of the season,
+     * see TrendRules), at most
      * {@link PreferenceProfile#PALETTE_LIKED}; like a penalty it never decides on its own whether an item can be used.
      */
     public static List<List<String>> generate(List<Item> items, String wardrobe, String occasion, String weather,
@@ -118,6 +124,16 @@ public final class DailyRules {
     public static List<List<String>> generate(List<Item> items, String wardrobe, String occasion, String weather,
             String date, String seed, Set<String> rejected, Map<String, String> fixed, int limit, Map<String, Integer> penalty,
             String targetStyle, Map<String, Integer> bonus, Double temperature) {
+        return generate(items, wardrobe, occasion, weather, date, seed, rejected, fixed, limit, penalty, targetStyle, bonus, temperature,
+            Collections.emptySet());
+    }
+    /**
+     * [trends]: TREND-01 (0.14.57) colour pairs of the season as {@link TrendRules#key} values, empty when the person
+     * switched trends off. Such a pair counts {@link TrendRules#pairBonus} more — one tier, never above the top one.
+     */
+    public static List<List<String>> generate(List<Item> items, String wardrobe, String occasion, String weather,
+            String date, String seed, Set<String> rejected, Map<String, String> fixed, int limit, Map<String, Integer> penalty,
+            String targetStyle, Map<String, Integer> bonus, Double temperature, Set<String> trends) {
         if (limit < 1 || limit > 20) throw new IllegalArgumentException();
         String style = targetStyle != null ? targetStyle : PreferenceProfile.defaultStyle(occasion);
         List<Candidate> all = new ArrayList<>();
@@ -152,7 +168,7 @@ public final class DailyRules {
                 int pairs = prior.pairs;
                 for (Item selected : prior.items) {
                     if (selected.piece.id.equals(next.piece.id) || !WardrobeRules.compatibleSeasons(selected.piece.season, next.piece.season)) { compatible = false; break; }
-                    pairs += pairScore(selected.piece, next.piece);
+                    pairs += pairScore(selected.piece, next.piece) + trendScore(selected.piece, next.piece, trends);
                 }
                 int score = prior.score - prior.pairs + itemScore(next, style, date, penalty, bonus) + pairs;
                 if (compatible) { List<Item> picked = new ArrayList<>(prior.items); picked.add(next); expanded.add(new Candidate(picked, score, pairs)); }
@@ -240,6 +256,13 @@ public final class DailyRules {
     public static List<String> replace(List<Item> items, String wardrobe, String occasion, String weather, String date,
             List<String> selected, String category, Set<String> rejected, Map<String, Integer> penalty, String targetStyle,
             Map<String, Integer> bonus, Double temperature) {
+        return replace(items, wardrobe, occasion, weather, date, selected, category, rejected, penalty, targetStyle, bonus, temperature,
+            Collections.emptySet());
+    }
+    /** [trends]: see {@link #generate} with trends. */
+    public static List<String> replace(List<Item> items, String wardrobe, String occasion, String weather, String date,
+            List<String> selected, String category, Set<String> rejected, Map<String, Integer> penalty, String targetStyle,
+            Map<String, Integer> bonus, Double temperature, Set<String> trends) {
         Map<String, String> fixed = new HashMap<>(); String old = "";
         for (String id : selected) {
             Item item = null; for (Item candidate : items) if (candidate.piece.id.equals(id)) { item = candidate; break; }
@@ -248,7 +271,7 @@ public final class DailyRules {
         }
         final String excluded = old;
         List<Item> candidates = new ArrayList<>(); for (Item i : items) if (!i.piece.id.equals(excluded)) candidates.add(i);
-        List<List<String>> result = generate(candidates, wardrobe, occasion, weather, date, "replace", rejected, fixed, 1, penalty, targetStyle, bonus, temperature);
+        List<List<String>> result = generate(candidates, wardrobe, occasion, weather, date, "replace", rejected, fixed, 1, penalty, targetStyle, bonus, temperature, trends);
         return result.isEmpty() ? Collections.emptyList() : result.get(0);
     }
     private static String key(Candidate c) { return c.key(); }

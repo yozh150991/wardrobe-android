@@ -29,8 +29,8 @@ check('personalChoices.clear(wardrobe)' in vm.split('fun resetPreferences', 1)[1
 # Effects: scores only, through the same generator entry points; «Краще» never offers a colour worn less.
 daily = read('outfits/DailyOutfits.kt')
 check('pieces(s, wardrobe), choices.avoided)' in daily, 'colours worn less are penalties (capped with the others)')
-check('skip, fixed, 3, scores, target, liked, temperature)' in daily, 'the daily variants get the liked-colour bonus')
-check('style(s, wardrobe, occasion, choices).style, bonus(s, wardrobe, choices), temperature)' in daily, 'replacing one piece gets the bonus too')
+check('skip, fixed, 3, scores, target, liked, temperature, trends(choices))' in daily, 'the daily variants get the liked-colour bonus')
+check('style(s, wardrobe, occasion, choices).style, bonus(s, wardrobe, choices), temperature, trends(choices))' in daily, 'replacing one piece gets the bonus too')
 rules = read('rules/DailyRules.java')
 check('+ Math.min(PreferenceProfile.PALETTE_LIKED, Math.max(0, bonus.getOrDefault(item.piece.id, 0)))' in rules, 'the bonus is capped per item')
 style = read('outfits/OutfitStyle.kt')

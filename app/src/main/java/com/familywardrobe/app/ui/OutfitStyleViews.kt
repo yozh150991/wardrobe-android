@@ -34,6 +34,7 @@ import com.familywardrobe.app.data.PersonalChoices
 import com.familywardrobe.app.outfits.BetterSwap
 import com.familywardrobe.app.outfits.Matching
 import com.familywardrobe.app.rules.StyleRules
+import com.familywardrobe.app.rules.TrendRules
 
 /** STYLE-03: one swatch per base colour (a custom shade shows its base). Outlined, so white and black read on any theme. */
 internal fun swatch(colour: String): Color = when (colour) {
@@ -238,6 +239,7 @@ private fun ReasonLine(good: Boolean, text: String) {
 /**
  * Why the outfit got its score: colours, style and weather, each in words the person can check. PERS-03: then which of
  * its colours are the person's own and which they wear less — why the variant moved up or down, not part of the score.
+ * TREND-01: with «Сезонні тренди» on, the trend pairs and colours of the season among its colours.
  */
 @Composable
 internal fun StyleReasons(rating: StyleRules.Rating, items: List<Garment>, weather: String, target: String,
@@ -265,6 +267,14 @@ internal fun StyleReasons(rating: StyleRules.Rating, items: List<Garment>, weath
         val less = colours.filter { palette.palette(it) == PersonalChoices.AVOIDED }.map { stringResource(label(it)) }
         if (mine.isNotEmpty()) ReasonLine(true, stringResource(R.string.style_colours_mine, mine.joinToString(", ")))
         if (less.isNotEmpty()) ReasonLine(false, stringResource(R.string.style_colours_less, less.joinToString(", ")))
+        // TREND-01: why a variant moved up with «Сезонні тренди» on; like the palette, not part of the score.
+        if (palette.trends) {
+            TrendRules.found(colours).take(2).forEach { (a, b) ->
+                ReasonLine(true, stringResource(R.string.style_trend_pair, stringResource(label(a)), stringResource(label(b))))
+            }
+            val season = colours.filter { TrendRules.colour(it) && palette.palette(it) != PersonalChoices.AVOIDED }.map { stringResource(label(it)) }
+            if (season.isNotEmpty()) ReasonLine(true, stringResource(R.string.style_trend_colours, season.joinToString(", ")))
+        }
     }
 }
 

@@ -60,7 +60,7 @@ keys = ['style_label_great', 'style_label_good', 'style_label_fair', 'style_labe
         'style_one_style_other', 'style_mixed', 'style_weather_ok', 'style_weather_no_outerwear', 'style_weather_season', 'style_now',
         'style_better', 'style_better_change', 'style_better_style', 'style_better_weather', 'style_apply', 'style_occasion_chip',
         'style_pair_accent_contrast', 'style_many_colours', 'style_pair_analogous', 'style_pair_complementary',
-        'style_colours_mine', 'style_colours_less', 'style_why_show', 'style_why_hide']
+        'style_colours_mine', 'style_colours_less', 'style_trend_pair', 'style_trend_colours', 'style_why_show', 'style_why_hide']
 res = root / 'app/src/main/res'
 placeholders = {}
 for folder in ('values', 'values-uk', 'values-en', 'values-pl'):
@@ -83,7 +83,7 @@ if failures:
     raise SystemExit('FAIL style:\n' + '\n'.join(failures))
 
 with tempfile.TemporaryDirectory(prefix='wardrobe-style-') as output:
-    files = [source / name for name in ('rules/WardrobeRules.java', 'rules/DailyRules.java', 'rules/PreferenceRules.java', 'rules/PreferenceProfile.java', 'rules/StyleRules.java', 'rules/WeatherRules.java')]
+    files = [source / name for name in ('rules/WardrobeRules.java', 'rules/DailyRules.java', 'rules/PreferenceRules.java', 'rules/PreferenceProfile.java', 'rules/StyleRules.java', 'rules/TrendRules.java', 'rules/WeatherRules.java')]
     files.append(root / 'app/src/test/java/com/familywardrobe/app/rules/StyleRulesCases.java')
     subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, *map(str, files)], check=True)
     subprocess.run([java, '-cp', output, 'com.familywardrobe.app.rules.StyleRulesCases'], check=True)
