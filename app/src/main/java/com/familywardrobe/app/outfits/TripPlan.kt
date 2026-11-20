@@ -109,7 +109,7 @@ object TripPlan {
             val hidden = DailyOutfits.rejected(s, wardrobe, occasion, weather)
             val scores = DailyOutfits.penalties(s, wardrobe, occasion, weather, choices)
             fun variants(skip: Set<String>) = DailyRules.generate(items, wardrobe, occasion, weather, date, "trip:${capsule.id}:$date",
-                skip, emptyMap(), 20, scores, target, liked, temperature).take(REUSE_CHOICES)
+                skip, emptyMap(), 20, scores, target, liked, temperature, DailyOutfits.trends(choices)).take(REUSE_CHOICES)
             val options = variants(hidden + used).ifEmpty { variants(hidden) }
             val pick = options.minByOrNull { look -> look.count { it !in chosen } } ?: continue
             chosen += pick; used += DailyRules.signature(pick); covered++

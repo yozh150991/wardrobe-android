@@ -14,7 +14,7 @@ for name in ('OCCASIONS', 'WEATHERS'):
     case_list = cases.split(f'List<String> {name} = List.of(', 1)[1].split(')', 1)[0]
     if app_list != case_list: raise SystemExit(f'FAIL: PreferenceRulesCases.{name} differs from LookRules.{name}')
 with tempfile.TemporaryDirectory(prefix='wardrobe-preferences-') as output:
-    files = [source / name for name in ('rules/WardrobeRules.java', 'rules/DailyRules.java', 'rules/PreferenceRules.java', 'rules/PreferenceProfile.java', 'rules/StyleRules.java', 'rules/WeatherRules.java')]
+    files = [source / name for name in ('rules/WardrobeRules.java', 'rules/DailyRules.java', 'rules/PreferenceRules.java', 'rules/PreferenceProfile.java', 'rules/StyleRules.java', 'rules/TrendRules.java', 'rules/WeatherRules.java')]
     files += [root / 'app/src/test/java/com/familywardrobe/app' / name for name in ('rules/PreferenceRulesCases.java', 'rules/PreferenceProfileCases.java')]
     subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, *map(str, files)], check=True)
     for cases in ('PreferenceRulesCases', 'PreferenceProfileCases'):

@@ -1523,4 +1523,8 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="appearance_current_older">Twoja wybrana paleta</string>
     <string name="appearance_show_older">Pokaż wcześniejsze palety: %1$d</string>
     <string name="appearance_hide_older">Ukryj wcześniejsze palety</string>
+    <string name="prefs_trends_title">Trendy sezonu</string>
+    <string name="prefs_trends_hint">Nieco częściej proponuje pary kolorów z wybranych przez Ciebie postów i kolory sezonu: %1$s. Ocena stylizacji się nie zmienia.</string>
+    <string name="style_trend_pair">Trend sezonu: %1$s + %2$s</string>
+    <string name="style_trend_colours">Kolor sezonu: %1$s</string>
 </resources>

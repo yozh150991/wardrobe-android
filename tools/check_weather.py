@@ -45,7 +45,7 @@ if failures: raise SystemExit('FAIL weather:\n' + '\n'.join(failures))
 
 with tempfile.TemporaryDirectory(prefix='wardrobe-weather-') as output:
     files = [source / name for name in ('rules/WardrobeRules.java', 'rules/WishRules.java', 'rules/DailyRules.java', 'rules/PreferenceRules.java', 'rules/PreferenceProfile.java',
-                                        'rules/StyleRules.java', 'rules/WeatherRules.java', 'rules/RoadmapRules.java', 'rules/RotationRules.java')]
+                                        'rules/StyleRules.java', 'rules/TrendRules.java', 'rules/WeatherRules.java', 'rules/RoadmapRules.java', 'rules/RotationRules.java')]
     files.append(root / 'app/src/test/java/com/familywardrobe/app/rules/WeatherRulesCases.java')
     subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, *map(str, files)], check=True)
     subprocess.run([java, '-cp', output, 'com.familywardrobe.app.rules.WeatherRulesCases'], check=True)

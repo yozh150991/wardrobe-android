@@ -1523,4 +1523,8 @@
     <string name="appearance_current_older">Ваша обрана палітра</string>
     <string name="appearance_show_older">Показати попередні палітри: %1$d</string>
     <string name="appearance_hide_older">Сховати попередні палітри</string>
+    <string name="prefs_trends_title">Сезонні тренди</string>
+    <string name="prefs_trends_hint">Трохи частіше пропонує пари кольорів із дописів, які ви обрали, і кольори сезону: %1$s. Оцінка образу не змінюється.</string>
+    <string name="style_trend_pair">Тренд сезону: %1$s + %2$s</string>
+    <string name="style_trend_colours">Колір сезону: %1$s</string>
 </resources>

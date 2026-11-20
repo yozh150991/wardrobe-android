@@ -13,7 +13,12 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 data class PersonalChoices(val styles: Map<String, String> = emptyMap(), val warmth: String = PreferenceProfile.AUTO,
     /** PERS-03: base colours the person likes wearing, and ones they would rather wear less; never both. */
-    val liked: Set<String> = emptySet(), val avoided: Set<String> = emptySet()) {
+    val liked: Set<String> = emptySet(), val avoided: Set<String> = emptySet(),
+    /**
+     * TREND-01: «Сезонні тренди» (TrendRules) move variants. The store reads it as on unless the person switched it off;
+     * choices made in code without the store (tests, previews) leave it off, so they see the colour table alone.
+     */
+    val trends: Boolean = false) {
     fun style(occasion: String): String = styles[occasion] ?: PreferenceProfile.AUTO
     fun palette(colour: String): String = when (colour) { in avoided -> AVOIDED; in liked -> LIKED; else -> NONE }
     companion object {
@@ -24,6 +29,7 @@ data class PersonalChoices(val styles: Map<String, String> = emptyMap(), val war
 }
 
 internal class PersonalChoiceStore(context: Context) {
+    private companion object { const val OFF = "off" }
     private val prefs = context.getSharedPreferences("preferences", Context.MODE_PRIVATE)
     private val mutable = MutableStateFlow(0)
     /** Bumps on every change, so screens re-read the choices. */
@@ -31,6 +37,7 @@ internal class PersonalChoiceStore(context: Context) {
     private fun styleKey(wardrobe: String, occasion: String) = "pref.style.$wardrobe.$occasion"
     private fun warmthKey(wardrobe: String) = "pref.warmth.$wardrobe"
     private fun paletteKey(wardrobe: String, kind: String) = "pref.palette.$wardrobe.$kind"
+    private fun trendsKey(wardrobe: String) = "pref.trends.$wardrobe"
     private fun occasionKey(wardrobe: String) = "daily.occasion.$wardrobe"
     /**
      * UX-05: the occasion last chosen on «Що вдягнути сьогодні» for this wardrobe, so the screen opens on it. A
@@ -51,7 +58,8 @@ internal class PersonalChoiceStore(context: Context) {
             prefs.getString(styleKey(wardrobe, occasion), null)?.takeIf { it in PreferenceProfile.STYLES }?.let { occasion to it }
         }.toMap(),
         prefs.getString(warmthKey(wardrobe), null)?.takeIf { it in PreferenceProfile.WARMTH } ?: PreferenceProfile.AUTO,
-        colours(wardrobe, PersonalChoices.LIKED) - colours(wardrobe, PersonalChoices.AVOIDED), colours(wardrobe, PersonalChoices.AVOIDED))
+        colours(wardrobe, PersonalChoices.LIKED) - colours(wardrobe, PersonalChoices.AVOIDED), colours(wardrobe, PersonalChoices.AVOIDED),
+        prefs.getString(trendsKey(wardrobe), null) != OFF)
 
     fun setStyle(wardrobe: String, occasion: String, value: String) {
         require(occasion in LookRules.OCCASIONS && (value == PreferenceProfile.AUTO || value in PreferenceProfile.STYLES))
@@ -77,11 +85,17 @@ internal class PersonalChoiceStore(context: Context) {
         }.commit()
         mutable.value++
     }
+    /** TREND-01: only "off" is stored; on is the default and what «Скинути всі вподобання» returns to. */
+    fun setTrends(wardrobe: String, on: Boolean) {
+        prefs.edit().apply { if (on) remove(trendsKey(wardrobe)) else putString(trendsKey(wardrobe), OFF) }.commit()
+        mutable.value++
+    }
     fun clear(wardrobe: String) {
         prefs.edit().apply {
             LookRules.OCCASIONS.forEach { remove(styleKey(wardrobe, it)) }
             remove(warmthKey(wardrobe))
             remove(paletteKey(wardrobe, PersonalChoices.LIKED)); remove(paletteKey(wardrobe, PersonalChoices.AVOIDED))
+            remove(trendsKey(wardrobe))
         }.commit()
         mutable.value++
     }

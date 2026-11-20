@@ -10,6 +10,7 @@ import com.familywardrobe.app.rules.PreferenceProfile
 import com.familywardrobe.app.rules.PreferenceRules
 import com.familywardrobe.app.rules.RotationRules
 import com.familywardrobe.app.rules.StyleRules
+import com.familywardrobe.app.rules.TrendRules
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -106,6 +107,26 @@ class DailyOutfitsPreferenceTest {
         assertEquals(PersonalChoices.LIKED, PersonalChoices(liked = setOf("grey")).palette("grey"))
         assertEquals(PersonalChoices.NONE, PersonalChoices(liked = setOf("grey")).palette("white"))
         assertEquals(19, PersonalChoices.PALETTE.size); assertFalse("other" in PersonalChoices.PALETTE)
+    }
+    /** TREND-01: «Сезонні тренди» on the app's entry point — colours of the season and trend pairs move variants; off = as before. */
+    @Test fun seasonalTrendsMoveTheVariants() {
+        // Burgundy, red and orange tops rate the same on cream trousers with white shoes; burgundy + cream is a trend pair.
+        val s = base.copy(garments = listOf(garment("wine", "top").copy(color = "burgundy"), garment("red", "top").copy(color = "red"),
+            garment("orange", "top").copy(color = "orange"), garment("trousers", "bottom").copy(color = "cream"),
+            garment("shoes", "shoes").copy(color = "white")))
+        val on = PersonalChoices(trends = true)
+        assertEquals(mapOf("wine" to TrendRules.COLOUR), DailyOutfits.bonus(s, "home", on))
+        assertEquals(mapOf("wine" to PreferenceProfile.PALETTE_LIKED), DailyOutfits.bonus(s, "home", on.copy(liked = setOf("burgundy"))))
+        assertTrue(DailyOutfits.bonus(s, "home", on.copy(avoided = setOf("burgundy"))).isEmpty())
+        assertTrue(DailyOutfits.bonus(s, "home").isEmpty()); assertTrue(DailyOutfits.trends().isEmpty())
+        assertEquals(TrendRules.PAIRS.size, DailyOutfits.trends(on).size)
+        for (seed in listOf("a", "b", "c"))
+            assertTrue(DailyOutfits.generate(s, "home", "everyday", "warm", date, seed = seed, choices = on).first().any { it.id == "wine" })
+        // Nothing is hidden: the same number of variants with trends on and off.
+        assertEquals(DailyOutfits.generate(s, "home", "everyday", "warm", date).size, DailyOutfits.generate(s, "home", "everyday", "warm", date, choices = on).size)
+        // Replacing the orange top follows the trends too: burgundy, not red.
+        val orange = s.garments.filter { it.id in setOf("orange", "trousers", "shoes") }
+        assertEquals("wine", DailyOutfits.replace(s, "home", "everyday", "warm", date, orange, "top", choices = on).first { it.category == "top" }.id)
     }
     @Test fun anotherWardrobesReasonsDoNotCount() {
         val other = base.copy(wardrobes = base.wardrobes + Wardrobe(id = "child", name = "Child"),
