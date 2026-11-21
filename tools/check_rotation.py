@@ -79,7 +79,7 @@ if failures:
     raise SystemExit('FAIL rotation:\n' + '\n'.join(failures))
 
 with tempfile.TemporaryDirectory(prefix='wardrobe-rotation-') as output:
-    files = [source / name for name in ('rules/WardrobeRules.java', 'rules/DailyRules.java', 'rules/PreferenceRules.java', 'rules/PreferenceProfile.java', 'rules/StyleRules.java', 'rules/WeatherRules.java', 'rules/RotationRules.java')]
+    files = [source / name for name in ('rules/WardrobeRules.java', 'rules/DailyRules.java', 'rules/PreferenceRules.java', 'rules/PreferenceProfile.java', 'rules/StyleRules.java', 'rules/TrendRules.java', 'rules/WeatherRules.java', 'rules/RotationRules.java')]
     files.append(root / 'app/src/test/java/com/familywardrobe/app/rules/RotationRulesCases.java')
     subprocess.run([java, '-m', 'jdk.compiler/com.sun.tools.javac.Main', '--release', '17', '-d', output, *map(str, files)], check=True)
     subprocess.run([java, '-cp', output, 'com.familywardrobe.app.rules.RotationRulesCases'], check=True)

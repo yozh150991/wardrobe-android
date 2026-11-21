@@ -1523,4 +1523,8 @@ Your current wardrobe is unchanged.</string>
     <string name="appearance_current_older">Your chosen palette</string>
     <string name="appearance_show_older">Show earlier palettes: %1$d</string>
     <string name="appearance_hide_older">Hide earlier palettes</string>
+    <string name="prefs_trends_title">Seasonal trends</string>
+    <string name="prefs_trends_hint">Suggests colour pairs from the posts you picked a little more often, and the colours of the season: %1$s. The outfit score does not change.</string>
+    <string name="style_trend_pair">Trend of the season: %1$s + %2$s</string>
+    <string name="style_trend_colours">Colour of the season: %1$s</string>
 </resources>
