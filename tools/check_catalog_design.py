@@ -55,6 +55,18 @@ check('Text(stringResource(title), maxLines = 1, softWrap = false)' in compact, 
 row = catalog[catalog.index('horizontalScroll(rememberScrollState())'):catalog.index('SubcategoryChoice(subcategory')]
 check('weight(' not in row, 'nothing in the category row is weighted')
 
+# BUG-58-03: a tab label wrapped to two lines («Хочу купити») and pushed its icon above the others. Labels stay on one
+# line and shrink together to fit.
+nav = ui[ui.index('bottomBar = {'):ui.index(') { padding ->', ui.index('bottomBar = {'))]
+label = ui[ui.index('private fun NavLabel('):] if 'private fun NavLabel(' in ui else ''
+check('maxLines = 2' not in nav and 'label = { NavLabel(stringResource(name), navScale)' in nav,
+      'tab labels are never two lines; they use the shared one-line label')
+check('var navScale by remember(navLabels, navColumns) { mutableFloatStateOf(1f) }' in nav and 'navScale == measured' in nav,
+      'all tab labels share one size, which shrinks one step at a time')
+check('maxLines = 1, softWrap = false' in label and 'layout.hasVisualOverflow' in label and 'drawWithContent { if (!overflowing) drawContent() }' in label,
+      'a tab label is measured on one line and shown only once it fits')
+check('private const val NAV_LABEL_MIN = 0.7f' in ui, 'labels shrink no further than 70 %')
+
 # The grid and «Додати річ».
 check('contentPadding = PaddingValues(top = 8.dp, bottom = 96.dp)' in catalog, 'the last row is not hidden under the add button')
 check('if (!selecting) Button(onClick = onAddMethods, enabled = !busy' in catalog and 'Modifier.align(Alignment.BottomEnd)' in catalog,

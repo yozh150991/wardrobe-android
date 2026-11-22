@@ -16,7 +16,7 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = 88
-        versionName = "0.14.58-catalog-fix"
+        versionName = "0.14.58-ui-fixes"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
