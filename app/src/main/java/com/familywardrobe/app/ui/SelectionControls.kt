@@ -58,7 +58,9 @@ fun CategoryChoice(value: String, change: (String) -> Unit, enabled: Boolean = t
         if (showSelectedValue) {
             Text(stringResource(title) + ": " + selectedTitle)
         } else {
-            Text(stringResource(title), modifier = Modifier.weight(1f, fill = false))
+            // BUG-58-01: no weight here. This compact button sits in the catalog's sideways-scrolling row, where the
+            // width is unbounded: a weighted label got the button's minimum width and wrapped one letter per line.
+            Text(stringResource(title), maxLines = 1, softWrap = false)
             Spacer(Modifier.width(4.dp))
             Icon(Icons.Outlined.ArrowDropDown, contentDescription = null)
         }
