@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -252,7 +253,7 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
         if (!selecting) Button(onClick = onAddMethods, enabled = !busy, shape = RoundedCornerShape(28.dp),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp, pressedElevation = 8.dp),
             contentPadding = PaddingValues(start = 18.dp, end = 22.dp),
-            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp).heightIn(min = 56.dp)) {
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp).heightIn(min = 56.dp).testTag("catalog-add")) {
             Icon(Icons.Outlined.Add, null); Spacer(Modifier.width(8.dp))
             Text(stringResource(if (newWardrobe) R.string.add_first_item else R.string.add_item), style = MaterialTheme.typography.titleSmall)
         }
@@ -375,7 +376,7 @@ private fun GarmentCard(g: Garment, vm: WardrobeViewModel, wears: Int, wornToday
     // UI-03: the photo is the card: a rounded tile with the name and one line under it, no frame around them.
     Card(onClick = open, enabled = enabled, colors = CardDefaults.cardColors(containerColor = Color.Transparent,
             disabledContainerColor = Color.Transparent),
-        modifier = Modifier.semantics { if (selection != null) { role = Role.Checkbox; toggleableState = if (selection) ToggleableState.On else ToggleableState.Off } }, shape = CardShape) {
+        modifier = Modifier.testTag("garment-card").semantics { if (selection != null) { role = Role.Checkbox; toggleableState = if (selection) ToggleableState.On else ToggleableState.Off } }, shape = CardShape) {
         Box(Modifier.fillMaxWidth().clip(PhotoShape)) {
             ZoomableItemPhoto(g.photoId, vm, Modifier.fillMaxWidth().aspectRatio(photoRatio), title = g.name, enabled = enabled && selection == null, garmentColour = g.color)
             FlowRow(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

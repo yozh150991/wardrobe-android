@@ -209,7 +209,9 @@ jobs:
           target: google_apis
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: bash -o pipefail -c "bash build-apk.sh -PciPreview=true connectedDebugAndroidTest 2>&1 | tee instrumentation.log"
+          # DEV-04: ScreenshotTourTest logs its pictures under the WardrobeShots tag; a large buffer keeps them all,
+          # and the dump runs whether the tests pass or not.
+          script: bash -o pipefail -c 'adb logcat -G 32M || true; bash build-apk.sh -PciPreview=true connectedDebugAndroidTest 2>&1 | tee instrumentation.log; status=$?; adb logcat -d -v raw -s WardrobeShots:I > screenshots.log || true; exit $status'
       - name: Build and test errors as annotations
         if: failure()
         run: python3 tools/ci_annotations.py instrumentation.log --junit app/build/outputs/androidTest-results
@@ -224,6 +226,17 @@ jobs:
               for key in totals: totals[key] += int(suite.get(key, 0))
           print(f"::notice title=Instrumentation tests::{totals['tests']} tests, {totals['failures']} failures, {totals['errors']} errors, {totals['skipped']} skipped")
           PY
+      - name: Screenshots for review (DEV-04)
+        if: always()
+        run: python3 tools/ci_screenshots.py screenshots.log app/build/outputs/androidTest-results screenshots
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: screenshots-${{ github.sha }}
+          path: screenshots/
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Upload instrumentation reports
         if: always()
         uses: actions/upload-artifact@v7

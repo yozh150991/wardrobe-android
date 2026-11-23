@@ -1,3 +1,8 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application android:networkSecurityConfig="@xml/emulator_network_security_config" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application android:networkSecurityConfig="@xml/emulator_network_security_config">
+        <!-- DEV-04: ui-test-manifest's empty activity hosts the screenshot tour. Only the app's own process
+             (the instrumentation) may start it, so it is not exported even in debug builds. -->
+        <activity android:name="androidx.activity.ComponentActivity" android:exported="false" tools:replace="android:exported" />
+    </application>
 </manifest>

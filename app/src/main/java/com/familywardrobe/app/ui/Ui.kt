@@ -41,6 +41,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -371,6 +372,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                     NavigationBarItem(selected = route == screen || (nested && screen == when (route) { "look", "saved", "capsuledaily", "calendar", "capsules", "capsule" -> "outfits"; "wishdetail", "wishedit", "compatibility" -> "shopping"; "detail" -> if (detailReturn == "saved") "outfits" else "catalog"; "manage", "appearance" -> "settings"; else -> "catalog" }),
                         // The tab is the plain «Сьогодні»: an item chosen earlier in the statistics is not kept.
                         onClick = { if (screen == "daily") rotationAnchor = ""; navigate(screen) }, enabled = canNavigate, icon = { Icon(icon, null) },
+                        modifier = Modifier.testTag("nav-$screen"),
                         label = { NavLabel(stringResource(name), navScale) { measured ->
                             if (navScale == measured && measured > NAV_LABEL_MIN) navScale = maxOf(NAV_LABEL_MIN, measured - 0.05f) } },
                         colors = NavigationBarItemDefaults.colors(selectedIconColor = MaterialTheme.colorScheme.primary,

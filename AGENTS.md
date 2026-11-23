@@ -1,3 +1,15 @@
+## Current handoff — DEV-04 screenshot tour in CI, 23 November 2026
+
+0.14.59-screenshots/code 89, Room 11 and backup formats unchanged. Read docs/releases/SCREENSHOTS-0.14.59.md. Stacked on
+PR #59 (0.14.58-ui-fixes); its PR targets main and contains it — merge the latest. ScreenshotTourTest (androidTest) seeds
+its own account, runs the production WardrobeApp in ui-test-manifest's ComponentActivity (debug only, unexported via
+src/debug) on a 1080×2340/420 dpi screen and captures 7 screens × 4 configurations (uk, uk-large 1.3, en, pl) as
+`WSHOT|name|part|parts|base64` logcat lines (tag WardrobeShots). CI dumps the tag after the emulator run;
+tools/ci_screenshots.py prints the lines into the job log and uploads JPEGs (`screenshots-<sha>`). **To review:** take the
+instrumentation job id from the check runs, `gh api repos/yozh150991/wardrobe-android/actions/jobs/<id>/logs`, collect
+WSHOT lines, decode with tools/ci_screenshots.py — artifact downloads are blocked from cloud sessions, logs are not.
+Tags the tour taps: nav-<screen>, garment-card, catalog-add, add-method-<method>; tools/check_screenshots.py guards them.
+
 ## Current handoff — BUG-58 category button, card text, tab labels, 22 November 2026
 
 0.14.58-ui-fixes/code 88, Room 11 and backup formats unchanged. Read docs/releases/UI-FIXES-0.14.58.md. The first
