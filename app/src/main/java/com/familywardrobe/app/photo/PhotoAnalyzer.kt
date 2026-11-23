@@ -106,6 +106,10 @@ class PhotoAnalyzer(private val context: Context, private val photos: PhotoStore
             } catch (e: IllegalArgumentException) {
                 Log.w(TAG, "Mask rejected: " + PhotoCutoutRules.describe(confidence, bitmap.width, bitmap.height)); throw e
             }
+            // PHOTO-19: debug builds keep the rules' input and output for tuning on real masks.
+            if (PhotoDebugCapture.enabled(context)) withContext(Dispatchers.IO) {
+                PhotoDebugCapture.save(context, sourcePixels, bitmap.width, bitmap.height, confidence, pixels, stronger)
+            }
             if (!PhotoRules.usableCutout(pixels)) return@withContext PhotoAnalysis(photoId, category = category,
                 cutoutStatus = CutoutStatus.NOT_FOUND, labelFailed = labelFailed).also { Log.i(TAG, "No usable cutout") }
             stage = "save"
