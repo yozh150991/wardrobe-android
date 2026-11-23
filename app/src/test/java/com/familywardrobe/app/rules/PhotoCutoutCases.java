@@ -106,7 +106,7 @@ public final class PhotoCutoutCases {
 
     public static void malformedAndCancellation() {
         Fixture f = garment();
-        for (float bad : new float[] { Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, -1, 2, -.001f, 1.001f }) {
+        for (float bad : new float[] { Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, -1, 2, -.51f, 1.51f }) {
             for (boolean stronger : new boolean[] { false, true }) {
                 f.mask[30 * W + 30] = bad;
                 boolean rejected = false;
@@ -116,6 +116,15 @@ public final class PhotoCutoutCases {
         }
         f.mask[30 * W + 30] = 1;
         int[] p = f.cut(false);
+        // QA-61-30: the device's masks overshoot 0..1 (seen: -0.167 and 1.2115); they are saturated, not refused,
+        // and give the same cutout as the saturated values.
+        float[] kept = f.mask.clone();
+        for (boolean stronger : new boolean[] { false, true }) {
+            int[] expected = f.cut(stronger);
+            for (int i = 0; i < f.mask.length; i++) f.mask[i] = kept[i] >= 1 ? (i % 2 == 0 ? 1.2115375f : 1.5f) : kept[i] <= 0 ? (i % 2 == 0 ? -.16697621f : -.5f) : kept[i];
+            check(Arrays.equals(expected, f.cut(stronger)), "Overshooting confidences are saturated");
+            System.arraycopy(kept, 0, f.mask, 0, kept.length);
+        }
         boolean failed = false;
         try { PhotoCutoutRules.refine(f.rgb, W, H - 1, FloatBuffer.wrap(f.mask), false, () -> {}); }
         catch (IllegalArgumentException expected) { failed = true; }

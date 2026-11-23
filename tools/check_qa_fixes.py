@@ -41,6 +41,9 @@ for stage in ('"model"', '"segment"', '"refine"', '"save"'):
 check('Log.w(TAG, "Cutout failed at $stage", e)' in analyzer, 'QA-61-30: an unknown failure is logged with its stage')
 check('Log.w(TAG, "Mask rejected: " + PhotoCutoutRules.describe(confidence, bitmap.width, bitmap.height)); throw e' in analyzer,
       'QA-61-30: a refused mask is described (sizes and range, no pixels) and still refused')
+cutout = read('rules/PhotoCutoutRules.java')
+check('CONFIDENCE_OVERSHOOT = .5f' in cutout and 'value < -CONFIDENCE_OVERSHOOT || value > 1f + CONFIDENCE_OVERSHOOT' in cutout
+      and '!Float.isFinite(value)' in cutout, 'QA-61-30: overshooting confidences are saturated; NaN and far values are refused')
 check('Log.w(TAG, "Labels failed", e)' in analyzer, 'QA-61-30: label failures are logged too')
 
 # QA-61-01: the camera shot survives the process being stopped behind the camera.
