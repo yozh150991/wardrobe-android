@@ -51,7 +51,9 @@ check('SubcategoryChoice(subcategory, subcategories, { subcategory = it })' in c
 choice = selection[selection.index('fun CategoryChoice('):selection.index('if (choosing) AlertDialog(')]
 compact = choice[choice.index('} else {'):]
 check('weight(' not in compact, 'the compact «Категорії» label has no weight (it sits in a scrolling row)')
-check('Text(stringResource(title), maxLines = 1, softWrap = false)' in compact, 'the compact «Категорії» label stays on one line')
+check('PillChip(false, stringResource(title)' in compact and 'singleLine = true)' in compact
+      and 'maxLines = if (singleLine) 1 else Int.MAX_VALUE, softWrap = !singleLine' in (root / 'app/src/main/java/com/familywardrobe/app/ui/FormControls.kt').read_text(encoding='utf-8'),
+      'the compact «Категорії» label stays on one line (a single-line pill since LOOK-13)')
 row = catalog[catalog.index('horizontalScroll(rememberScrollState())'):catalog.index('SubcategoryChoice(subcategory')]
 check('weight(' not in row, 'nothing in the category row is weighted')
 

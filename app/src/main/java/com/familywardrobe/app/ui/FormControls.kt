@@ -47,10 +47,11 @@ fun ChipChoice(value: String, options: List<String>, change: (String) -> Unit, t
  *  LOOK-07: every choice chip in the app is this one (or ChipChoice), so no screen keeps the old outlined chip. */
 @Composable
 internal fun PillChip(selected: Boolean, title: String, click: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true,
-    leadingIcon: (@Composable () -> Unit)? = null) {
+    leadingIcon: (@Composable () -> Unit)? = null, trailingIcon: (@Composable () -> Unit)? = null, singleLine: Boolean = false) {
     FilterChip(selected, onClick = click, enabled = enabled, modifier = modifier.heightIn(min = 48.dp),
-        shape = RoundedCornerShape(50), border = null, leadingIcon = leadingIcon,
-        label = { Text(title, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium) },
+        shape = RoundedCornerShape(50), border = null, leadingIcon = leadingIcon, trailingIcon = trailingIcon,
+        label = { Text(title, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            maxLines = if (singleLine) 1 else Int.MAX_VALUE, softWrap = !singleLine) },
         colors = FilterChipDefaults.filterChipColors(containerColor = MaterialTheme.colorScheme.surface,
             labelColor = MaterialTheme.colorScheme.onSurface,
             selectedContainerColor = MaterialTheme.colorScheme.onSurface,

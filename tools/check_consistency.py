@@ -124,6 +124,8 @@ check('OutlinedCard(' not in sources['ui/StatisticsScreen.kt'] and 'Choice(group
       and 'PillChip(group == code' in sources['ui/StatisticsScreen.kt'], 'LOOK-11: statistics views are pills, rows are plain cards')
 sub = sources['ui/CategoryControls.kt'].split('fun SubcategoryChoice(', 1)[1][:900]
 check('PillChip(value.isNotBlank()' in sub and 'OutlinedButton(' not in sub, 'LOOK-12: the subcategory filter is a pill')
+cat = sources['ui/SelectionControls.kt'].split('fun CategoryChoice(', 1)[1].split('if (choosing) AlertDialog(', 1)[0]
+check('PillChip(false, stringResource(title)' in cat, 'LOOK-13: the catalog\'s «Категорії ▾» is a pill like the chips beside it')
 
 if failures:
     print('FAIL consistency guards:'); [print('  -', f) for f in failures]
