@@ -9,7 +9,12 @@ import java.util.Arrays;
  */
 public final class PhotoCutoutRules {
     private PhotoCutoutRules() {}
-    private static final float CONFIDENCE_ROUNDING_TOLERANCE = .00001f;
+    /** QA-61-30: how far outside 0..1 a confidence may be and still be saturated. On a Galaxy S23 every mask from
+     * ML Kit's segmenter had 1–23 % of its values between about -0.17 and 1.21 (resampling overshoot at edges), and
+     * the earlier float-rounding tolerance refused every photo. Values further out, NaN and infinities are still a
+     * malformed mask.
+     */
+    private static final float CONFIDENCE_OVERSHOOT = .5f;
 
     /** Below this alpha a pixel counts as removed when the outside of the garment is traced. */
     private static final int SOLID = 128;
@@ -275,13 +280,29 @@ public final class PhotoCutoutRules {
         return result;
     }
 
-    /** Saturate tiny float32 overshoots instead of turning confident fabric into holes.
+    /** QA-61-30: the shape of a rejected mask for logcat (sizes and value range only, never pixels).
+     * Reads with absolute indexes, so the SDK buffer position is left as it was.
+     */
+    public static String describe(FloatBuffer mask, int width, int height) {
+        int start = mask.position(), end = mask.limit(), nonFinite = 0, below = 0, above = 0;
+        float min = Float.POSITIVE_INFINITY, max = Float.NEGATIVE_INFINITY;
+        for (int i = start; i < end; i++) {
+            float value = mask.get(i);
+            if (!Float.isFinite(value)) { nonFinite++; continue; }
+            if (value < min) min = value;
+            if (value > max) max = value;
+            if (value < 0f) below++; else if (value > 1f) above++;
+        }
+        return "size=" + (end - start) + " expected=" + ((long) width * height) + " (" + width + "x" + height + ")" +
+            " min=" + min + " max=" + max + " nonFinite=" + nonFinite + " below0=" + below + " above1=" + above;
+    }
+
+    /** Saturate overshoots instead of turning confident fabric into holes.
      * A genuinely malformed mask is rejected as a whole so the caller keeps the current
      * photo, rather than accepting a cutout with arbitrary transparent pixels.
      */
     private static float unitConfidence(float value) {
-        if (!Float.isFinite(value) || value < -CONFIDENCE_ROUNDING_TOLERANCE ||
-                value > 1f + CONFIDENCE_ROUNDING_TOLERANCE)
+        if (!Float.isFinite(value) || value < -CONFIDENCE_OVERSHOOT || value > 1f + CONFIDENCE_OVERSHOOT)
             throw new IllegalArgumentException("Invalid foreground confidence mask");
         return Math.max(0f, Math.min(1f, value));
     }

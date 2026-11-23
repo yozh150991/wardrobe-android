@@ -18,7 +18,8 @@ check('"share/$namespace"' in body and '86_400_000L' in body and 'deleteRecursiv
 check('PhotoExportRules.fileName(title, format)' in body and 'File(root, newId())' in body, 'a safe name in a fresh folder')
 check('ExifInterface' not in body and 'directory' not in body, 'pixels only; never the saved photos folder')
 check('FileProvider.getUriForFile(app, "${app.packageName}.files", file)' in store and store.count('FileProvider.getUriForFile(') == 1
-      and store.count('sharedUri(') == 3, 'every URI is made with the application context (the roots are its cache)')
+      # newCapture, export and captureReady (QA-61-01 compares the camera URI with the one it handed out).
+      and store.count('sharedUri(') == 4, 'every URI is made with the application context (the roots are its cache)')
 check('<cache-path name="share" path="share/" />' in (root / 'app/src/main/res/xml/file_paths.xml').read_text(encoding='utf-8'), 'FileProvider exposes share/')
 check('<files-path' not in (root / 'app/src/main/res/xml/file_paths.xml').read_text(encoding='utf-8'), 'saved photos are never exposed')
 dialog = read('photo/PhotoExportDialog.kt')

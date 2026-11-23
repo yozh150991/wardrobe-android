@@ -1,3 +1,17 @@
+## Current handoff — QA-62 fixes from the exploratory test, 23 November 2026
+
+0.14.62-qa-fixes/code 92, Room 11 and backup formats unchanged. Read docs/releases/QA-FIXES-0.14.62.md and
+QA-EXPLORATORY-0.14.61.md. Branch fix/qa-0.14.62 from main after PR #62; PR #63. **QA-61-30** (every gallery photo ended in «Обробка не завершилася»): the user's logcat (tag WardrobePhoto) showed
+ML Kit masks on a Galaxy S23 with 1–23 % of values outside 0..1 (-0.17…1.21); unitConfidence allowed only float
+rounding. PhotoCutoutRules now saturates values within CONFIDENCE_OVERSHOOT (0.5) and still refuses NaN, infinities and
+anything further. Not yet confirmed on the phone. The CI preview APK (.ci package) has no Firebase config, so sign-in
+does not work in it: for device checks the user builds the branch locally (build-apk.ps1). The camera
+shot is written to the editor draft before the camera opens (startCapture) and imported after a restore
+(PhotoStore.captureReady). Wardrobe names are unique (WardrobeNameRules, also in the repository). The profile is a list
+of SettingsRow; backups and family sharing are routes "backups" and "family". The weather city was already per account
+(prefs "weather" in the account context). Strings: tools/qa_fixes_strings.py (idempotent). Guards:
+tools/check_qa_fixes.py (49 host suites). Computer use on the phone was not available at the end of this session.
+
 ## Current handoff — BUG-61 item page, TXT-01–08 texts, LOOK-07–10 controls, DEV-05 tour, 23 November 2026
 
 0.14.61-consistency/code 91, Room 11 and backup formats unchanged. Read docs/releases/CONSISTENCY-0.14.61.md. Stacked on

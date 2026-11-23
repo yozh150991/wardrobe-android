@@ -36,6 +36,7 @@ import com.familywardrobe.app.newId
 import com.familywardrobe.app.outfits.Matching
 import com.familywardrobe.app.photo.PhotoStore
 import com.familywardrobe.app.photo.ZoomableItemPhoto
+import com.familywardrobe.app.rules.ItemNameRules
 import com.familywardrobe.app.rules.TextLimits
 import com.familywardrobe.app.rules.WishRules
 import java.math.BigDecimal
@@ -114,7 +115,7 @@ fun Wishlist(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, add: (String)
                     Card(onClick = { open(wish.id) }, modifier = Modifier.weight(1f).fillMaxHeight(), shape = RoundedCornerShape(18.dp)) {
                         Column(Modifier.fillMaxHeight()) {
                             if (wish.kind == "product" && wish.photoId.isNotBlank()) Box {
-                                ZoomableItemPhoto(wish.photoId, vm, Modifier.fillMaxWidth().height(170.dp), title = wish.name, garmentColour = wish.color)
+                                ZoomableItemPhoto(wish.photoId, vm, Modifier.fillMaxWidth().height(170.dp), title = wish.name, garmentColour = wish.color, zoomButtonOnly = true)
                                 Surface(Modifier.padding(8.dp), shape = RoundedCornerShape(12.dp),
                                     color = MaterialTheme.colorScheme.tertiaryContainer, contentColor = MaterialTheme.colorScheme.onTertiaryContainer) {
                                     Text(stringResource(if (wish.kind == "need") R.string.wish_need_badge else R.string.shopping), Modifier.padding(horizontal = 8.dp, vertical = 5.dp), style = MaterialTheme.typography.labelMedium)
@@ -142,10 +143,12 @@ fun Wishlist(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, add: (String)
     if (choosing) AlertDialog(onDismissRequest = { choosing = false }, title = { Text(stringResource(R.string.add_wish)) },
         text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.wish_kind_hint))
-            OutlinedButton(onClick = { choosing = false; importProduct() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.shop_title)) }
+            // QA-61-27: three answers of the same kind, one style each, and a way out.
+            OutlinedButton(onClick = { choosing = false; add("product") }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.wish_product)) }
+            OutlinedButton(onClick = { choosing = false; add("need") }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.wish_need)) }
+            OutlinedButton(onClick = { choosing = false; importProduct() }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.shop_title)) }
         } },
-        confirmButton = { TextButton(onClick = { choosing = false; add("product") }) { Text(stringResource(R.string.wish_product)) } },
-        dismissButton = { TextButton(onClick = { choosing = false; add("need") }) { Text(stringResource(R.string.wish_need)) } })
+        confirmButton = { TextButton(onClick = { choosing = false }) { Text(stringResource(R.string.cancel)) } })
 }
 
 @Composable
@@ -227,6 +230,10 @@ fun WishEditor(original: Wish?, wardrobe: String, kind: String, converting: Bool
     var validate by remember { mutableStateOf(false) }
     val nameFocus = remember { FocusRequester() }; val categoryFocus = remember { FocusRequester() }
     val amountFocus = remember { FocusRequester() }; val linkFocus = remember { FocusRequester() }
+    // QA-61-27: the name is optional, as for an item: without one the wish is called by its category (and colour).
+    val autoName = ItemNameRules.suggest("", category.takeIf { it in Matching.categories }?.let { stringResource(label(it)) }.orEmpty(),
+        color.takeIf { product && it in Matching.colors && it != "other" }?.let { stringResource(label(it)) }.orEmpty())
+    val effectiveName = ItemNameRules.effective(name, autoName)
     val amountValid = runCatching { WishRules.money(if (product) price else budget) }.isSuccess
     val linkValid = WishRules.validLink(link)
     val payload = JSONObject().apply {
@@ -235,7 +242,7 @@ fun WishEditor(original: Wish?, wardrobe: String, kind: String, converting: Bool
         put("requirements", requirements); put("link", link); put("color", color); put("inspiration", inspiration); put("photo", photo); put("advanced", advanced)
     }.toString()
     LaunchedEffect(advanced, validate, linkValid) {
-        if (advanced && validate && !linkValid && TextLimits.hasVisibleText(name) && category.isNotBlank() && amountValid) linkFocus.requestFocus()
+        if (advanced && validate && !linkValid && TextLimits.hasVisibleText(effectiveName) && category.isNotBlank() && amountValid) linkFocus.requestFocus()
     }
     val baseline = remember { payload }
     LaunchedEffect(payload) { onDirty(payload != baseline || restored != null); vm.keepDraft("wish", wardrobe, original?.id.orEmpty(), JSONObject(payload)) }
@@ -251,11 +258,16 @@ fun WishEditor(original: Wish?, wardrobe: String, kind: String, converting: Bool
             OutlinedButton(onClick = { gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.wish_photo_optional)) }
             if (photo.isNotBlank()) TextButton(onClick = { vm.rememberEditorPhoto(photoKey, ""); photo = "" }, enabled = !busy) { Text(stringResource(R.string.remove_photo)) }
         }
-        OutlinedTextField(name, { name = TextLimits.input(it, 120) }, label = { Text(stringResource(R.string.name_required)) }, singleLine = true, enabled = !busy,
-            isError = validate && !TextLimits.hasVisibleText(name), supportingText = { if (validate && !TextLimits.hasVisibleText(name)) Text(stringResource(R.string.wish_name_required)) }, modifier = Modifier.fillMaxWidth().focusRequester(nameFocus))
+        val nameMissing = validate && category.isNotBlank() && !TextLimits.hasVisibleText(effectiveName)
+        OutlinedTextField(name, { name = TextLimits.input(it, 120) }, label = { Text(stringResource(R.string.item_name_optional)) }, singleLine = true, enabled = !busy,
+            isError = nameMissing, supportingText = {
+                if (nameMissing) Text(stringResource(R.string.wish_name_required))
+                else if (!TextLimits.hasVisibleText(name) && autoName.isNotEmpty()) Text(stringResource(R.string.wish_name_auto, autoName))
+            }, modifier = Modifier.fillMaxWidth().focusRequester(nameFocus))
         CategoryChoice(category, { category = it }, title = R.string.category_required, enabled = !busy,
             modifier = Modifier.fillMaxWidth().focusRequester(categoryFocus))
-        if (validate && category.isBlank()) Text(stringResource(R.string.wish_category_required), color = MaterialTheme.colorScheme.error)
+        if (validate && category.isBlank()) Text(stringResource(R.string.wish_category_required), color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodySmall)
         MoneyField(if (product) price else budget, { if (product) price = it else budget = it }, if (product) currency else budgetCurrency,
             { if (product) currency = it else budgetCurrency = it }, if (product) R.string.wish_price else R.string.wish_budget,
             busy, validate && !amountValid, amountFocus)
@@ -279,15 +291,15 @@ fun WishEditor(original: Wish?, wardrobe: String, kind: String, converting: Bool
         Button(onClick = {
             validate = true
             when {
-                !TextLimits.hasVisibleText(name) -> nameFocus.requestFocus()
                 category.isBlank() -> categoryFocus.requestFocus()
+                !TextLimits.hasVisibleText(effectiveName) -> nameFocus.requestFocus()
                 !amountValid -> amountFocus.requestFocus()
                 !linkValid -> { advanced = true; if (!product) linkFocus.requestFocus() }
                 else -> {
-                    val next = (original ?: Wish(id, wardrobe, name, category)).copy(name = name.trim(), category = category,
+                    val next = (original ?: Wish(id, wardrobe, effectiveName, category)).copy(name = effectiveName, category = category,
                         kind = if (product) "product" else "need", priceMinor = if (product) WishRules.money(price) else null, currency = currency,
                         budgetMinor = if (!product) WishRules.money(budget) else original?.budgetMinor, budgetCurrency = budgetCurrency,
-                        needName = if (!product) name.trim() else original?.needName.orEmpty(), needCategory = if (!product) category else original?.needCategory.orEmpty(),
+                        needName = if (!product) effectiveName else original?.needName.orEmpty(), needCategory = if (!product) category else original?.needCategory.orEmpty(),
                         requirements = requirements.trim(), link = link.trim(), color = if (product) color else "",
                         inspiration = inspiration.trim(), photoId = photo)
                     vm.saveWish(next, converting) { onDirty(false); done(id) }

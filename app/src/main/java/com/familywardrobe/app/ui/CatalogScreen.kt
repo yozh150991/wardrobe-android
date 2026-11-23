@@ -183,7 +183,8 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
                             }
                             if (!selecting) ToolButton(Icons.Outlined.Add, stringResource(R.string.add_item), !busy, selected = true,
                                 modifier = Modifier.testTag("catalog-add"), onClick = onAddMethods)
-                            ToolButton(if (selecting) Icons.Outlined.Done else Icons.Outlined.Checklist,
+                            // QA-61-28: leaving the selection is a close (✕), not a confirming tick.
+                            ToolButton(if (selecting) Icons.Outlined.Close else Icons.Outlined.Checklist,
                                 stringResource(if (selecting) R.string.bulk_finish else R.string.bulk_select), !busy, selected = selecting) {
                                 selecting = !selecting; selectedIds = emptyList() }
                             ToolButton(Icons.Outlined.BarChart, stringResource(R.string.statistics_title), !busy, onClick = onStatistics)
@@ -226,7 +227,7 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
                                 { base, custom -> chooseCategory(custom.ifBlank { base }) }, title = R.string.browse_categories,
                                 allowAll = true, modifier = Modifier, showSelectedValue = false)
                         }
-                        SubcategoryChoice(subcategory, subcategories, { subcategory = it })
+                        SubcategoryChoice(subcategory, subcategories, { subcategory = it }, pill = true)
                     }
                 }
             }
@@ -384,11 +385,12 @@ private fun GarmentCard(g: Garment, vm: WardrobeViewModel, wears: Int, wornToday
             disabledContainerColor = Color.Transparent),
         modifier = Modifier.testTag("garment-card").semantics { if (selection != null) { role = Role.Checkbox; toggleableState = if (selection) ToggleableState.On else ToggleableState.Off } }, shape = CardShape) {
         Box(Modifier.fillMaxWidth().clip(PhotoShape)) {
-            ZoomableItemPhoto(g.photoId, vm, Modifier.fillMaxWidth().aspectRatio(photoRatio), title = g.name, enabled = enabled && selection == null, garmentColour = g.color)
+            // QA-61-02: a tap on the photo opens the item like the rest of the card; the magnifier opens the photo.
+            ZoomableItemPhoto(g.photoId, vm, Modifier.fillMaxWidth().aspectRatio(photoRatio), title = g.name, enabled = enabled && selection == null, garmentColour = g.color, zoomButtonOnly = true)
             FlowRow(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (g.archived) PhotoBadge(R.string.archived)
                 else if (g.availability != "available") PhotoBadge(label(g.availability))
-                if (wornToday) PhotoBadge(R.string.wear)
+                if (wornToday) PhotoBadge(R.string.worn_today_badge)
             }
         }
         Column(Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {

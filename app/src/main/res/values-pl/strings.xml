@@ -281,8 +281,8 @@
     <string name="add_next">Dodaj kolejną</string>
     <string name="dismiss_confirmation">Zamknij potwierdzenie</string>
     <string name="save_add_next">Zapisz i dodaj kolejną</string>
-    <string name="discard_item_title">Opuścić niezapisane zmiany?</string>
-    <string name="discard_item_hint">Zmiany są zachowane jako lokalny szkic. Odrzucenie usuwa ten szkic; zapisane rekordy pozostają bez zmian.</string>
+    <string name="discard_item_title">Wyjść bez zapisywania?</string>
+    <string name="discard_item_hint">Zmiany w tym formularzu nie są jeszcze zapisane. Jeśli wyjdziesz, przepadną.</string>
     <string name="discard_changes">Odrzuć zmiany</string>
     <string name="keep_editing">Kontynuuj edycję</string>
     <string name="undo_action">Cofnij</string>
@@ -312,7 +312,7 @@
     <string name="wish_requirements">Wymagania (opcjonalnie)</string>
     <string name="wish_budget">Budżet (opcjonalnie)</string>
     <string name="found_candidate_hint">Dodaj znaleziony produkt. Pierwotna potrzeba, wymagania i budżet zostaną zachowane.</string>
-    <string name="wish_product_hint">Zapisz nazwę i kategorię. Cena oraz dodatkowe szczegóły są opcjonalne.</string>
+    <string name="wish_product_hint">Wybierz kategorię. Nazwa, cena oraz inne szczegóły są opcjonalne.</string>
     <string name="wish_need_hint">Opisz, czego brakuje. Gdy znajdziesz produkt, dodasz go do tej potrzeby.</string>
     <string name="wish_photo_optional">Dodaj / zmień zdjęcie (opcjonalnie)</string>
     <string name="remove_photo">Usuń zdjęcie</string>
@@ -333,7 +333,7 @@
     <string name="look_weather_hint">Wybierz ręcznie — dostęp do lokalizacji nie jest potrzebny.</string>
     <string name="look_source">Skąd wybieramy rzeczy?</string>
     <string name="source_owned">Tylko moja garderoba</string>
-    <string name="source_mixed">Garderoba + chcę kupić</string>
+    <string name="source_mixed">Garderoba i „Chcę kupić”</string>
     <string name="source_inspiration">Ogólna inspiracja</string>
     <string name="look_owned_hint">Tylko Twoje dostępne ubrania.</string>
     <string name="look_mixed_hint">Twoje ubrania i zapisane życzenia z oznaczeniem własności.</string>
@@ -823,7 +823,7 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="shop_waiting">Linki w kolejce: %1$d. Najpierw zakończ bieżącą edycję.</string>
     <string name="shop_incoming">Importuj udostępniony link · w kolejce: %1$d</string>
     <string name="shop_tools">Narzędzia garderoby</string>
-    <string name="shop_manual">Dodaj ręcznie</string>
+    <string name="shop_manual">Wypełnij ręcznie</string>
     <string name="advice_product_required">Wybierz zapisany produkt, którego jeszcze nie kupiono.</string>
     <string name="advice_price">Orientacyjna cena: %1$s</string>
     <string name="advice_above_budget">Cena przekracza budżet o %1$s.</string>
@@ -1024,7 +1024,7 @@ Obecna garderoba pozostała bez zmian.</string>
 
     <!-- Family initial transfer -->
     <string name="family_title">Przenoszenie rodzinne</string>
-    <string name="family_hint">Kopia jednej garderoby na serwerze. Dane lokalne pozostają. Zaproszenia i stała synchronizacja rodzinna nie są jeszcze dostępne.</string>
+    <string name="family_hint">Tworzy wspólną kopię jednej garderoby na serwerze. Twoje dane lokalne zostają na telefonie. Zaproszenia i wspólne zmiany są w sekcji „Rodzinne garderoby i zaproszenia”.</string>
     <string name="family_choose">Wybierz garderobę</string>
     <string name="family_confirm">Utworzyć kopię tej garderoby na serwerze z rzeczami, zestawami, historią i gotowymi zdjęciami? Inne garderoby nie zostaną skopiowane. Dane lokalne pozostaną na urządzeniu.</string>
     <string name="family_start">Rozpocznij przenoszenie</string>
@@ -1047,7 +1047,7 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="family_limit">Osiągnięto limit serwera. Spróbuj później lub sprawdź limit projektu.</string>
     <string name="family_retry_error">Nie udało się potwierdzić operacji. Sprawdź połączenie i spróbuj ponownie. Najpierw zostanie sprawdzony poprzedni wynik.</string>
     <string name="family_pending">Przenoszenie oczekuje na zakończenie lub sprawdzenie</string>
-    <string name="family_local_changes">Dane konta zmieniły się od przygotowania kopii. Automatyczna synchronizacja rodzinna nie jest jeszcze dostępna.</string>
+    <string name="family_local_changes">Garderoba zmieniła się od przygotowania kopii. Tych zmian nie będzie w kopii; aby je uwzględnić, stuknij „Przygotuj ponownie”.</string>
     <string name="family_missing_local">Garderoby nie ma już na urządzeniu</string>
     <string name="family_resume">Wznów / sprawdź</string>
     <string name="family_restart">Przygotuj ponownie</string>
@@ -1379,7 +1379,7 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="style_pair_two_accents">dwa jaskrawe kolory — resztę lepiej zostawić neutralną</string>
     <string name="style_one_style">Jeden styl: %1$s</string>
     <string name="style_one_style_other">Jeden styl: %1$s (na tę okazję zwykle — %2$s)</string>
-    <string name="style_mixed">Style mieszane: %1$s — rzeczy: %2$d z %3$d</string>
+    <string name="style_mixed">Style mieszane: %1$s — %2$d z %3$d rzeczy</string>
     <string name="style_weather_ok">Pasuje do pogody „%1$s”</string>
     <string name="style_weather_no_outerwear">Brak okrycia wierzchniego na pogodę „%1$s”</string>
     <string name="style_weather_season">„%1$s” nie pasuje sezonem do pogody „%2$s”</string>
@@ -1527,4 +1527,17 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="prefs_trends_hint">Nieco częściej proponuje pary kolorów z wybranych przez Ciebie postów i kolory sezonu: %1$s. Ocena zestawu się nie zmienia.</string>
     <string name="style_trend_pair">Trend sezonu: %1$s + %2$s</string>
     <string name="style_trend_colours">Kolor sezonu: %1$s</string>
+    <string name="worn_today_badge">Noszone dziś</string>
+    <string name="item_photo_required">Zdjęcie *</string>
+    <string name="wardrobe_name_taken">Garderoba o tej nazwie już istnieje.</string>
+    <string name="settings_wardrobes">Garderoby</string>
+    <string name="settings_backups">Kopie zapasowe</string>
+    <string name="settings_backups_hint">Utwórz kopię lub przywróć z niej dane</string>
+    <string name="settings_family">Udostępnianie rodzinie</string>
+    <string name="settings_family_hint">Wspólne garderoby i zaproszenia</string>
+    <string name="app_version">Wersja %1$s</string>
+    <string name="weather_hint_title">Zestawy na pogodę</string>
+    <string name="weather_hint_text">Wybierz swoje miasto, a zestawy będą dobierane według prognozy: zimno, ciepło, deszcz. Jedno miasto dla wszystkich garderób.</string>
+    <string name="not_now">Nie teraz</string>
+    <string name="wish_name_auto">Bez nazwy życzenie będzie się nazywać „%1$s”.</string>
 </resources>

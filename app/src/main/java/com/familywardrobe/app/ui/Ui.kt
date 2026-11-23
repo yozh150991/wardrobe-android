@@ -40,6 +40,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
@@ -94,6 +95,7 @@ import com.familywardrobe.app.rules.ImportReviewRules
 import com.familywardrobe.app.rules.ItemNameRules
 import com.familywardrobe.app.rules.ItemRemovalRules
 import com.familywardrobe.app.rules.TextLimits
+import com.familywardrobe.app.rules.WardrobeNameRules
 import com.familywardrobe.app.rules.WishRules
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -230,7 +232,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
             if (route == "daily" && returnStack.isEmpty() && snapshot.garments.none { it.wardrobeId == current.id }) { route = "catalog"; entryKey = "catalog" }
         }
     }
-    val nested = route in setOf("detail", "edit", "look", "saved", "manage", "appearance", "wishdetail", "wishedit", "batch", "importedit", "calendar", "statistics", "capsules", "capsule", "capsuledaily", "compatibility", "shop", "reprocess")
+    val nested = route in setOf("detail", "edit", "look", "saved", "manage", "appearance", "wishdetail", "wishedit", "batch", "importedit", "calendar", "statistics", "capsules", "capsule", "capsuledaily", "compatibility", "shop", "reprocess", "backups", "family")
     // UX-04 (0.14.43): «Сьогодні» is a tab of its own and the app opens on it.
     val roots = setOf("daily", "catalog", "shopping", "outfits", "settings")
     fun frame(): String = JSONObject().put("route", route).put("key", entryKey)
@@ -302,8 +304,8 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
     LaunchedEffect(widgetState) { if (widgetState != null) { delay(500); vm.widgetChanged() } }
     fun openItem(g: Garment) { detailReturn = route; selected = g.id; go("detail") }
     fun addItem(category: String) { editorLaunch = ""; vm.clearDraft(); vm.forgetEditorPhotos(); buyingWishId = ""; editId = ""; editorCategory = category; editorSequence++; editorDirty = false; go("edit", replace = route == "edit") }
-    fun openShop(sharedId: String? = null) {
-        if (vm.beginShopImport(sharedId)) { editorDirty = false; go("shop") }
+    fun openShop(sharedId: String? = null, target: String = "wish") {
+        if (vm.beginShopImport(sharedId, target)) { editorDirty = false; go("shop") }
     }
     fun firstOutfit() { vm.clearDraft(); lookAnchor = ""; lookId = ""; editorDirty = false; go("look") }
     fun buildOutfit() { garment?.let { vm.clearDraft(); lookAnchor = it.id; lookId = ""; editorDirty = false; go("look") } }
@@ -322,7 +324,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
         "look" -> if (lookSetup) R.string.look_setup else R.string.outfit_builder;
         "wishdetail" -> R.string.wish_details; "wishedit" -> if (convertingWish) R.string.found_candidate else R.string.add_wish; "saved", "outfits" -> R.string.outfits
         "shopping" -> R.string.shopping; "settings" -> R.string.settings; "manage" -> R.string.manage_wardrobes
-        "appearance" -> R.string.appearance; else -> R.string.my_wardrobe
+        "appearance" -> R.string.appearance; "backups" -> R.string.settings_backups; "family" -> R.string.settings_family; else -> R.string.my_wardrobe
     }
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
@@ -369,7 +371,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                     windowInsets = WindowInsets(0, 0, 0, 0)) {
                   row.forEach { (screen, icon) ->
                     val name = navName(screen)
-                    NavigationBarItem(selected = route == screen || (nested && screen == when (route) { "look", "saved", "capsuledaily", "calendar", "capsules", "capsule" -> "outfits"; "wishdetail", "wishedit", "compatibility" -> "shopping"; "detail" -> if (detailReturn == "saved") "outfits" else "catalog"; "manage", "appearance" -> "settings"; else -> "catalog" }),
+                    NavigationBarItem(selected = route == screen || (nested && screen == when (route) { "look", "saved", "capsuledaily", "calendar", "capsules", "capsule" -> "outfits"; "wishdetail", "wishedit", "compatibility" -> "shopping"; "detail" -> if (detailReturn == "saved") "outfits" else "catalog"; "manage", "appearance", "backups", "family" -> "settings"; else -> "catalog" }),
                         // The tab is the plain «Сьогодні»: an item chosen earlier in the statistics is not kept.
                         onClick = { if (screen == "daily") rotationAnchor = ""; navigate(screen) }, enabled = canNavigate, icon = { Icon(icon, null) },
                         modifier = Modifier.testTag("nav-$screen"),
@@ -503,10 +505,13 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                     if (wish.ownedId.isBlank()) { wishId = wish.id; navigate("wishdetail") }
                     else { selected = wish.ownedId; navigate("detail") }
                 })
-                "settings" -> Settings(vm, appearance, accountEmail, onSignOut, onNewWardrobe = { newWardrobe = true }, onManageWardrobes = { go("manage") }, onAppearance = { go("appearance") },
+                "settings" -> Settings(vm, appearance, accountEmail, onSignOut, onManageWardrobes = { go("manage") }, onAppearance = { go("appearance") },
+                    onBackups = { go("backups") }, onFamily = { go("family") },
                     onAccountDeleted = onAccountDeleted, snapshot = snapshot, wardrobe = current.id, today = today)
                 "appearance" -> AppearanceScreen(appearance, onBrowse = { go("catalog") })
-                "manage" -> ManageWardrobes(snapshot, current.id, vm) { id ->
+                "backups" -> BackupSettings(vm)
+                "family" -> FamilySettings(vm)
+                "manage" -> ManageWardrobes(snapshot, current.id, vm, onNew = { newWardrobe = true }) { id ->
                     vm.select(id); go("catalog"); requestedCategory = ""
                 }
             } }
@@ -516,7 +521,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
         addMethods = false
         when (method) {
             "batch" -> go("batch")
-            "shop" -> openShop()
+            "shop" -> openShop(target = "garment")
             else -> { addItem(""); editorLaunch = if (method == "manual") "" else method }
         }
     }
@@ -530,10 +535,15 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
             pendingWardrobe?.let { navigationWardrobe = it; vm.select(it); returnStack = arrayListOf() }
             go(pendingRoute ?: "catalog"); pendingRoute = null; pendingWardrobe = null
         }) {
-            Text(stringResource(R.string.discard_changes))
+            // QA-61-11: the destructive choice looks destructive.
+            Text(stringResource(R.string.discard_changes), color = MaterialTheme.colorScheme.error)
         } }, dismissButton = { TextButton(onClick = { pendingRoute = null; pendingWardrobe = null }) { Text(stringResource(R.string.keep_editing)) } })
-    if (newWardrobe) NameDialog(R.string.new_wardrobe, R.string.wardrobe_name, onDismiss = { newWardrobe = false }) {
-        vm.addWardrobe(it); newWardrobe = false
+    val wardrobeNames = snapshot.wardrobes.map { it.displayName() }
+    if (newWardrobe) NameDialog(R.string.new_wardrobe, R.string.wardrobe_name, onDismiss = { newWardrobe = false },
+        taken = { WardrobeNameRules.taken(wardrobeNames, it) }) {
+        // QA-61-07: the wardrobe someone just created is the one they want to fill.
+        vm.addWardrobe(it) { id -> vm.select(id); go(if (route == "daily") "daily" else "catalog"); requestedCategory = "" }
+        newWardrobe = false
     }
     var copyRequestToken by rememberSaveable { mutableStateOf("") }
     val createErrorCopy = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
@@ -623,7 +633,8 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
     val duplicates = catalog.garments.filter { it.wardrobeId == wardrobe && it.id != id && fingerprint.isNotBlank() && it.photoFingerprint == fingerprint }
     val previousItem = catalog.garments.filter { it.wardrobeId == wardrobe && it.id != id }.maxByOrNull { it.createdAt }
     var copyingPrevious by rememberSaveable { mutableStateOf(false) }
-    var copyFields by rememberSaveable { mutableStateOf(arrayListOf("category", "season", "style")) }
+    // QA-61-09: a form opened for a category («Додати низ») keeps it unless the user ticks «Категорія» on purpose.
+    var copyFields by rememberSaveable { mutableStateOf(arrayListOf("season", "style").apply { if (initialCategory !in Matching.categories) add(0, "category") }) }
     var confirmDefer by remember { mutableStateOf(false) }
     var advanced by rememberSaveable { mutableStateOf(restored?.optBoolean("advanced", false) ?: false) }
     val editorPhotoKey = "$wardrobe:$id"
@@ -634,7 +645,8 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
     LaunchedEffect(pendingPhoto) { pendingPhoto?.let { photo = it } }
     fun receivePhoto(next: String) { vm.rememberEditorPhoto(editorPhotoKey, next); photo = next }
     var editingPhoto by rememberSaveable { mutableStateOf(false) }
-    var pendingCapture by rememberSaveable { mutableStateOf("") }
+    // QA-61-01: the camera app can outlive this process; the draft, not only the saved UI state, keeps the pending shot.
+    var pendingCapture by rememberSaveable { mutableStateOf(initial("pendingCapture", "")) }
     var validation by remember { mutableStateOf(false) }
     val nameFocus = remember { FocusRequester() }
     val categoryFocus = remember { FocusRequester() }
@@ -654,6 +666,7 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
         ?: color.takeIf { it in Matching.colors && it != "other" }?.let { stringResource(label(it)) }.orEmpty()
     val autoName = ItemNameRules.suggest(subcategory, categoryTitle, colourTitle)
     val effectiveName = ItemNameRules.effective(name, autoName)
+    val nameMissing = validation && category in Matching.categories && !TextLimits.hasVisibleText(effectiveName)
     fun showRequiredFields() { editorScope.launch {
         if (category !in Matching.categories) { categoryView.bringIntoView(); categoryFocus.requestFocus() }
         else { fieldsView.bringIntoView(); nameFocus.requestFocus() }
@@ -677,7 +690,7 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
     val payload = JSONObject().put("id", id).put("name", name).put("category", category).put("color", color).put("size", size)
         .put("location", location).put("description", description).put("season", season).put("style", style).put("availability", availability)
         .put("photo", photo).put("advanced", advanced).put("price", price).put("currency", currency).put("subcategory", subcategory).put("customCategoryId", customCategoryId).put("customColorId", customColorId)
-        .put("shopImported", shopImported).put("shopLink", shopLink).put("shopPhotoAnalyzed", shopPhotoAnalyzed).toString()
+        .put("shopImported", shopImported).put("shopLink", shopLink).put("shopPhotoAnalyzed", shopPhotoAnalyzed).put("pendingCapture", pendingCapture).toString()
     LaunchedEffect(payload, hasPhotoSession) { onDirtyChange(dirty); vm.keepDraft(draftKind, wardrobe, originalId, JSONObject(payload)) }
     LaunchedEffect(shopImported, photo, busy) {
         if (shopImported && !shopPhotoAnalyzed && photo.isNotBlank() && !busy) {
@@ -717,17 +730,28 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
     if (editingPhoto && photo.isNotEmpty()) PhotoEditor(photo, vm, onDismiss = { editingPhoto = false }, onPhoto = ::receivePhoto, beforePhotoId = fingerprintSource, owner = editorPhotoKey)
     val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) vm.importPhoto(uri, ::receivePhoto) }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success && pendingCapture.isNotEmpty()) vm.importPhoto(Uri.parse(pendingCapture)) { receivePhoto(it); pendingCapture = "" }
-        else pendingCapture = ""
+        val shot = pendingCapture; pendingCapture = ""
+        if (success && shot.isNotEmpty()) vm.importPhoto(Uri.parse(shot), ::receivePhoto)
+    }
+    fun startCapture() = runCatching {
+        val uri = vm.photos.newCapture(); pendingCapture = uri.toString()
+        // Written now: once the camera is in front, this screen may get no frame to run its draft effect before the
+        // system stops the process (4 of 5 photos were lost that way in QA-61-01).
+        vm.keepDraft(draftKind, wardrobe, originalId, JSONObject(payload).put("pendingCapture", pendingCapture))
+        camera.launch(uri)
+    }.onFailure { vm.reportFailure(OperationKind.PHOTO, it as? Exception ?: IllegalStateException()) }
+    // After the process was stopped behind the camera, the result callback is usually gone: take the shot from the
+    // file the camera wrote. Whichever of the two runs first clears pendingCapture, so a shot is imported once.
+    LaunchedEffect(Unit) {
+        val shot = pendingCapture
+        if (shot.isNotEmpty()) { pendingCapture = ""; if (vm.photos.captureReady(Uri.parse(shot))) vm.importPhoto(Uri.parse(shot), ::receivePhoto) }
     }
     var actionStarted by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(initialPhotoAction, busy) {
         if (!actionStarted && !busy && original == null && purchase == null && imported == null && initialPhotoAction.isNotBlank()) {
             actionStarted = true
             if (initialPhotoAction == "gallery") gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-            else if (initialPhotoAction == "camera") runCatching { vm.photos.newCapture() }.onSuccess {
-                pendingCapture = it.toString(); camera.launch(it)
-            }.onFailure { vm.reportFailure(OperationKind.PHOTO, it as? Exception ?: IllegalStateException()) }
+            else if (initialPhotoAction == "camera") startCapture()
         }
     }
 
@@ -742,13 +766,15 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
                     ItemPhoto(nextReviewPhoto, vm, Modifier.size(48.dp)); Text(stringResource(R.string.review_next_preview), Modifier.padding(start = 8.dp))
                 }
             }
+            // QA-61-04: the photo is required like the category, so it is marked the same way.
+            Text(stringResource(R.string.item_photo_required), style = MaterialTheme.typography.titleSmall)
             // UI-05: a larger photo on its own tile, as in the approved design.
             ItemPhoto(photo, vm, Modifier.bringIntoViewRequester(photoView).fillMaxWidth().height(if (LocalConfiguration.current.screenHeightDp < 700) 200.dp else 260.dp)
                 .clip(RoundedCornerShape(24.dp)), fit = true, garmentColour = color)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, enabled = !busy && !hasPhotoSession, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
                     Icon(Icons.Outlined.PhotoLibrary, null); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.gallery)) }
-                OutlinedButton(onClick = { runCatching { val uri = vm.photos.newCapture(); pendingCapture = uri.toString(); camera.launch(uri) }.onFailure { vm.reportFailure(OperationKind.PHOTO, it as? Exception ?: IllegalStateException()) } },
+                OutlinedButton(onClick = { startCapture() },
                     enabled = !busy && !hasPhotoSession, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
                     Icon(Icons.Outlined.PhotoCamera, null); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.camera)) }
             }
@@ -766,8 +792,9 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
             if (original == null && purchase == null && previousItem != null) TextButton(onClick = { copyingPrevious = true },
                 enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.import_copy_previous)) }
             OutlinedTextField(name, { name = TextLimits.input(it, 120) }, label = { Text(stringResource(R.string.item_name_optional)) }, singleLine = true,
-                enabled = !busy, isError = validation && !TextLimits.hasVisibleText(effectiveName), supportingText = {
-                    if (validation && !TextLimits.hasVisibleText(effectiveName)) Text(stringResource(R.string.wish_name_required))
+                // QA-61-03: without a category there is no automatic name either; only the category error is shown then.
+                enabled = !busy, isError = nameMissing, supportingText = {
+                    if (nameMissing) Text(stringResource(R.string.wish_name_required))
                     else if (!TextLimits.hasVisibleText(name) && autoName.isNotEmpty()) Text(stringResource(R.string.item_name_auto, autoName)) },
                 modifier = Modifier.fillMaxWidth().bringIntoViewRequester(fieldsView).focusRequester(nameFocus))
             WardrobeCategoryChoice(category, customCategoryId, catalog, wardrobe, vm, { base, custom ->
@@ -775,11 +802,12 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
                 category = base; customCategoryId = custom
             }, title = R.string.category_required, enabled = !busy,
                 modifier = Modifier.fillMaxWidth().bringIntoViewRequester(categoryView).focusRequester(categoryFocus))
+            if (validation && category !in Matching.categories) Text(stringResource(R.string.wish_category_required),
+                color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             Field(subcategory, { subcategory = TextLimits.input(it, 60) }, R.string.item_subcategory, enabled = !busy)
             val knownSubcategories = subcategoryOptions(catalog.garments, wardrobe, customCategoryId.ifBlank { category })
             if (knownSubcategories.isNotEmpty()) SubcategoryChoice(subcategory, knownSubcategories, { subcategory = it },
                 enabled = !busy, allowAll = false, title = R.string.subcategory_choose)
-            if (validation && category !in Matching.categories) Text(stringResource(R.string.wish_category_required), color = MaterialTheme.colorScheme.error)
             WardrobeColorChoice(color, customColorId, catalog, wardrobe, vm, { base, custom ->
                 color = base; customColorId = custom
             }, enabled = !busy)
@@ -842,9 +870,13 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
                 "color" to (stringResource(R.string.color) + ": " + (catalog.customColor(previousItem)?.name ?: stringResource(label(previousItem.color)))),
                 "season" to (stringResource(R.string.season) + ": " + stringResource(label(previousItem.season))),
                 "style" to (stringResource(R.string.style) + ": " + stringResource(label(previousItem.style))),
-                "subcategory" to (stringResource(R.string.item_subcategory) + ": " + previousItem.subcategory),
+                "subcategory" to (stringResource(R.string.filter_subcategory) + ": " + previousItem.subcategory),
                 "size" to (stringResource(R.string.size) + ": " + previousItem.size),
-                "location" to (stringResource(R.string.location) + ": " + previousItem.location)).forEach { (key, text) ->
+                "location" to (stringResource(R.string.location) + ": " + previousItem.location)).filter { (key, _) ->
+                // QA-61-09: an empty field of the previous item has nothing to copy.
+                when (key) { "subcategory" -> previousItem.subcategory.isNotBlank(); "size" -> previousItem.size.isNotBlank()
+                    "location" -> previousItem.location.isNotBlank(); else -> true }
+            }.forEach { (key, text) ->
                 SelectionRow(text, key in copyFields, !busy) { checked -> copyFields = ArrayList(if (checked) copyFields + key else copyFields - key) }
             }
         }
@@ -943,76 +975,53 @@ fun SavedOutfit(outfit: Outfit, s: Snapshot, vm: WardrobeViewModel, today: Strin
 }
 
 @Composable
-fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEmail: String, onSignOut: () -> Unit, onNewWardrobe: () -> Unit, onManageWardrobes: () -> Unit, onAppearance: () -> Unit,
+fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEmail: String, onSignOut: () -> Unit, onManageWardrobes: () -> Unit, onAppearance: () -> Unit,
+    onBackups: () -> Unit, onFamily: () -> Unit,
     onAccountDeleted: () -> Unit = {}, snapshot: Snapshot? = null, wardrobe: String = "", today: String = LocalDate.now().toString()) {
     val busy by vm.busy.collectAsStateWithLifecycle()
     val appearance by appearanceVm.appearance.collectAsStateWithLifecycle()
+    val city by vm.weather.city.collectAsStateWithLifecycle()
     var signOutDialog by remember { mutableStateOf(false) }
     // UX-14: the preferences and the weather's city were reachable only through the weather chip on «Сьогодні».
     var preferencesOpen by rememberSaveable { mutableStateOf(false) }
     var weatherOpen by rememberSaveable { mutableStateOf(false) }
     var languageMenu by remember { mutableStateOf(false) }
-    val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri -> if (uri != null) vm.export(uri) }
-    val restore = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.previewRestore(uri) }
     val selectedLanguage = AppCompatDelegate.getApplicationLocales().toLanguageTags()
     val languageNames = mapOf("" to stringResource(R.string.system_language), "uk" to "Українська", "en" to "English", "pl" to "Polski")
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    val context = LocalContext.current
+    val version = remember { runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty() }
+    // QA-61-25: a short list of sections. Backups and family sharing have their own screens; signing out is at the end.
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.auth_account), style = MaterialTheme.typography.titleMedium)
         Text(accountEmail)
         CloudSyncPanel(vm)
-        OutlinedButton(onClick = { signOutDialog = true }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.auth_sign_out))
-        }
         HorizontalDivider()
-        Card(onClick = onAppearance, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Icon(Icons.Outlined.Palette, null, tint = MaterialTheme.colorScheme.primary)
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.appearance), style = MaterialTheme.typography.titleMedium)
-                    Text("${stringResource((appearance ?: AppearanceSettings()).palette.title)} · ${stringResource((appearance ?: AppearanceSettings()).mode.title)}",
-                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Icon(Icons.Outlined.ChevronRight, null)
-            }
-        }
+        SettingsRow(Icons.Outlined.Palette, R.string.appearance,
+            "${stringResource((appearance ?: AppearanceSettings()).palette.title)} · ${stringResource((appearance ?: AppearanceSettings()).mode.title)}", onAppearance)
         Box {
-            OutlinedButton(onClick = { languageMenu = true }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-                Text("${stringResource(R.string.language)}: ${languageNames[selectedLanguage] ?: selectedLanguage}")
-            }
+            SettingsRow(Icons.Outlined.Language, R.string.language, languageNames[selectedLanguage] ?: selectedLanguage, { languageMenu = true }, enabled = !busy)
             DropdownMenu(languageMenu, onDismissRequest = { languageMenu = false }) {
                 languageNames.forEach { (code, name) -> DropdownMenuItem(text = { Text(name) }, onClick = {
                     languageMenu = false; AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(code))
                 }) }
             }
         }
-        if (snapshot != null && wardrobe.isNotEmpty()) {
-            HorizontalDivider()
-            Text(stringResource(R.string.settings_suggestions), style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(R.string.settings_suggestions_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            OutlinedButton(onClick = { preferencesOpen = true }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.prefs_open)) }
-            OutlinedButton(onClick = { weatherOpen = true }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.settings_weather)) }
-            HorizontalDivider()
+        if (snapshot != null && wardrobe.isNotEmpty())
+            SettingsRow(Icons.Outlined.Tune, R.string.prefs_open, stringResource(R.string.settings_suggestions_hint), { preferencesOpen = true }, enabled = !busy)
+        // One city for the whole account (the weather is not kept per wardrobe).
+        SettingsRow(Icons.Outlined.WbSunny, R.string.settings_weather, city?.name ?: stringResource(R.string.weather_no_city), { weatherOpen = true },
+            tag = "settings-weather")
+        SettingsRow(Icons.Outlined.Checkroom, R.string.settings_wardrobes,
+            stringResource(R.string.wardrobe_total, snapshot?.wardrobes?.size ?: 0), onManageWardrobes, enabled = !busy, tag = "settings-wardrobes")
+        SettingsRow(Icons.Outlined.Backup, R.string.settings_backups, stringResource(R.string.settings_backups_hint), onBackups, tag = "settings-backups")
+        SettingsRow(Icons.Outlined.Groups, R.string.settings_family, stringResource(R.string.settings_family_hint), onFamily, tag = "settings-family")
+        HorizontalDivider()
+        OutlinedButton(onClick = { signOutDialog = true }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            Text(stringResource(R.string.auth_sign_out))
         }
-        OutlinedButton(onClick = onNewWardrobe, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.new_wardrobe)) }
-        OutlinedButton(onClick = onManageWardrobes, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.manage_wardrobes)) }
-        HorizontalDivider()
-        Text(stringResource(R.string.backup), style = MaterialTheme.typography.titleLarge)
-        BackupHealthPanel(vm, createNow = { export.launch("wardrobe-${LocalDate.now()}.zip") })
-        SingleWardrobeBackupControl(vm)
-        HorizontalDivider()
-        FamilyTransferControl(vm)
-        FamilyAccessControl(vm)
-        HorizontalDivider()
-        OutlinedButton(onClick = { restore.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.import_backup))
-        }
-        HorizontalDivider()
-        Text(stringResource(R.string.local_version), style = MaterialTheme.typography.titleMedium)
-        Text(stringResource(R.string.local_notice), style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
-        HorizontalDivider()
         AccountDeletionControl(vm, accountEmail, onAccountDeleted)
+        if (version.isNotEmpty()) Text(stringResource(R.string.app_version, version), style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     if (preferencesOpen && snapshot != null) PreferencesDialog(snapshot, wardrobe, vm, today) { preferencesOpen = false }
     if (weatherOpen) AlertDialog(onDismissRequest = { weatherOpen = false }, title = { Text(stringResource(R.string.settings_weather)) },
@@ -1023,7 +1032,51 @@ fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEm
         text = { Text(stringResource(R.string.auth_logout_hint)) },
         confirmButton = { TextButton(onClick = { signOutDialog = false; onSignOut() }, enabled = !busy) { Text(stringResource(R.string.auth_sign_out)) } },
         dismissButton = { TextButton(onClick = { signOutDialog = false }) { Text(stringResource(R.string.cancel)) } })
+}
 
+/** One section of the profile: an icon, a title, what is set now, and an arrow to its screen or dialog. */
+@Composable
+private fun SettingsRow(icon: ImageVector, title: Int, subtitle: String, onClick: () -> Unit, enabled: Boolean = true, tag: String? = null) {
+    Card(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().then(if (tag != null) Modifier.testTag(tag) else Modifier),
+        shape = MaterialTheme.shapes.medium, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface,
+            disabledContainerColor = MaterialTheme.colorScheme.surface)) {
+        Row(Modifier.heightIn(min = 56.dp).padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
+                if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Icon(Icons.Outlined.ChevronRight, null)
+        }
+    }
+}
+
+/** QA-61-25: backups and restoring, moved out of the profile list. */
+@Composable
+fun BackupSettings(vm: WardrobeViewModel) {
+    val busy by vm.busy.collectAsStateWithLifecycle()
+    val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri -> if (uri != null) vm.export(uri) }
+    val restore = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.previewRestore(uri) }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        BackupHealthPanel(vm, createNow = { export.launch("wardrobe-${LocalDate.now()}.zip") })
+        SingleWardrobeBackupControl(vm)
+        HorizontalDivider()
+        OutlinedButton(onClick = { restore.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")) }, enabled = !busy,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            Text(stringResource(R.string.import_backup))
+        }
+        // BackupHealthPanel already says where the data lives (local_notice); it is not repeated here.
+    }
+}
+
+/** QA-61-25: the family transfer and shared wardrobes, moved out of the profile list. */
+@Composable
+fun FamilySettings(vm: WardrobeViewModel) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        FamilyAccessControl(vm)
+        HorizontalDivider()
+        FamilyTransferControl(vm)
+    }
 }
 
 // Shared editors supply their isolated photo store to all reused canvas/picker/detail components.
@@ -1079,6 +1132,13 @@ fun Field(value: String, change: (String) -> Unit, title: Int, enabled: Boolean 
         singleLine = true, enabled = enabled, modifier = Modifier.fillMaxWidth())
 }
 
+/** A one-line name with an error under it (QA-61-06: a name that is already taken). */
+@Composable
+fun NameField(value: String, change: (String) -> Unit, title: Int, enabled: Boolean = true, error: Int? = null) {
+    OutlinedTextField(value, change, label = { Text(stringResource(title)) }, singleLine = true, enabled = enabled,
+        isError = error != null, supportingText = error?.let { { Text(stringResource(it)) } }, modifier = Modifier.fillMaxWidth())
+}
+
 /** A fact about the item; not a button, so it does not look like one. */
 @Composable
 fun Info(title: Int, value: String) {
@@ -1091,11 +1151,13 @@ fun Toggle(title: Int, value: Boolean, change: (Boolean) -> Unit) {
 }
 
 @Composable
-fun NameDialog(title: Int, field: Int, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+fun NameDialog(title: Int, field: Int, onDismiss: () -> Unit, taken: (String) -> Boolean = { false }, takenError: Int = R.string.wardrobe_name_taken,
+    onSave: (String) -> Unit) {
     var name by rememberSaveable { mutableStateOf("") }
+    val duplicate = taken(name)
     AlertDialog(onDismissRequest = onDismiss, title = { Text(stringResource(title)) },
-        text = { Field(name, { name = TextLimits.input(it, 80) }, field) },
-        confirmButton = { TextButton(onClick = { onSave(name.trim()) }, enabled = TextLimits.hasVisibleText(name)) { Text(stringResource(R.string.save)) } },
+        text = { NameField(name, { name = TextLimits.input(it, 80) }, field, error = if (duplicate) takenError else null) },
+        confirmButton = { TextButton(onClick = { onSave(name.trim()) }, enabled = TextLimits.hasVisibleText(name) && !duplicate) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } })
 }
 

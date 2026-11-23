@@ -138,6 +138,10 @@ class ScreenshotTourTest {
             extra(config, "5b-profile-scrolled") { tap("nav-settings"); scrollDown(); shot(config, "5b-profile-scrolled") }
             extra(config, "5c-preferences") { tapText(text(R.string.prefs_open)); shotDialog(config, "5c-preferences"); back() }
             extra(config, "5d-appearance") { tap("nav-settings"); tapText(text(R.string.appearance)); shot(config, "5d-appearance"); back() }
+            // QA-61-25: the profile's own screens.
+            extra(config, "5e-wardrobes") { tap("nav-settings"); tapText(text(R.string.settings_wardrobes)); shot(config, "5e-wardrobes"); back() }
+            extra(config, "5f-backups") { tap("nav-settings"); tapText(text(R.string.settings_backups)); shot(config, "5f-backups"); back() }
+            extra(config, "5g-family") { tap("nav-settings"); tapText(text(R.string.settings_family)); shot(config, "5g-family"); back() }
             extra(config, "7-new-item") { tap("nav-catalog"); tap("catalog-add"); tap("add-method-manual"); shot(config, "7-new-item") }
         } finally {
             session.close(signedOut = false)

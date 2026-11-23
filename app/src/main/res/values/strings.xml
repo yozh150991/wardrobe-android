@@ -54,7 +54,7 @@
     <string name="auth_storage_title">Не вдалося відкрити дані</string>
     <string name="auth_storage_error">Перевір вільне місце на телефоні та спробуй знову. Наявні дані не видалено.</string>
     <string name="auth_reauth_title">Увійди ще раз</string>
-    <string name="auth_reauth_hint">Сеанс завершився. Увійди в той самий акаунт, щоб продовжити з місця, де зупинився.</string>
+    <string name="auth_reauth_hint">Сеанс завершився. Увійди в той самий акаунт, щоб продовжити.</string>
     <string name="auth_wrong_account">Потрібен той самий акаунт. Або обери «Змінити акаунт».</string>
     <string name="auth_switch_account">Змінити акаунт</string>
     <string name="auth_discard_session">Чернетки залишаться на цьому пристрої та відновляться після входу в той самий акаунт. Збережені речі залишаться у своєму акаунті.</string>
@@ -281,8 +281,8 @@
     <string name="add_next">Додати наступну</string>
     <string name="dismiss_confirmation">Закрити підтвердження</string>
     <string name="save_add_next">Зберегти й додати наступну</string>
-    <string name="discard_item_title">Залишити незбережені зміни?</string>
-    <string name="discard_item_hint">Зміни збережено локально як чернетку. Відкидання видалить цю чернетку; збережені записи залишаться без змін.</string>
+    <string name="discard_item_title">Вийти без збереження?</string>
+    <string name="discard_item_hint">Зміни в цій формі ще не збережено. Якщо вийти, вони зникнуть.</string>
     <string name="discard_changes">Відкинути зміни</string>
     <string name="keep_editing">Продовжити редагування</string>
     <string name="undo_action">Скасувати</string>
@@ -312,7 +312,7 @@
     <string name="wish_requirements">Вимоги (необов’язково)</string>
     <string name="wish_budget">Бюджет (необов’язково)</string>
     <string name="found_candidate_hint">Додай знайдений товар. Початкова потреба, вимоги й бюджет збережуться.</string>
-    <string name="wish_product_hint">Збережи назву й категорію. Ціна та додаткові деталі необов’язкові.</string>
+    <string name="wish_product_hint">Обери категорію. Назва, ціна та інші деталі необов’язкові.</string>
     <string name="wish_need_hint">Опиши те, чого бракує. Коли знайдеш товар, додаси його до цієї потреби.</string>
     <string name="wish_photo_optional">Додати / замінити фото (необов’язково)</string>
     <string name="remove_photo">Прибрати фото</string>
@@ -333,7 +333,7 @@
     <string name="look_weather_hint">Обери вручну — доступ до геолокації не потрібен.</string>
     <string name="look_source">Звідки беремо речі?</string>
     <string name="source_owned">Лише мій гардероб</string>
-    <string name="source_mixed">Гардероб + хочу купити</string>
+    <string name="source_mixed">Гардероб і «Хочу купити»</string>
     <string name="source_inspiration">Загальне натхнення</string>
     <string name="look_owned_hint">Лише власні речі, доступні зараз.</string>
     <string name="look_mixed_hint">Власні речі та збережені бажання з позначками власності.</string>
@@ -386,7 +386,7 @@
     <string name="retry_connection">Повторити підключення</string>
     <string name="offline_login_hint">Для нового або повторного входу потрібне з’єднання. Локальні чернетки відновляться після входу в той самий акаунт.</string>
     <string name="owned_badge">Маю</string>
-    <string name="draft_restored">Чернетку відновлено — продовжуй із місця, де зупинився.</string>
+    <string name="draft_restored">Чернетку відновлено — продовжуй з того самого місця.</string>
     <string name="purchase_source_missing">Ця покупка вже перенесена або запис більше недоступний. Повернися до списку.</string>
     <string name="additional_details">Додаткові деталі</string>
     <string name="name_required">Назва *</string>
@@ -823,7 +823,7 @@
     <string name="shop_waiting">Посилань у черзі: %1$d. Заверши поточне редагування.</string>
     <string name="shop_incoming">Імпортувати посилання · у черзі: %1$d</string>
     <string name="shop_tools">Інструменти гардероба</string>
-    <string name="shop_manual">Додати вручну</string>
+    <string name="shop_manual">Заповнити вручну</string>
     <string name="advice_product_required">Для перевірки потрібен збережений товар, який ще не куплено.</string>
     <string name="advice_price">Орієнтовна ціна: %1$s</string>
     <string name="advice_above_budget">Ціна перевищує бюджет на %1$s.</string>
@@ -1024,7 +1024,7 @@
 
     <!-- Family initial transfer -->
     <string name="family_title">Сімейний перенос</string>
-    <string name="family_hint">Серверна копія одного гардероба. Локальні дані зберігаються. Запрошення та постійна сімейна синхронізація ще недоступні.</string>
+    <string name="family_hint">Створює спільну копію одного гардероба на сервері. Твої локальні дані залишаються на телефоні. Запрошення та спільні зміни — у розділі «Сімейні гардероби та запрошення».</string>
     <string name="family_choose">Вибрати гардероб</string>
     <string name="family_confirm">Створити серверну копію цього гардероба з речами, образами, історією та кінцевими фото? Інші гардероби не потраплять до копії. Локальні дані залишаться на пристрої.</string>
     <string name="family_start">Почати перенос</string>
@@ -1047,7 +1047,7 @@
     <string name="family_limit">Досягнуто серверного ліміту. Спробуй пізніше або перевір квоту проєкту.</string>
     <string name="family_retry_error">Не вдалося підтвердити операцію. Перевір мережу й повтори. Застосунок спочатку перевірить попередній результат.</string>
     <string name="family_pending">Перенос очікує завершення або перевірки</string>
-    <string name="family_local_changes">Після підготовки копії в акаунті були зміни. Автоматичної сімейної синхронізації ще немає.</string>
+    <string name="family_local_changes">Після підготовки копії гардероб змінився. Ці зміни не потраплять у копію; щоб їх врахувати, натисни «Підготувати заново».</string>
     <string name="family_missing_local">Гардероб відсутній на пристрої</string>
     <string name="family_resume">Продовжити / перевірити</string>
     <string name="family_restart">Підготувати заново</string>
@@ -1101,7 +1101,7 @@
     <string name="family_member_revoked">Доступ або запрошення відкликано.</string>
     <string name="family_leave">Вийти зі спільного гардероба</string>
     <string name="family_leave_confirm">Вийти зі спільного гардероба? Для повернення знадобиться нове запрошення від власника.</string>
-    <string name="family_member_left">Ти вийшов зі спільного гардероба.</string>
+    <string name="family_member_left">Спільний гардероб залишено.</string>
     <string name="family_accept_confirm">Прийняти доступ до «%1$s» від %2$s? Роль: %3$s. Власник побачить твою email-адресу.</string>
     <string name="family_confirm_action">Підтвердити</string>
     <string name="family_members_conflict">Доступ або запрошення вже змінилися. Онови список перед наступною дією.</string>
@@ -1379,7 +1379,7 @@
     <string name="style_pair_two_accents">два яскраві кольори — решту краще лишити нейтральною</string>
     <string name="style_one_style">Один стиль: %1$s</string>
     <string name="style_one_style_other">Один стиль: %1$s (для цієї нагоди зазвичай — %2$s)</string>
-    <string name="style_mixed">Стилі змішані: %1$s — речей: %2$d із %3$d</string>
+    <string name="style_mixed">Стилі змішані: %1$s — %2$d із %3$d речей</string>
     <string name="style_weather_ok">Під погоду «%1$s»</string>
     <string name="style_weather_no_outerwear">Для погоди «%1$s» бракує верхнього одягу</string>
     <string name="style_weather_season">«%1$s» не за сезоном для погоди «%2$s»</string>
@@ -1527,4 +1527,17 @@
     <string name="prefs_trends_hint">Трохи частіше пропонує пари кольорів із вибраних тобою дописів і кольори сезону: %1$s. Оцінка образу не змінюється.</string>
     <string name="style_trend_pair">Тренд сезону: %1$s + %2$s</string>
     <string name="style_trend_colours">Колір сезону: %1$s</string>
+    <string name="worn_today_badge">Вдягнено сьогодні</string>
+    <string name="item_photo_required">Фото *</string>
+    <string name="wardrobe_name_taken">Гардероб із такою назвою вже є.</string>
+    <string name="settings_wardrobes">Гардероби</string>
+    <string name="settings_backups">Резервні копії</string>
+    <string name="settings_backups_hint">Створити копію або відновити з неї дані</string>
+    <string name="settings_family">Сімейний доступ</string>
+    <string name="settings_family_hint">Спільні гардероби й запрошення</string>
+    <string name="app_version">Версія %1$s</string>
+    <string name="weather_hint_title">Підбір за погодою</string>
+    <string name="weather_hint_text">Обери своє місто, і образи підбиратимуться за прогнозом: холод, тепло, дощ. Місто одне для всіх гардеробів.</string>
+    <string name="not_now">Не зараз</string>
+    <string name="wish_name_auto">Без назви бажання називатиметься «%1$s».</string>
 </resources>

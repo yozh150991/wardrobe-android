@@ -46,7 +46,7 @@ def where(d, pattern, keep=()):
 # TXT-02: «ти», never «Ви».
 check(not [k for k, v in uk.items() if INFORMAL_RE.search(v)], f'Ukrainian says «ти»: {[k for k, v in uk.items() if INFORMAL_RE.search(v)][:5]}')
 # TXT-03: no gendered verbs aimed at the user, one verb for wearing.
-gendered = where(uk, r'(?<![А-Яа-яЇїІіЄєҐґ’])(Вдягнув|вдягнув|Одягнув|одягнув|одягав|вдягав|Знайшов|знайшов|обирав|вибрав|обрав|забув|Купив|купив|[Нн]осив|додав|зберіг|бачив|хотів|зробив|створив|відкрив|натиснув|змінив|видалив|отримав)(?![А-Яа-яЇїІіЄєҐґ’])')
+gendered = where(uk, r'(?<![А-Яа-яЇїІіЄєҐґ’])(Вдягнув|вдягнув|Одягнув|одягнув|одягав|вдягав|Знайшов|знайшов|обирав|вибрав|обрав|забув|Купив|купив|[Нн]осив|додав|зберіг|бачив|хотів|зробив|створив|відкрив|натиснув|змінив|видалив|отримав|зупинився|зупинилася|залогінився|зареєструвався|повернувся|переконався|навчився|помилився|увійшов|вийшов|передумав)(?![А-Яа-яЇїІіЄєҐґ’])')
 check(not gendered, f'no gendered verbs for the user: {gendered}')
 check(not where(uk, r'(?<![А-Яа-яЇїІіЄєҐґ’])[Оо]дяг(ну|а)'), 'wearing is «вдягати», not «одягати»')
 # TXT-04: one name per thing.
@@ -66,7 +66,9 @@ for lang, pattern, why, keep in [
     found = where(langs[lang], pattern, keep)
     check(not found, f'{lang}: {why}: {found}')
 # TXT-05: a number never stands before a noun that has to agree with it. Constants (31 days, 16 days, 2 answers) are fine.
-CONSTANT = {'trip_truncated', 'trip_city_forecast', 'prefs_warmth_default'}
+CONSTANT = {'trip_truncated', 'trip_city_forecast', 'prefs_warmth_default',
+            # QA-61-18: «2 із 3 речей» — after «із»/of/z the noun is genitive for any count, and an outfit has 2+ items.
+            'style_mixed'}
 nouns = {'uk': r'гардероб\w*|реч(ей|і)|образ\w*|змін\w*|днів|дні|дня|відгук\w*|товар\w*|фото',
          'en': r'wardrobes?|items?|outfits?|pieces?|changes?|days?|products?|photos?',
          'pl': r'garder\w*|rzecz\w*|zestaw\w*|zmian\w*|dni|produkt\w*|zdjęć'}
@@ -123,7 +125,9 @@ check('if (scroll.value > 0 && statusBarPx > 0f) drawRect(pageColour' in sources
 check('OutlinedCard(' not in sources['ui/StatisticsScreen.kt'] and 'Choice(group' not in sources['ui/StatisticsScreen.kt']
       and 'PillChip(group == code' in sources['ui/StatisticsScreen.kt'], 'LOOK-11: statistics views are pills, rows are plain cards')
 sub = sources['ui/CategoryControls.kt'].split('fun SubcategoryChoice(', 1)[1][:900]
-check('PillChip(value.isNotBlank()' in sub and 'OutlinedButton(' not in sub, 'LOOK-12: the subcategory filter is a pill')
+check('if (pill) PillChip(value.isNotBlank()' in sub, 'LOOK-12: the subcategory filter is a pill in the catalog row')
+check('SubcategoryChoice(subcategory, subcategories, { subcategory = it }, pill = true)' in sources['ui/CatalogScreen.kt'] and
+      sources['ui/CatalogScreen.kt'].count('pill = true') == 1, 'QA-61-17: only the catalog row has the subcategory pill')
 cat = sources['ui/SelectionControls.kt'].split('fun CategoryChoice(', 1)[1].split('if (choosing) AlertDialog(', 1)[0]
 check('PillChip(false, stringResource(title)' in cat, 'LOOK-13: the catalog\'s «Категорії ▾» is a pill like the chips beside it')
 

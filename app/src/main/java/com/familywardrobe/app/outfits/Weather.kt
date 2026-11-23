@@ -51,6 +51,9 @@ class WeatherController(context: Context, private val scope: CoroutineScope) {
     val loading = MutableStateFlow(false)
     val failed = MutableStateFlow(false)
     val results = MutableStateFlow<List<WeatherCity>>(emptyList())
+    /** QA-61-25: «Не зараз» on the «Сьогодні» card that offers a city; kept for the account. */
+    val hintClosed = MutableStateFlow(prefs.getBoolean("hint_closed", false))
+    fun closeHint() { hintClosed.value = true; prefs.edit().putBoolean("hint_closed", true).apply() }
     private var job: Job? = null
     private var generation = 0
     private fun readCity(): WeatherCity? = runCatching {

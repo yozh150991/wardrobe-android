@@ -224,8 +224,12 @@ private fun pairText(code: String): Int = when (code) {
 }
 
 @Composable
-internal fun pairLine(a: String, b: String, code: String): String =
-    stringResource(R.string.style_pair_line, stringResource(label(a)), stringResource(label(b)), stringResource(pairText(code)))
+internal fun pairLine(a: String, b: String, code: String): String {
+    // QA-61-18: «Коричневий + сірий», as in the outfit title.
+    val locale = uiLocale()
+    return stringResource(R.string.style_pair_line, stringResource(label(a)),
+        stringResource(label(b)).replaceFirstChar { it.lowercase(locale) }, stringResource(pairText(code)))
+}
 
 @Composable
 private fun ReasonLine(good: Boolean, text: String) {

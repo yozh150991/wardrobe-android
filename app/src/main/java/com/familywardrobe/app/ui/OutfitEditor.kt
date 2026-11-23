@@ -86,10 +86,12 @@ internal fun LookEditor(s: Snapshot, wardrobe: String, anchorId: String, outfitI
     LaunchedEffect(keys.toList()) { undoLayout = null; undoBackground = null }
     val payload = JSONObject().put("stage", stage).put("occasion", occasion).put("weather", weather).put("source", source)
         .put("manual", manual).put("name", name).put("keys", JSONArray(keys)).put("locks", JSONArray(locks)).put("layout", layout).put("background", background).toString()
-    val baseline = remember { payload }
+    // QA-61-11: the step and the way of building are navigation; going back from an empty canvas loses nothing.
+    val content = JSONObject(payload).apply { remove("stage"); remove("manual") }.toString()
+    val baseline = remember { content }
     // A drag changes the layout on every pointer event; the draft is saved once the gesture ends (audit A-02).
     LaunchedEffect(payload, gestureActive) {
-        onStage(stage == 0); onDirty(payload != baseline || restored != null || original == null && pieces.isNotEmpty())
+        onStage(stage == 0); onDirty(content != baseline || restored != null || original == null && pieces.isNotEmpty())
         if (!gestureActive) { if (port != null) port.keep(JSONObject(payload)) else vm.keepDraft("look", wardrobe, outfitId, JSONObject(payload)) }
     }
     fun submit(target: String) {
