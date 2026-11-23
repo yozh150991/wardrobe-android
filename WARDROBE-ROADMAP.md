@@ -995,4 +995,5 @@ and device acceptance remain pending; no live Firebase deployment is included.
 - LOOK-07–10: усі `FilterChip` поза FormControls → `PillChip` (тепер з `modifier` і `leadingIcon`); пошукові поля → `SearchBox`; 11 повноекранних `Dialog` → `Surface(color = background)`; кнопка «Першого образу» primary; дати носінь круглі.
 - DEV-05: тур вмикає `enableEdgeToEdge()` і затіняє системні смуги. Ще 10 екранів через `extra()` (пропуск → `WSHOT-SKIP`, CI показує попередження); «Мої вподобання» знімаються як окреме вікно (`isDialog()`).
 - Перевірки: новий `tools/check_consistency.py` (48-й набір; на старих текстах падає з 29 причин). Оновлено `check_item_page.py`, `check_screenshots.py`, `ci_screenshots.py`.
+- Телефон (scrcpy, збірка першого коміту PR #62, лише перегляд): фото й «Ношу рідко» як задумано. Знайдено й виправлено: текст під годинником на прокрученій сторінці речі (BUG-61-03, смуга `drawWithContent` після прокрутки); «Знайдено товар» читалося як стан → «Додати товар»; «Носінь» → «Днів носіння»; статистика (чипи замість списку, картки без рамки, LOOK-11) і «Підкатегорія» чипом (LOOK-12). Мови EN/PL на телефоні ще не переглянуто.
 

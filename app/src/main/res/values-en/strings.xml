@@ -306,7 +306,7 @@
     <string name="wish_inspiration">Inspiration</string>
     <string name="wish_link_failed">Could not open the link. It remains saved.</string>
     <string name="open_link">Open link</string>
-    <string name="found_candidate">Found a product</string>
+    <string name="found_candidate">Add a product</string>
     <string name="remove_wish_title">Remove this wish?</string>
     <string name="original_need">Original need</string>
     <string name="wish_requirements">Requirements (optional)</string>

@@ -115,6 +115,13 @@ check(not white_pages, f'LOOK-09: full-screen dialogs sit on the app background 
 check(not [n for n, t in sources.items() if 'buttonColors(containerColor = MaterialTheme.colorScheme.secondary' in t],
       'LOOK-10: main actions are primary buttons')
 check('shape = RoundedCornerShape(50),' in sources['ui/ItemPage.kt'].split('InputChip(', 1)[1][:400], 'wear days are round like the labels')
+# Found on the phone (scrcpy, 23.11): text under the clock once the item page scrolls; the statistics and the subcategory
+# filter still in the old style.
+check('if (scroll.value > 0 && statusBarPx > 0f) drawRect(pageColour' in sources['ui/ItemPage.kt'], 'BUG-61-03: a band under the status bar once the item page scrolls')
+check('OutlinedCard(' not in sources['ui/StatisticsScreen.kt'] and 'Choice(group' not in sources['ui/StatisticsScreen.kt']
+      and 'PillChip(group == code' in sources['ui/StatisticsScreen.kt'], 'LOOK-11: statistics views are pills, rows are plain cards')
+sub = sources['ui/CategoryControls.kt'].split('fun SubcategoryChoice(', 1)[1][:900]
+check('PillChip(value.isNotBlank()' in sub and 'OutlinedButton(' not in sub, 'LOOK-12: the subcategory filter is a pill')
 
 if failures:
     print('FAIL consistency guards:'); [print('  -', f) for f in failures]

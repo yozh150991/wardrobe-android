@@ -70,11 +70,9 @@ fun SubcategoryChoice(value: String, options: List<String>, change: (String) -> 
     enabled: Boolean = true, allowAll: Boolean = true, title: Int = R.string.filter_subcategory) {
     var choosing by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
-    OutlinedButton(onClick = { query = ""; choosing = true }, enabled = enabled,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-        Text(if (!allowAll && value.isBlank()) stringResource(title)
-            else stringResource(title) + ": " + value.ifBlank { stringResource(R.string.all) })
-    }
+    // LOOK-12: a pill like the category chips (dark once a subcategory is chosen), not a full-width outlined button.
+    PillChip(value.isNotBlank(), if (!allowAll && value.isBlank()) stringResource(title)
+        else stringResource(title) + ": " + value.ifBlank { stringResource(R.string.all) }, { query = ""; choosing = true }, enabled = enabled)
     if (choosing) AlertDialog(onDismissRequest = { choosing = false }, title = { Text(stringResource(R.string.filter_subcategory)) },
         text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             SearchBox(query, { query = TextLimits.input(it, 100) }, stringResource(R.string.search_subcategories), stringResource(R.string.catalog_search_clear), Modifier.fillMaxWidth())

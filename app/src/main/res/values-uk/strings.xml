@@ -275,7 +275,7 @@
     <string name="empty_archive">Архів порожній.</string>
     <string name="empty_active">Тут поки немає речей. Перевір архів або додай нову.</string>
     <string name="reset_filters">Скинути фільтри</string>
-    <string name="wear_count">Носінь: %1$d</string>
+    <string name="wear_count">Днів носіння: %1$d</string>
     <string name="most_worn">Найбільше носінь</string>
     <string name="item_saved">Збережено «%1$s»</string>
     <string name="add_next">Додати наступну</string>
@@ -306,7 +306,7 @@
     <string name="wish_inspiration">Натхнення</string>
     <string name="wish_link_failed">Не вдалося відкрити посилання. Воно залишилося збереженим.</string>
     <string name="open_link">Відкрити посилання</string>
-    <string name="found_candidate">Знайдено товар</string>
+    <string name="found_candidate">Додати товар</string>
     <string name="remove_wish_title">Видалити бажання?</string>
     <string name="original_need">Початкова потреба</string>
     <string name="wish_requirements">Вимоги (необов’язково)</string>

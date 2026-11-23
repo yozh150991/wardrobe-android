@@ -4,7 +4,7 @@ Run once after an edit to strings.xml files; it is idempotent. The rules are che
 
 TXT-01  the default locale (values) is Ukrainian, like values-uk; 24 photo-editor strings were left in English there.
 TXT-02  Ukrainian speaks to the user as «ти» everywhere (the app mostly did; ~90 strings used «Ви»).
-TXT-03  no gendered verbs for the user: «Вдягнув сьогодні», «Знайшов товар» → «Вдягаю сьогодні», «Знайдено товар»;
+TXT-03  no gendered verbs for the user: «Вдягнув сьогодні», «Знайшов товар» → «Вдягаю сьогодні», «Додати товар»;
         one verb for wearing (вдягати, not одягати), one label for wearing today, «вдягнено» for a recorded wear.
 TXT-04  one name per thing: «образ» (not «комплект»), «outfit» (not «look»), «item» for a garment (not «piece»),
         «zestaw» (not «stylizacja»), «garderoba» (not «szafa»), and the tab «Хочу купити» / “Want to buy” /
@@ -38,7 +38,10 @@ UPDATED = {
 'calendar_hint': ('Плануй тиждень наперед. Лічильник носіння змінюється лише після підтвердження «Вдягнено».',
     'Plan the week ahead. Wear counts change only after confirming “Worn”.',
     'Zaplanuj tydzień. Licznik użyć zmienia się dopiero po potwierdzeniu „Noszone”.'),
-'found_candidate': ('Знайдено товар', 'Found a product', None),
+# On the phone «Знайдено товар» under «Шукаю» read as a state («already found»); the button adds the product it found.
+'found_candidate': ('Додати товар', 'Add a product', 'Dodaj produkt'),
+# The catalog card counted «Носінь», the item page and statistics «днів носіння»; a wear is one per day.
+'wear_count': ('Днів носіння: %1$d', None, None),
 'wish_kind_hint': ('Конкретний товар уже знайдено чи ще шукаєш потрібну річ?', None, None),
 'i_bought_it': ('Уже куплено', None, None),
 'family_read_counts': ('Ревізія %1$d · речей: %2$d · образів: %3$d · у «Хочу купити»: %4$d',

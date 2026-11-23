@@ -21,9 +21,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -66,8 +69,16 @@ fun Detail(g: Garment, s: Snapshot, vm: WardrobeViewModel, today: String, onBack
     val largeText = LocalConfiguration.current.fontScale >= 1.3f
     val categoryTitle = s.customCategory(g)?.name ?: stringResource(label(g.category))
 
+    // BUG-61-03: once the page is scrolled, a band of the page colour sits under the status bar, so text never runs
+    // under the clock (the app is edge-to-edge and this page has no top bar).
+    val scroll = rememberScrollState()
+    val statusBarPx = WindowInsets.statusBars.getTop(LocalDensity.current).toFloat()
+    val pageColour = MaterialTheme.colorScheme.background
     Column(Modifier.fillMaxSize()) {
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+        Column(Modifier.weight(1f).drawWithContent {
+            drawContent()
+            if (scroll.value > 0 && statusBarPx > 0f) drawRect(pageColour, size = Size(size.width, statusBarPx))
+        }.verticalScroll(scroll)) {
             // UI-04: the photo is the top of the page, with back, share, edit and «⋮» over it.
             // BUG-61-01: the app draws under the status bar, so the backdrop goes there but the picture and the buttons
             // start below it; the picture also clears the button row, so nothing covers the garment.
