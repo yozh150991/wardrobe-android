@@ -59,6 +59,7 @@ check('modifier = Modifier.testTag("catalog-add"), onClick = onAddMethods' in ca
 # LOOK-06: the new-item buttons stay side by side up to a very large font.
 check('private const val FORM_STACK_SCALE = 1.6f' in ui and 'fontScale >= FORM_STACK_SCALE) Column(' in ui,
       'the bottom buttons stack only from font 1.6')
+check('addNextButton(Modifier.weight(1.4f)); saveButton(Modifier.weight(1f))' in ui, '«Зберегти й додати наступну» gets the wider share of the row')
 
 if failures:
     for message in failures:

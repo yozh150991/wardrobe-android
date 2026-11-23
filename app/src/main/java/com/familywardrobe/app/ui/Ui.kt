@@ -828,7 +828,9 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
         // LOOK-06: stacked only from FORM_STACK_SCALE; at 1.3 two side-by-side buttons with wrapped labels take half the height.
         else if (LocalConfiguration.current.fontScale >= FORM_STACK_SCALE) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             saveButton(Modifier.fillMaxWidth()); addNextButton(Modifier.fillMaxWidth())
-        } else Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { addNextButton(Modifier.weight(1f)); saveButton(Modifier.weight(1f)) }
+        } else Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            // LOOK-06: the long label gets more of the row than «Зберегти», so it wraps to two lines at most at font 1.3.
+            addNextButton(Modifier.weight(1.4f)); saveButton(Modifier.weight(1f)) }
     }
     if (confirmDefer) AlertDialog(onDismissRequest = { confirmDefer = false }, text = { Text(stringResource(R.string.review_defer_changes)) },
         confirmButton = { TextButton(onClick = { confirmDefer = false; deferReview() }) { Text(stringResource(R.string.review_defer)) } },
