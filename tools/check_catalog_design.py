@@ -69,8 +69,10 @@ check('private const val NAV_LABEL_MIN = 0.7f' in ui, 'labels shrink no further 
 
 # The grid and «Додати річ».
 check('contentPadding = PaddingValues(top = 8.dp, bottom = 96.dp)' in catalog, 'the last row is not hidden under the add button')
-check('if (!selecting) Button(onClick = onAddMethods, enabled = !busy' in catalog and 'Modifier.align(Alignment.BottomEnd)' in catalog,
-      '«Додати річ» floats at the bottom right')
+check('if (!selecting && newWardrobe) Button(onClick = onAddMethods, enabled = !busy' in catalog and 'Modifier.align(Alignment.BottomEnd)' in catalog,
+      'an empty wardrobe has the wide «Додати першу річ» at the bottom right')
+check('if (!selecting) ToolButton(Icons.Outlined.Add, stringResource(R.string.add_item), !busy, selected = true' in catalog,
+      '«Додати річ» is a tool in the header row (LOOK-05)')
 check('R.string.add_first_item' in catalog, 'an empty wardrobe still says «Додати першу річ»')
 card = catalog[catalog.index('private fun GarmentCard('):catalog.index('private fun PhotoBadge(')]
 check('role = Role.Checkbox' in card and 'R.string.favorite' in card and 'R.string.wear_count' in card, 'a card keeps its selection role, favourite and wear count')

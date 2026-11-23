@@ -1,3 +1,13 @@
+## Current handoff — LOOK-01–06 fixes from the first screenshot review, 23 November 2026
+
+0.14.60-look-fixes/code 90, Room 11 and backup formats unchanged. Read docs/releases/LOOK-FIXES-0.14.60.md. Stacked on
+PR #60 ⊃ #59; its PR targets main and contains them — merge the latest. The user answered «Всі» to the six look
+questions. The new-item save hint waits for `validation`; FormControls.kt has the shared PillChip and SearchBox (catalog
+and wishlist); wish cards go in rows of equal height (IntrinsicSize.Min — keep SubcomposeLayout out of the card);
+«Додати образ» is primary; item-photo RoundButtons have an outline and shadow; the catalog's «Додати річ» is a header
+tool (tag catalog-add) and a round FAB (catalog-add-floating) only once the header scrolled away; new-item buttons
+stack from FORM_STACK_SCALE 1.6. tools/check_look.py guards all six. Review the next tour's screenshots after CI.
+
 ## Current handoff — DEV-04 screenshot tour in CI, 23 November 2026
 
 0.14.59-screenshots/code 89, Room 11 and backup formats unchanged. Read docs/releases/SCREENSHOTS-0.14.59.md. Stacked on

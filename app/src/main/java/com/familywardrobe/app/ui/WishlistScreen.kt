@@ -74,14 +74,18 @@ fun Wishlist(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, add: (String)
     val wishes = s.wishes.filter { it.wardrobeId == wardrobe && it.ownedId.isBlank() }
     val categoryNames = Matching.categories.associateWith { stringResource(label(it)) }
     val found = wishes.filter { (kind.isBlank() || it.kind == kind) && (it.name + " " + it.requirements + " " + it.inspiration + " " + categoryNames[it.category]).contains(query.trim(), ignoreCase = true) }
-    LazyVerticalGrid(GridCells.Fixed(if (LocalConfiguration.current.fontScale >= 1.5f) 1 else 2),
+    val columns = if (LocalConfiguration.current.fontScale >= 1.5f) 1 else 2
+    LazyVerticalGrid(GridCells.Fixed(columns),
         contentPadding = PaddingValues(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.wishlist_intro), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                OutlinedTextField(query, { query = TextLimits.input(it, 120) }, label = { Text(stringResource(R.string.picker_search)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("" to R.string.all, "need" to R.string.wishlist_needs, "product" to R.string.wishlist_products).forEach { (code,title) -> FilterChip(kind == code, { kind = code }, label = { Text(stringResource(title)) }) }
+                // LOOK-02: the search field and chips of the new design, as in «Гардероб».
+                SearchBox(query, { query = TextLimits.input(it, 120) }, stringResource(R.string.picker_search),
+                    stringResource(R.string.catalog_search_clear), Modifier.fillMaxWidth())
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf("" to R.string.all, "need" to R.string.wishlist_needs, "product" to R.string.wishlist_products).forEach { (code, title) ->
+                        PillChip(kind == code, stringResource(title), { kind = code }) }
                 }
                 Button(onClick = { choosing = true }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                     Icon(Icons.Outlined.Add, null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.add_wish))
@@ -103,24 +107,35 @@ fun Wishlist(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, add: (String)
                 if (wishes.isNotEmpty()) TextButton(onClick = { query = ""; kind = "" }) { Text(stringResource(R.string.reset_filters)) }
             }
         }
-        items(found, key = { it.id }) { wish ->
-            Card(onClick = { open(wish.id) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
-                if (wish.kind == "product" && wish.photoId.isNotBlank()) Box {
-                    ZoomableItemPhoto(wish.photoId, vm, Modifier.fillMaxWidth().height(170.dp), title = wish.name, garmentColour = wish.color)
-                    Surface(Modifier.padding(8.dp), shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.tertiaryContainer, contentColor = MaterialTheme.colorScheme.onTertiaryContainer) {
-                        Text(stringResource(if (wish.kind == "need") R.string.wish_need_badge else R.string.shopping), Modifier.padding(horizontal = 8.dp, vertical = 5.dp), style = MaterialTheme.typography.labelMedium)
+        // LOOK-02: cards of one row have the same height; «Знайшов товар» sits at the bottom of its card.
+        items(found.chunked(columns), key = { row -> row.first().id }, span = { GridItemSpan(maxLineSpan) }) { row ->
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                row.forEach { wish ->
+                    Card(onClick = { open(wish.id) }, modifier = Modifier.weight(1f).fillMaxHeight(), shape = RoundedCornerShape(18.dp)) {
+                        Column(Modifier.fillMaxHeight()) {
+                            if (wish.kind == "product" && wish.photoId.isNotBlank()) Box {
+                                ZoomableItemPhoto(wish.photoId, vm, Modifier.fillMaxWidth().height(170.dp), title = wish.name, garmentColour = wish.color)
+                                Surface(Modifier.padding(8.dp), shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.tertiaryContainer, contentColor = MaterialTheme.colorScheme.onTertiaryContainer) {
+                                    Text(stringResource(if (wish.kind == "need") R.string.wish_need_badge else R.string.shopping), Modifier.padding(horizontal = 8.dp, vertical = 5.dp), style = MaterialTheme.typography.labelMedium)
+                                }
+                            }
+                            Column(Modifier.weight(1f).padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                                if (wish.kind == "need" || wish.photoId.isBlank()) Text(stringResource(if (wish.kind == "need") R.string.wish_need_badge else R.string.wish_product), style = MaterialTheme.typography.labelMedium)
+                                Text(wish.name, style = MaterialTheme.typography.titleMedium)
+                                Text(stringResource(label(wish.category)), style = MaterialTheme.typography.bodySmall)
+                                val amount = if (wish.kind == "need") wish.budgetMinor else wish.priceMinor
+                                if (amount != null) Text(stringResource(if (wish.kind == "need") R.string.wish_budget_value else R.string.wish_price_value,
+                                    moneyLabel(amount, if (wish.kind == "need") wish.budgetCurrency else wish.currency, locale)), style = MaterialTheme.typography.bodySmall)
+                                if (wish.kind == "need") {
+                                    Spacer(Modifier.weight(1f))
+                                    TextButton(onClick = { foundProduct(wish) }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.found_candidate)) }
+                                }
+                            }
+                        }
                     }
                 }
-                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    if (wish.kind == "need" || wish.photoId.isBlank()) Text(stringResource(if (wish.kind == "need") R.string.wish_need_badge else R.string.wish_product), style = MaterialTheme.typography.labelMedium)
-                    Text(wish.name, style = MaterialTheme.typography.titleMedium)
-                    Text(stringResource(label(wish.category)), style = MaterialTheme.typography.bodySmall)
-                    val amount = if (wish.kind == "need") wish.budgetMinor else wish.priceMinor
-                    if (amount != null) Text(stringResource(if (wish.kind == "need") R.string.wish_budget_value else R.string.wish_price_value,
-                        moneyLabel(amount, if (wish.kind == "need") wish.budgetCurrency else wish.currency, locale)), style = MaterialTheme.typography.bodySmall)
-                    if (wish.kind == "need") TextButton(onClick = { foundProduct(wish) }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.found_candidate)) }
-                }
+                repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }

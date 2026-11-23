@@ -21,7 +21,7 @@ bottom = editor.split('// UI-05: «Зберегти й додати ще»', 1)[
 check('val offerAddNext = original == null && purchase == null && imported == null' in bottom, '«додати наступну» only for a new item')
 check('onClick = { saveItem(true) }' in bottom and 'onClick = { saveItem(imported != null) }' in bottom, 'both saves keep their meaning')
 check(editor.count('saveItem(true)') == 1, '«додати наступну» is only at the bottom')
-check('if (LocalConfiguration.current.fontScale >= 1.3f) Column(' in bottom, 'the buttons stack at a large font')
+check('if (LocalConfiguration.current.fontScale >= FORM_STACK_SCALE) Column(' in bottom, 'the buttons stack at a very large font (LOOK-06)')
 for kept in ('R.string.review_save_queue', 'R.string.review_defer', 'R.string.review_queue', 'R.string.additional_details',
              'R.string.purchase_confirm', 'R.string.review_save_next', 'PhotoProcessingPanel(', 'R.string.import_copy_previous'):
     check(kept in editor, f'the form keeps {kept}')

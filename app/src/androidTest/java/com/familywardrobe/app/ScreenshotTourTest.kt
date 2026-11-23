@@ -30,6 +30,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
 import androidx.lifecycle.ViewModel
@@ -58,7 +59,7 @@ import java.util.Locale
 /**
  * DEV-04: a screenshot tour for visual review. The real WardrobeApp runs on a seeded account (eight items with drawn
  * photos, an outfit, two wishes, a few wear days) on a phone-sized screen (1080×2340, 420 dpi), and the main screens are
- * captured in Ukrainian, Ukrainian with a large font (1.3), English and Polish.
+ * captured (with the catalog scrolled once more) in Ukrainian, Ukrainian with a large font (1.3), English and Polish.
  *
  * Every picture is halved, saved as JPEG and written to logcat under the tag [TAG] as `WSHOT|name|part|parts|base64`
  * lines; CI collects them (tools/ci_screenshots.py), prints them into the job log and uploads them as an artifact.
@@ -93,6 +94,9 @@ class ScreenshotTourTest {
             }
             shot(config, "1-today")
             tap("nav-catalog"); shot(config, "2-wardrobe")
+            // LOOK-05: once the header has scrolled away, the round «+» floats at the bottom right.
+            compose.onNodeWithTag("catalog-grid").performScrollToIndex(6); shot(config, "2b-wardrobe-scrolled")
+            compose.onNodeWithTag("catalog-grid").performScrollToIndex(0)
             tap("nav-shopping"); shot(config, "3-want-to-buy")
             tap("nav-outfits"); shot(config, "4-outfits")
             tap("nav-settings"); shot(config, "5-profile")
