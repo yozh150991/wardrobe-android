@@ -485,7 +485,7 @@
     <string name="statistics_prices_missing">Without a price: %1$d. Add it in item details.</string>
     <string name="statistics_show">Show</string>
     <string name="statistics_most">Most worn</string>
-    <string name="statistics_forgotten">Not worn for 90+ days</string>
+    <string name="statistics_forgotten">Not worn for a while</string>
     <string name="statistics_never">Never worn</string>
     <string name="statistics_cost">Cost per wear</string>
     <string name="statistics_empty">No data for this view yet.</string>

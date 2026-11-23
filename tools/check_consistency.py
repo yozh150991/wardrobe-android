@@ -46,7 +46,7 @@ def where(d, pattern, keep=()):
 # TXT-02: «ти», never «Ви».
 check(not [k for k, v in uk.items() if INFORMAL_RE.search(v)], f'Ukrainian says «ти»: {[k for k, v in uk.items() if INFORMAL_RE.search(v)][:5]}')
 # TXT-03: no gendered verbs aimed at the user, one verb for wearing.
-gendered = where(uk, r'(?<![А-Яа-яЇїІіЄєҐґ’])(Вдягнув|вдягнув|Одягнув|одягнув|одягав|вдягав|Знайшов|знайшов|обирав|вибрав|обрав|забув|Купив|купив)(?![А-Яа-яЇїІіЄєҐґ’])')
+gendered = where(uk, r'(?<![А-Яа-яЇїІіЄєҐґ’])(Вдягнув|вдягнув|Одягнув|одягнув|одягав|вдягав|Знайшов|знайшов|обирав|вибрав|обрав|забув|Купив|купив|[Нн]осив|додав|зберіг|бачив|хотів|зробив|створив|відкрив|натиснув|змінив|видалив|отримав)(?![А-Яа-яЇїІіЄєҐґ’])')
 check(not gendered, f'no gendered verbs for the user: {gendered}')
 check(not where(uk, r'(?<![А-Яа-яЇїІіЄєҐґ’])[Оо]дяг(ну|а)'), 'wearing is «вдягати», not «одягати»')
 # TXT-04: one name per thing.
@@ -97,6 +97,8 @@ for d in (uk, en, pl):
 WORN = r'[Вв]дягнут(о|ий|а|е|і|ого|ому|им|ою|у|их|ими)(?![А-Яа-яЇїІіЄєҐґ’])'  # «вдягнути» (to put on) is fine
 check(not where(uk, WORN), f'a recorded wear is «вдягнено»: {where(uk, WORN)}')
 
+for d in (uk, en, pl):
+    check(d['statistics_forgotten'] == d['rotation_title'], 'the 90-day list has one name in the statistics and on «Сьогодні»')
 # LOOK-07…10: one look for the same control on every screen.
 SRC = ROOT / 'app/src/main/java/com/familywardrobe/app'
 sources = {f.relative_to(SRC).as_posix(): f.read_text(encoding='utf-8') for f in SRC.rglob('*.kt')}

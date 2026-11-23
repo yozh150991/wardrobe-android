@@ -44,6 +44,9 @@ UPDATED = {
 'wear_count': ('Днів носіння: %1$d', None, None),
 'wish_kind_hint': ('Конкретний товар уже знайдено чи ще шукаєш потрібну річ?', None, None),
 'i_bought_it': ('Уже куплено', None, None),
+# Statistics on the phone: «Не носив 90+ днів», «Ще не носив». The 90-day list is «Давно не вдягали» everywhere else.
+'statistics_forgotten': ('Давно не вдягали', 'Not worn for a while', 'Dawno nienoszone'),
+'statistics_never': ('Ще не вдягали', None, None),
 'family_read_counts': ('Ревізія %1$d · речей: %2$d · образів: %3$d · у «Хочу купити»: %4$d',
     'Revision %1$d · items: %2$d · outfits: %3$d · in “Want to buy”: %4$d',
     'Wersja %1$d · rzeczy: %2$d · zestawy: %3$d · w „Chcę kupić”: %4$d'),

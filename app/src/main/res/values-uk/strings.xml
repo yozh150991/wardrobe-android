@@ -485,8 +485,8 @@
     <string name="statistics_prices_missing">Без ціни: %1$d. Додати її можна в деталях речі.</string>
     <string name="statistics_show">Показати</string>
     <string name="statistics_most">Найчастіше ношу</string>
-    <string name="statistics_forgotten">Не носив 90+ днів</string>
-    <string name="statistics_never">Ще не носив</string>
+    <string name="statistics_forgotten">Давно не вдягали</string>
+    <string name="statistics_never">Ще не вдягали</string>
     <string name="statistics_cost">Вартість одного носіння</string>
     <string name="statistics_empty">Для цього розділу поки немає даних.</string>
     <string name="statistics_wears">Днів носіння: %1$d</string>

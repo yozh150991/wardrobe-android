@@ -485,7 +485,7 @@
     <string name="statistics_prices_missing">Bez ceny: %1$d. Dodasz ją w szczegółach rzeczy.</string>
     <string name="statistics_show">Pokaż</string>
     <string name="statistics_most">Najczęściej noszone</string>
-    <string name="statistics_forgotten">Nienoszone od 90+ dni</string>
+    <string name="statistics_forgotten">Dawno nienoszone</string>
     <string name="statistics_never">Jeszcze nienoszone</string>
     <string name="statistics_cost">Koszt jednego użycia</string>
     <string name="statistics_empty">Brak danych w tym widoku.</string>
