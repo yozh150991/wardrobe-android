@@ -1,3 +1,14 @@
+## Current handoff — PHOTO-19 step 1: debug mask capture, 23 November 2026
+
+0.14.63-mask-capture/code 93, Room 11 and backup formats unchanged. Read docs/releases/MASK-CAPTURE-0.14.63.md.
+Stacked on PR #63 (0.14.62); its PR targets main and contains it — merge the latest. After QA-61-30 photos process, but
+on the user's phone the cutout keeps bits of a patterned backdrop and a foot touching the garment. Debuggable builds now
+write `<time>-source.png`, `-mask.png` (16-bit confidence: red high byte, green low byte) and `-cutout.png` to the
+external files folder `photo-debug/` (PhotoDebugCapture, newest 8). **Next:** get that folder from the user, turn the
+files into fixtures and tune PhotoCutoutRules on them (drop differently coloured parts joined by a narrow bridge; clean
+edges on a busy backdrop) without breaking PHOTO-18's «never cut the garment». After that: the agent harness the user
+asked for (decisions are in the project memory; start from main once these PRs are merged).
+
 ## Current handoff — QA-62 fixes from the exploratory test, 23 November 2026
 
 0.14.62-qa-fixes/code 92, Room 11 and backup formats unchanged. Read docs/releases/QA-FIXES-0.14.62.md and
