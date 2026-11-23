@@ -1030,19 +1030,22 @@ fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEm
 internal val LocalLookPhotos = staticCompositionLocalOf<PhotoStore?> { null }
 
 @Composable
-fun ItemPhoto(id: String, vm: WardrobeViewModel, modifier: Modifier = Modifier, description: String? = null, fit: Boolean = true, backgroundColor: androidx.compose.ui.graphics.Color? = null, garmentColour: String? = null) {
-    ItemPhoto(id, LocalLookPhotos.current ?: vm.photos, modifier, description, fit, backgroundColor, garmentColour)
+fun ItemPhoto(id: String, vm: WardrobeViewModel, modifier: Modifier = Modifier, description: String? = null, fit: Boolean = true, backgroundColor: androidx.compose.ui.graphics.Color? = null, garmentColour: String? = null,
+    inset: PaddingValues = PaddingValues(0.dp)) {
+    ItemPhoto(id, LocalLookPhotos.current ?: vm.photos, modifier, description, fit, backgroundColor, garmentColour, inset)
 }
 
 @Composable
-internal fun ItemPhoto(id: String, photos: PhotoStore, modifier: Modifier = Modifier, description: String? = null, fit: Boolean = true, backgroundColor: androidx.compose.ui.graphics.Color? = null, garmentColour: String? = null) {
+internal fun ItemPhoto(id: String, photos: PhotoStore, modifier: Modifier = Modifier, description: String? = null, fit: Boolean = true, backgroundColor: androidx.compose.ui.graphics.Color? = null, garmentColour: String? = null,
+    inset: PaddingValues = PaddingValues(0.dp)) {
     val bitmap by produceState<android.graphics.Bitmap?>(null, id, photos) {
         value = null
         if (id.isNotEmpty()) value = photos.bitmap(id)
     }
     val backdrop = rememberPhotoBackdrop(bitmap, garmentColour)
     Box(modifier.background(backgroundColor ?: if (bitmap != null) backdrop else MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-        bitmap?.let { Image(it.asImageBitmap(), contentDescription = description, modifier = Modifier.fillMaxSize(), contentScale = if (fit) ContentScale.Fit else ContentScale.Crop) }
+        // BUG-61-01: `inset` keeps the picture clear of what lies over it (status bar, round buttons); the backdrop stays full.
+        bitmap?.let { Image(it.asImageBitmap(), contentDescription = description, modifier = Modifier.fillMaxSize().padding(inset), contentScale = if (fit) ContentScale.Fit else ContentScale.Crop) }
             ?: Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Outlined.Image, null, Modifier.size(36.dp))
                 Text(stringResource(if (id.isEmpty()) R.string.photo else R.string.photo_missing), style = MaterialTheme.typography.bodySmall)

@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.familywardrobe.app.ui.PillChip
 import com.familywardrobe.app.R
 import com.familywardrobe.app.rules.PhotoBrushRules
 import com.familywardrobe.app.rules.PhotoEditHistory
@@ -150,10 +151,8 @@ internal fun PhotoMaskEditor(image: PhotoSessionImage?, enabled: Boolean, histor
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(stringResource(R.string.photo_history_unified_hint), style = MaterialTheme.typography.bodySmall)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(!regionMode, onClick = { regionMode = false; regionPoint = null }, enabled = controlsEnabled && !comparison,
-                label = { Text(stringResource(R.string.photo_brush_tool)) })
-            FilterChip(regionMode, onClick = { regionMode = true }, enabled = controlsEnabled && !comparison,
-                label = { Text(stringResource(R.string.photo_region_tool)) })
+            PillChip(!regionMode, stringResource(R.string.photo_brush_tool), { regionMode = false; regionPoint = null }, enabled = controlsEnabled && !comparison)
+            PillChip(regionMode, stringResource(R.string.photo_region_tool), { regionMode = true }, enabled = controlsEnabled && !comparison)
         }
         if (comparison) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(stringResource(R.string.photo_compare_before), Modifier.weight(1f))
@@ -310,8 +309,7 @@ internal fun PhotoMaskEditor(image: PhotoSessionImage?, enabled: Boolean, histor
             listOf("auto" to R.string.photo_backdrop_auto, "white" to R.string.photo_backdrop_white,
                 "cream" to R.string.photo_backdrop_cream, "dark" to R.string.photo_backdrop_dark,
                 "contrast" to R.string.photo_backdrop_contrast, "grid" to R.string.photo_backdrop_grid).forEach { (code, label) ->
-                FilterChip(backdropMode == code, onClick = { backdropMode = code }, enabled = controlsEnabled,
-                    label = { Text(stringResource(label)) })
+                PillChip(backdropMode == code, stringResource(label), { backdropMode = code }, enabled = controlsEnabled)
             }
         }
         Text(stringResource(R.string.photo_inspection_hint), style = MaterialTheme.typography.bodySmall)
@@ -330,8 +328,8 @@ internal fun PhotoMaskEditor(image: PhotoSessionImage?, enabled: Boolean, histor
         TextButton(onClick = { zoom = 1f; panX = 0f; panY = 0f }, enabled = controlsEnabled) { Text(stringResource(R.string.mask_fit)) }
         if (!regionMode && !comparison) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(selected = !restore, onClick = { restore = false }, enabled = controlsEnabled, label = { Text(stringResource(R.string.mask_erase)) })
-            FilterChip(selected = restore, onClick = { restore = true }, enabled = controlsEnabled, label = { Text(stringResource(R.string.mask_restore)) })
+            PillChip(!restore, stringResource(R.string.mask_erase), { restore = false }, enabled = controlsEnabled)
+            PillChip(restore, stringResource(R.string.mask_restore), { restore = true }, enabled = controlsEnabled)
         }
         val brushLabel = stringResource(R.string.photo_brush_diameter, diameter)
         val smaller = stringResource(R.string.photo_brush_smaller); val larger = stringResource(R.string.photo_brush_larger)
@@ -346,8 +344,7 @@ internal fun PhotoMaskEditor(image: PhotoSessionImage?, enabled: Boolean, histor
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             (listOf(1, 4, 16, 64).filter { it <= maximumDiameter } + maximumDiameter).distinct().forEach { size ->
-                FilterChip(selected = diameter == size, onClick = { selectedDiameter = size }, enabled = controlsEnabled,
-                    label = { Text(stringResource(R.string.photo_brush_preset, size)) })
+                PillChip(diameter == size, stringResource(R.string.photo_brush_preset, size), { selectedDiameter = size }, enabled = controlsEnabled)
             }
         }
         val softnessLabel = stringResource(R.string.photo_brush_softness, (softness * 100).roundToInt())

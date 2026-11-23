@@ -42,19 +42,19 @@ import kotlin.math.roundToInt
 /** A photo tap is distinct from the containing card's details/selection action. */
 @Composable
 fun ZoomableItemPhoto(photoId: String, vm: WardrobeViewModel, modifier: Modifier,
-    title: String, enabled: Boolean = true, garmentColour: String? = null) {
-    ZoomableItemPhoto(photoId, vm.photos, modifier, title, enabled, garmentColour)
+    title: String, enabled: Boolean = true, garmentColour: String? = null, inset: PaddingValues = PaddingValues(0.dp)) {
+    ZoomableItemPhoto(photoId, vm.photos, modifier, title, enabled, garmentColour, inset)
 }
 
 @Composable
 internal fun ZoomableItemPhoto(photoId: String, photos: PhotoStore, modifier: Modifier,
-    title: String, enabled: Boolean = true, garmentColour: String? = null) {
+    title: String, enabled: Boolean = true, garmentColour: String? = null, inset: PaddingValues = PaddingValues(0.dp)) {
     var opened by remember(photoId, photos) { mutableStateOf(false) }
     val canOpen = enabled && photoId.isNotBlank()
     val openLabel = stringResource(R.string.photo_view_open, title)
     Box(modifier.then(if (canOpen) Modifier.clickable(role = Role.Button, onClickLabel = openLabel) { opened = true } else Modifier)) {
         key(photos, photoId) {
-            ItemPhoto(photoId, photos, Modifier.fillMaxSize(), description = title, fit = true, garmentColour = garmentColour)
+            ItemPhoto(photoId, photos, Modifier.fillMaxSize(), description = title, fit = true, garmentColour = garmentColour, inset = inset)
         }
         if (canOpen) Surface(Modifier.align(Alignment.BottomEnd).padding(8.dp),
             shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surface.copy(alpha = .92f)) {
@@ -76,7 +76,7 @@ private fun PhotoViewer(photoId: String, title: String, photos: PhotoStore, onDi
     }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false,
         dismissOnBackPress = true, dismissOnClickOutside = false)) {
-        Surface(Modifier.fillMaxSize()) {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(title, Modifier.weight(1f).padding(start = 8.dp), style = MaterialTheme.typography.titleMedium,

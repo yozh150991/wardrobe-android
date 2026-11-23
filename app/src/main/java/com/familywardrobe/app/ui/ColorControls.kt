@@ -94,7 +94,7 @@ fun ColorChoice(value: String, change: (String) -> Unit, enabled: Boolean = true
     }
     if (choosing) AlertDialog(onDismissRequest = { choosing = false }, title = { Text(stringResource(title)) }, text = {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(query, { query = TextLimits.input(it, 100) }, label = { Text(stringResource(R.string.search_colors)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            SearchBox(query, { query = TextLimits.input(it, 100) }, stringResource(R.string.search_colors), stringResource(R.string.catalog_search_clear), Modifier.fillMaxWidth())
             val visible = options.filter { CategoryRules.matches(query, titles.getValue(it)) }
             if (visible.isEmpty()) Text(stringResource(R.string.no_results))
             LazyColumn(Modifier.heightIn(max = 340.dp).selectableGroup()) {

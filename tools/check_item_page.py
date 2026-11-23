@@ -24,7 +24,16 @@ check('RoundButton(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.strin
       'back is always available, even while busy')
 check('PhotoExportDialog(g.photoId, g.name, vm.photos' in page and 'if (g.photoId.isNotBlank())' in page, 'share is on the photo when there is one')
 check('RoundButton(Icons.Outlined.Edit, stringResource(R.string.edit), !busy, onClick = onEdit)' in page, 'edit is on the photo')
-check('height(if (compact) 300.dp else 372.dp)' in page, 'the photo is shorter on short screens')
+check('height((if (compact) 252.dp else 320.dp) + statusBar + PHOTO_BUTTON_BAND)' in page, 'the photo is shorter on short screens')
+# BUG-61-01: the app draws under the status bar; the picture and the buttons start below it, the picture below the buttons.
+check('val statusBar = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()' in page
+      and 'inset = PaddingValues(top = statusBar + PHOTO_BUTTON_BAND, bottom = 12.dp)' in page
+      and 'Row(Modifier.fillMaxWidth().statusBarsPadding().padding(16.dp)' in page, 'the photo and its buttons clear the status bar')
+# BUG-61-02: «Ношу рідко» is a switch row among the actions, not a chip among the labels.
+labels = page[page.index('FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)'):page.index('val stats = listOf(')]
+check('FilterChip' not in labels and 'R.string.rare)' not in labels, 'no switch hides among the labels')
+check('toggleable(g.rarelyWorn, enabled = !busy, role = Role.Switch' in page and 'Switch(checked = g.rarelyWorn, onCheckedChange = null' in page,
+      '«Ношу рідко» is a switch row')
 
 # Every action of the earlier page.
 for code, what in [('vm.update(g) { it.copy(favorite = !it.favorite) }', 'favourite'),

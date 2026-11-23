@@ -11,7 +11,9 @@ import android.graphics.RectF
 import android.os.SystemClock
 import android.util.Base64
 import android.util.Log
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -24,15 +26,23 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.Density
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -60,6 +70,8 @@ import java.util.Locale
  * DEV-04: a screenshot tour for visual review. The real WardrobeApp runs on a seeded account (eight items with drawn
  * photos, an outfit, two wishes, a few wear days) on a phone-sized screen (1080×2340, 420 dpi), and the main screens are
  * captured (with the catalog scrolled once more) in Ukrainian, Ukrainian with a large font (1.3), English and Polish.
+ * DEV-05: the item page and the profile scrolled, statistics, a wish, the outfit, calendar, capsules, «Мої вподобання»
+ * and «Оформлення» too; the app draws under the system bars like MainActivity, and the bars are shaded in the picture.
  *
  * Every picture is halved, saved as JPEG and written to logcat under the tag [TAG] as `WSHOT|name|part|parts|base64`
  * lines; CI collects them (tools/ci_screenshots.py), prints them into the job log and uploads them as an artifact.
@@ -79,12 +91,15 @@ class ScreenshotTourTest {
         val identity = AuthIdentity("screens", newId(), "screens@example.test")
         val session = AccountSession(identity, app, AccountLocation(identity.key, false))
         try {
-            runBlocking { seed(session, localized(app.resources, language).getString(R.string.my_wardrobe)) }
+            strings = localized(app.resources, language)
+            runBlocking { seed(session, strings.getString(R.string.my_wardrobe)) }
             val vm = ViewModelProvider(session, object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T = WardrobeViewModel(app, session) as T
             })[WardrobeViewModel::class.java]
             val appearance = AppearanceViewModel(app)
+            // BUG-61-01: like MainActivity, the app draws under the system bars (the CI tour did not, and missed it).
+            compose.runOnUiThread { compose.activity.enableEdgeToEdge() }
             compose.setContent {
                 Localized(language, fontScale) {
                     WardrobeTheme(AppearanceSettings()) {
@@ -104,8 +119,19 @@ class ScreenshotTourTest {
             // The photo has its own zoom; the item opens from the text under it.
             compose.onAllNodesWithTag("garment-card")[0].performTouchInput { click(Offset(centerX, height - 24f)) }
             shot(config, "6-item")
-            compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
-            tap("catalog-add"); tap("add-method-manual"); shot(config, "7-new-item")
+            // DEV-05: the rest of every screen and the nested screens. A step that cannot be reached is logged as
+            // WSHOT-SKIP and the tour goes on, so one missed button never hides the other pictures.
+            extra(config, "6b-item-actions") { scrollDown(); shot(config, "6b-item-actions") }
+            back()
+            extra(config, "2c-statistics") { tapDescription(text(R.string.statistics_title)); shot(config, "2c-statistics"); back() }
+            extra(config, "3b-wish") { tap("nav-shopping"); tapText("Зимові черевики"); shot(config, "3b-wish"); back() }
+            extra(config, "4b-outfit") { tap("nav-outfits"); tapText("Офіс"); shot(config, "4b-outfit"); back() }
+            extra(config, "4c-calendar") { tap("nav-outfits"); tapText(text(R.string.calendar_title)); shot(config, "4c-calendar"); back() }
+            extra(config, "4d-capsules") { tap("nav-outfits"); tapText(text(R.string.capsules_title)); shot(config, "4d-capsules"); back() }
+            extra(config, "5b-profile-scrolled") { tap("nav-settings"); scrollDown(); shot(config, "5b-profile-scrolled") }
+            extra(config, "5c-preferences") { tapText(text(R.string.prefs_open)); shotDialog(config, "5c-preferences"); back() }
+            extra(config, "5d-appearance") { tap("nav-settings"); tapText(text(R.string.appearance)); shot(config, "5d-appearance"); back() }
+            extra(config, "7-new-item") { tap("nav-catalog"); tap("catalog-add"); tap("add-method-manual"); shot(config, "7-new-item") }
         } finally {
             session.close(signedOut = false)
         }
@@ -117,16 +143,69 @@ class ScreenshotTourTest {
         compose.waitForIdle()
     }
 
-    private fun shot(config: String, screen: String) {
+    private lateinit var strings: Resources
+    private fun text(id: Int) = strings.getString(id)
+
+    /** A button by its label; scrolled into view first when it sits in a scrolling column. */
+    private fun tapText(label: String) {
+        compose.waitForIdle()
+        val node = compose.onAllNodesWithText(label)[0]
+        runCatching { node.performScrollTo() }
+        node.performClick(); compose.waitForIdle()
+    }
+
+    private fun tapDescription(label: String) {
+        compose.waitForIdle(); compose.onAllNodesWithContentDescription(label)[0].performClick(); compose.waitForIdle()
+    }
+
+    private fun scrollDown() {
+        compose.onNodeWithTag(ROOT).performTouchInput { swipeUp(startY = bottom * 0.8f, endY = bottom * 0.2f, durationMillis = 400) }
+        compose.waitForIdle()
+    }
+
+    /** Back as the phone's button does it: it reaches a dialog window as well as the app. */
+    private fun back() {
+        compose.waitForIdle(); InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK); compose.waitForIdle()
+    }
+
+    private fun extra(config: String, screen: String, steps: () -> Unit) {
+        try { steps() } catch (failure: Throwable) {
+            Log.w(TAG, "WSHOT-SKIP|$config-$screen|${failure.javaClass.simpleName}: ${failure.message.orEmpty().lineSequence().first().take(160)}")
+            runCatching { back() }
+        }
+    }
+
+    private fun shot(config: String, screen: String) = capture(config, screen) { compose.onNodeWithTag(ROOT) }
+
+    /** A full-screen dialog is a window of its own, outside the app's root. */
+    private fun shotDialog(config: String, screen: String) = capture(config, screen) { compose.onNode(isDialog()) }
+
+    private fun capture(config: String, screen: String, node: () -> SemanticsNodeInteraction) {
         // Generation, photos and the weather run off the main thread; Compose idling does not see them.
         compose.waitForIdle(); SystemClock.sleep(SETTLE_MS); compose.waitForIdle()
-        val full = compose.onNodeWithTag(ROOT).captureToImage().asAndroidBitmap()
+        val full = markSystemBars(node().captureToImage().asAndroidBitmap())
         val half = Bitmap.createScaledBitmap(full, full.width / 2, full.height / 2, true)
         val bytes = ByteArrayOutputStream().also { half.compress(Bitmap.CompressFormat.JPEG, 82, it) }.toByteArray()
         val parts = Base64.encodeToString(bytes, Base64.NO_WRAP).chunked(CHUNK)
         val name = "$config-$screen"
         parts.forEachIndexed { index, part -> Log.i(TAG, "WSHOT|$name|${index + 1}|${parts.size}|$part") }
         Log.i(TAG, "WSHOT-DONE|$name|${full.width}x${full.height}|${bytes.size}")
+    }
+
+    /** The window has no status or navigation bar in it; shade where they lie on a phone, to show what goes under them. */
+    private fun markSystemBars(picture: Bitmap): Bitmap {
+        var top = 0; var bottom = 0
+        compose.runOnUiThread {
+            val bars = ViewCompat.getRootWindowInsets(compose.activity.window.decorView)?.getInsets(WindowInsetsCompat.Type.systemBars())
+            top = bars?.top ?: 0; bottom = bars?.bottom ?: 0
+        }
+        val marked = picture.copy(Bitmap.Config.ARGB_8888, true)
+        val shade = Paint().apply { color = 0x55000000 }
+        Canvas(marked).apply {
+            if (top > 0) drawRect(0f, 0f, marked.width.toFloat(), top.toFloat(), shade)
+            if (bottom > 0) drawRect(0f, (marked.height - bottom).toFloat(), marked.width.toFloat(), marked.height.toFloat(), shade)
+        }
+        return marked
     }
 
     private suspend fun seed(session: AccountSession, wardrobeName: String) {

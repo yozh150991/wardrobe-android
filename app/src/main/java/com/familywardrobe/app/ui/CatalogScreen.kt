@@ -363,9 +363,8 @@ private fun FirstOutfitChecklist(ready: List<String>, required: List<String>, en
                     }
                 }
             }
-            Button(onClick = onNext, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary,
-                    contentColor = MaterialTheme.colorScheme.onSecondary)) {
+            // LOOK-10: the next step is a primary button like every other main action (it was the only secondary one).
+            Button(onClick = onNext, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Text(stringResource(when (next) {
                     "top" -> R.string.add_top; "bottom" -> R.string.add_bottom; "shoes" -> R.string.add_shoes
                     else -> R.string.create_first_outfit

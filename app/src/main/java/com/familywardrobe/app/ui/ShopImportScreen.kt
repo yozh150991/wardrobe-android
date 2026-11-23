@@ -108,9 +108,8 @@ internal fun ShopImportScreen(s: Snapshot, currentWardrobe: String, vm: Wardrobe
         if (selected >= 0) {
             if (photo.isNotBlank()) ItemPhoto(photo, vm, Modifier.fillMaxWidth().height(190.dp), fit = true)
             if (images.length() > 1) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                repeat(images.length()) { index -> FilterChip(selected = imageIndex == index,
-                    onClick = { imageIndex = index; photo = ""; vm.loadShopPhoto(images.getString(index)) { photo = it } }, enabled = !busy,
-                    label = { Text(stringResource(R.string.shop_photo_number, index + 1)) }) }
+                repeat(images.length()) { index -> PillChip(imageIndex == index, stringResource(R.string.shop_photo_number, index + 1),
+                    { imageIndex = index; photo = ""; vm.loadShopPhoto(images.getString(index)) { photo = it } }, enabled = !busy) }
             }
             if (images.length() > 0) TextButton(onClick = ::loadPhoto, enabled = !busy) { Text(stringResource(R.string.shop_retry_photo)) }
             if (photo.isNotBlank()) TextButton(onClick = { photo = "" }, enabled = !busy) { Text(stringResource(R.string.remove_photo)) }

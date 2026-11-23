@@ -1,3 +1,16 @@
+## Current handoff — BUG-61 item page, TXT-01–08 texts, LOOK-07–10 controls, DEV-05 tour, 23 November 2026
+
+0.14.61-consistency/code 91, Room 11 and backup formats unchanged. Read docs/releases/CONSISTENCY-0.14.61.md. Stacked on
+PR #61 ⊃ #60 ⊃ #59; its PR targets main and contains them — merge the latest. The app is edge-to-edge: anything drawn at
+the top of a screen must clear `WindowInsets.statusBars` (the item photo uses ItemPhoto's `inset`). «Ношу рідко» is a
+switch row among the item page's actions, never a chip among labels. **Strings:** values/strings.xml is a byte copy
+of values-uk; Ukrainian says «ти» with no gendered verbs for the user; one name per thing (образ/outfit/zestaw, item,
+garderoba, the tabs «Хочу купити»/“Want to buy”/„Chcę kupić” and «Гардероб»); the noun goes before a number
+(«речей: 2»); button names are quoted («» / “” / „”) and must equal the real label; British English, ’ apostrophes.
+Edit strings in all four files (or extend tools/consistency_strings.py and re-run it); tools/check_consistency.py
+guards every rule, plus: choice chips are PillChip/ChipChoice only, search fields are SearchBox, full-screen
+dialogs use `Surface(color = background)`. The tour now has `extra()` steps that log WSHOT-SKIP instead of failing.
+
 ## Current handoff — LOOK-01–06 fixes from the first screenshot review, 23 November 2026
 
 0.14.60-look-fixes/code 90, Room 11 and backup formats unchanged. Read docs/releases/LOOK-FIXES-0.14.60.md. Stacked on

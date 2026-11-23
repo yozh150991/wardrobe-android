@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -68,10 +69,14 @@ fun Detail(g: Garment, s: Snapshot, vm: WardrobeViewModel, today: String, onBack
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             // UI-04: the photo is the top of the page, with back, share, edit and «⋮» over it.
-            Box(Modifier.fillMaxWidth().height(if (compact) 300.dp else 372.dp)
+            // BUG-61-01: the app draws under the status bar, so the backdrop goes there but the picture and the buttons
+            // start below it; the picture also clears the button row, so nothing covers the garment.
+            val statusBar = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+            Box(Modifier.fillMaxWidth().height((if (compact) 252.dp else 320.dp) + statusBar + PHOTO_BUTTON_BAND)
                 .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))) {
-                ZoomableItemPhoto(g.photoId, vm, Modifier.fillMaxSize(), title = g.name, garmentColour = g.color)
-                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                ZoomableItemPhoto(g.photoId, vm, Modifier.fillMaxSize(), title = g.name, garmentColour = g.color,
+                    inset = PaddingValues(top = statusBar + PHOTO_BUTTON_BAND, bottom = 12.dp))
+                Row(Modifier.fillMaxWidth().statusBarsPadding().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     RoundButton(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.back), enabled = true, onClick = onBack)
                     Spacer(Modifier.weight(1f))
                     if (g.photoId.isNotBlank()) {
@@ -106,19 +111,15 @@ fun Detail(g: Garment, s: Snapshot, vm: WardrobeViewModel, today: String, onBack
                         Icon(if (g.favorite) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder, stringResource(R.string.favorite))
                     }
                 }
-                // UX-10: plain labels (they are not buttons); «Ношу рідко» is the only switch here.
+                // UX-10: plain labels (they are not buttons). BUG-61-02: «Ношу рідко» is a switch, so it lives with the
+                // actions below, not among the labels.
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     ItemLabel(stringResource(if (g.archived) R.string.archived else label(g.availability)),
                         status = !g.archived && g.availability == "available")
                     ItemLabel(stringResource(label(g.style)))
                     ItemLabel(stringResource(label(g.season)))
                     ItemLabel(s.customColor(g)?.name ?: stringResource(label(g.color)))
-                    FilterChip(g.rarelyWorn, { vm.update(g) { it.copy(rarelyWorn = !it.rarelyWorn) } }, enabled = !busy,
-                        shape = RoundedCornerShape(50), label = { Text(stringResource(R.string.rare)) })
                 }
-                // UX-06: what «Ношу рідко» does, so the chip is not a mystery.
-                if (g.rarelyWorn) Text(stringResource(R.string.rare_hint), style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (g.suggestionExcluded) Text(stringResource(R.string.rules_manual_allowed), style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 // UI-04: three numbers at a glance — wear days, days since, outfits with the item.
@@ -137,6 +138,19 @@ fun Detail(g: Garment, s: Snapshot, vm: WardrobeViewModel, today: String, onBack
                             ActionRow(stringResource(if (g.availability == "laundry") R.string.return_after_wash else R.string.mark_laundry), !busy) {
                                 vm.changeAvailability(g, availability = if (g.availability == "laundry") "available" else "laundry") }
                         }
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        // BUG-61-02: a switch row like the others; UX-06: when it is on, it says what it does.
+                        Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).toggleable(g.rarelyWorn, enabled = !busy, role = Role.Switch,
+                            onValueChange = { vm.update(g) { it.copy(rarelyWorn = !it.rarelyWorn) } }).padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(stringResource(R.string.rare), style = MaterialTheme.typography.bodyLarge)
+                                if (g.rarelyWorn) Text(stringResource(R.string.rare_hint), style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Switch(checked = g.rarelyWorn, onCheckedChange = null, enabled = !busy)
+                        }
                     }
                 }
                 s.wishes.find { it.ownedId == g.id }?.let { PurchaseHistory(it, vm) }
@@ -153,6 +167,7 @@ fun Detail(g: Garment, s: Snapshot, vm: WardrobeViewModel, today: String, onBack
                         dates.take(8).forEach { day ->
                             val remove = stringResource(R.string.wear_remove_day, dateLabel(day))
                             InputChip(selected = false, onClick = { removingWear = day }, enabled = !busy, label = { Text(dateLabel(day)) },
+                                shape = RoundedCornerShape(50),
                                 trailingIcon = { Icon(Icons.Outlined.Close, contentDescription = null, modifier = Modifier.size(18.dp)) },
                                 modifier = Modifier.semantics { contentDescription = remove })
                         }
@@ -260,3 +275,6 @@ private fun ActionRow(text: String, enabled: Boolean, onClick: () -> Unit) {
         Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
+
+/** BUG-61-01: the band at the top of the photo that holds back, share, edit and «⋮» (48 dp buttons, 16 dp padding). */
+private val PHOTO_BUTTON_BAND = 64.dp

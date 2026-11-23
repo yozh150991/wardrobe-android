@@ -77,8 +77,7 @@ fun SubcategoryChoice(value: String, options: List<String>, change: (String) -> 
     }
     if (choosing) AlertDialog(onDismissRequest = { choosing = false }, title = { Text(stringResource(R.string.filter_subcategory)) },
         text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(query, { query = TextLimits.input(it, 100) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.search_subcategories)) })
+            SearchBox(query, { query = TextLimits.input(it, 100) }, stringResource(R.string.search_subcategories), stringResource(R.string.catalog_search_clear), Modifier.fillMaxWidth())
             val visible = options.filter { CategoryRules.matches(query, it) }
             if (options.isEmpty()) Text(stringResource(R.string.subcategory_empty))
             else if (visible.isEmpty()) Text(stringResource(R.string.no_results))

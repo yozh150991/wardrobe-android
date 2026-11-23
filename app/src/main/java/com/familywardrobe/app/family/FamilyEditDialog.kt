@@ -53,7 +53,7 @@ internal fun FamilyEditDialog(vm: WardrobeViewModel, remote: String, dismiss: ()
     LaunchedEffect(draft?.editId) { dirty = false }
     val close = { if (dirty) confirmClose = true else dismiss() }
     Dialog(onDismissRequest = close, properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)) {
-        Surface(Modifier.fillMaxSize()) {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(stringResource(R.string.family_edit_title), style = MaterialTheme.typography.titleLarge)

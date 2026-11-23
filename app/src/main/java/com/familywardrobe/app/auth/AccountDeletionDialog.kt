@@ -56,7 +56,7 @@ private fun AccountDeletionDialog(vm: WardrobeViewModel, accountEmail: String, o
     val owners = FamilyOwnership.owners(state.owned, choices)
     val working = state.loading || state.running || state.done
     Dialog(onDismissRequest = close, properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)) {
-        Surface(Modifier.fillMaxSize()) {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.account_delete_title), style = MaterialTheme.typography.titleLarge)

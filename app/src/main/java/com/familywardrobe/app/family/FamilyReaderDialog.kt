@@ -21,6 +21,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.familywardrobe.app.rules.TextLimits
+import com.familywardrobe.app.ui.SearchBox
 import com.familywardrobe.app.R
 import com.familywardrobe.app.outfits.LookRules
 import com.familywardrobe.app.photo.ZoomableItemPhoto
@@ -64,7 +66,7 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
     val view = state.view?.takeIf { foreground && state.remoteId == remoteId && it.readable(now) && vm.familyReader.readable(it) }
     Dialog(onDismissRequest = { if (state.running) vm.cancelOperation(); onDismiss() },
         properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)) {
-        Surface(Modifier.fillMaxSize()) {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.family_read_title), style = MaterialTheme.typography.titleLarge)
@@ -128,8 +130,7 @@ internal fun FamilyReaderDialog(vm: WardrobeViewModel, remoteId: String, onDismi
                                     }
                                     Text(stringResource(R.string.family_export_hint), style = MaterialTheme.typography.bodySmall)
                                 }
-                                OutlinedTextField(value = query, onValueChange = { query = it }, singleLine = true,
-                                    label = { Text(stringResource(R.string.family_read_search)) }, modifier = Modifier.fillMaxWidth())
+                                SearchBox(query, { query = TextLimits.input(it, 120) }, stringResource(R.string.family_read_search), stringResource(R.string.catalog_search_clear), Modifier.fillMaxWidth())
                             }
                         }
                         items(snapshot.outfits.filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }, key = { "outfit:${it.id}" }) { look ->

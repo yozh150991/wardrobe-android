@@ -146,8 +146,8 @@ internal fun LookEditor(s: Snapshot, wardrobe: String, anchorId: String, outfitI
             }
             Text(stringResource(LookRules.status(pieces)), style = MaterialTheme.typography.titleMedium)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(!composing, { composing = false }, label = { Text(stringResource(R.string.look_contents_mode)) })
-                FilterChip(composing, { composing = true }, label = { Text(stringResource(R.string.look_composition_mode)) })
+                PillChip(!composing, stringResource(R.string.look_contents_mode), { composing = false })
+                PillChip(composing, stringResource(R.string.look_composition_mode), { composing = true })
             }
             Text(stringResource(if (composing) R.string.canvas_gesture_hint else R.string.look_select_hint), style = MaterialTheme.typography.bodySmall)
             OutfitComposition(pieces, vm, selected, locks.toSet(), enabled = !busy, layout = layout, background = background,
