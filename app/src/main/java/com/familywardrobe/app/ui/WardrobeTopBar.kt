@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -90,7 +91,7 @@ fun AddItemMethods(dismiss: () -> Unit, choose: (String) -> Unit) {
             Text(stringResource(R.string.add_item), style = MaterialTheme.typography.titleLarge)
             listOf("camera" to R.string.camera, "gallery" to R.string.gallery, "batch" to R.string.batch_pick,
                 "shop" to R.string.shop_title, "manual" to R.string.shop_manual).forEach { (method, label) ->
-                TextButton(onClick = { choose(method) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(label)) }
+                TextButton(onClick = { choose(method) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("add-method-$method")) { Text(stringResource(label)) }
             }
         }
     }
