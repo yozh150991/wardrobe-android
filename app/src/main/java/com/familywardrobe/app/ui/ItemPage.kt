@@ -3,6 +3,7 @@
 package com.familywardrobe.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -19,6 +20,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
@@ -217,7 +219,9 @@ fun Detail(g: Garment, s: Snapshot, vm: WardrobeViewModel, today: String, onBack
 
 @Composable
 private fun RoundButton(icon: ImageVector, description: String, enabled: Boolean, onClick: () -> Unit) {
-    FilledIconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(48.dp), shape = CircleShape,
+    // LOOK-04: a thin outline and a light shadow keep the white circle visible on a white photo background.
+    FilledIconButton(onClick = onClick, enabled = enabled, shape = CircleShape,
+        modifier = Modifier.size(48.dp).shadow(2.dp, CircleShape).border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
         colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface)) {
         Icon(icon, description, Modifier.size(22.dp))

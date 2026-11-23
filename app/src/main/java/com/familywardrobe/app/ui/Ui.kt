@@ -810,7 +810,8 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
                 TextButton(onClick = reviewQueue, enabled = !busy) { Text(stringResource(R.string.review_queue)) }
             }
         }
-        if (saveBlocker != null) Text(stringResource(saveBlocker), color = MaterialTheme.colorScheme.error,
+        // LOOK-01: the reason shows after «Зберегти» was tried; before that a red line read as an error nobody made.
+        if (validation && saveBlocker != null) Text(stringResource(saveBlocker), color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.bodySmall)
         // UI-05: «Зберегти й додати ще» beside «Зберегти» at the bottom for a new item; they stack at a large font.
         val addNextButton: @Composable (Modifier) -> Unit = { modifier ->
@@ -824,9 +825,12 @@ fun EditItem(original: Garment?, wardrobe: String, vm: WardrobeViewModel, initia
         }
         val offerAddNext = original == null && purchase == null && imported == null
         if (!offerAddNext) saveButton(Modifier.fillMaxWidth())
-        else if (LocalConfiguration.current.fontScale >= 1.3f) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // LOOK-06: stacked only from FORM_STACK_SCALE; at 1.3 two side-by-side buttons with wrapped labels take half the height.
+        else if (LocalConfiguration.current.fontScale >= FORM_STACK_SCALE) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             saveButton(Modifier.fillMaxWidth()); addNextButton(Modifier.fillMaxWidth())
-        } else Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { addNextButton(Modifier.weight(1f)); saveButton(Modifier.weight(1f)) }
+        } else Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            // LOOK-06: the long label gets more of the row than «Зберегти», so it wraps to two lines at most at font 1.3.
+            addNextButton(Modifier.weight(1.4f)); saveButton(Modifier.weight(1f)) }
     }
     if (confirmDefer) AlertDialog(onDismissRequest = { confirmDefer = false }, text = { Text(stringResource(R.string.review_defer_changes)) },
         confirmButton = { TextButton(onClick = { confirmDefer = false; deferReview() }) { Text(stringResource(R.string.review_defer)) } },
@@ -870,9 +874,9 @@ fun OutfitList(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, add: () -> 
             OutlinedButton(onClick = calendar, enabled = !busy) { Text(stringResource(R.string.calendar_title)) }
             OutlinedButton(onClick = capsules, enabled = !busy) { Text(stringResource(R.string.capsules_title)) }
         } }
-        item { Button(onClick = add, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary)) { Icon(Icons.Outlined.Add, null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.add_outfit)) } }
+        // LOOK-03: the main action in the primary colour, like «Додати бажання» and «Зберегти».
+        item { Button(onClick = add, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            Icon(Icons.Outlined.Add, null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.add_outfit)) } }
         if (found.isEmpty()) item { Text(stringResource(R.string.empty_outfits_new), Modifier.padding(vertical = 24.dp)) }
         items(found, key = { it.id }) { outfit ->
             val pieces = LookRules.saved(s, outfit)
@@ -1108,3 +1112,6 @@ private fun NavLabel(text: String, scale: Float, shrink: (Float) -> Unit) {
             if (overflowing) shrink(scale)
         })
 }
+
+/** LOOK-06: the new-item buttons stack only at a very large font. */
+private const val FORM_STACK_SCALE = 1.6f

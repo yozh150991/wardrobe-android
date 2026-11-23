@@ -2,6 +2,11 @@
 
 package com.familywardrobe.app.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -10,6 +15,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -130,10 +136,14 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
         location.isNotBlank(), favorites, sort != "newest").count { it }
     val inWash = found.count { !it.archived && it.availability == "laundry" }
     var moreMenu by remember { mutableStateOf(false) }
+    // LOOK-05: while the header with the tools is on screen, «Додати річ» is one of the tools and nothing floats over
+    // the cards; once it has scrolled away, a round «+» floats at the bottom right.
+    val grid = rememberLazyGridState()
+    val headerShown by remember { derivedStateOf { grid.firstVisibleItemIndex == 0 } }
 
     Box(Modifier.fillMaxSize()) {
-        LazyVerticalGrid(columns = if (largeText) GridCells.Adaptive(240.dp) else GridCells.Fixed(columns),
-            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), contentPadding = PaddingValues(top = 8.dp, bottom = 96.dp),
+        LazyVerticalGrid(state = grid, columns = if (largeText) GridCells.Adaptive(240.dp) else GridCells.Fixed(columns),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp).testTag("catalog-grid"), contentPadding = PaddingValues(top = 8.dp, bottom = 96.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item(key = "catalog_header", span = { GridItemSpan(maxLineSpan) }) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -171,6 +181,8 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
                                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(start = 4.dp).semantics { liveRegion = LiveRegionMode.Polite })
                             }
+                            if (!selecting) ToolButton(Icons.Outlined.Add, stringResource(R.string.add_item), !busy, selected = true,
+                                modifier = Modifier.testTag("catalog-add"), onClick = onAddMethods)
                             ToolButton(if (selecting) Icons.Outlined.Done else Icons.Outlined.Checklist,
                                 stringResource(if (selecting) R.string.bulk_finish else R.string.bulk_select), !busy, selected = selecting) {
                                 selecting = !selecting; selectedIds = emptyList() }
@@ -193,15 +205,8 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
                         }
                         // UI-03: the search on a white field and the filters as a filled button with the number that are on.
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            TextField(query, { query = it }, modifier = Modifier.weight(1f), singleLine = true,
-                                placeholder = { Text(stringResource(R.string.catalog_search_hint)) },
-                                leadingIcon = { Icon(Icons.Outlined.Search, null) }, shape = RoundedCornerShape(16.dp),
-                                trailingIcon = if (query.isNotEmpty()) ({ IconButton(onClick = { query = "" }) {
-                                    Icon(Icons.Outlined.Close, stringResource(R.string.catalog_search_clear)) } }) else null,
-                                colors = TextFieldDefaults.colors(focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface, disabledContainerColor = MaterialTheme.colorScheme.surface,
-                                    focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
-                                    disabledIndicatorColor = Color.Transparent))
+                            SearchBox(query, { query = it }, stringResource(R.string.catalog_search_hint),
+                                stringResource(R.string.catalog_search_clear), Modifier.weight(1f))
                             val filterText = if (activeFilters > 0) stringResource(R.string.catalog_filters_active, activeFilters) else stringResource(R.string.filter)
                             BadgedBox(badge = { if (activeFilters > 0) Badge(containerColor = MaterialTheme.colorScheme.secondary,
                                 contentColor = MaterialTheme.colorScheme.onSecondary) { Text("$activeFilters", Modifier.clearAndSetSemantics { }) } }) {
@@ -249,13 +254,20 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
                 }
             }
         }
-        // UI-03: «Додати річ» floats over the grid at the bottom right; while choosing items it steps aside.
-        if (!selecting) Button(onClick = onAddMethods, enabled = !busy, shape = RoundedCornerShape(28.dp),
+        // UI-03: an empty wardrobe has no tool row, so the wide «Додати першу річ» floats at the bottom right.
+        if (!selecting && newWardrobe) Button(onClick = onAddMethods, enabled = !busy, shape = RoundedCornerShape(28.dp),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp, pressedElevation = 8.dp),
             contentPadding = PaddingValues(start = 18.dp, end = 22.dp),
             modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp).heightIn(min = 56.dp).testTag("catalog-add")) {
             Icon(Icons.Outlined.Add, null); Spacer(Modifier.width(8.dp))
-            Text(stringResource(if (newWardrobe) R.string.add_first_item else R.string.add_item), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.add_first_item), style = MaterialTheme.typography.titleSmall)
+        }
+        AnimatedVisibility(!selecting && !newWardrobe && !headerShown, enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut(),
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp)) {
+            FloatingActionButton(onClick = { if (!busy) onAddMethods() }, containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.testTag("catalog-add-floating")) {
+                Icon(Icons.Outlined.Add, stringResource(R.string.add_item))
+            }
         }
     }
     if (bulkMenu) AlertDialog(onDismissRequest = { bulkMenu = false }, title = { Text(stringResource(R.string.bulk_count, selectedIds.size)) },
@@ -310,8 +322,9 @@ private val PhotoShape = RoundedCornerShape(22.dp)
 private val CardShape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp, bottomStart = 12.dp, bottomEnd = 12.dp)
 
 @Composable
-private fun ToolButton(icon: ImageVector, description: String, enabled: Boolean, selected: Boolean = false, onClick: () -> Unit) {
-    FilledIconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(48.dp),
+private fun ToolButton(icon: ImageVector, description: String, enabled: Boolean, selected: Boolean = false,
+    modifier: Modifier = Modifier, onClick: () -> Unit) {
+    FilledIconButton(onClick = onClick, enabled = enabled, modifier = modifier.size(48.dp),
         colors = IconButtonDefaults.filledIconButtonColors(
             containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
             contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)) {
@@ -321,14 +334,8 @@ private fun ToolButton(icon: ImageVector, description: String, enabled: Boolean,
 
 @Composable
 private fun CategoryChip(selected: Boolean, title: String, click: () -> Unit) {
-    // UI-03: white chips on the background; the chosen one is dark, as in the approved design.
-    FilterChip(selected, onClick = click, modifier = Modifier.heightIn(min = 48.dp),
-        shape = RoundedCornerShape(50), border = null,
-        label = { Text(title, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium) },
-        colors = FilterChipDefaults.filterChipColors(containerColor = MaterialTheme.colorScheme.surface,
-            labelColor = MaterialTheme.colorScheme.onSurface,
-            selectedContainerColor = MaterialTheme.colorScheme.onSurface,
-            selectedLabelColor = MaterialTheme.colorScheme.surface))
+    // UI-03: white chips on the background; the chosen one is dark, as in the approved design (shared with «Хочу купити»).
+    PillChip(selected, title, click)
 }
 
 @Composable

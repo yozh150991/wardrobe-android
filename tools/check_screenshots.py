@@ -32,6 +32,8 @@ for config, language, scale in (('uk', 'uk', '1.0f'), ('uk-large', 'uk', '1.3f')
 screens = ['1-today', '2-wardrobe', '3-want-to-buy', '4-outfits', '5-profile', '6-item', '7-new-item']
 positions = [tour.find(f'shot(config, "{name}")') for name in screens]
 check(all(p > 0 for p in positions) and positions == sorted(positions), 'the tour captures the seven screens in order')
+check('performScrollToIndex(6); shot(config, "2b-wardrobe-scrolled")' in tour and 'testTag("catalog-grid")' in (source / 'ui/CatalogScreen.kt').read_text(encoding='utf-8'),
+      'the tour also captures the scrolled catalog with the round «+» (LOOK-05)')
 check('WardrobeApp(vm, appearance, identity.email, {}, {})' in tour and 'WardrobeViewModel(app, session)' in tour,
       'the tour drives the production WardrobeApp and view model')
 check('session.close(signedOut = false)' in tour, 'the tour closes its account without signing anyone out')
