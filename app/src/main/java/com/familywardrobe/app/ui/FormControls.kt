@@ -37,25 +37,21 @@ fun ChipChoice(value: String, options: List<String>, change: (String) -> Unit, t
         FlowRow(Modifier.semantics { selectableGroup() }, horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)) {
             options.forEach { code ->
-                val selected = code == value
-                FilterChip(selected, onClick = { change(code) }, enabled = enabled, modifier = Modifier.heightIn(min = 48.dp),
-                    shape = RoundedCornerShape(50), border = null,
-                    label = { Text(stringResource(label(code)), fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium) },
-                    colors = FilterChipDefaults.filterChipColors(containerColor = MaterialTheme.colorScheme.surface,
-                        labelColor = MaterialTheme.colorScheme.onSurface,
-                        selectedContainerColor = MaterialTheme.colorScheme.onSurface,
-                        selectedLabelColor = MaterialTheme.colorScheme.surface))
+                PillChip(code == value, stringResource(label(code)), { change(code) }, enabled = enabled)
             }
         }
     }
 }
 
-/** UI-03 / LOOK-02: a filter chip of the new design — white on the background, the chosen one dark. */
+/** UI-03 / LOOK-02: a filter chip of the new design — white on the background, the chosen one dark.
+ *  LOOK-07: every choice chip in the app is this one (or ChipChoice), so no screen keeps the old outlined chip. */
 @Composable
-internal fun PillChip(selected: Boolean, title: String, click: () -> Unit, enabled: Boolean = true) {
-    FilterChip(selected, onClick = click, enabled = enabled, modifier = Modifier.heightIn(min = 48.dp),
-        shape = RoundedCornerShape(50), border = null,
-        label = { Text(title, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium) },
+internal fun PillChip(selected: Boolean, title: String, click: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true,
+    leadingIcon: (@Composable () -> Unit)? = null, trailingIcon: (@Composable () -> Unit)? = null, singleLine: Boolean = false) {
+    FilterChip(selected, onClick = click, enabled = enabled, modifier = modifier.heightIn(min = 48.dp),
+        shape = RoundedCornerShape(50), border = null, leadingIcon = leadingIcon, trailingIcon = trailingIcon,
+        label = { Text(title, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            maxLines = if (singleLine) 1 else Int.MAX_VALUE, softWrap = !singleLine) },
         colors = FilterChipDefaults.filterChipColors(containerColor = MaterialTheme.colorScheme.surface,
             labelColor = MaterialTheme.colorScheme.onSurface,
             selectedContainerColor = MaterialTheme.colorScheme.onSurface,

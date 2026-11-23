@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.familywardrobe.app.ui.PillChip
 import com.familywardrobe.app.R
 import com.familywardrobe.app.rules.PhotoEditHistory
 import com.familywardrobe.app.rules.PhotoGeometry
@@ -97,7 +98,7 @@ fun PhotoEditor(photoId: String, vm: WardrobeViewModel, onDismiss: () -> Unit, o
     fun resetTo(id: String) { append(JSONObject().put("source", id).toString()) }
     Dialog(onDismissRequest = { if (!busy && !maskDrawing && !cropping && !regionPending && !precisionPending) pause() }, properties = DialogProperties(
         usePlatformDefaultWidth = false, dismissOnBackPress = !busy, dismissOnClickOutside = !busy)) {
-        Surface(Modifier.fillMaxSize()) {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
           BoxWithConstraints(Modifier.fillMaxSize()) {
             val availableHeight = maxHeight
             val scrollPage = LocalDensity.current.fontScale > 1.3f || availableHeight < 600.dp
@@ -107,7 +108,7 @@ fun PhotoEditor(photoId: String, vm: WardrobeViewModel, onDismiss: () -> Unit, o
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("crop" to R.string.photo_crop_tool, "rotate" to R.string.photo_rotate_tool, "background" to R.string.photo_background_tool,
                         "precision" to R.string.photo_precision_tool).forEach { (code, title) ->
-                        FilterChip(tool == code, onClick = { tool = code; persist(nextTool = code) }, enabled = controlsEnabled, label = { Text(stringResource(title)) })
+                        PillChip(tool == code, stringResource(title), { tool = code; persist(nextTool = code) }, enabled = controlsEnabled)
                     }
                 }
                 PhotoHistoryControls(history, controlsEnabled) { changeHistory(it); resetBounds() }

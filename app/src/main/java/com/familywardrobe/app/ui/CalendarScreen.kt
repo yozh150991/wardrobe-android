@@ -80,10 +80,9 @@ fun CalendarScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: 
                 }
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     items((0..6).map { monday.plusDays(it.toLong()) }.filter { it.year in 1900..2200 }) { day ->
-                        FilterChip(selected = day.toString() == date, onClick = { date = day.toString() }, label = {
-                            val count = ownPlans.count { it.date == day.toString() }
-                            Text(day.format(DateTimeFormatter.ofPattern("EEE d", locale)) + if (count > 0) " · $count" else "")
-                        })
+                        val count = ownPlans.count { it.date == day.toString() }
+                        PillChip(day.toString() == date, day.format(DateTimeFormatter.ofPattern("EEE d", locale)) + if (count > 0) " · $count" else "",
+                            { date = day.toString() })
                     }
                 }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

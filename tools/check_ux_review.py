@@ -51,7 +51,7 @@ check('R.string.daily_title' not in ui.split('fun OutfitList(', 1)[1].split('fun
 # the rest of the everyday actions in a list above the facts, rare decisions under «⋮» of the photo.
 detail = item_page.split('fun Detail(', 1)[1].split('\nprivate fun RoundButton(', 1)[0]
 check('AssistChip(onClick = {}' not in ui + item_page, 'no chips that look like buttons and do nothing')
-page = detail.split('Column(Modifier.weight(1f).verticalScroll', 1)[1]
+page = detail.split('}.verticalScroll(scroll)) {', 1)[1]  # BUG-61-03: the scroll column also draws the status-bar band
 menu = page.split('DropdownMenu(moreMenu', 1)[1].split('Column(Modifier.padding(start = 16.dp', 1)[0]
 body = page.split('Column(Modifier.padding(start = 16.dp', 1)[1].split('// UI-04: «Вдягнув сьогодні»', 1)[0]
 bar = page.split('// UI-04: «Вдягнув сьогодні»', 1)[1]

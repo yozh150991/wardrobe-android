@@ -4,6 +4,7 @@ package com.familywardrobe.app.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -59,15 +60,22 @@ fun StatisticsScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today
                     Text(stringResource(R.string.statistics_spend, moneyLabel(items.sumOf { it.garment.priceMinor!! }, currency, locale), items.size))
                 }
                 Text(stringResource(R.string.statistics_prices_missing, usage.count { it.garment.priceMinor == null }), style = MaterialTheme.typography.bodySmall)
-                Choice(group, listOf("most", "forgotten", "never", "cost"), { group = it }, R.string.statistics_show,
-                    optionLabels = mapOf("most" to R.string.statistics_most, "forgotten" to R.string.statistics_forgotten,
-                        "never" to R.string.statistics_never, "cost" to R.string.statistics_cost))
+                // LOOK-11: the four views as pills, like every other short choice, instead of a drop-down.
+                Text(stringResource(R.string.statistics_show), style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf("most" to R.string.statistics_most, "forgotten" to R.string.statistics_forgotten,
+                        "never" to R.string.statistics_never, "cost" to R.string.statistics_cost).forEach { (code, title) ->
+                        PillChip(group == code, stringResource(title), { group = code })
+                    }
+                }
             }
         }
         if (rows.isEmpty()) item { Text(stringResource(R.string.statistics_empty), Modifier.padding(vertical = 24.dp)) }
         items(rows, key = { it.garment.id }) { row ->
             val g = row.garment
-            OutlinedCard(Modifier.fillMaxWidth()) {
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         ItemPhoto(g.photoId, vm, Modifier.size(84.dp), description = g.name)

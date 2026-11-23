@@ -23,6 +23,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.familywardrobe.app.rules.TextLimits
+import com.familywardrobe.app.ui.SearchBox
 import com.familywardrobe.app.R
 import com.familywardrobe.app.photo.ZoomableItemPhoto
 import com.familywardrobe.app.ui.ItemPhoto
@@ -64,7 +66,7 @@ internal fun FamilyPhotoDialog(vm: WardrobeViewModel, remote: String, dismiss: (
     val current = view?.candidate?.snapshot?.garments?.find { it.id == state.garmentId }
     val choose = readable && draft == null && !state.synced && !state.running && state.queue.size < FamilyMediaQueue.LIMIT
     Dialog(onDismissRequest = dismiss, properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)) {
-        Surface(Modifier.fillMaxSize()) {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.family_photo_title), style = MaterialTheme.typography.titleLarge)
                 TextButton(onClick = dismiss) { Text(stringResource(R.string.close)) }
@@ -143,7 +145,7 @@ internal fun FamilyPhotoDialog(vm: WardrobeViewModel, remote: String, dismiss: (
                         if (choosing) {
                             item {
                                 Text(stringResource(R.string.family_photo_choose))
-                                OutlinedTextField(query, { query = it }, singleLine = true, label = { Text(stringResource(R.string.family_read_search)) }, modifier = Modifier.fillMaxWidth())
+                                SearchBox(query, { query = TextLimits.input(it, 120) }, stringResource(R.string.family_read_search), stringResource(R.string.catalog_search_clear), Modifier.fillMaxWidth())
                             }
                             val matches = state.choices.filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
                             if (matches.isEmpty()) item { Text(stringResource(R.string.family_add_empty)) }

@@ -122,8 +122,8 @@ fun CompatibilityScreen(wish: Wish, s: Snapshot, vm: WardrobeViewModel, open: (G
                     if (report.previews.isNotEmpty()) Text(stringResource(R.string.advice_gap_count, report.withoutReplacement), style = MaterialTheme.typography.bodySmall)
                 }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(selected = !similarTab, onClick = { similarTab = false }, label = { Text(stringResource(R.string.advice_outfits)) })
-                    FilterChip(selected = similarTab, onClick = { similarTab = true }, label = { Text(stringResource(R.string.advice_similar)) })
+                    PillChip(!similarTab, stringResource(R.string.advice_outfits), { similarTab = false })
+                    PillChip(similarTab, stringResource(R.string.advice_similar), { similarTab = true })
                 }
                 if (current == null) { LinearProgressIndicator(Modifier.fillMaxWidth()); Text(stringResource(R.string.advice_loading)) }
                 if (current?.failed == true) {

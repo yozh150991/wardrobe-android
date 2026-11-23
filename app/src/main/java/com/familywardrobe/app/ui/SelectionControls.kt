@@ -51,23 +51,20 @@ fun CategoryChoice(value: String, change: (String) -> Unit, enabled: Boolean = t
     val titles = options.associateWith { code -> customCategories.find { it.id == code }?.name
         ?: stringResource(if (code.isBlank()) R.string.all else label(code)) }
     val selectedTitle = titles[value] ?: stringResource(R.string.choose_category)
-    OutlinedButton(onClick = { query = ""; choosing = true }, enabled = enabled,
-        modifier = modifier.heightIn(min = 48.dp).semantics {
-            if (!showSelectedValue) stateDescription = selectedTitle
-        }) {
-        if (showSelectedValue) {
-            Text(stringResource(title) + ": " + selectedTitle)
-        } else {
-            // BUG-58-01: no weight here. This compact button sits in the catalog's sideways-scrolling row, where the
-            // width is unbounded: a weighted label got the button's minimum width and wrapped one letter per line.
-            Text(stringResource(title), maxLines = 1, softWrap = false)
-            Spacer(Modifier.width(4.dp))
-            Icon(Icons.Outlined.ArrowDropDown, contentDescription = null)
-        }
+    if (showSelectedValue) OutlinedButton(onClick = { query = ""; choosing = true }, enabled = enabled,
+        modifier = modifier.heightIn(min = 48.dp)) {
+        Text(stringResource(title) + ": " + selectedTitle)
+    } else {
+        // BUG-58-01: no weight here. This compact button sits in the catalog's sideways-scrolling row, where the
+        // width is unbounded: a weighted label got the button's minimum width and wrapped one letter per line.
+        // LOOK-13 (seen on the phone): it is a pill like the category chips beside it, not the one outlined button.
+        PillChip(false, stringResource(title), { query = ""; choosing = true },
+            modifier.semantics { stateDescription = selectedTitle }, enabled = enabled,
+            trailingIcon = { Icon(Icons.Outlined.ArrowDropDown, contentDescription = null) }, singleLine = true)
     }
     if (choosing) AlertDialog(onDismissRequest = { choosing = false }, title = { Text(stringResource(R.string.all_categories)) }, text = {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(query, { query = TextLimits.input(it, 100) }, label = { Text(stringResource(R.string.search_categories)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            SearchBox(query, { query = TextLimits.input(it, 100) }, stringResource(R.string.search_categories), stringResource(R.string.catalog_search_clear), Modifier.fillMaxWidth())
             LazyColumn(Modifier.heightIn(max = 340.dp).selectableGroup()) {
                 items(options.filter { CategoryRules.matches(query, titles.getValue(it)) }, key = { it.ifBlank { "all" } }) { code ->
                     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(code == value, role = Role.RadioButton, onClick = { change(code); choosing = false }), verticalAlignment = Alignment.CenterVertically) {
@@ -99,7 +96,7 @@ fun VisualPickerDialog(title: Int, options: List<VisualOption>, vm: WardrobeView
     val visible = options.filter { (category.isBlank() || category == it.category) && (it.name + " " + it.context).contains(query.trim(), ignoreCase = true) }
     AlertDialog(onDismissRequest = dismiss, title = { Text(stringResource(title)) }, text = {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(query, { query = TextLimits.input(it, 120) }, singleLine = true, label = { Text(stringResource(R.string.picker_search)) }, modifier = Modifier.fillMaxWidth())
+            SearchBox(query, { query = TextLimits.input(it, 120) }, stringResource(R.string.picker_search), stringResource(R.string.catalog_search_clear), Modifier.fillMaxWidth())
             if (categories.size > 1) CategoryChoice(category, { category = it }, allowAll = true)
             Text(stringResource(R.string.picker_count, visible.size, options.size), style = MaterialTheme.typography.bodySmall)
             if (visible.isEmpty()) Text(stringResource(R.string.no_results))

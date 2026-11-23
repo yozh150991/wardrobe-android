@@ -49,7 +49,7 @@ internal fun FamilyOutfitDialog(vm: WardrobeViewModel, remote: String, dismiss: 
     val editing = form != null && view != null && form.base == view.remote.revision &&
         (form.outfit.isEmpty() || view.candidate.snapshot.outfits.any { it.id == form.outfit })
     Dialog(onDismissRequest = dismiss, properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)) {
-        Surface(Modifier.fillMaxSize()) {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(R.string.family_look_title), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)

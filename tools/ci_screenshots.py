@@ -7,7 +7,7 @@ CI dumps that tag after the emulator run (screenshots.log). This script
 * reassembles each screen into OUT_DIR/<name>.jpg (uploaded as the `screenshots-<sha>` artifact);
 * prints the WSHOT lines into the job log, so a reviewer that can read the log but not the artifact
   (Claude in a cloud session) can rebuild the same pictures;
-* reports how many screens arrived and which are incomplete.
+* reports how many screens arrived, which are incomplete and which the tour could not reach (WSHOT-SKIP).
 
 When the dump is missing it falls back to the per-test logcat files that the Android test runner keeps under
 RESULTS_DIR. It never fails the build: the pictures are for review, the tour itself is the test.
@@ -20,18 +20,19 @@ import re
 import sys
 
 MARK = 'WSHOT|'
+SKIP = 'WSHOT-SKIP|'
 NAME = re.compile(r'^[a-z0-9-]{1,60}$')
 
 
 def lines_from(dump: pathlib.Path, results: pathlib.Path):
     if dump.is_file():
-        found = [line for line in dump.read_text(encoding='utf-8', errors='replace').splitlines() if MARK in line]
+        found = [line for line in dump.read_text(encoding='utf-8', errors='replace').splitlines() if MARK in line or SKIP in line]
         if found:
             return found, str(dump)
     found = []
     if results.is_dir():
         for path in sorted(results.rglob('*.txt')):
-            found += [line for line in path.read_text(encoding='utf-8', errors='replace').splitlines() if MARK in line]
+            found += [line for line in path.read_text(encoding='utf-8', errors='replace').splitlines() if MARK in line or SKIP in line]
     return found, str(results)
 
 
@@ -84,6 +85,9 @@ def main(argv):
                 print(f'{MARK}{name}|{i}|{expected[name]}|{parts[i]}')
     print(f'::notice title=Screenshots::{len(complete)} screens from {source}'
           + (f'; incomplete: {", ".join(broken)}' if broken else ''))
+    for line in lines:
+        if SKIP in line:
+            print(f'::warning title=Screenshot skipped::{line[line.index(SKIP) + len(SKIP):].strip()[:220]}')
     if not complete:
         print('::warning title=Screenshots::no screenshot arrived (did ScreenshotTourTest run?)')
     return 0

@@ -34,6 +34,17 @@ positions = [tour.find(f'shot(config, "{name}")') for name in screens]
 check(all(p > 0 for p in positions) and positions == sorted(positions), 'the tour captures the seven screens in order')
 check('performScrollToIndex(6); shot(config, "2b-wardrobe-scrolled")' in tour and 'testTag("catalog-grid")' in (source / 'ui/CatalogScreen.kt').read_text(encoding='utf-8'),
       'the tour also captures the scrolled catalog with the round «+» (LOOK-05)')
+# DEV-05: the rest of the screens, each one skippable but logged, and the app edge-to-edge like MainActivity.
+extras = ['6b-item-actions', '2c-statistics', '3b-wish', '4b-outfit', '4c-calendar', '4d-capsules', '5b-profile-scrolled',
+          '5c-preferences', '5d-appearance', '7-new-item']
+extra_positions = [tour.find(f'extra(config, "{name}")') for name in extras]
+check(all(p > 0 for p in extra_positions) and extra_positions == sorted(extra_positions) and extra_positions[0] > positions[5],
+      'the tour goes on to the nested screens after the item page')
+check('shotDialog(config, "5c-preferences")' in tour and 'compose.onNode(isDialog())' in tour, 'a full-screen dialog is captured as its own window')
+check('Log.w(TAG, "WSHOT-SKIP|$config-$screen|' in tour, 'a screen the tour cannot reach is logged, not silently missing')
+check('compose.activity.enableEdgeToEdge()' in tour and 'markSystemBars(' in tour and 'resources.updateConfiguration(configuration' in tour,
+      'the tour draws under the system bars like MainActivity, shades them (BUG-61-01) and localizes dialog windows')
+check("SKIP = 'WSHOT-SKIP|'" in (root / 'tools/ci_screenshots.py').read_text(encoding='utf-8'), 'CI reports the skipped screens')
 check('WardrobeApp(vm, appearance, identity.email, {}, {})' in tour and 'WardrobeViewModel(app, session)' in tour,
       'the tour drives the production WardrobeApp and view model')
 check('session.close(signedOut = false)' in tour, 'the tour closes its account without signing anyone out')
@@ -87,4 +98,4 @@ if failures:
     for message in failures:
         print(f'FAIL: {message}')
     sys.exit(1)
-print('Screenshot tour: four configurations, seven screens, tags, debug-only activity, CI collection, decoder — pass')
+print('Screenshot tour: four configurations, seven main screens + ten more, edge-to-edge, tags, debug-only activity, CI collection, decoder — pass')

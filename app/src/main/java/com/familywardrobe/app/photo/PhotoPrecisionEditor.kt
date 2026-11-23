@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.familywardrobe.app.ui.PillChip
 import com.familywardrobe.app.R
 import com.familywardrobe.app.rules.PhotoEditHistory
 import com.familywardrobe.app.rules.PhotoPrecisionRules
@@ -111,8 +112,7 @@ internal fun PhotoPrecisionEditor(image: PhotoSessionImage?, enabled: Boolean, h
             listOf("edges" to R.string.photo_edge_tool, "erase" to R.string.photo_lasso_erase,
                 "restore" to R.string.photo_lasso_restore, "protect" to R.string.photo_lasso_protect,
                 "unprotect" to R.string.photo_lasso_unprotect).forEach { (code, label) ->
-                FilterChip(mode == code, { mode = code; reset() }, enabled = enabled && !pending,
-                    label = { Text(stringResource(label)) })
+                PillChip(mode == code, stringResource(label), { mode = code; reset() }, enabled = enabled && !pending)
             }
         }
         Text(stringResource(if (mode == "edges") R.string.photo_edge_hint else R.string.photo_lasso_hint), style = MaterialTheme.typography.bodySmall)
@@ -209,7 +209,7 @@ internal fun PhotoPrecisionEditor(image: PhotoSessionImage?, enabled: Boolean, h
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             listOf("white" to R.string.photo_backdrop_white, "cream" to R.string.photo_backdrop_cream,
                 "dark" to R.string.photo_backdrop_dark, "contrast" to R.string.photo_backdrop_contrast).forEach { (code, label) ->
-                FilterChip(backdrop == code, { backdrop = code }, enabled = enabled, label = { Text(stringResource(label)) })
+                PillChip(backdrop == code, stringResource(label), { backdrop = code }, enabled = enabled)
             }
         }
         Text(stringResource(R.string.photo_protection_hint), style = MaterialTheme.typography.bodySmall)

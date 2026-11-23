@@ -58,7 +58,7 @@ private fun FamilyAccessDialog(vm: WardrobeViewModel, dismiss: () -> Unit) {
     val managed = state.wardrobes.find { it.remoteId == state.managedRemote && it.role == "owner" }
     LaunchedEffect(vm.sessionToken) { vm.familyAccess.refresh() }
     Dialog(onDismissRequest = dismiss, properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)) {
-        Surface(Modifier.fillMaxSize()) {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(16.dp)) {
                 Text(stringResource(R.string.family_access_open), style = MaterialTheme.typography.titleLarge)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

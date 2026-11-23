@@ -49,7 +49,7 @@ internal fun PreferencesDialog(s: Snapshot, wardrobe: String, vm: WardrobeViewMo
     val warmth = DailyOutfits.warmth(s, wardrobe, choices)
     val empty = feedback.isEmpty() && choices == PersonalChoices(trends = true) && rotation.frequency == RotationRules.DAILY && postponed.isEmpty()
     Dialog(onDismissRequest = dismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Surface(Modifier.fillMaxSize()) {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.prefs_title), style = MaterialTheme.typography.titleLarge)
                 if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -68,8 +68,8 @@ internal fun PreferencesDialog(s: Snapshot, wardrobe: String, vm: WardrobeViewMo
                             Text(styleSource(style), style = MaterialTheme.typography.bodySmall)
                             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 (listOf(PreferenceProfile.AUTO) + PreferenceProfile.STYLES).forEach { value ->
-                                    FilterChip(selected = choices.style(occasion) == value, onClick = { vm.setStyleChoice(wardrobe, occasion, value) },
-                                        enabled = !busy, label = { Text(stringResource(if (value == PreferenceProfile.AUTO) R.string.prefs_auto else label(value))) })
+                                    PillChip(choices.style(occasion) == value, stringResource(if (value == PreferenceProfile.AUTO) R.string.prefs_auto else label(value)),
+                                        { vm.setStyleChoice(wardrobe, occasion, value) }, enabled = !busy)
                                 }
                             }
                         }
@@ -82,8 +82,7 @@ internal fun PreferencesDialog(s: Snapshot, wardrobe: String, vm: WardrobeViewMo
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 (listOf(PreferenceProfile.AUTO) + PreferenceProfile.WARMTH).forEach { value ->
-                                    FilterChip(selected = choices.warmth == value, onClick = { vm.setWarmthChoice(wardrobe, value) },
-                                        enabled = !busy, label = { Text(stringResource(warmthLabel(value))) })
+                                    PillChip(choices.warmth == value, stringResource(warmthLabel(value)), { vm.setWarmthChoice(wardrobe, value) }, enabled = !busy)
                                 }
                             }
                         }
@@ -138,8 +137,7 @@ internal fun PreferencesDialog(s: Snapshot, wardrobe: String, vm: WardrobeViewMo
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 RotationRules.FREQUENCIES.forEach { value ->
-                                    FilterChip(selected = rotation.frequency == value, onClick = { vm.rotation.setFrequency(wardrobe, value) },
-                                        enabled = !busy, label = { Text(stringResource(frequencyLabel(value))) })
+                                    PillChip(rotation.frequency == value, stringResource(frequencyLabel(value)), { vm.rotation.setFrequency(wardrobe, value) }, enabled = !busy)
                                 }
                             }
                             Text(stringResource(R.string.prefs_rotation_postponed, postponed.size), style = MaterialTheme.typography.titleSmall)
@@ -177,9 +175,8 @@ private fun PaletteChoice(title: String, choices: PersonalChoices, kind: String,
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         PersonalChoices.PALETTE.forEach { colour ->
             val selected = choices.palette(colour) == kind
-            FilterChip(selected = selected, onClick = { set(colour, if (selected) PersonalChoices.NONE else kind) }, enabled = enabled,
-                leadingIcon = { Box(Modifier.size(18.dp).clip(CircleShape).background(swatch(colour)).border(1.dp, outline, CircleShape)) },
-                label = { Text(stringResource(label(colour))) })
+            PillChip(selected, stringResource(label(colour)), { set(colour, if (selected) PersonalChoices.NONE else kind) }, enabled = enabled,
+                leadingIcon = { Box(Modifier.size(18.dp).clip(CircleShape).background(swatch(colour)).border(1.dp, outline, CircleShape)) })
         }
     }
 }

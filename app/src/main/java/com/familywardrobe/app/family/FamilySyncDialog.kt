@@ -26,7 +26,7 @@ internal fun FamilySyncDialog(vm: WardrobeViewModel, remote: String, canSend: Bo
     val plan = state.plan?.takeIf { current }
     val operations = state.operations.takeIf { current }.orEmpty()
     Dialog(onDismissRequest = dismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Surface(Modifier.fillMaxSize()) {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.family_sync_title), style = MaterialTheme.typography.titleLarge)
