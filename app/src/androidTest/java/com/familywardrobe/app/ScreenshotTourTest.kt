@@ -214,8 +214,9 @@ class ScreenshotTourTest {
 @Composable
 private fun Localized(language: String, fontScale: Float, content: @Composable () -> Unit) {
     val base = LocalContext.current
-    val configuration = remember(language, fontScale) {
-        Configuration(base.resources.configuration).apply { setLocale(Locale.forLanguageTag(language)); this.fontScale = fontScale }
+    val current = LocalConfiguration.current
+    val configuration = remember(current, language, fontScale) {
+        Configuration(current).apply { setLocale(Locale.forLanguageTag(language)); this.fontScale = fontScale }
     }
     val context = remember(configuration) {
         val resources = base.createConfigurationContext(configuration).resources
