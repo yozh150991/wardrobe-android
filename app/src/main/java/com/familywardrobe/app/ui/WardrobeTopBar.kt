@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,7 +54,14 @@ fun WardrobeTopBar(title: Int, current: Wardrobe?, wardrobes: List<Wardrobe>, ne
                         }
                     }
                     DropdownMenu(wardrobesOpen, onDismissRequest = { wardrobesOpen = false }) {
-                        wardrobes.forEach { w -> DropdownMenuItem(text = { Text(w.displayName()) }, onClick = { wardrobesOpen = false; select(w.id) }) }
+                        // QA-61-06: the open wardrobe is marked, in words for TalkBack as well.
+                        wardrobes.forEach { w ->
+                            val active = w.id == current.id
+                            DropdownMenuItem(text = { Text(w.displayName(), fontWeight = if (active) FontWeight.Bold else null) },
+                                trailingIcon = if (active) { { Icon(Icons.Outlined.Check, null) } } else null,
+                                modifier = Modifier.semantics { selected = active },
+                                onClick = { wardrobesOpen = false; select(w.id) })
+                        }
                         HorizontalDivider()
                         DropdownMenuItem(text = { Text(stringResource(R.string.new_wardrobe)) }, onClick = { wardrobesOpen = false; create() })
                         DropdownMenuItem(text = { Text(stringResource(R.string.manage_wardrobes)) }, onClick = { wardrobesOpen = false; manage() })

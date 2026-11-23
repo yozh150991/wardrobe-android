@@ -128,6 +128,13 @@ public final class PhotoCutoutCases {
         FloatBuffer buffer = FloatBuffer.wrap(padded); buffer.position(4);
         check(Arrays.equals(p, PhotoCutoutRules.refine(f.rgb, W, H, buffer, false, () -> {})), "Respect buffer position");
         check(buffer.position() == 4, "Do not consume SDK buffer");
+        // QA-61-30: the logcat description of a rejected mask reports its shape without consuming the buffer.
+        float[] odd = { .5f, 1.25f, -.5f, Float.NaN, 0, 1 };
+        FloatBuffer described = FloatBuffer.wrap(odd); described.position(1);
+        String text = PhotoCutoutRules.describe(described, 2, 2);
+        check(text.contains("size=5") && text.contains("expected=4") && text.contains("nonFinite=1") &&
+            text.contains("below0=1") && text.contains("above1=1") && text.contains("max=1.25"), "Describe a rejected mask: " + text);
+        check(described.position() == 1, "Describing does not consume the SDK buffer");
         int[] checkpoints = {0}; failed = false;
         try { PhotoCutoutRules.refine(f.rgb, W, H, FloatBuffer.wrap(f.mask), false, () -> {
             if (++checkpoints[0] == 5) throw new CancellationException();

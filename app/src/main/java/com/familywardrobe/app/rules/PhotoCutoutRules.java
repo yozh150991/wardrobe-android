@@ -275,6 +275,23 @@ public final class PhotoCutoutRules {
         return result;
     }
 
+    /** QA-61-30: the shape of a rejected mask for logcat (sizes and value range only, never pixels).
+     * Reads with absolute indexes, so the SDK buffer position is left as it was.
+     */
+    public static String describe(FloatBuffer mask, int width, int height) {
+        int start = mask.position(), end = mask.limit(), nonFinite = 0, below = 0, above = 0;
+        float min = Float.POSITIVE_INFINITY, max = Float.NEGATIVE_INFINITY;
+        for (int i = start; i < end; i++) {
+            float value = mask.get(i);
+            if (!Float.isFinite(value)) { nonFinite++; continue; }
+            if (value < min) min = value;
+            if (value > max) max = value;
+            if (value < 0f) below++; else if (value > 1f) above++;
+        }
+        return "size=" + (end - start) + " expected=" + ((long) width * height) + " (" + width + "x" + height + ")" +
+            " min=" + min + " max=" + max + " nonFinite=" + nonFinite + " below0=" + below + " above1=" + above;
+    }
+
     /** Saturate tiny float32 overshoots instead of turning confident fabric into holes.
      * A genuinely malformed mask is rejected as a whole so the caller keeps the current
      * photo, rather than accepting a cutout with arbitrary transparent pixels.

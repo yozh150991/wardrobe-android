@@ -2,6 +2,7 @@
 package com.familywardrobe.app.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -95,7 +96,8 @@ internal fun ShopImportScreen(s: Snapshot, currentWardrobe: String, vm: Wardrobe
                 val p = options.getJSONObject(index)
                 OutlinedCard(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SelectionRow(p.optString("name").ifBlank { stringResource(R.string.shop_unnamed) }, selected == index, !busy) {
+                        RadioRow(p.optString("name").ifBlank { stringResource(R.string.shop_unnamed) }, selected == index, !busy) {
+                            if (selected == index) return@RadioRow
                             selected = index; imageIndex = 0; photo = ""
                             p.optJSONArray("images")?.optString(0)?.takeIf { it.isNotBlank() }?.let { image -> vm.loadShopPhoto(image) { photo = it } }
                         }
@@ -117,8 +119,11 @@ internal fun ShopImportScreen(s: Snapshot, currentWardrobe: String, vm: Wardrobe
         ShopDropdown(stringResource(R.string.shop_wardrobe), s.wardrobes.find { it.id == targetWardrobe }?.displayName().orEmpty(), !busy,
             s.wardrobes.map { it.id to it.displayName() }) { targetWardrobe = it; needId = "" }
         Text(stringResource(R.string.shop_destination), style = MaterialTheme.typography.titleMedium)
-        SelectionRow(stringResource(R.string.shop_wanted), target == "wish", !busy) { target = "wish" }
-        SelectionRow(stringResource(R.string.shop_owned), target == "garment", !busy) { target = "garment"; needId = "" }
+        // QA-61-10: one of two answers; the screen opened from «Додати річ» starts on «Моя річ».
+        Column(Modifier.selectableGroup()) {
+            RadioRow(stringResource(R.string.shop_owned), target == "garment", !busy) { target = "garment"; needId = "" }
+            RadioRow(stringResource(R.string.shop_wanted), target == "wish", !busy) { target = "wish" }
+        }
         if (target == "wish") {
             val needs = s.wishes.filter { it.wardrobeId == targetWardrobe && it.kind == "need" && it.ownedId.isBlank() }
             if (needs.isNotEmpty()) ShopDropdown(stringResource(R.string.shop_attach_need), needs.find { it.id == needId }?.name ?: stringResource(R.string.shop_new_product),

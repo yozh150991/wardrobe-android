@@ -78,7 +78,7 @@ check('if (!selecting) ToolButton(Icons.Outlined.Add, stringResource(R.string.ad
 check('R.string.add_first_item' in catalog, 'an empty wardrobe still says «Додати першу річ»')
 card = catalog[catalog.index('private fun GarmentCard('):catalog.index('private fun PhotoBadge(')]
 check('role = Role.Checkbox' in card and 'R.string.favorite' in card and 'R.string.wear_count' in card, 'a card keeps its selection role, favourite and wear count')
-check('if (wornToday) PhotoBadge(R.string.wear)' in card, 'worn today is a badge on the photo')
+check('if (wornToday) PhotoBadge(R.string.worn_today_badge)' in card, 'worn today is a state badge on the photo (QA-61-08)')
 check('aspectRatio(photoRatio)' in card, 'the photo is taller than wide as in the design')
 # BUG-58-02: the card clips to its shape; with the photo's 22 dp bottom corners the last text line lost its first letter.
 check('private val CardShape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp, bottomStart = 12.dp, bottomEnd = 12.dp)' in catalog

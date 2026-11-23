@@ -67,12 +67,16 @@ fun WardrobeCategoryChoice(base: String, customId: String, s: Snapshot, wardrobe
 /** Empty selection means all; custom values are displayed literally, never as resource keys. */
 @Composable
 fun SubcategoryChoice(value: String, options: List<String>, change: (String) -> Unit,
-    enabled: Boolean = true, allowAll: Boolean = true, title: Int = R.string.filter_subcategory) {
+    enabled: Boolean = true, allowAll: Boolean = true, title: Int = R.string.filter_subcategory, pill: Boolean = false) {
     var choosing by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
-    // LOOK-12: a pill like the category chips (dark once a subcategory is chosen), not a full-width outlined button.
-    PillChip(value.isNotBlank(), if (!allowAll && value.isBlank()) stringResource(title)
-        else stringResource(title) + ": " + value.ifBlank { stringResource(R.string.all) }, { query = ""; choosing = true }, enabled = enabled)
+    val text = if (!allowAll && value.isBlank()) stringResource(title) else stringResource(title) + ": " + value.ifBlank { stringResource(R.string.all) }
+    // LOOK-12: in the catalog's chip row a pill like the category chips (dark once a subcategory is chosen).
+    // QA-61-17: everywhere else (the filters dialog, the item form) a full-width button like the category button above it.
+    if (pill) PillChip(value.isNotBlank(), text, { query = ""; choosing = true }, enabled = enabled)
+    else OutlinedButton(onClick = { query = ""; choosing = true }, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+        Text(text)
+    }
     if (choosing) AlertDialog(onDismissRequest = { choosing = false }, title = { Text(stringResource(R.string.filter_subcategory)) },
         text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             SearchBox(query, { query = TextLimits.input(it, 100) }, stringResource(R.string.search_subcategories), stringResource(R.string.catalog_search_clear), Modifier.fillMaxWidth())

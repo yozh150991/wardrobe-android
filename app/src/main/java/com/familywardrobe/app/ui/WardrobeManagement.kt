@@ -18,6 +18,7 @@ import com.familywardrobe.app.R
 import com.familywardrobe.app.Snapshot
 import com.familywardrobe.app.Wardrobe
 import com.familywardrobe.app.rules.TextLimits
+import com.familywardrobe.app.rules.WardrobeNameRules
 
 @Composable
 fun Wardrobe.displayName(): String = if (usesDefaultName) stringResource(R.string.my_wardrobe) else name
@@ -58,12 +59,16 @@ fun ManageWardrobes(snapshot: Snapshot, activeId: String, vm: WardrobeViewModel,
             }
         }
     }
+    val names = snapshot.wardrobes.associate { it.id to it.displayName() }
     snapshot.wardrobes.find { it.id == renameId }?.let {
+        // QA-61-06: another wardrobe's name is refused here, before the switcher would show two identical rows.
+        val duplicate = WardrobeNameRules.taken(names.filterKeys { id -> id != renameId }.values, editedName)
         AlertDialog(onDismissRequest = { if (!busy) renameId = "" }, title = { Text(stringResource(R.string.rename_wardrobe)) },
-            text = { Field(editedName, { value -> editedName = TextLimits.input(value, 80) }, R.string.wardrobe_name, enabled = !busy) },
+            text = { NameField(editedName, { value -> editedName = TextLimits.input(value, 80) }, R.string.wardrobe_name, enabled = !busy,
+                error = if (duplicate) R.string.wardrobe_name_taken else null) },
             confirmButton = { TextButton(onClick = {
                 vm.renameWardrobe(renameId, editedName); renameId = ""
-            }, enabled = !busy && TextLimits.hasVisibleText(editedName)) { Text(stringResource(R.string.save)) } },
+            }, enabled = !busy && TextLimits.hasVisibleText(editedName) && !duplicate) { Text(stringResource(R.string.save)) } },
             dismissButton = { TextButton(onClick = { renameId = "" }, enabled = !busy) { Text(stringResource(R.string.cancel)) } })
     }
     snapshot.wardrobes.find { it.id == deleteId }?.let { w ->

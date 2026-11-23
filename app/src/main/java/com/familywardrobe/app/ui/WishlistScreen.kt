@@ -114,7 +114,7 @@ fun Wishlist(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, add: (String)
                     Card(onClick = { open(wish.id) }, modifier = Modifier.weight(1f).fillMaxHeight(), shape = RoundedCornerShape(18.dp)) {
                         Column(Modifier.fillMaxHeight()) {
                             if (wish.kind == "product" && wish.photoId.isNotBlank()) Box {
-                                ZoomableItemPhoto(wish.photoId, vm, Modifier.fillMaxWidth().height(170.dp), title = wish.name, garmentColour = wish.color)
+                                ZoomableItemPhoto(wish.photoId, vm, Modifier.fillMaxWidth().height(170.dp), title = wish.name, garmentColour = wish.color, zoomButtonOnly = true)
                                 Surface(Modifier.padding(8.dp), shape = RoundedCornerShape(12.dp),
                                     color = MaterialTheme.colorScheme.tertiaryContainer, contentColor = MaterialTheme.colorScheme.onTertiaryContainer) {
                                     Text(stringResource(if (wish.kind == "need") R.string.wish_need_badge else R.string.shopping), Modifier.padding(horizontal = 8.dp, vertical = 5.dp), style = MaterialTheme.typography.labelMedium)

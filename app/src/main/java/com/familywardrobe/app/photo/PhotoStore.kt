@@ -112,6 +112,14 @@ class PhotoStore(private val context: Context) {
         dir.listFiles()?.filter { System.currentTimeMillis() - it.lastModified() > 7 * 86_400_000L }?.forEach { it.delete() }
         return sharedUri(File(dir, "${newId()}.jpg"))
     }
+    /** QA-61-01: true for a camera file this store handed out that the camera has written to. Any other URI is refused. */
+    fun captureReady(uri: Uri): Boolean = runCatching {
+        val namespace = (context as? AccountContext)?.location?.key ?: "local"
+        val name = uri.lastPathSegment.orEmpty()
+        if (!name.endsWith(".jpg") || !ID.matches(name.removeSuffix(".jpg"))) return false
+        val file = File(context.applicationContext.cacheDir, "camera/$namespace/$name")
+        file.isFile && file.length() > 0 && sharedUri(file) == uri
+    }.getOrDefault(false)
     suspend fun import(uri: Uri): String = candidate {
         val workContext = coroutineContext
         val id = newId()

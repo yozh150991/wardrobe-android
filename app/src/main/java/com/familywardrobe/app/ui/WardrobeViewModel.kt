@@ -212,7 +212,8 @@ class WardrobeViewModel internal constructor(application: Application, private v
         return writeEditorDraft(PhotoSessionDraft.withSession(requireNotNull(editorDraft), null))
     }
     fun clearDraft() { cancelPhotoWork(); if (draftStore.clear()) { editorDraft = null; editorDraftKey = null; photoEditRevision.value++ } else notice.value = R.string.draft_save_failed }
-    internal fun beginShopImport(sharedId: String? = null): Boolean {
+    /** target: "garment" from «Додати річ», "wish" from «Хочу купити» and shared links (QA-61-10). */
+    internal fun beginShopImport(sharedId: String? = null, target: String = "wish"): Boolean {
         if (busy.value) return false
         val existing = editorDraft
         if (existing != null) {
@@ -223,7 +224,7 @@ class WardrobeViewModel internal constructor(application: Application, private v
         val text = shared?.text.orEmpty()
         val id = newId()
         keepDraft("shop", active.value, "", JSONObject().put("id", id).put("input", ShopImportRules.urls(text).singleOrNull().orEmpty())
-            .put("sharedText", text).put("shareId", shared?.id.orEmpty()))
+            .put("sharedText", text).put("shareId", shared?.id.orEmpty()).put("target", if (target == "garment") "garment" else "wish"))
         if (editorDraft?.optJSONObject("fields")?.optString("id") != id) return false
         shared?.let { shareInbox.complete(it.id, session.identity.key) }
         return true
@@ -667,7 +668,7 @@ class WardrobeViewModel internal constructor(application: Application, private v
         val created = repo.addCustomCategory(wardrobe, name, base)
         done(created)
     }
-    fun addWardrobe(name: String) = perform { repo.addWardrobe(name) }
+    fun addWardrobe(name: String, done: (String) -> Unit = {}) = perform { done(repo.addWardrobe(name)) }
     fun renameWardrobe(id: String, name: String) = perform { repo.renameWardrobe(id, name) }
     fun deleteWardrobe(id: String) = perform {
         val result = repo.deleteWardrobe(id, photos)

@@ -3,6 +3,7 @@ package com.familywardrobe.app.photo
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Log
 import com.familywardrobe.app.newId
 import com.familywardrobe.app.rules.PhotoCutoutRules
 import com.familywardrobe.app.rules.PhotoRules
@@ -35,6 +36,8 @@ enum class CutoutStatus { READY, MODEL_NEEDED, PLAY_SERVICES_NEEDED, NOT_FOUND, 
 data class PhotoAnalysis(val sourceId: String, val category: String? = null, val color: String? = null,
     val cutoutPath: String? = null, val cutoutStatus: CutoutStatus = CutoutStatus.FAILED,
     val labelFailed: Boolean = false, val failure: PhotoFailureKind = PhotoFailureKind.NONE)
+
+private const val TAG = "WardrobePhoto"
 
 /** All inference is on-device. Only model installation is delegated to Play services. */
 class PhotoAnalyzer(private val context: Context, private val photos: PhotoStore) : PhotoAnalysisEngine {
@@ -79,22 +82,33 @@ class PhotoAnalyzer(private val context: Context, private val photos: PhotoStore
         try {
             val labels = withTimeout(30_000) { labeler.process(input).await() }
             category = PhotoRules.category(labels.associate { it.index to it.confidence })
-        } catch (_: TimeoutCancellationException) { labelFailed = true
+        } catch (_: TimeoutCancellationException) { labelFailed = true; Log.w(TAG, "Labels timed out")
         } catch (e: CancellationException) { throw e
-        } catch (_: Exception) { labelFailed = true }
+        } catch (e: Exception) { labelFailed = true; Log.w(TAG, "Labels failed", e) }
 
         if (!hasPlayServices()) return@withContext PhotoAnalysis(photoId, category = category,
             cutoutStatus = CutoutStatus.PLAY_SERVICES_NEEDED, labelFailed = labelFailed)
+        // QA-61-30: the stage and the mask shape go to logcat (tag WardrobePhoto), never pixels or paths, so a failure
+        // reported by a user can be told apart: the model, the segmenter, the mask check or saving the cutout.
+        var stage = "model"
         try {
             val available = withTimeout(10_000) { modules.areModulesAvailable(segmenter).await().areModulesAvailable() }
             if (!available) return@withContext PhotoAnalysis(photoId, category = category,
                 cutoutStatus = CutoutStatus.MODEL_NEEDED, labelFailed = labelFailed)
+            stage = "segment"
             val result = withTimeout(30_000) { segmenter.process(input).await() }
+            stage = "refine"
             val confidence = result.foregroundConfidenceMask?.duplicate()?.apply { rewind() }
                 ?: return@withContext PhotoAnalysis(photoId, category = category, cutoutStatus = CutoutStatus.NOT_FOUND, labelFailed = labelFailed)
-            val pixels = PhotoCutoutRules.refine(sourcePixels, bitmap.width, bitmap.height, confidence, stronger) { workContext.ensureActive() }
+                    .also { Log.w(TAG, "Segmenter returned no mask") }
+            val pixels = try {
+                PhotoCutoutRules.refine(sourcePixels, bitmap.width, bitmap.height, confidence, stronger) { workContext.ensureActive() }
+            } catch (e: IllegalArgumentException) {
+                Log.w(TAG, "Mask rejected: " + PhotoCutoutRules.describe(confidence, bitmap.width, bitmap.height)); throw e
+            }
             if (!PhotoRules.usableCutout(pixels)) return@withContext PhotoAnalysis(photoId, category = category,
-                cutoutStatus = CutoutStatus.NOT_FOUND, labelFailed = labelFailed)
+                cutoutStatus = CutoutStatus.NOT_FOUND, labelFailed = labelFailed).also { Log.i(TAG, "No usable cutout") }
+            stage = "save"
             val color = PhotoRules.dominantColor(pixels)
             val foreground = Bitmap.createBitmap(pixels, bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
             val path = withContext(Dispatchers.IO) {
@@ -109,9 +123,13 @@ class PhotoAnalyzer(private val context: Context, private val photos: PhotoStore
             }
             PhotoAnalysis(photoId, category, color, path, CutoutStatus.READY, labelFailed)
         } catch (_: TimeoutCancellationException) {
+            Log.w(TAG, "Cutout timed out at $stage")
             PhotoAnalysis(photoId, category = category, cutoutStatus = CutoutStatus.TIMED_OUT, labelFailed = labelFailed)
         } catch (e: CancellationException) { throw e
-        } catch (e: Exception) { photoFailure(photoId, e).copy(category = category, labelFailed = labelFailed) }
+        } catch (e: Exception) {
+            Log.w(TAG, "Cutout failed at $stage", e)
+            photoFailure(photoId, e).copy(category = category, labelFailed = labelFailed)
+        }
         // Do not manually recycle input bitmaps: timed-out native tasks may still reference them.
     }
 }

@@ -40,6 +40,16 @@ fun SelectionRow(name: String, selected: Boolean, enabled: Boolean = true, chang
     }
 }
 
+/** One answer of several (QA-61-10): a radio button, so choosing one visibly unsets the others. */
+@Composable
+fun RadioRow(name: String, selected: Boolean, enabled: Boolean = true, choose: () -> Unit) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).selectable(selected, enabled = enabled, role = Role.RadioButton, onClick = choose)
+        .padding(horizontal = 4.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        RadioButton(selected, onClick = null, enabled = enabled)
+        Text(name, Modifier.weight(1f).padding(start = 8.dp))
+    }
+}
+
 @Composable
 fun CategoryChoice(value: String, change: (String) -> Unit, enabled: Boolean = true,
     title: Int = R.string.category, allowAll: Boolean = false, modifier: Modifier = Modifier.fillMaxWidth(),

@@ -37,6 +37,7 @@ import com.familywardrobe.app.photo.PhotoStore
 import com.familywardrobe.app.rules.InspirationCatalog
 import com.familywardrobe.app.rules.ItemRemovalRules
 import com.familywardrobe.app.rules.TextLimits
+import com.familywardrobe.app.rules.WardrobeNameRules
 import com.familywardrobe.app.rules.WardrobeRules
 import com.familywardrobe.app.rules.WishRules
 import com.familywardrobe.app.ui.WishCategoryInUseException
@@ -448,11 +449,16 @@ class Repository(val db: WardrobeDatabase, val writes: Mutex = Mutex()) {
         dao.saveGarment(current.copy(availability = change.beforeAvailability, archived = change.beforeArchived))
         true
     }
-    suspend fun addWardrobe(name: String) = writes.withLock {
-        require(name.trim().length in 1..80 && TextLimits.hasVisibleText(name)); dao.insertWardrobe(Wardrobe(name = name.trim()))
+    /** Returns the new wardrobe's id, so the app can open it (QA-61-07). */
+    suspend fun addWardrobe(name: String): String = writes.withLock {
+        require(name.trim().length in 1..80 && TextLimits.hasVisibleText(name))
+        // QA-61-06: the form checks the names people see; this keeps two stored names from ever being the same.
+        require(!WardrobeNameRules.taken(dao.allWardrobes().filter { !it.usesDefaultName }.map { it.name }, name))
+        val wardrobe = Wardrobe(name = name.trim()); dao.insertWardrobe(wardrobe); wardrobe.id
     }
     suspend fun renameWardrobe(id: String, name: String) = writes.withLock {
         require(name.trim().length in 1..80 && TextLimits.hasVisibleText(name))
+        require(!WardrobeNameRules.taken(dao.allWardrobes().filter { it.id != id && !it.usesDefaultName }.map { it.name }, name))
         require(dao.renameWardrobe(id, name.trim()) == 1)
     }
     suspend fun deleteWardrobe(id: String, photos: PhotoStore): WardrobeDeletion = writes.withLock {

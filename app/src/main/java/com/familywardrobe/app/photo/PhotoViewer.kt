@@ -42,21 +42,35 @@ import kotlin.math.roundToInt
 /** A photo tap is distinct from the containing card's details/selection action. */
 @Composable
 fun ZoomableItemPhoto(photoId: String, vm: WardrobeViewModel, modifier: Modifier,
-    title: String, enabled: Boolean = true, garmentColour: String? = null, inset: PaddingValues = PaddingValues(0.dp)) {
-    ZoomableItemPhoto(photoId, vm.photos, modifier, title, enabled, garmentColour, inset)
+    title: String, enabled: Boolean = true, garmentColour: String? = null, inset: PaddingValues = PaddingValues(0.dp),
+    zoomButtonOnly: Boolean = false) {
+    ZoomableItemPhoto(photoId, vm.photos, modifier, title, enabled, garmentColour, inset, zoomButtonOnly)
 }
 
+/** zoomButtonOnly (QA-61-02): a tap on the photo goes to what holds it (a catalog card opens the item);
+ * only the magnifier opens the full-screen viewer. Otherwise the whole photo opens it.
+ */
 @Composable
 internal fun ZoomableItemPhoto(photoId: String, photos: PhotoStore, modifier: Modifier,
-    title: String, enabled: Boolean = true, garmentColour: String? = null, inset: PaddingValues = PaddingValues(0.dp)) {
+    title: String, enabled: Boolean = true, garmentColour: String? = null, inset: PaddingValues = PaddingValues(0.dp),
+    zoomButtonOnly: Boolean = false) {
     var opened by remember(photoId, photos) { mutableStateOf(false) }
     val canOpen = enabled && photoId.isNotBlank()
     val openLabel = stringResource(R.string.photo_view_open, title)
-    Box(modifier.then(if (canOpen) Modifier.clickable(role = Role.Button, onClickLabel = openLabel) { opened = true } else Modifier)) {
+    Box(modifier.then(if (canOpen && !zoomButtonOnly) Modifier.clickable(role = Role.Button, onClickLabel = openLabel) { opened = true } else Modifier)) {
         key(photos, photoId) {
             ItemPhoto(photoId, photos, Modifier.fillMaxSize(), description = title, fit = true, garmentColour = garmentColour, inset = inset)
         }
-        if (canOpen) Surface(Modifier.align(Alignment.BottomEnd).padding(8.dp),
+        if (canOpen && zoomButtonOnly) Surface(onClick = { opened = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp)
+                .size(48.dp).semantics { contentDescription = openLabel },
+            shape = MaterialTheme.shapes.small, color = Color.Transparent) {
+            Box(contentAlignment = Alignment.Center) {
+                Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surface.copy(alpha = .92f)) {
+                    Icon(Icons.Outlined.ZoomIn, contentDescription = null, modifier = Modifier.padding(6.dp).size(24.dp))
+                }
+            }
+        }
+        else if (canOpen) Surface(Modifier.align(Alignment.BottomEnd).padding(8.dp),
             shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surface.copy(alpha = .92f)) {
             Icon(Icons.Outlined.ZoomIn, contentDescription = null, modifier = Modifier.padding(6.dp).size(24.dp))
         }

@@ -54,7 +54,7 @@
     <string name="auth_storage_title">Could not open your data</string>
     <string name="auth_storage_error">Check the available space on your phone and try again. Existing data has not been deleted.</string>
     <string name="auth_reauth_title">Sign in again</string>
-    <string name="auth_reauth_hint">Your session has ended. Sign in to the same account to continue where you left off.</string>
+    <string name="auth_reauth_hint">Your session has ended. Sign in to the same account to continue.</string>
     <string name="auth_wrong_account">Use the same account, or choose “Switch account”.</string>
     <string name="auth_switch_account">Switch account</string>
     <string name="auth_discard_session">Drafts stay on this device and return after signing in to the same account. Saved items remain with their account.</string>
@@ -281,8 +281,8 @@
     <string name="add_next">Add next</string>
     <string name="dismiss_confirmation">Dismiss confirmation</string>
     <string name="save_add_next">Save and add next</string>
-    <string name="discard_item_title">Leave unsaved changes?</string>
-    <string name="discard_item_hint">Changes are stored as a local draft. Discarding deletes this draft; saved records stay unchanged.</string>
+    <string name="discard_item_title">Leave without saving?</string>
+    <string name="discard_item_hint">The changes in this form are not saved yet. If you leave, they will be lost.</string>
     <string name="discard_changes">Discard changes</string>
     <string name="keep_editing">Keep editing</string>
     <string name="undo_action">Undo</string>
@@ -823,7 +823,7 @@ Your current wardrobe is unchanged.</string>
     <string name="shop_waiting">Links waiting: %1$d. Finish the current edit first.</string>
     <string name="shop_incoming">Import shared link · waiting: %1$d</string>
     <string name="shop_tools">Wardrobe tools</string>
-    <string name="shop_manual">Add manually</string>
+    <string name="shop_manual">Fill in manually</string>
     <string name="advice_product_required">Choose a saved product that you have not bought yet.</string>
     <string name="advice_price">Estimated price: %1$s</string>
     <string name="advice_above_budget">The price exceeds the budget by %1$s.</string>
@@ -1024,7 +1024,7 @@ Your current wardrobe is unchanged.</string>
 
     <!-- Family initial transfer -->
     <string name="family_title">Family transfer</string>
-    <string name="family_hint">A server copy of one wardrobe. Local data is retained. Invitations and ongoing family sync are not available yet.</string>
+    <string name="family_hint">Creates a shared server copy of one wardrobe. Your local data stays on this phone. Invitations and shared changes are under “Family wardrobes and invitations”.</string>
     <string name="family_choose">Choose wardrobe</string>
     <string name="family_confirm">Create a server copy of this wardrobe with items, outfits, history and final photos? Other wardrobes are excluded. Local data stays on this device.</string>
     <string name="family_start">Start transfer</string>
@@ -1047,7 +1047,7 @@ Your current wardrobe is unchanged.</string>
     <string name="family_limit">A server limit was reached. Try later or check the project quota.</string>
     <string name="family_retry_error">The operation could not be confirmed. Check your connection and retry. The previous result will be checked first.</string>
     <string name="family_pending">Transfer awaits completion or verification</string>
-    <string name="family_local_changes">This account has changed since the copy was prepared. Automatic family sync is not available yet.</string>
+    <string name="family_local_changes">The wardrobe has changed since the copy was prepared. Those changes will not be in the copy; to include them, tap “Prepare again”.</string>
     <string name="family_missing_local">Wardrobe is no longer on this device</string>
     <string name="family_resume">Resume / check</string>
     <string name="family_restart">Prepare again</string>
@@ -1379,7 +1379,7 @@ Your current wardrobe is unchanged.</string>
     <string name="style_pair_two_accents">two bright colours — keep the rest neutral</string>
     <string name="style_one_style">One style: %1$s</string>
     <string name="style_one_style_other">One style: %1$s (this occasion usually calls for %2$s)</string>
-    <string name="style_mixed">Mixed styles: %1$s — items: %2$d of %3$d</string>
+    <string name="style_mixed">Mixed styles: %1$s — %2$d of %3$d items</string>
     <string name="style_weather_ok">Right for “%1$s” weather</string>
     <string name="style_weather_no_outerwear">No outerwear for “%1$s” weather</string>
     <string name="style_weather_season">“%1$s” is out of season for “%2$s” weather</string>
@@ -1527,4 +1527,7 @@ Your current wardrobe is unchanged.</string>
     <string name="prefs_trends_hint">Suggests colour pairs from the posts you picked a little more often, and the colours of the season: %1$s. The outfit score does not change.</string>
     <string name="style_trend_pair">Trend of the season: %1$s + %2$s</string>
     <string name="style_trend_colours">Colour of the season: %1$s</string>
+    <string name="worn_today_badge">Worn today</string>
+    <string name="item_photo_required">Photo *</string>
+    <string name="wardrobe_name_taken">A wardrobe with this name already exists.</string>
 </resources>
