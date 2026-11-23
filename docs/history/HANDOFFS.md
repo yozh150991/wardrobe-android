@@ -1,0 +1,664 @@
+# Handoff history
+
+Every "Current handoff" note written in AGENTS.md from October to 24 November 2026, newest first, followed by the
+earlier Ukrainian instructions. Kept for reference: the rules that still apply are in AGENTS.md and .claude/rules/.
+Release documents in docs/releases/ describe each version in full.
+
+## Current handoff — PHOTO-19 steps 2–3: cutout rules tuned on real masks, 24 November 2026
+
+0.14.64-cutout-cleanup/code 94, Room 11 and backup formats unchanged. Read docs/releases/CUTOUT-CLEANUP-0.14.64.md.
+Stacked on PR #64 ⊃ #63; its PR targets main and contains them — merge the latest. Six captures from the user's phone
+showed the ML Kit mask is almost binary (0.3–0.5 % of values between 0.15 and 0.7), so faults come from the model:
+PhotoCutoutRules.clean removes (A) backdrop colours reaching the outline, at most 3 % of the garment, and (B) a small
+part beyond a narrow neck whose colours are the background's and not the body's. Both only remove. Run changes to these
+rules through tools/photo_stand/PhotoStand.java on a `photo-debug` folder (the user's captures are not in the repo;
+ask for fresh ones) and keep PhotoCutoutCases.foreignParts passing. **Open:** device check; «Очистити фон сильніше»
+re-analyses the already cut photo and returns the same pixels — it needs the original or the first mask. Next after
+this: the agent harness (decisions in the project memory; from main once the stack is merged).
+
+## Current handoff — PHOTO-19 step 1: debug mask capture, 23 November 2026
+
+0.14.63-mask-capture/code 93, Room 11 and backup formats unchanged. Read docs/releases/MASK-CAPTURE-0.14.63.md.
+Stacked on PR #63 (0.14.62); its PR targets main and contains it — merge the latest. After QA-61-30 photos process, but
+on the user's phone the cutout keeps bits of a patterned backdrop and a foot touching the garment. Debuggable builds now
+write `<time>-source.png`, `-mask.png` (16-bit confidence: red high byte, green low byte) and `-cutout.png` to the
+external files folder `photo-debug/` (PhotoDebugCapture, newest 8). **Next:** get that folder from the user, turn the
+files into fixtures and tune PhotoCutoutRules on them (drop differently coloured parts joined by a narrow bridge; clean
+edges on a busy backdrop) without breaking PHOTO-18's «never cut the garment». After that: the agent harness the user
+asked for (decisions are in the project memory; start from main once these PRs are merged).
+
+## Current handoff — QA-62 fixes from the exploratory test, 23 November 2026
+
+0.14.62-qa-fixes/code 92, Room 11 and backup formats unchanged. Read docs/releases/QA-FIXES-0.14.62.md and
+QA-EXPLORATORY-0.14.61.md. Branch fix/qa-0.14.62 from main after PR #62; PR #63. **QA-61-30** (every gallery photo ended in «Обробка не завершилася»): the user's logcat (tag WardrobePhoto) showed
+ML Kit masks on a Galaxy S23 with 1–23 % of values outside 0..1 (-0.17…1.21); unitConfidence allowed only float
+rounding. PhotoCutoutRules now saturates values within CONFIDENCE_OVERSHOOT (0.5) and still refuses NaN, infinities and
+anything further. Not yet confirmed on the phone. The CI preview APK (.ci package) has no Firebase config, so sign-in
+does not work in it: for device checks the user builds the branch locally (build-apk.ps1). The camera
+shot is written to the editor draft before the camera opens (startCapture) and imported after a restore
+(PhotoStore.captureReady). Wardrobe names are unique (WardrobeNameRules, also in the repository). The profile is a list
+of SettingsRow; backups and family sharing are routes "backups" and "family". The weather city was already per account
+(prefs "weather" in the account context). Strings: tools/qa_fixes_strings.py (idempotent). Guards:
+tools/check_qa_fixes.py (49 host suites). Computer use on the phone was not available at the end of this session.
+
+## Current handoff — BUG-61 item page, TXT-01–08 texts, LOOK-07–10 controls, DEV-05 tour, 23 November 2026
+
+0.14.61-consistency/code 91, Room 11 and backup formats unchanged. Read docs/releases/CONSISTENCY-0.14.61.md. Stacked on
+PR #61 ⊃ #60 ⊃ #59; its PR targets main and contains them — merge the latest. The app is edge-to-edge: anything drawn at
+the top of a screen must clear `WindowInsets.statusBars` (the item photo uses ItemPhoto's `inset`). «Ношу рідко» is a
+switch row among the item page's actions, never a chip among labels. **Strings:** values/strings.xml is a byte copy
+of values-uk; Ukrainian says «ти» with no gendered verbs for the user; one name per thing (образ/outfit/zestaw, item,
+garderoba, the tabs «Хочу купити»/“Want to buy”/„Chcę kupić” and «Гардероб»); the noun goes before a number
+(«речей: 2»); button names are quoted («» / “” / „”) and must equal the real label; British English, ’ apostrophes.
+Edit strings in all four files (or extend tools/consistency_strings.py and re-run it); tools/check_consistency.py
+guards every rule, plus: choice chips are PillChip/ChipChoice only, search fields are SearchBox, full-screen
+dialogs use `Surface(color = background)`. The tour now has `extra()` steps that log WSHOT-SKIP instead of failing.
+
+## Current handoff — LOOK-01–06 fixes from the first screenshot review, 23 November 2026
+
+0.14.60-look-fixes/code 90, Room 11 and backup formats unchanged. Read docs/releases/LOOK-FIXES-0.14.60.md. Stacked on
+PR #60 ⊃ #59; its PR targets main and contains them — merge the latest. The user answered «Всі» to the six look
+questions. The new-item save hint waits for `validation`; FormControls.kt has the shared PillChip and SearchBox (catalog
+and wishlist); wish cards go in rows of equal height (IntrinsicSize.Min — keep SubcomposeLayout out of the card);
+«Додати образ» is primary; item-photo RoundButtons have an outline and shadow; the catalog's «Додати річ» is a header
+tool (tag catalog-add) and a round FAB (catalog-add-floating) only once the header scrolled away; new-item buttons
+stack from FORM_STACK_SCALE 1.6. tools/check_look.py guards all six. Review the next tour's screenshots after CI.
+
+## Current handoff — DEV-04 screenshot tour in CI, 23 November 2026
+
+0.14.59-screenshots/code 89, Room 11 and backup formats unchanged. Read docs/releases/SCREENSHOTS-0.14.59.md. Stacked on
+PR #59 (0.14.58-ui-fixes); its PR targets main and contains it — merge the latest. ScreenshotTourTest (androidTest) seeds
+its own account, runs the production WardrobeApp in ui-test-manifest's ComponentActivity (debug only, unexported via
+src/debug) on a 1080×2340/420 dpi screen and captures 7 screens × 4 configurations (uk, uk-large 1.3, en, pl) as
+`WSHOT|name|part|parts|base64` logcat lines (tag WardrobeShots). CI dumps the tag after the emulator run;
+tools/ci_screenshots.py prints the lines into the job log and uploads JPEGs (`screenshots-<sha>`). **To review:** take the
+instrumentation job id from the check runs, `gh api repos/yozh150991/wardrobe-android/actions/jobs/<id>/logs`, collect
+WSHOT lines, decode with tools/ci_screenshots.py — artifact downloads are blocked from cloud sessions, logs are not.
+Tags the tour taps: nav-<screen>, garment-card, catalog-add, add-method-<method>; tools/check_screenshots.py guards them.
+
+## Current handoff — BUG-58 category button, card text, tab labels, 22 November 2026
+
+0.14.58-ui-fixes/code 88, Room 11 and backup formats unchanged. Read docs/releases/UI-FIXES-0.14.58.md. The first
+device-found bug after the redesign: the category row scrolls sideways (unbounded width), so nothing inside it may use
+`Modifier.weight` — CategoryChoice's compact label wrapped one letter per line. The garment card clips to its shape:
+its bottom corners (CardShape, 12 dp) must stay smaller than the photo's (PhotoShape, 22 dp), and the text keeps 4 dp
+bottom padding. Tab labels (Ui.kt NavLabel) are one line; all share navScale, which shrinks in 5 % steps to
+NAV_LABEL_MIN (70 %) until the longest fits — never `maxLines = 2` again (it lifted the icon). tools/check_catalog_design.py
+guards all three. The bug-fix phase has started: fix what the user finds on the phone, one small PR each.
+**CI lesson:** the push run checks the version against the branch's previous push (VERSION_BASE_SHA = `before`). Once a
+branch is pushed, never rename versionName with the same code (0.14.58-catalog-fix → -ui-fixes failed) and never change
+the code alone; pick the final name before the first push, or bump both.
+
+## Current handoff — TREND-01 seasonal trends, 20 November 2026
+
+0.14.57-trends/code 87, Room 11 and backup formats unchanged. Read docs/releases/TRENDS-0.14.57.md. Branched from main
+after PR #57. TrendRules.java holds a hand-kept journal (pairs + colours of the season) from screenshots the user sends
+of posts they liked; there is no expiry. A trend pair adds +1 to the pair's colour points in the generator only, never
+above the top tier (4); a colour of the season adds +2 per item under the same bonus cap, never for an avoided colour.
+pairScore (manual building) and the 0–10 rating stay the sourced table. PersonalChoices.trends is on when read from the
+store unless `pref.trends.<wardrobe>` = off, and off for choices built in code (tests). **Updating the journal:** change
+TrendRules.PAIRS/COLOURS/UPDATED, the table in TRENDS-0.14.57.md (tools/check_trends.py compares them), the pair count in
+TrendRulesCases, and bump the version. Every host tool compiling DailyRules must also compile TrendRules.java.
+
+## Current handoff — UI-06 palette list and widget colours, 17 November 2026
+
+0.14.56-palette-tidy/code 86, Room 11 and backup formats unchanged. Read docs/releases/PALETTE-TIDY-0.14.56.md. Stacked
+on PR #55 ⊃ #54 ⊃ #53 — merge the latest. AppearanceScreen lists WardrobePalette.LIGHT, then the earlier palette in
+use (if any), the other 11 behind «Показати попередні палітри»; nothing is removed. Widget colours (values and
+values-night) are the LIGHT_OLIVE paper/ink/muted/primary/onPrimary tokens — tools/check_palette_tidy.py compares
+them with Theme.kt and checks contrast; change both together. The design canvas mockups are recoloured too.
+
+## Current handoff — UI-05 new-item form, 17 November 2026
+
+0.14.55-new-item/code 85, Room 11 and backup formats unchanged. Read docs/releases/NEW-ITEM-DESIGN-0.14.55.md. Stacked
+on PR #54 ⊃ #53; its PR targets main and contains them — merge the latest. EditItem: photo 260 dp, ChipChoice
+(ui/FormControls.kt) for season and style, «Зберегти й додати наступну» beside «Зберегти» at the bottom for a new
+item only. tools/check_new_item_design.py (43 host suites). All four approved screens are done (UI-02…05); open:
+device check, recolouring the canvas mockups, widget colours, fewer palettes (see LIGHT-PALETTES-0.14.51.md).
+
+## Current handoff — UI-04 item page, 17 November 2026
+
+0.14.54-item-page/code 84, Room 11 and backup formats unchanged. Read docs/releases/ITEM-PAGE-0.14.54.md. Stacked on
+PR #53 (0.14.53); its PR targets main and contains it — merge the latest. `Detail` now lives in ui/ItemPage.kt
+(Ui.kt hides WardrobeTopBar only for route "detail" with an item and passes onBack). Photo header with RoundButtons
+(back always enabled, share via PhotoExportDialog, edit, «⋮» = exclude/archive/delete), ItemLabels, three StatTiles,
+ActionRows (another day, laundry), «Про річ» facts and wear history, a bottom bar (wear today, build an outfit).
+tools/check_item_page.py guards every earlier action (42 host suites); check_ux_review/check_wear/check_recent_wears
+read ItemPage.kt. No device was used. Next: the new-item form (last screen of the design).
+
+## Current handoff — UI-03 «Гардероб» and the tab header, 17 November 2026
+
+0.14.53-catalog-design/code 83, Room 11 and backup formats unchanged. Read docs/releases/CATALOG-DESIGN-0.14.53.md.
+PR #52 is merged; this branch is from main. WardrobeTopBar gives every tab a large heading and the wardrobe as a pill
+(same menu; stacked at font ≥1.4); nested screens are unchanged. CatalogScreen: collection + count row with
+ToolButtons (select, statistics, «⋮» = batch import + columns), a search field with clear, a filled filter button
+with the number of filters on (sort counts), one scrolling row of category chips, frameless photo cards, a floating
+«Додати річ» (hidden while selecting; the grid has 96 dp bottom padding). tools/check_catalog_design.py guards it
+(41 host suites). No device was used. Next in UI-02/03: the item page, then the new-item form.
+
+## Current handoff — UI-02 «Сьогодні» by the new design, 15 November 2026
+
+0.14.52-today-design/code 82, Room 11 and backup formats unchanged. Read docs/releases/TODAY-DESIGN-0.14.52.md.
+PRs #44–#51 are merged; this branch is from main. DailyScreen shows one variant at a time (`page`, PagerDots, a
+swipe, «Інший» → next variant, then `otherVariants()`); OutfitCollage + ScorePill replace the tile grid on the
+variant; VariantActions holds save / plan / «Не підходить…»; RotationRow is the compact «Давно не вдягали» and
+opens the earlier card. Every earlier action is kept — tools/check_today_design.py guards that (40 host suites).
+No UI tests cover this screen and no device was used. Next in UI-02: the shared top bar (large title, wardrobe
+pill) with «Каталог», then the item page and the new-item form — one screen per PR.
+**Lesson from merging #44–#51:** the Git Safety audit walks every branch. When a file listed in
+tools/git_safety_allowlist.json changes, older commits fail the audit while the newer branch exists, so merge the
+last PR of such a stack, not the PRs one by one. Do not push a branch at a commit that already has a PR and then
+add a commit a minute later: the cancelled run shows up as failing checks on the older PR.
+
+## Current handoff — UI-01 light palettes, 15 November 2026
+
+0.14.51-light-palettes/code 81. Read docs/releases/LIGHT-PALETTES-0.14.51.md. Feedback said the colours were too
+dark; the user approved the new design mockups and four light palettes. WardrobePalette gains LIGHT_OLIVE (the new
+DEFAULT), MONO, SKY, LILAC with light and dark tokens; a stored earlier choice is kept. Every palette must pass
+tools/check_theme.py (text ≥ 4.5:1). Next (UI-02): the approved screen designs — «Сьогодні», «Каталог», the item
+page, the new-item form — one screen per PR. Stacked on PR #50 ⊃ … ⊃ #44 (CI green, not merged).
+
+## Current handoff — DEV-03 packages, 14 November 2026
+
+0.14.50-packages/code 80, no behaviour change. Read docs/releases/PACKAGES-0.14.50.md. The user chose real packages.
+`com.familywardrobe.app` is split: `rules` (all Java rules; their Java tests are in the test source set's `rules`),
+`family`, `ui`, `photo`, `data`, `outfits`, `auth`, `backup`, `cloud`, `importing`. **The root package keeps only
+what is known by class name outside the code — do not move or rename these:** MainActivity.kt (with
+WardrobeApplication), TodayWidget.kt (provider and receiver), Data.kt (Room database; the schema folder is named
+after it), BackupHealth.kt, CloudSync.kt and FamilySyncSchedule.kt (WorkManager workers). New Kotlin files go to the
+package of their area with explicit imports; new Java rules go to `rules`. Kotlin tests stay in the root package.
+tools/check_*.py read sources by `package/Name.kt`. Changing CloudEmulatorTest.kt or cloud/auth.test.mjs needs a
+new hash in tools/git_safety_allowlist.json and `python3 tools/git_safety.py install` (the hook uses its own copy).
+Stacked on PR #49 ⊃ … ⊃ #44 (CI green, not merged; the user merges them one by one).
+
+## Where documents live — 14 November 2026
+
+The user asked for an orderly structure instead of everything in one folder. Release documents (`NAME-version.md`,
+hotfix notes) are in `docs/releases/`; guides are in `docs/guides/`; validation reports are in
+`release-evidence/validation/`. The root keeps only README.md, README-UK.md, AGENTS.md, CHANGELOG.md and
+WARDROBE-ROADMAP.md. **Write every new release document to `docs/releases/`.** Older notes below and in the roadmap
+name these documents without a folder — they are in `docs/releases/` unless a path says otherwise.
+
+## Current handoff — UX-15 item deletion, 14 November 2026
+
+0.14.49-item-delete/code 79, Room 11 and backup formats unchanged. Read ITEM-DELETE-0.14.49.md. The user's decision:
+delete only items without wear and outfits, archive the rest. Stacked on 0.14.48 (PR #47 ⊃ #46 ⊃ #45 ⊃ #44, CI green,
+not merged); its PR targets main and contains them. ItemRemovalRules.blocker (wear, outfits, bought from a wish) is
+used by the item page and enforced again in Repository.removeGarment. Open from the UX review: findings 10–15 (UX-12).
+
+## Current handoff — UX-13 bulk style, UX-14 preferences and weather in Settings, 14 November 2026
+
+0.14.48-bulk-style/code 78, Room 11 and backup formats unchanged. Read BULK-STYLE-0.14.48.md. Stacked on the UX
+review (PR #46 ⊃ #45 ⊃ #44, CI green, not merged); its PR targets main and contains them. bulkChange/undoBulk take
+the action "style"; Settings opens PreferencesDialog and WeatherPanel for the wardrobe on screen. Open from the UX
+review: findings 7 and 10–15 (UX-12); item deletion waits for the user's decision.
+
+## Current handoff — UX review and UX-07–UX-11, 14 November 2026
+
+0.14.47-ux-review/code 77, Room 11 and backup formats unchanged. Read UX-REVIEW-0.14.47.md (15 findings; 7–15 are
+open as UX-12, item deletion needs the user's decision). Stacked on PHOTO-17 (PR #45 ⊃ #44, CI green, not merged);
+its PR targets main and contains them. Repository.removeOutfit turns wear recorded through the outfit or its plans
+into the items' own wear before deleting (a wear's source must exist — BackupStateRules), then reconciles capsules.
+ItemNameRules makes the item name optional. Season and style are in the main item form. A wardrobe without items
+starts on the catalog (startChecked in WardrobeApp).
+
+## Current handoff — PHOTO-17 share a photo as a file, 14 November 2026
+
+0.14.46-photo-export/code 76, Room 11 and backup formats unchanged. Read PHOTO-EXPORT-0.14.46.md. Stacked on WTH-02
+(PR #44, CI green, not merged); its PR targets main and contains it. PhotoExportRules (sizes never enlarge, source-over
+blend onto white/cream, safe file names); PhotoStore.export writes a new pixel-only file under cache/share/<account>/
+<id>/ (expires after a day) and returns a FileProvider URI; PhotoExportDialog shares it via ACTION_SEND. FileProvider
+exposes only camera/ and share/ — never the saved photos. Every FileProvider URI goes through
+PhotoStore.sharedUri with the application context: the provider keeps the roots of its first caller, and the account
+context has its own cache folder (camera URIs could fail before).
+
+## Current handoff — WTH-02 rain from the forecast, 14 November 2026
+
+0.14.45-rain/code 75, Room 11 and backup formats unchanged. Read RAIN-0.14.45.md. PRs #36–#43 are merged; this
+branch is from main. WeatherRules.mode(temperature, rain): a mild day (+8…+22) with a rain chance from RAIN_FROM = 60%
+is "rain"; WeatherRules.outerwear adds a jacket in "rain" up to +22. Forecast.rain/mode, DailyScreen and TripPlan use
+it; a manual weather choice is never overridden.
+
+## Current handoff — TRIP-01 trip city and occasion, 12 November 2026
+
+0.14.44-trip-details/code 74, **Room 11, backup format 11** (only when a capsule has trip details; otherwise 10).
+Read TRIP-DETAILS-0.14.44.md. Stacked on UX-04 (PR #42 ⊃ … ⊃ #36, CI green, not merged); its PR targets main and
+contains them. Capsule gains city/latitude/longitude/occasion (MIGRATION_10_11, validTripDetails on save and
+restore). Backup.formatOf writes 11 only with details; encode(s, maximum) caps it. CloudHead.format (8–11); commit
+writes max(existing, archive) because the rules forbid lowering it. cloud/firestore.rules accept 11 — **the user
+deploys only the Firestore rule before phones get 0.14.44** (Console edit to `d.format in [8, 9, 10, 11]`, or
+`npx firebase deploy --only firestore:rules`). Never tell the user to run cloud/deploy-rules.ps1 once family
+sharing is live: without -Deploy it only prints a plan, with -Deploy it also deploys storage.rules, which has no
+familyWardrobes rules (those are only in family-storage.rules). Every family/server-bound encode passes
+FamilyRules.CONTENT_VERSION (10): trip details never reach shared wardrobes; schema.py and functions unchanged.
+WeatherController.cities/forecastFor serve the trip city (16 days, memory cache) without touching the daily city.
+Schema 11.json was written without an SDK; tools/room_identity.py recomputes Room's identityHash (it reproduces
+every exported schema) and check_trip_details.py verifies all of them. On drift CI prints the generated schema.
+
+## Current handoff — UX-04 «Сьогодні» tab, 12 November 2026
+
+0.14.43-today-tab/code 73, Room/backup 10. Read TODAY-TAB-0.14.43.md. Stacked on TRIP-03 (PR #41 ⊃ … ⊃ #36, CI
+green, not merged); its PR targets main and contains them. The user chose a fifth tab: "daily" is now a navigation
+root (first tab, start screen), no longer nested; tapping the tab clears rotationAnchor; switching the wardrobe
+keeps "daily". The user also chose TRIP-01 with backup format 11 — next, including cloud rules for the user to deploy.
+
+## Current handoff — TRIP-03 compact trip packing, 12 November 2026
+
+0.14.42-trip-packing/code 72, Room/backup 10. Read TRIP-PACKING-0.14.42.md. Stacked on TRIP-02 (PR #40 ⊃ … ⊃ #36,
+not merged); its PR targets main and contains them. TripPlan.packing: per trip day, the 10 best variants of the
+whole wardrobe's ready items (DailyRules.generate, limit 20, the daily screen's penalties/style/palette/temperature);
+the one needing the fewest items not yet chosen wins; capsule items count as chosen. Repository.addCapsuleItems adds
+them in one transaction as manual items. Remaining open items need the user's decision: UX-04 (navigation) and
+TRIP-01 (capsule fields → backup format 11 and cloud rules).
+
+## Current handoff — TRIP-02 trip days, 12 November 2026
+
+0.14.41-trip-days/code 71, Room/backup 10. Read TRIP-DAYS-0.14.41.md. Stacked on STYLE-04 (PR #39 ⊃ … ⊃ #36, not
+merged); its PR targets main and contains them. TripPlan.coverage (pure Kotlin over Snapshot) gives one outfit per
+trip day from the capsule's items through DailyOutfits.daily (forecast temperature where known, else any_weather),
+different outfits first, then repeats, DailyDiagnostics.explain for empty days; nothing is persisted.
+CapsuleDetailScreen shows «Дні поїздки» for dated capsules. TRIP-01 (destination/activities) needs new capsule
+fields = a backup-format change (cloud rules accept 8–10), so it was not done. UX-04 (a «Сьогодні» tab) was deferred:
+navigation roots, state frames, the widget and the statistics anchor all depend on "daily" being nested.
+
+## Current handoff — STYLE-04 / UX-03, 12 November 2026
+
+0.14.40-daily-layout/code 70, Room/backup 10. Read DAILY-LAYOUT-0.14.40.md. Stacked on GEN-03 (PR #38 ⊃ #37 ⊃ #36,
+not merged); its PR targets main and contains them. WardrobeRules.Scorer lets Matching (manual building) rank with
+DailyRules.pairScore; compatibility and purchase advice already went through the generator (the 11 November review
+was wrong about them). DailyScreen: the rotation items live in `rotationBlock`, emitted after the variants unless
+an anchor was chosen in the statistics; StyleReasons on variant cards open under «Чому така оцінка»; the duplicate
+«Налаштувати умови» button under the chips is gone (the weather chip opens the sheet). Next: UX-04, then TRIP.
+
+## Current handoff — GEN-03 / UX-05 / UX-06, 12 November 2026
+
+0.14.39-recent-wears/code 69, Room/backup 10. Read RECENT-WEARS-0.14.39.md. Stacked on WTH-01 (PR #37 ⊃ #36, CI
+green, not merged); its PR targets main and contains them. The user asked to keep developing, stacking on the latest
+PR, until their weekly limit; they merge the latest. DailyOutfits.rawItems counts DailyRules.recentWears (30 days);
+lastWear is still all history. RotationRules.Item.rare (from Garment.rarelyWorn) keeps an item out of
+RotationRules.candidates and WardrobeStats' forgotten list; the anchor path still works. PersonalChoiceStore
+remembers the daily occasion per wardrobe (`daily.occasion.<id>`, not cleared by the preference reset). New host
+suite tools/check_recent_wears.py (34 suites). Next: STYLE-04, then UX-03–04.
+
+## Current handoff — WTH-01 / GEN-04 temperature-aware weather and layers, 12 November 2026
+
+0.14.38-weather-layers/code 68, Room/backup 10. Read WEATHER-LAYERS-0.14.38.md. Stacked on PHOTO-18 (PR #36, CI
+green, not merged); its PR targets main and contains it. The saved weather is still one of five modes (backups,
+feedback rows, the family server validate them) and saved outfits still require pairwise-compatible seasons, so
+neither changed. Instead a transient `temperature: Double?` travels with the mode when the weather comes from the
+forecast: Forecast.temperature → DailyScreen (shifted by PERS-02 warmth, ±4°) → DailyOutfits / RotationOutfits /
+OutfitStyle → DailyRules / StyleRules / RotationRules. WeatherRules holds every limit (coat < 15, layer < 8, tights
+with a dress < 12, season overlap 3°). null temperature = a manual choice = the earlier rules exactly. Weather
+pieces (outerwear, layer, tights) are optional unless pinned. New host suite tools/check_weather.py (33 suites).
+The outerwear limit (+15) was proposed to the user and not answered; it is the default. Next: GEN-03, STYLE-04,
+UX-03–06.
+
+## Current handoff — PHOTO-18 cutout protects the garment, 12 November 2026
+
+0.14.37-cutout-protect/code 67, Room/backup 10. Read CUTOUT-PROTECT-0.14.37.md. PRs #28–#35 are merged; this
+branch starts from main. The user asked that background removal never touches the garment. PhotoCutoutRules now
+builds each mask in `mask` and then `protect`s it: the outside is traced from the frame edge; removed areas enclosed
+by the garment are restored unless they really are backdrop (model sure + backdrop colour, or — when colour cannot
+tell — very sure and substantial); soft alpha only in a thin band; unsure edge pixels in a confident-fabric colour
+are kept and feathered. Protection only restores, source alpha stays an upper bound, the stronger mask is min'ed
+with the default. `modelInput` shows the model a contrasting backdrop instead of transparency (PhotoAnalyzer).
+Thresholds are heuristics: no real ML mask or device was used. Next: WTH-01 + GEN-04.
+
+## Current handoff — GEN-01/02 fair layouts and distinct variants, 11 November 2026
+
+0.14.36-variants/code 66, Room/backup 10. Read VARIANTS-0.14.36.md. Stacked on WEAR-01 (PR #34 ⊃ … ⊃ #28, none
+merged); its PR targets main and contains them. DailyRules.Candidate keeps the pair part of its score apart:
+rank = items/size + pairs/pairCount + RATING_WEIGHT × rating (unchanged for three pieces, so no earlier expectation
+moved). DailyRules.distinct picks the variants shown in three passes (two items incl. a base piece; a base piece;
+the rest), best first, original order kept; it also applies to purchase-advice examples (limit 20). DailyScreen:
+«Показати інші варіанти» passes the shown signatures as additionalRejected and starts over when nothing new is left.
+New host suite tools/check_generator.py with GeneratorRulesCases (32 suites). Next: WTH-01 + GEN-04.
+
+## Current handoff — WEAR-01 wear log, 11 November 2026
+
+0.14.35-wear-log/code 65, Room/backup 10. Read WEAR-LOG-0.14.35.md. Stacked on PERS-03 (PR #33 ⊃ #32 ⊃ … ⊃ #28,
+all CI green, none merged); its PR targets main and contains them. A logic and UX review on 11 November found the
+backlog now in roadmap section 9 (GEN-01–04, WTH-01, STYLE-04, UX-03–06); the user chose wear logging first.
+Repository.wearItems/forgetWears (CalendarOperations.kt) write plain "item:<id>" wear rows — no new wear source, so
+backup 10, the cloud copy and family envelopes are untouched; never a future day; only items with no wear that day.
+DailyScreen: «Вдягаю сьогодні» on variants and the rotation card, a «Сьогодні вдягнено» card with an exact undo.
+Detail: another day (DateChoiceDialog latest = today) and recent wear days. Calendar: worn items of the day.
+New host suite tools/check_wear.py (31 suites). Next: GEN-01 + GEN-02.
+
+## Current handoff — PERS-03 personal palette, 11 November 2026
+
+0.14.34-palette/code 64, Room/backup 10. Read PALETTE-0.14.34.md. Stacked on step 2 (PR #32 ⊃ #31 ⊃ #30 ⊃ #29 ⊃
+#28, all CI green, none merged); its PR targets main and contains them. PersonalChoices gained liked/avoided colour
+sets (account prefs `pref.palette.<wardrobe>.liked|avoided`, cleared by «Скинути всі вподобання», never in backups
+or family copies). PreferenceProfile.PALETTE_LIKED (+3, capped in DailyRules.itemScore via the new `bonus` argument)
+and PALETTE_AVOIDED (−6, merged into penalties under MAX 12). OutfitStyle.better skips avoided colours; the 0–10
+rating ignores the palette. New host suite tools/check_palette.py (30 suites). Next: user merges and deploys family
+functions (`--only functions:family`) for colors2.
+
+## Current handoff — step 2: daily generator on the new colour table, 3 November 2026
+
+0.14.33-generator-colors/code 63, Room/backup 10. Read GENERATOR-COLORS-0.14.33.md. Stacked on COL-02 (PR #31 ⊃
+#30 ⊃ #29 ⊃ #28); its PR targets main and contains them. DailyRules.pairScore = StyleRules pair points + 4 for a
+matching style (was WardrobeRules.score); final order = per-item average + RATING_WEIGHT (500) × rating, so personal
+reasons and wears still lead. Every host tool compiling DailyRules now includes StyleRules.java. Manual building,
+compatibility and purchase advice still use WardrobeRules.score. Next: step 3, a personal palette in preferences.
+
+## Current handoff — COL-02 ten more base colours, 3 November 2026
+
+0.14.32-colors2/code 62, Room/backup 10. Read COLORS-0.14.32.md. Stacked on STYLE (PR #30 ⊃ #29 ⊃ #28); its PR
+targets main and contains them. User: «По порядку» — 1 new colours (this), 2 generator on the new colour table,
+3 personal palette. Decision: full + server flag. Matching.colors has 20 bases; ColorRules.legacy maps the new
+ones for family servers without "colors2" (FamilyColors.forServer at every send: FamilyEnvelope.encode(colors2),
+initial transfer via FamilyLocalTransfer.serverFeatures from family_create, add/change, photo, outfits); the shared
+add form offers FamilyColors.choices. Server schema.py accepts 20, FEATURES adds colors2: needs a family functions
+deploy by the user (never a plain firebase deploy). StyleRules: attributes for all 20, wheel-based ANALOGOUS (3)
+and COMPLEMENTARY (2). PhotoRules: former «other» hues → green/orange/yellow/purple/pink. Next: step 2.
+
+## Current handoff — STYLE-01–03 outfit score, «Добре → Краще», new card, 3 November 2026
+
+0.14.31-outfit-style/code 61, Room/backup 10. Read OUTFIT-STYLE-0.14.31.md. Stacked on ROT-02 (PR #29 ⊃ #28); its
+PR targets main and contains both. From the user's Essembl screenshots; user chose: score with explanation,
+Good → Better with a colour-pair table, new card look (no mockup first); try-on is out of scope. StyleRules.java
+(pair table by lightness/temperature, rating = colour 0–5 + style 0–3 + weather 0–2, better = best single swap),
+OutfitStyle.kt (candidates as the daily picks; no uncomfortable, hidden or pinned), OutfitStyleViews.kt (dots,
+ScoreBadge, OutfitGrid, StyleReasons, BetterBlock); DailyScreen uses them for variants and the rotation card, chips
+for occasion and weather. The generator still uses WardrobeRules.score (old colour weights): moving it to the new
+table is the next step, with its and the purchase-advice expectations. tools/check_style.py guards it.
+Rules v2 (same PR): sourced table, references [S1–S11] next to every pair code in StyleRules.java (the guard
+requires a source with a link for each), research/app survey/trends in COLOR-RULES-0.14.31.md.
+
+## Current handoff — ROT-02 postpone, reasons and frequency, 3 November 2026
+
+0.14.30-rotation-control/code 60, Room/backup 10. Read ROTATION-CONTROL-0.14.30.md. Stacked on ROT-01 (PR #28);
+its PR targets main and contains ROT-01. User decisions: postpone for a week/month/3 months; reasons
+«Незручно» (PERS-01 row), size/no longer liked (archive with confirmation or 3 months), waiting (3 months), nothing
+to wear it with (a month + manual look editor); card daily/weekly/off (daily default) plus «Сховати на сьогодні»;
+no push. RotationRules: until/snoozed/reasonDays/recentlySeen/visible; RotationStore in account prefs
+"preferences" (rot.* keys; markShown never bumps revision). Next: two-phone acceptance; the user sent
+Essembl-style recommendation examples (Good/Better colour pairs, outfit score) to discuss as a new item.
+
+## Current handoff — ROT-01 long-unworn items, 3 November 2026
+
+0.14.29-rotation/code 59, Room/backup 10. Read ROTATION-0.14.29.md. Based on main after PR #27 (PR #25/#26/#27
+merged). User decisions: 90 days as in the statistics; a card on Daily plus «Підібрати на сьогодні» in the
+statistics; one suggestion with «Інша річ». RotationRules.java (forgotten = 90 days since the last actual wear
+or since added; suitable = ready, not excluded, not uncomfortable, season fits the weather; order = occasion
+style, then longest wait; order() cycles with the current item last), RotationOutfits.suggest (production
+generator with the item pinned; user pins win; an item chosen in the statistics overrides its category pin and
+explains why it cannot be worn). WardrobeStats uses the same rule. tools/check_rotation.py guards it.
+Next: ROT-02 (snooze, reason for not wearing, frequency/off) or two-phone acceptance.
+
+## Current handoff — WID-01 today widget, 2 November 2026
+
+0.14.28-today-widget/code 58, Room/backup 10. Read TODAY-WIDGET-0.14.28.md. Branched from PERS-02 (PR #26);
+its PR targets main directly and contains PERS-01/02. User decisions: only the active wardrobe's plans for
+today; without a plan the widget offers «Підібрати образ» (opens Daily, nothing computed in the background).
+TodayWidgetModel (pure states), TodayWidget (exported provider for system broadcasts only; non-exported
+TodayWidgetActions for wear/midnight; picture in memory; inexact RTC alarm), Repository.markPlanWorn (marks
+only, same wardrobe/day, calendar conditions). Reads only the signed-in, already opened, not erased account,
+after its closing/erasure job; sign-out clears the widget and any pending tap. tools/check_widget.py guards it.
+Next: two-phone acceptance (add preferences and the widget), then ROT-01.
+
+## Current handoff — PERS-02 visible preferences, 30 October 2026
+
+0.14.27-preference-profile/code 57, Room/backup 10. Read PREFERENCE-PROFILE-0.14.27.md. Branched from PERS-01
+(PR #25); its PR targets main directly and contains PERS-01. PreferenceProfile.java: per-occasion target style
+(choice → casual after 2 "too formal" + formal items −6 → occasion default) and warmth (choice → one step
+lighter after 2 "too warm" → forecast); scores only, so DailyOutfits.daily never returns empty because of
+preferences (hidden sets come back with hiddenShown). PreferencesDialog from the Daily conditions sheet;
+PersonalChoiceStore in account prefs (not in backup/cloud). FamilyEnvelope and the owner's copy drop
+feedback: preferences are personal. Next: acceptance, then R5 (WID-01 / ROT-01).
+
+## Current handoff — PERS-01 reasons for turning down an outfit, 30 October 2026
+
+0.14.26-preferences/code 56, Room/backup 10. Read PREFERENCES-0.14.26.md. Based on main after PR #24
+(0.14.21–0.14.25 merged; family functions deployed by the user on 30.10). Daily screen "Не підходить…"
+sheet: combination (set, every context), uncomfortable (item penalty 10, never hidden), too formal
+(occasion), too warm (weather, conditions one step lighter); scope shown before and after, undo removes
+exactly the rows added. PreferenceRules.java holds the rules (penalty cap 12); no new reason codes — an
+item row is a one-ID signature, so backup 10, cloud, old clients and the family server accept it.
+Two-phone acceptance checklist lives in Claude Docs. Next: acceptance, then PERS-02.
+
+## Current handoff — FAM-04 ownership and account deletion, 29 October 2026
+
+0.14.25-family-ownership/code 55, Room/backup 10. Read FAMILY-OWNERSHIP-0.14.25.md. Stacked on
+0.14.24 (PR #22 → #21 → #20 → #19 → #18). User decisions: the owner picks the new owner among
+editors (single editor automatic); a wardrobe without editors is deleted for everyone; full account
+deletion (server: memberships, private cloud, Firebase user; phone: only this account's data) plus a
+separate "Transfer ownership" action. family/ownership.py, AccountDeletion.kt (AccountErasure marker,
+controller), AccountFiles.kt (tools/check_account_erasure.py guards new account stores),
+FamilyArchiveIdentity.sameWardrobe for drafts queued before a transfer. Needs a functions deploy;
+rules unchanged. Next: deploy, two-phone acceptance.
+
+## Current handoff — FAM-04 part 1, 29 October 2026
+
+0.14.24-family-export/code 54, Room/backup 10. Read FAMILY-EXPORT-0.14.24.md. Stacked on 0.14.23
+(PR #21 → #20 → #19 → #18). ADR export rule implemented: only the owner saves a portable copy of a
+shared wardrobe (fresh read, FamilyRules.mayExport, Backup.exportSnapshot); no membership in the file.
+Role matrix emulator scenario (emulator_roles.py) and old-client compatibility tests. Open in FAM-04:
+two-phone acceptance, account deletion (needs a decision on the shared wardrobe's fate), deploy.
+
+## Current handoff — FAM-03 automatic sending, 29 October 2026
+
+0.14.23-family-auto-sync/code 53, Room/backup 10. Read FAMILY-AUTO-SYNC-0.14.23.md. Stacked on
+0.14.22 (PR #20 → #19 → #18). User decision: per shared wardrobe switch, off by default; any
+network. FamilyAutoSync.decide/blocked (pure), setting in family-sync/<key>/auto/, FamilyAutoSyncWorker
+woken by FamilySyncSchedule.kick after outbox changes; whole queue becomes a background batch run
+by the same engine; a batch stopped by a user-level problem waits until that operation changes or
+the switch is turned on again. Editors follow the outbox. No backend change. Next: deploy, device
+checks (joint acceptance), then FAM-04.
+
+## Current handoff — FAM-03 outfit changes, 29 October 2026
+
+0.14.22-family-outfit-changes/code 52, Room/backup 10. Read FAMILY-OUTFIT-CHANGES-0.14.22.md.
+Stacked on 0.14.21 (PR #19 → #18). Outfits are server-applied changes too: apply_change kind
+'outfit' with the outfit's own rows + "previous" (no begin/upload); only someone else's change to
+the same outfit conflicts (CHANGE_OUTFIT_CHANGED). Client uses it when features include 'outfit1'.
+FamilyOutfitDraft.delta, FamilyOutfitForm.origin, outfit journal v3. Needs a functions deploy;
+rules unchanged. Next: deploy, device checks, continuous sync, FAM-04.
+
+## Current handoff — FAM-03 delta model v1, 29 October 2026
+
+0.14.21-family-changes/code 51, Room/backup 10. Read FAMILY-CHANGES-0.14.21.md. Stacked on
+0.14.20 (PR #18). Additions and photo replacements are server-applied changes: one-photo ZIP +
+change JSON via family_begin_change/family_apply_change (cloud/family-functions/family/applying.py),
+applied to the current head; never stale, no rebase. Client uses it only when family_resume reports
+features ['change1']; otherwise the full-archive path of 0.14.20 is unchanged. Media journal v3
+(FamilyAddDraft.change). Sync order OUTFIT, ADD, PHOTO, EDIT. Needs a functions deploy; rules
+unchanged. Next: deploy, device checks, outfit deltas, continuous sync, FAM-04.
+
+## Current handoff — audit fixes, 29 October 2026
+
+0.14.20-audit-fixes/code 50, Room/backup 10. Read AUDIT-0.14.19.md and AUDIT-FIXES-0.14.20.md.
+Editor drafts: separate editor-draft.json written by one background thread (in-process read()
+sees the latest value; never mutate a draft after write()). Daily generation/diagnostics run on
+Dispatchers.Default. Shared editors show waiting + Cancel; outfit autosave uses a form lock, not
+the account lock. Sync plan journal v2: owned revisions (edits rebase over own commits), deferred
+whole-archive ops (PARTIAL), durable attempts, continuation via APPEND_OR_REPLACE. Backend B-01
+cleanup needs a functions deploy. CI adds Firebase emulator and instrumentation jobs. Next: deploy,
+device checks, delta model for shared changes, FAM-04.
+
+## Current handoff — FAM-03 approved background batches, 25 October 2026
+
+0.14.19-family-background-sync/code 49, Room/backup 10. Read FAMILY-SYNC-0.14.19.md.
+Based on main after PR #16 (0576c48); outfit queue included. Shared account Mutex now
+serializes all four editors with FamilySyncEngine. Exact approved operations only;
+submitted receipt retry, durable ack -> outbox removal -> cursor. Opt-in one-time
+WorkManager, unmetered network, 10 operations/run, bounded network retries; sign-out
+cancels/pauses plans. No automatic rebase or enrolling new drafts. Stale base stops for
+manual review/new approval. 23 JVM + 6 instrumentation tests; verify current CI.
+PR #16 CI 40130329782 passed 209 JVM/lint/schema/APK. Next: safe refresh/rebase policy
+and continuous sync, then FAM-04. No live deployment; native/GC/live fixes pending.
+
+## Current handoff — FAM-03 outfit queue, 24 October 2026
+
+0.14.18-family-outfit-queue/code 48, Room/backup 10. Read FAMILY-OUTFIT-QUEUE-0.14.18.md.
+FamilyOutfitQueue + atomic v2 store preserve one unfinished form alongside up to 10
+immutable publications / 512 MiB active ZIPs per remote. Promotion consumes exact form
+atomically; v1 migration preserves submitted receipt, corrupt v2 never falls back.
+Only selected head sends; explicit rebase, expected draft/generation guards; independent
+form survives sending/discarding queue entries. 18 JVM + 5 new instrumentation tests;
+verify current CI. Base main includes PR #15, CI 40128849612 passed 191 JVM/lint/APK.
+Next: common scheduling, opt-in background sync, FAM-04. Native/GC/live fixes pending.
+
+## Current handoff — FAM-03 media queues, 24 October 2026
+
+0.14.17-family-media-queue/code 47, Room/backup 10. Read FAMILY-MEDIA-QUEUE-0.14.17.md.
+FamilyAddStore v2 + FamilyMediaQueue keep separate FIFO lists for additions/photos,
+10 drafts / 512 MiB active ZIPs per remote/kind. Only selected exact head sends;
+rebase stays explicit and preserves position, submitted receipt-first retry unchanged.
+Item-specific photo selection, add-another flow, picker generation guards. v1 upgraded
+atomically on mutation. 14 JVM + 5 new store instrumentation tests; verify current CI.
+PR #14 already passed 177 JVM/unit/lint/APK. Next: outfit queue, scheduling/background
+sync, FAM-04. No new backend deployment; native acceptance and orphan GC pending.
+
+## Current handoff — FAM-03 metadata queue, 23 October 2026
+
+0.14.16-family-queue/code 46, Room/backup 10. Read FAMILY-QUEUE-0.14.16.md.
+FamilyEditQueue/Sender + journal v2 support up to 100 account-private metadata drafts,
+one per shared item. FIFO per remote; explicit single/batch send, field-aware refresh
+only for unsubmitted requests, stop-on-error and exact submitted retry. Read legacy v1,
+write v2 atomically. Shared add/photo/outfit journals remain unchanged. 22 JVM + 2 new
+instrumentation tests; verify this PR CI, device acceptance pending. Based on PR #13
+whose CI 39999768334 passed. Next: add/photo/outfit queues, background sync, FAM-04.
+
+## Current handoff — FAM-03 shared outfits, 23 October 2026
+
+0.14.15-family-outfits/code 45, Room/backup 10. Read FAMILY-OUTFITS-0.14.15.md.
+Shared reader displays outfit collages; owner/editor creates/edits through the existing
+LookEditor with LookEditorPort and LocalLookPhotos. Form + immutable publication live in
+account-private family-outfits, one pending outfit per remote. Explicit send, receipt-first
+retry and confirmed rebase; preserve history and reconcile capsule packing. All sources use
+only shared garments/wishes or catalog inspiration. No new backend/rules deployment.
+Host 23 pass + missing client config skipped; backend 148 pass. New JVM tests need CI;
+5 instrumentation tests and device acceptance not run. Next: multi-operation queue,
+background sync, FAM-04. Earlier handoffs below are historical, not current status.
+
+## Current handoff — QA bug fixes, 22 October 2026
+
+0.14.14-qa-fixes2/code 44, Room/backup 10. All 13 bugs of QA-REPORT-0.14.13.md fixed; read QA-FIXES-0.14.14.md. The QA suites now have no open bugs (every former knownBug is a regular assertion). Backend changes (invite names in UTF-16 units + legacy filtering, RFC e-mail, family_edit_item 1 GiB/540 s) need a manual functions deploy. Saved names must pass TextLimits.hasVisibleText in form and repository; restores use CategoryRules.validStoredName for older labels. Next: deploy, device checks, then FAM-03.
+
+## Current handoff — QA regression suites, 22 October 2026
+
+Tests only, 0.14.13-qa-fixes/code 43 unchanged. Read QA-REPORT-0.14.13.md: 13 open bugs (QA-01 high: server counts invite names in code points, phone in UTF-16 → recipient's invitation list unparsable). Technique-tagged suites: app/src/test Qa*Cases.java (+ QaRegressionTest.kt, QaFamilyWireTest.kt), cloud/family-functions/tests/test_qa_techniques.py, tools/check_qa_regression.py (in run_host_checks). Open bugs are strict expected failures (knownBug / expectedFailure / known_bug): when you fix one, its check fails until you turn it into a regular assertion and update the report.
+
+## Current handoff — QA fixes, 20 October 2026
+
+0.14.13-qa-fixes/code 43 (0.14.12 + all 16 bugs of the 0.14.12 QA report), Room/backup 10. Read QA-FIXES-0.14.13.md. Backend changes in cloud/family-functions (IDN e-mails, final-sigma label keys, CRLF edits, bidi/invisible names) need a manual functions deploy. New TextLimits.java is the grapheme-safe truncation/visible-text helper; use TextLimits.input(it, N) in text fields instead of it.take(N). Next: device checks of shop import and .укр invitations, then FAM-03 shared outfits/queue/background sync.
+
+## Current handoff — FAM-03 new shared item, 20 October 2026
+
+0.14.12-family-labels/code 42 (0.14.11 + shared custom categories/colours in the new-item form), Room/backup 10. Read FAMILY-NEW-0.14.11.md (and FAMILY-PHOTO-0.14.10.md). Owner/editor can create a new item directly in a shared wardrobe with a gallery/camera photo; it is an ordinary addition draft (FamilyAddController.prepareNew). Existing shared custom labels can be chosen; creating new shared labels is later. Next FAM-03: shared outfits, multi-operation queue, background sync; then FAM-04. Work in branches, merge via PR; CI compiles Kotlin and reports the JVM test count.
+
+## Current handoff — FAM-03 photo replacement, 20 October 2026
+
+0.14.10-family-photo/code 40, Room/backup 10. Read FAMILY-PHOTO-0.14.10.md. Owner/editor replaces the photo of an existing shared item from gallery/camera (imported as is) or an own item's final photo; same durable draft/receipt/CAS flow as additions in its own folder. No backend change. Migration tests: RoomMigrationSchemaTest (audit №13). Next FAM-03: direct shared camera/gallery for new items, shared outfits, multi-operation queue, background sync; then FAM-04. Work in branches and merge via PR; CI compiles Kotlin.
+
+## Current handoff — 0.14.9-family-add integration, 20 October 2026
+
+0.14.9-family-add/code 39, Room/backup 10 = Codex 0.14.8-family-add (FAMILY-ADD-0.14.8.md) rebased onto 0.14.8-audit-fixes (AUDIT-FIXES-0.14.8.md) and renumbered because code 38 was already released. FamilyAddController now queues actions and prepare() copies shared photos/ZIP outside the private write lock. No backend change besides tests, so no functions deploy is needed for additions. Future Codex packages: build on current main and bump versionCode above main; apply in a branch and merge via PR — do not run updaters directly on main.
+
+## Current handoff — audit fixes, 20 October 2026
+
+0.14.8-audit-fixes/code 38, Room/backup 10, on top of 0.14.7-family-edit. Read AUDIT-FIXES-0.14.8.md. On user request («Можеш виправити все?») the 0.14.6 audit findings were fixed as bugfixes only; №2/№13/№14 and parts of №4/№9/№11/№15 remain open (listed there). Host suites and backend tests pass; verify the Android CI job and a device run. main.py family_commit memory/timeout needs a manual functions deploy; no live deploy was run by the agent. Use tools/audit_strings.py-style targeted edits for strings. Then continue FAM-03 per FAMILY-EDIT-0.14.7.md.
+
+## Current handoff — FAM-03, 19 October 2026
+
+0.14.8-family-add/code38, Room/backup10. Read FAMILY-ADD-0.14.8.md and RELEASE-VALIDATION-0.14.8.json. Owner/editor can copy one saved private item with its final photo/custom category/color into a shared wardrobe. Explicit draft/preview/send; immutable account-private ZIP/journal; general base>=1 begin/commit, historical receipt retry and explicit rebase preserving other data. No private Room/backup writes. One pending addition per remote wardrobe, separate from metadata edits. Backend95 /host22 pass; new JVM7 and Android8 prepared, not run. No APK/live deploy; full JDK unavailable. Next: replace shared item photos and shared outfit editing, multi-operation queue/continuous sync, then FAM-04. Direct shared camera/gallery remains open. User deferred bugfixes and joint native acceptance.
+
+## Wardrobe — інструкція для продовження роботи (до 24.11.2026)
+
+Цей файл стосується проєкту `wardrobe-android`. Прямі вказівки користувача та правила середовища мають перевагу.
+
+## Почати тут
+
+1. Прочитай [WARDROBE-ROADMAP.md](WARDROBE-ROADMAP.md), особливо швидкий старт, поточні статуси й останню контрольну точку. Це головний беклог; старі `ROADMAP-UPDATE-*` — історія релізів.
+2. Звір `app/build.gradle.kts`, `README.md`, локальні зміни та останній release-звіт. Поточну базу бери з `app/build.gradle.kts` і верхнього «Current handoff» цього файла (на 12.11.2026 — 0.14.43-today-tab, code 73, Room/backup 10). Історія нижче: 0.14.12-family-labels поверх 0.14.11; FAM-03 нова спільна річ поверх 0.14.10; FAM-03 заміна фото поверх 0.14.9; Codex 0.14.8-family-add поверх 0.14.8-audit-fixes; AUDIT-FIXES-0.14.8.md; фото-зміни описані нижче. FAM-01/03 partial: Android initial transfer/UI підключено до family backend; див. FAMILY-ANDROID-0.14.2.md та RELEASE-VALIDATION-0.14.2.json. Це початкова серверна копія зі збереженням приватного локального гардероба. Read-only shared cache/lease реалізовано у 0.14.5, FAM-02 invite/accept/role/revoke у 0.14.6. У 0.14.7 metadata edits, у 0.14.8 копіювання однієї речі/фото; наступне — заміна shared-фото, образи, multi-operation queue і continuous sync. Оновлений Android потребує backend 0.14.2 (actor binding і structured recovery errors). Не запускати live deploy автоматично; firebase.family.example.json окремий від приватної конфігурації. Native-приймання спільне; production GCS, GC, App Check і витрати ще потребують перевірки.
+3. За прямою вказівкою користувача 10.10.2026 («Тестувати будемо все разом») PHOTO-12–14 реалізовані у 0.13.8, PHOTO-01–10 збережені; native-приймання перенесене на спільний етап. Воно не блокує подальше погоджене впровадження; автоматичні перевірки виконувати. Спільне native-приймання має включати FAM-01 foundation (FAMILY-FOUNDATION-0.14.0.md: 8 Android-тестів, вибір/retry/акаунти/backup health), COL-01/CAT-01 (COLORS-0.13.10.md/CATEGORIES-0.13.9.md) та PHOTO-12–14 (PHOTO-PRECISION-0.13.8.md: краї/ласо/захист, перезапуск/Undo/Redo/Apply/Discard, пошкодження/акаунти/cleanup), PHOTO-09–10 (PHOTO-QUALITY-0.13.7.md: роздільність, пам’ять/час/backup, вибрана черга, перезапуск/скасування/конфлікти/акаунти), PHOTO-06–08 (PHOTO-INSPECTION-0.13.6.md), PHOTO-05 (лупа/спільна історія/м’якість і сила, PHOTO-TOOLS-0.13.5.md), PHOTO-04 (історія/пензель, PHOTO-EDITOR-0.13.4.md), PHOTO-03 (очищення/фон, PHOTO-CLEANUP-0.13.3.md), PHOTO-02 (зум фото, PHOTO-ZOOM-0.13.2.md) та PHOTO-01: причини збоїв фото, ручне завершення й видиму валідацію; див. PHOTO-RECOVERY-0.13.1.md. Погоджений порядок: компактний каталог → імпорт із магазину через Android Share → розширений помічник покупки → окремі сімейні акаунти → персоналізація → віджет/забуті речі → подорожі. Поточний наступний ID і статус завжди бери з роадмапу.
+
+## Поточний Android photo hotfix3 (17.10.2026)
+
+PHOTO-03 / verify: 0.14.4-photo-hotfix3/code34, Room/backup10. Прочитай
+PHOTO-CLEANUP-HOTFIX3.md. Автоматичний default — gentle (0.15–0.70),
+colour flood лише за explicit stronger. Clamp дрібного float32 overshoot
+і fail-whole-mask для NaN/Inf/значного порушення діапазону. Стара production
+функція падає на новій synthetic rounding regression; після виправлення
+61 mask/backdrop assertion pass. Це не доказ точного походження сітки на
+телефоні: ML-маска користувача недоступна, потрібен новий імпорт оригіналу.
+Gradle wrapper blocked: Network is unreachable; Android/Compose/APK та
+PowerShell не виконані. Старі family hotfix1/2 збережені; живі правила не
+змінювати. Наступне: native PHOTO-03 acceptance, потім чинний сімейний беклог.
+
+## Попередній Android hotfix2 (17.10.2026)
+
+Фактична версія: 0.14.3-family-hotfix2/code33; Room/backup 10. Прочитай
+FAMILY-PROGRESS-HOTFIX2.md. Виправлено deferred progress callback NaN після
+переходу UPLOADING → COMMITTING; 19 Kotlin/JVM-тестів pass. Android/Compose
+build і телефонне приймання ще не виконані. Live Storage 403 не вважати
+остаточно усуненим. Console rules користувач змінював окремо, їхні guards
+ще не перенесені в cloud source rules; не перезаписувати їх старим deploy.
+
+## Попередній серверний hotfix1 (16.10.2026)
+
+FAM-01/03: Android залишається 0.14.2/code32. Прочитай FAMILY-CALLABLE-HOTFIX1.md.
+Виправлено callable Long size; 35 host tests pass. Деплой і приймання на телефоні
+не виконані агентом; до підтвердження не вважати випадок користувача закритим.
+
+## Під час роботи
+
+- Використовуй наявні редактори, чернетки й операції збереження. Календар, статистика, капсули та базова сумісність покупки вже є; потрібні розширення, а не дублікати.
+- Фіксуй task-ID, виконавця, змінені файли й контрольну точку. Погоджена задача не потребує повторного узгодження звичайних оборотних кроків.
+- Зберігай `com.familywardrobe.app`, дані користувача, ключ підпису, client Firebase config, локальні SDK/Gradle/порти. У користувача Jenkins на 8080; Firestore запропоновано перенести на 8088.
+- Нові постійні поля перевіряй у Room migration, backup, cloud, історії покупок і посиланнях образів. Не використовуй destructive migration або тиху заміну даних.
+- Ізоляція акаунтів перевіряється і при асинхронній роботі. Сімейний доступ не можна реалізувати відкриттям всього ZIP акаунта іншому UID.
+- Зберігай UA/EN/PL, теми, доступність, великий шрифт і відсутність горизонтального обрізання. Розрізняй власні речі, бажані товари та натхнення.
+- Оригінальні фото не зберігай постійно. Незавершені чернетки й потрібні кінцеві референси історії обробляй без втрати даних.
+- Запускай релевантні перевірки за роадмапом. Успіх старого релізу не переноситься на новий. Source checks не замінюють компіляцію чи перевірку екрана на Android.
+
+## Перед передачею
+
+- Онови статуси й журнал у `WARDROBE-ROADMAP.md`: що зроблено, які докази є, що не перевірено, який блокер і точний наступний крок.
+- Не пиши «готово» для сценарію лише тому, що код або тест існує. Відділяй реалізацію, виконані автоматичні перевірки й приймання на пристрої.
+- Включи актуальні `AGENTS.md` і `WARDROBE-ROADMAP.md` у наступний пакет/репозиторій та механізм оновлення. Окремий примірник роадмапу має відповідати вмісту пакета.
+- Не видавай старий APK за новий. У короткому звіті користувачу вкажи результат, межі перевірки й посилання на збережені файли.
+
+<!-- WARDROBE-GIT-SAFETY -->
+## Git Safety — DEV-01
+
+- Перед commit/push прочитай `GIT-SAFETY.md`; установи hooks у кожному clone.
+- Зберігай `.gitignore`, `.gitattributes`, `.githooks`, інсталятори та `tools/git_safety*`.
+- Не додавай локальні ключі/Firebase config/дані до Git. Не обходь блокер
+  секрету через автоматичний untrack, переписування історії або `--no-verify`.
+- Тести guard: `python3 tools/test_git_safety.py`; справжні credentials не використовувати.
+- Два винятки для локальних Firebase emulator-тестів прив’язані до SHA-256
+  точного файла та одного literal-warning. Зміна потребує перегляду;
+  не розширюй винятки на каталоги, токени чи приватні ключі.
+- Після оновлення guard повтори installer: активна копія зберігається локально
+  в Git-каталозі й працює навіть на гілках без версійованого guard.
+<!-- END WARDROBE-GIT-SAFETY -->
+
+## DEV-02 — очищення, 18.10.2026
+
+Поточна структура: README → WARDROBE-ROADMAP → CHANGELOG/docs/history.
+Прочитай PROJECT-CLEANUP.md та CLEANUP-VALIDATION.json. Старі JSON докази незмінні.
+Не відновлюй OfflineScreen або його два видалені рядки зі старого payload.
+Для нових змін використовуй очищене дерево; старі updater-пакети можуть конфліктувати.
+Версія Android лишається 0.14.4/code34; Android build/lint ще потребують запуску.
+
+## DEV-03 — GitHub preparation, 18.10.2026
+
+Прочитай GITHUB-WORKFLOW-UK.md і GITHUB-READINESS-VALIDATION.json.
+CI використовує read-only permissions, без live deploy/signing/Firebase secrets.
+CI preview: -PciPreview=true → com.familywardrobe.app.ci, локальний default незмінний.
+Release tag має збігатися з v + versionName; code збільшується для нового релізу.
+Перед GitHub push повтори audit локального index/history; hooks установлюються на кожному clone.
+Не оголошувати remote/CI підключеними без підтвердження.
+
+### Publication checkpoint — 23 October 2026
+
+Branch `feat/family-outfits-0.14.15`, based on main
+`797daadb2f173627e8f05ef3c8db4aa20afc10af`. GitHub write authorization was restored
+and verified by a successful create-tree request on 23 October 2026, after earlier
+403 failures. Publication proceeds through a draft PR; Android/JVM CI results
+must be verified for that PR before marking this work validated. Instrumentation
+and device acceptance remain pending; no live Firebase deployment is included.

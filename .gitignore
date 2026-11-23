@@ -82,3 +82,7 @@ wardrobe-backups/
 *.bz2
 *.xz
 # END WARDROBE GIT SAFETY
+
+# Claude Code: personal, per-machine files
+CLAUDE.local.md
+.claude/settings.local.json
