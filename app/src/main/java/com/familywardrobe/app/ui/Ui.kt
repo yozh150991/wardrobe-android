@@ -1065,7 +1065,7 @@ fun BackupSettings(vm: WardrobeViewModel) {
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
             Text(stringResource(R.string.import_backup))
         }
-        Text(stringResource(R.string.local_notice), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // BackupHealthPanel already says where the data lives (local_notice); it is not repeated here.
     }
 }
 

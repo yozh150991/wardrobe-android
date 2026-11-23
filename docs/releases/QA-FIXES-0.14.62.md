@@ -57,4 +57,15 @@
   [tools/check_qa_fixes.py](../../tools/check_qa_fixes.py) охоплює кожне виправлення й запускає `WardrobeNameRulesCases`.
   У `PhotoCutoutCases` додано перевірку `describe`.
 - Скриншот-тур знімає ще три екрани профілю: `5e-wardrobes`, `5f-backups`, `5g-family`.
-- CI, скриншоти й перевірку на телефоні — див. PR #63.
+- CI (PR #63):
+  - **68e7aed** (перший раунд): Android debug preview — pass, APK зібрано для перевірки логу.
+  - **d83b30b**, PR-запуск 45249757875:
+    - Source and Git safety — pass;
+    - Android debug preview — pass (unit-тести, lint, APK);
+    - Android instrumentation — pass, 80 скриншотів (20 екранів × 4 налаштування), переглянуто;
+    - Firebase emulators — pass.
+  - Push-запуск того самого коміту впав на завантаженні плагіна KSP. Це мережевий збій, відомий з минулих PR.
+- Перегляд скриншотів знайшов, що на екрані «Резервні копії» текст про зберігання даних показаний двічі. Його вже
+  виводить BackupHealthPanel; другий прибрано.
+- Профіль і «Сьогодні» з карткою міста виглядають правильно в uk, uk-large, en і pl.
+- На телефоні не перевірено.

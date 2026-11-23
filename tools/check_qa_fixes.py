@@ -142,6 +142,7 @@ check('"manage", "appearance", "backups", "family" -> "settings"' in ui, 'QA-61-
 backups = ui.split('fun BackupSettings(', 1)[1][:1500]
 check('BackupHealthPanel(' in backups and 'SingleWardrobeBackupControl(vm)' in backups and 'R.string.import_backup' in backups,
       'QA-61-25: backups, one-wardrobe copy and restore are on the backup screen')
+check('R.string.local_notice' not in backups, 'QA-61-25: the storage note is shown once (BackupHealthPanel has it)')
 family_screen = ui.split('fun FamilySettings(', 1)[1][:600]
 check('FamilyAccessControl(vm)' in family_screen and 'FamilyTransferControl(vm)' in family_screen, 'QA-61-25: family sharing has its screen')
 check('Button(onClick = onNew' in management, 'QA-61-25: «Новий гардероб» is on the wardrobes screen')
