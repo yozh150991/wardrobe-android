@@ -983,3 +983,4 @@ and device acceptance remain pending; no live Firebase deployment is included.
 - LOOK-05: «Додати річ» — перший інструмент у рядку заголовка (`catalog-add`). Кругла «+» (`catalog-add-floating`) з'являється, лише коли заголовок прокручено (`firstVisibleItemIndex > 0`). Порожній гардероб і далі має широку «Додати першу річ».
 - LOOK-06: кнопки нової речі стають одна під одною з `FORM_STACK_SCALE = 1.6` (було 1,3).
 - Перевірки: новий `tools/check_look.py` (47-й набір, мутації ловить). Оновлено `check_catalog_design.py` і `check_new_item_design.py`.
+- Тур (32 скриншоти, тепер і прокручений «Гардероб») показав усі шість змін. За шрифту 1,3 «Зберегти й додати наступну» спершу була у три рядки; поділ ряду 1,4 : 1 зменшив її до двох. CI — 8/8 на 70c3e9f і edd6e3b.
