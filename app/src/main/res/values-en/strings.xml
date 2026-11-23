@@ -275,7 +275,7 @@
     <string name="empty_archive">The archive is empty.</string>
     <string name="empty_active">No active pieces. Check the archive or add a piece.</string>
     <string name="reset_filters">Reset filters</string>
-    <string name="wear_count">Worn: %1$d days</string>
+    <string name="wear_count">Days worn: %1$d</string>
     <string name="most_worn">Most worn</string>
     <string name="item_saved">Saved “%1$s”</string>
     <string name="add_next">Add next</string>

@@ -131,11 +131,11 @@ class ScreenshotTourTest {
         val home = repo.dao.allWardrobes().single().id
         fun item(name: String, category: String, color: String, style: String = "casual") =
             Garment(wardrobeId = home, name = name, category = category, color = color, style = style, photoId = newId())
-        val shirt = item("Біла сорочка", "top", "white", "business")
+        val shirt = item("Біла сорочка", "top", "white", "formal")
         val sweater = item("Светр з високим горлом, довгий рукав", "top", "burgundy")
         val tee = item("Футболка", "top", "navy")
         val jeans = item("Джинси", "bottom", "light_blue")
-        val trousers = item("Брюки", "bottom", "beige", "business")
+        val trousers = item("Брюки", "bottom", "beige", "formal")
         val sneakers = item("Кросівки", "shoes", "white")
         val boots = item("Черевики", "shoes", "brown")
         val coat = item("Пальто", "outerwear", "camel")
@@ -193,9 +193,23 @@ class ScreenshotTourTest {
             "light_blue" to 0xFF8FB3D9.toInt(), "beige" to 0xFFD9C7A7.toInt(), "brown" to 0xFF6B4A2F.toInt(),
             "camel" to 0xFFC19A6B.toInt())
 
-        /** A phone-sized screen for every test of this class (the emulator's default is smaller); restored afterwards. */
-        @BeforeClass @JvmStatic fun phoneScreen() { shell("wm size 1080x2340"); shell("wm density 420") }
-        @AfterClass @JvmStatic fun restoreScreen() { shell("wm size reset"); shell("wm density reset") }
+        /**
+         * A phone-sized screen for every test of this class (the emulator's default is smaller); restored afterwards.
+         * `wm` returns before the system applies the change; an activity started meanwhile is recreated and loses its
+         * content («No compose hierarchies found»), so wait until the app sees the new density.
+         */
+        @BeforeClass @JvmStatic fun phoneScreen() { shell("wm size 1080x2340"); shell("wm density 420"); settle(420) }
+        @AfterClass @JvmStatic fun restoreScreen() { shell("wm size reset"); shell("wm density reset"); settle(null) }
+
+        private fun settle(density: Int?) {
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            val deadline = SystemClock.uptimeMillis() + 10_000
+            while (density != null && instrumentation.targetContext.applicationContext.resources.configuration.densityDpi != density
+                && SystemClock.uptimeMillis() < deadline) SystemClock.sleep(200)
+            instrumentation.waitForIdleSync()
+            SystemClock.sleep(1_000)
+            Log.i(TAG, "screen ${instrumentation.targetContext.applicationContext.resources.displayMetrics.let { "${it.widthPixels}x${it.heightPixels} ${it.densityDpi}dpi" }}")
+        }
 
         private fun shell(command: String): String {
             val descriptor = InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)

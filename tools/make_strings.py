@@ -440,7 +440,7 @@ STRINGS={'appearance_classic': ('Класичні акценти', 'Classic acce
                   'No active pieces. Check the archive or add a piece.',
                   'Nie ma aktywnych rzeczy. Sprawdź archiwum lub dodaj nową rzecz.'),
  'reset_filters': ('Скинути фільтри', 'Reset filters', 'Wyczyść filtry'),
- 'wear_count': ('Носінь: %1$d', 'Worn: %1$d days', 'Dni noszenia: %1$d'),
+ 'wear_count': ('Носінь: %1$d', 'Days worn: %1$d', 'Dni noszenia: %1$d'),
  'most_worn': ('Найбільше носінь', 'Most worn', 'Najczęściej noszone'),
  'item_saved': ('Збережено «%1$s»', 'Saved “%1$s”', 'Zapisano „%1$s”'),
  'add_next': ('Додати наступну', 'Add next', 'Dodaj kolejną'),
