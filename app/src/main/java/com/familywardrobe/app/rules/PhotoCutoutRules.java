@@ -59,6 +59,8 @@ public final class PhotoCutoutRules {
             for (int i = 0; i < n; i++) if ((gentle[i] & 255) < (alpha[i] & 255)) alpha[i] = gentle[i];
         }
         Arrays.fill(visited, (byte) 0);
+        clean(alpha, source, width, height, confidence, queue, visited, checkpoint);
+        Arrays.fill(visited, (byte) 0);
         // Retain ALL substantial components: a pair of shoes is not reduced to one shoe.
         // Eight-neighbour connectivity preserves diagonal straps and laces.
         int minimum = Math.max(8, (int) Math.ceil(n * .00006));
@@ -88,6 +90,210 @@ public final class PhotoCutoutRules {
         }
         checkpoint.run();
         return output;
+    }
+
+    /** PHOTO-19: what the model itself gets wrong, measured on masks captured from a phone (Galaxy S23, six photos
+     * on a patterned blanket): its mask is almost binary, so nothing above can tell that it is wrong.
+     *
+     * A. Backdrop at the edge. Colours that are common where the model is sure of the background and at least
+     *    eight times rarer in the garment are removed where they reach the garment's outline (a patch of the
+     *    blanket at a cuff, a thin halo). At most 3 % of the garment, or nothing: more means the colours are shared
+     *    (the captures needed up to 1.3 %). Known limit: a trim under 3 % of the garment, at its edge, in one of the
+     *    backdrop's main colours, is taken for the backdrop.
+     * B. Something else in the frame joined by a narrow neck (a foot under a shirt). The garment's body is what
+     *    survives an opening of radius 8.5 % of the square root of its area; a part outside it is removed only when
+     *    it is small (0.2–6 % of the area), its colours are hardly the body's (overlap under 0.3) and are the
+     *    background's (overlap of 0.3 or more, and twice the body's). A sleeve or a strap in the garment's colours,
+     *    or in a colour the backdrop does not have, stays.
+     * Both only remove; photos already cut out (no confident background left) are not touched.
+     */
+    private static void clean(byte[] alpha, int[] source, int width, int height, FloatBuffer confidence,
+            int[] queue, byte[] visited, Runnable checkpoint) {
+        final int n = alpha.length, offset = confidence.position();
+        int[] fine = new int[512], fineBack = new int[512], coarseBack = new int[64];
+        int solid = 0, back = 0;
+        for (int i = 0; i < n; i++) {
+            if ((i & 8191) == 0) checkpoint.run();
+            if ((source[i] >>> 24) < 230) continue;
+            if ((alpha[i] & 255) >= SOLID) { solid++; fine[bin(source[i])]++; }
+            else if (alpha[i] == 0 && confidence.get(offset + i) < .1f) { back++; fineBack[bin(source[i])]++; coarseBack[coarse(source[i])]++; }
+        }
+        if (solid < 4096 || back < n * .02) return;
+        // A. Backdrop colours reaching the outline.
+        boolean[] backdrop = new boolean[512];
+        boolean any = false;
+        for (int b = 0; b < 512; b++) {
+            backdrop[b] = fineBack[b] >= back * .003 && (long) fineBack[b] * solid >= 8L * fine[b] * back;
+            any |= backdrop[b];
+        }
+        if (any) {
+            int tail = 0;
+            for (int i = 0; i < n; i++) {
+                if ((i & 8191) == 0) checkpoint.run();
+                if ((alpha[i] & 255) < SOLID || !backdrop[bin(source[i])]) continue;
+                int x = i % width, y = i / width;
+                boolean edge = false;
+                for (int dy = -1; dy <= 1 && !edge; dy++) for (int dx = -1; dx <= 1; dx++) {
+                    if (x + dx < 0 || x + dx >= width || y + dy < 0 || y + dy >= height) continue;
+                    if ((alpha[i + dy * width + dx] & 255) < SOLID) { edge = true; break; }
+                }
+                if (edge) { visited[i] = 1; queue[tail++] = i; }
+            }
+            for (int head = 0; head < tail; head++) {
+                if ((head & 8191) == 0) checkpoint.run();
+                int i = queue[head], x = i % width, y = i / width;
+                for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++) {
+                    if (x + dx < 0 || x + dx >= width || y + dy < 0 || y + dy >= height) continue;
+                    int j = i + dy * width + dx;
+                    if (visited[j] == 0 && (alpha[j] & 255) >= SOLID && backdrop[bin(source[j])]) { visited[j] = 1; queue[tail++] = j; }
+                }
+            }
+            if (tail <= solid * .03) {
+                for (int k = 0; k < tail; k++) alpha[queue[k]] = 0;
+                // Crumbs and hairlines left beside what was just removed: a pixel that has lost five of its eight
+                // neighbours goes too. Only next to the removed backdrop, so no other outline is thinned.
+                int from = 0, end = tail;
+                for (int pass = 0; pass < 4 && from < end; pass++) {
+                    for (int k = from; k < end; k++) {
+                        if ((k & 8191) == 0) checkpoint.run();
+                        int i = queue[k], x = i % width, y = i / width;
+                        for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++) {
+                            if (x + dx < 0 || x + dx >= width || y + dy < 0 || y + dy >= height) continue;
+                            int j = i + dy * width + dx;
+                            if (visited[j] != 0 || (alpha[j] & 255) < SOLID) continue;
+                            int jx = j % width, jy = j / width, open = 0;
+                            for (int ey = -1; ey <= 1; ey++) for (int ex = -1; ex <= 1; ex++) {
+                                if (jx + ex < 0 || jx + ex >= width || jy + ey < 0 || jy + ey >= height) continue;
+                                if ((alpha[j + ey * width + ex] & 255) < SOLID) open++;
+                            }
+                            if (open >= 5) { visited[j] = 1; queue[tail++] = j; }
+                        }
+                    }
+                    for (int k = end; k < tail; k++) alpha[queue[k]] = 0;
+                    from = end; end = tail;
+                }
+                solid -= tail;
+                // The soft outline that was drawn around the removed backdrop, up to three pixels from it.
+                int marked = tail;
+                from = 0; end = tail;
+                for (int pass = 0; pass < 3 && from < end; pass++) {
+                    for (int k = from; k < end; k++) {
+                        if ((k & 8191) == 0) checkpoint.run();
+                        int i = queue[k], x = i % width, y = i / width;
+                        for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++) {
+                            if (x + dx < 0 || x + dx >= width || y + dy < 0 || y + dy >= height) continue;
+                            int j = i + dy * width + dx;
+                            if (visited[j] == 0 && alpha[j] != 0 && (alpha[j] & 255) < SOLID) { visited[j] = 1; alpha[j] = 0; queue[marked++] = j; }
+                        }
+                    }
+                    from = end; end = marked;
+                }
+                tail = marked;
+            }
+            for (int k = 0; k < tail; k++) visited[queue[k]] = 0;
+        }
+        // B. A foreign part joined by a narrow neck.
+        final int radius = 3 * Math.max(3, (int) Math.round(Math.sqrt(solid) * .085));
+        short[] depth = new short[n];
+        for (int i = 0; i < n; i++) depth[i] = (alpha[i] & 255) >= SOLID ? Short.MAX_VALUE : 0;
+        chamfer(depth, width, height, checkpoint);
+        int best = -1, bestSize = 0;
+        for (int start = 0; start < n; start++) {
+            if ((start & 8191) == 0) checkpoint.run();
+            if (visited[start] != 0 || depth[start] <= radius) continue;
+            int size = flood(start, depth, radius, visited, (byte) 0, (byte) 1, queue, width, height, checkpoint);
+            if (size > bestSize) { bestSize = size; best = start; }
+        }
+        if (best < 0) return;
+        flood(best, depth, radius, visited, (byte) 1, (byte) 2, queue, width, height, checkpoint);
+        for (int i = 0; i < n; i++) depth[i] = visited[i] == 2 ? 0 : Short.MAX_VALUE;
+        chamfer(depth, width, height, checkpoint);
+        final int reach = (int) (radius * 1.15f);
+        int[] coarseBody = new int[64];
+        int body = 0;
+        for (int i = 0; i < n; i++) {
+            boolean in = (alpha[i] & 255) >= SOLID && depth[i] <= reach;
+            visited[i] = in ? (byte) 3 : 0;
+            if (in) { body++; coarseBody[coarse(source[i])]++; }
+        }
+        int[] piece = new int[64];
+        for (int start = 0; start < n; start++) {
+            if ((start & 8191) == 0) checkpoint.run();
+            if (visited[start] != 0 || (alpha[start] & 255) < SOLID) continue;
+            Arrays.fill(piece, 0);
+            int head = 0, tail = 1;
+            boolean joined = false;
+            visited[start] = 4; queue[0] = start;
+            while (head < tail) {
+                if ((head & 8191) == 0) checkpoint.run();
+                int i = queue[head++], x = i % width, y = i / width;
+                piece[coarse(source[i])]++;
+                for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++) {
+                    if (x + dx < 0 || x + dx >= width || y + dy < 0 || y + dy >= height) continue;
+                    int j = i + dy * width + dx;
+                    if (visited[j] == 3) joined = true;
+                    else if (visited[j] == 0 && (alpha[j] & 255) >= SOLID) { visited[j] = 4; queue[tail++] = j; }
+                }
+            }
+            if (!joined || tail < solid * .002 || tail > solid * .06) continue;
+            double likeBody = 0, likeBack = 0;
+            for (int b = 0; b < 64; b++) {
+                double share = piece[b] / (double) tail;
+                likeBody += Math.min(share, coarseBody[b] / (double) body);
+                likeBack += Math.min(share, coarseBack[b] / (double) back);
+            }
+            if (likeBody < .3 && likeBack >= .3 && likeBack >= 2 * likeBody) for (int k = 0; k < tail; k++) alpha[queue[k]] = 0;
+        }
+    }
+
+    private static int coarse(int p) { return ((p >> 18) & 48) | ((p >> 12) & 12) | ((p >> 6) & 3); }
+
+    /** Marks the four-connected region of pixels deeper than `radius` that carry `from`; returns its size. */
+    private static int flood(int start, short[] depth, int radius, byte[] marks, byte from, byte to, int[] queue,
+            int width, int height, Runnable checkpoint) {
+        int head = 0, tail = 1;
+        marks[start] = to; queue[0] = start;
+        while (head < tail) {
+            if ((head & 8191) == 0) checkpoint.run();
+            int i = queue[head++], x = i % width, y = i / width;
+            if (x > 0 && marks[i - 1] == from && depth[i - 1] > radius) { marks[i - 1] = to; queue[tail++] = i - 1; }
+            if (x < width - 1 && marks[i + 1] == from && depth[i + 1] > radius) { marks[i + 1] = to; queue[tail++] = i + 1; }
+            if (y > 0 && marks[i - width] == from && depth[i - width] > radius) { marks[i - width] = to; queue[tail++] = i - width; }
+            if (y < height - 1 && marks[i + width] == from && depth[i + width] > radius) { marks[i + width] = to; queue[tail++] = i + width; }
+        }
+        return tail;
+    }
+
+    /** 3-4 chamfer distance (three units a pixel) to the nearest zero; the frame is not a zero. */
+    private static void chamfer(short[] d, int width, int height, Runnable checkpoint) {
+        for (int y = 0, i = 0; y < height; y++) {
+            checkpoint.run();
+            for (int x = 0; x < width; x++, i++) {
+                int v = d[i];
+                if (v == 0) continue;
+                if (x > 0) v = Math.min(v, d[i - 1] + 3);
+                if (y > 0) {
+                    v = Math.min(v, d[i - width] + 3);
+                    if (x > 0) v = Math.min(v, d[i - width - 1] + 4);
+                    if (x < width - 1) v = Math.min(v, d[i - width + 1] + 4);
+                }
+                d[i] = (short) Math.min(v, Short.MAX_VALUE);
+            }
+        }
+        for (int y = height - 1, i = width * height - 1; y >= 0; y--) {
+            checkpoint.run();
+            for (int x = width - 1; x >= 0; x--, i--) {
+                int v = d[i];
+                if (v == 0) continue;
+                if (x < width - 1) v = Math.min(v, d[i + 1] + 3);
+                if (y < height - 1) {
+                    v = Math.min(v, d[i + width] + 3);
+                    if (x < width - 1) v = Math.min(v, d[i + width + 1] + 4);
+                    if (x > 0) v = Math.min(v, d[i + width - 1] + 4);
+                }
+                d[i] = (short) Math.min(v, Short.MAX_VALUE);
+            }
+        }
     }
 
     /** The model's mask as alpha, with the garment's interior protected (see {@link #protect}). */

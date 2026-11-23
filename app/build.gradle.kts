@@ -15,8 +15,8 @@ android {
         applicationId = "com.familywardrobe.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 93
-        versionName = "0.14.63-mask-capture"
+        versionCode = 94
+        versionName = "0.14.64-cutout-cleanup"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {

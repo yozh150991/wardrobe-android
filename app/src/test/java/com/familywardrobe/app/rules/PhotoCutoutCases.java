@@ -300,7 +300,74 @@ public final class PhotoCutoutCases {
         check(PhotoCutoutRules.modelInput(empty, () -> {})[0] == 0xffffffff, "A fully transparent photo: white");
     }
 
+    /** PHOTO-19: shapes of the two faults seen in masks captured from a phone (a foot joined to a shirt, a patch
+     * of the blanket at a cuff), and the garments that must survive the same rules.
+     */
+    private static final int S = 300, CREAM = 0xffe8dcc0, BLACK = 0xff141414, GREY = 0xffb0a8a8, BLUE = 0xff2040c0;
+    private static int[] scene(float[] mask, int part, boolean patch, int body) {
+        int[] rgb = new int[S * S];
+        // A patterned blanket above a dark floor, as in the captures.
+        for (int y = 0; y < S; y++) for (int x = 0; x < S; x++)
+            rgb[y * S + x] = y >= 225 ? BLACK : ((x / 10 + y / 10) & 1) == 0 ? RED : GREY;
+        for (int y = 40; y < 200; y++) for (int x = 80; x < 220; x++) { rgb[y * S + x] = body; mask[y * S + x] = 1; }
+        if (part != 0) {
+            for (int y = 200; y < 214; y++) for (int x = 144; x < 156; x++) { rgb[y * S + x] = part; mask[y * S + x] = 1; }
+            for (int y = 214; y < 250; y++) for (int x = 135; x < 165; x++) { rgb[y * S + x] = part; mask[y * S + x] = 1; }
+        }
+        // The model is sure about a square of the blanket beside the garment.
+        if (patch) for (int y = 100; y < 120; y++) for (int x = 60; x < 80; x++) mask[y * S + x] = 1;
+        return rgb;
+    }
+    private static int[] cutScene(int[] rgb, float[] mask) { return PhotoCutoutRules.refine(rgb, S, S, FloatBuffer.wrap(mask), false, () -> {}); }
+    private static int alphaAt(int[] p, int x, int y) { return p[y * S + x] >>> 24; }
+
+    public static void foreignParts() {
+        float[] mask = new float[S * S];
+        int[] rgb0;
+        int[] cut = cutScene(scene(mask, BLACK, false, CREAM), mask);
+        check(alphaAt(cut, 150, 235) == 0 && alphaAt(cut, 150, 206) == 0, "A foot in the floor's colours, joined by a neck, is removed");
+        check(alphaAt(cut, 150, 120) == 255 && alphaAt(cut, 150, 195) == 255 && alphaAt(cut, 85, 45) == 255, "The garment keeps its body");
+
+        mask = new float[S * S];
+        cut = cutScene(scene(mask, BLUE, false, CREAM), mask);
+        check(alphaAt(cut, 150, 235) == 255, "A part in a colour the backdrop does not have (a contrast sleeve) stays");
+
+        mask = new float[S * S];
+        cut = cutScene(scene(mask, CREAM, false, CREAM), mask);
+        check(alphaAt(cut, 150, 235) == 255, "A part in the garment's own colour (a sleeve, a strap) stays");
+
+        mask = new float[S * S];
+        cut = cutScene(scene(mask, BLACK, false, BLACK), mask);
+        check(alphaAt(cut, 150, 235) == 255 && alphaAt(cut, 150, 120) == 255, "A dark garment on a dark floor loses nothing");
+
+        mask = new float[S * S];
+        cut = cutScene(scene(mask, 0, true, CREAM), mask);
+        check(alphaAt(cut, 70, 110) == 0 && alphaAt(cut, 62, 102) == 0, "A patch of the blanket at the garment's edge is removed");
+        check(alphaAt(cut, 82, 110) == 255 && alphaAt(cut, 150, 120) == 255, "The fabric beside the patch stays");
+
+        mask = new float[S * S];
+        cut = cutScene(scene(mask, 0, true, RED), mask);
+        check(alphaAt(cut, 82, 110) == 255 && alphaAt(cut, 150, 120) == 255 && alphaAt(cut, 215, 195) == 255,
+            "A garment in the blanket's colour is not eaten from its edge");
+
+        // A colour that is only a tenth of the backdrop and 2 % of the garment is not eight times rarer in it: a trim.
+        mask = new float[S * S];
+        rgb0 = scene(mask, 0, false, CREAM);
+        for (int y = 0; y < 22; y++) for (int x = 0; x < S; x++) rgb0[y * S + x] = 0xff20a040;
+        for (int y = 197; y < 200; y++) for (int x = 80; x < 220; x++) rgb0[y * S + x] = 0xff20a040;
+        cut = cutScene(rgb0, mask);
+        check(alphaAt(cut, 150, 198) == 255, "A trim in a minor backdrop colour stays");
+
+        // A photo that was already cut out has no confident background to learn from: nothing more is removed.
+        mask = new float[S * S];
+        int[] rgb = scene(mask, BLACK, false, CREAM);
+        for (int i = 0; i < rgb.length; i++) if (mask[i] == 0) rgb[i] = 0;
+        cut = cutScene(rgb, mask);
+        check(alphaAt(cut, 150, 235) == 255, "An already cut photo is left as it is");
+    }
+
     public static void main(String[] args) {
+        foreignParts();
         roundedConfidence(); cleanup(); gentleMode(); preserveDetails(); malformedAndCancellation(); backdrops(); largeFrame();
         protectGarment(); modelInput();
         System.out.println("PASS: " + assertions + " production mask/backdrop assertions; synthetic fixtures, not ML accuracy.");
