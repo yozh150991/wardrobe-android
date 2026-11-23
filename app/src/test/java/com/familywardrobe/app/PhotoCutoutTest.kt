@@ -11,4 +11,5 @@ class PhotoCutoutTest {
     @Test fun invalidMasksAndCancellation() = PhotoCutoutCases.malformedAndCancellation()
     @Test fun whiteAndCreamBackdrops() = PhotoCutoutCases.backdrops()
     @Test fun cameraSizedFrame() = PhotoCutoutCases.largeFrame()
+    @Test fun foreignPartsAndBackdropPatches() = PhotoCutoutCases.foreignParts()
 }

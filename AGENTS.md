@@ -1,3 +1,15 @@
+## Current handoff — PHOTO-19 steps 2–3: cutout rules tuned on real masks, 24 November 2026
+
+0.14.64-cutout-cleanup/code 94, Room 11 and backup formats unchanged. Read docs/releases/CUTOUT-CLEANUP-0.14.64.md.
+Stacked on PR #64 ⊃ #63; its PR targets main and contains them — merge the latest. Six captures from the user's phone
+showed the ML Kit mask is almost binary (0.3–0.5 % of values between 0.15 and 0.7), so faults come from the model:
+PhotoCutoutRules.clean removes (A) backdrop colours reaching the outline, at most 3 % of the garment, and (B) a small
+part beyond a narrow neck whose colours are the background's and not the body's. Both only remove. Run changes to these
+rules through tools/photo_stand/PhotoStand.java on a `photo-debug` folder (the user's captures are not in the repo;
+ask for fresh ones) and keep PhotoCutoutCases.foreignParts passing. **Open:** device check; «Очистити фон сильніше»
+re-analyses the already cut photo and returns the same pixels — it needs the original or the first mask. Next after
+this: the agent harness (decisions in the project memory; from main once the stack is merged).
+
 ## Current handoff — PHOTO-19 step 1: debug mask capture, 23 November 2026
 
 0.14.63-mask-capture/code 93, Room 11 and backup formats unchanged. Read docs/releases/MASK-CAPTURE-0.14.63.md.
