@@ -35,6 +35,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.asImageBitmap
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.familywardrobe.app.AvailabilityChange
@@ -353,6 +355,11 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
             val navigation = listOf("daily" to Icons.Outlined.Today, "catalog" to Icons.Outlined.Checkroom, "shopping" to Icons.Outlined.BookmarkBorder,
                 "outfits" to Icons.Outlined.Layers, "settings" to Icons.Outlined.Settings)
             val navColumns = if (LocalConfiguration.current.fontScale >= 1.4f) 3 else 5
+            val navName = { screen: String -> when (screen) { "daily" -> R.string.today_tab; "outfits" -> R.string.outfits; "shopping" -> R.string.shopping; "settings" -> R.string.settings; else -> R.string.catalog } }
+            // BUG-58-03: one shared size for the tab labels. When a label does not fit in one line, every label shrinks a
+            // step (down to NAV_LABEL_MIN): a wrapped «Хочу купити» pushed its icon above the others.
+            val navLabels = navigation.map { stringResource(navName(it.first)) }
+            var navScale by remember(navLabels, navColumns) { mutableFloatStateOf(1f) }
             if (!nested) Surface(color = MaterialTheme.colorScheme.surface) {
               Column {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -360,11 +367,12 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                   NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp,
                     windowInsets = WindowInsets(0, 0, 0, 0)) {
                   row.forEach { (screen, icon) ->
-                    val name = when (screen) { "daily" -> R.string.today_tab; "outfits" -> R.string.outfits; "shopping" -> R.string.shopping; "settings" -> R.string.settings; else -> R.string.catalog }
+                    val name = navName(screen)
                     NavigationBarItem(selected = route == screen || (nested && screen == when (route) { "look", "saved", "capsuledaily", "calendar", "capsules", "capsule" -> "outfits"; "wishdetail", "wishedit", "compatibility" -> "shopping"; "detail" -> if (detailReturn == "saved") "outfits" else "catalog"; "manage", "appearance" -> "settings"; else -> "catalog" }),
                         // The tab is the plain «Сьогодні»: an item chosen earlier in the statistics is not kept.
                         onClick = { if (screen == "daily") rotationAnchor = ""; navigate(screen) }, enabled = canNavigate, icon = { Icon(icon, null) },
-                        label = { Text(stringResource(name), maxLines = 2) },
+                        label = { NavLabel(stringResource(name), navScale) { measured ->
+                            if (navScale == measured && measured > NAV_LABEL_MIN) navScale = maxOf(NAV_LABEL_MIN, measured - 0.05f) } },
                         colors = NavigationBarItemDefaults.colors(selectedIconColor = MaterialTheme.colorScheme.primary,
                             selectedTextColor = MaterialTheme.colorScheme.primary, indicatorColor = MaterialTheme.colorScheme.primaryContainer,
                             unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant, unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant))
@@ -1080,4 +1088,21 @@ fun NameDialog(title: Int, field: Int, onDismiss: () -> Unit, onSave: (String) -
         text = { Field(name, { name = TextLimits.input(it, 80) }, field) },
         confirmButton = { TextButton(onClick = { onSave(name.trim()) }, enabled = TextLimits.hasVisibleText(name)) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } })
+}
+
+private const val NAV_LABEL_MIN = 0.7f
+
+/** BUG-58-03: a tab label on one line. It is drawn only once it fits (or at the smallest size), so no frame shows the
+ *  label wrapped or cut while the bar finds its size; `shrink` gets the scale this label was measured with. */
+@Composable
+private fun NavLabel(text: String, scale: Float, shrink: (Float) -> Unit) {
+    val style = LocalTextStyle.current
+    var overflowing by remember(text, scale) { mutableStateOf(true) }
+    Text(text, maxLines = 1, softWrap = false,
+        style = if (style.fontSize.isSpecified) style.copy(fontSize = style.fontSize * scale) else style,
+        modifier = Modifier.drawWithContent { if (!overflowing) drawContent() },
+        onTextLayout = { layout ->
+            overflowing = layout.hasVisualOverflow && scale > NAV_LABEL_MIN
+            if (overflowing) shrink(scale)
+        })
 }

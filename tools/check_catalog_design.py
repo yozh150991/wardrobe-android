@@ -13,6 +13,7 @@ source = root / 'app/src/main/java/com/familywardrobe/app'
 catalog = (source / 'ui/CatalogScreen.kt').read_text(encoding='utf-8')
 bar = (source / 'ui/WardrobeTopBar.kt').read_text(encoding='utf-8')
 ui = (source / 'ui/Ui.kt').read_text(encoding='utf-8')
+selection = (source / 'ui/SelectionControls.kt').read_text(encoding='utf-8')
 failures = []
 def check(condition, message):
     if not condition: failures.append(message)
@@ -45,6 +46,26 @@ check('Modifier.clearAndSetSemantics { }) } }' in catalog, 'the badge number is 
 check('horizontalScroll(rememberScrollState())' in catalog and 'R.string.browse_categories' in catalog,
       'categories scroll in one row and every category stays reachable')
 check('SubcategoryChoice(subcategory, subcategories, { subcategory = it })' in catalog, 'the subcategory stays')
+# BUG-58-01: in a sideways-scrolling row the width is unbounded; a weighted label got the button's minimum width and
+# wrapped one letter per line («Categories» stood as a column).
+choice = selection[selection.index('fun CategoryChoice('):selection.index('if (choosing) AlertDialog(')]
+compact = choice[choice.index('} else {'):]
+check('weight(' not in compact, 'the compact «Категорії» label has no weight (it sits in a scrolling row)')
+check('Text(stringResource(title), maxLines = 1, softWrap = false)' in compact, 'the compact «Категорії» label stays on one line')
+row = catalog[catalog.index('horizontalScroll(rememberScrollState())'):catalog.index('SubcategoryChoice(subcategory')]
+check('weight(' not in row, 'nothing in the category row is weighted')
+
+# BUG-58-03: a tab label wrapped to two lines («Хочу купити») and pushed its icon above the others. Labels stay on one
+# line and shrink together to fit.
+nav = ui[ui.index('bottomBar = {'):ui.index(') { padding ->', ui.index('bottomBar = {'))]
+label = ui[ui.index('private fun NavLabel('):] if 'private fun NavLabel(' in ui else ''
+check('maxLines = 2' not in nav and 'label = { NavLabel(stringResource(name), navScale)' in nav,
+      'tab labels are never two lines; they use the shared one-line label')
+check('var navScale by remember(navLabels, navColumns) { mutableFloatStateOf(1f) }' in nav and 'navScale == measured' in nav,
+      'all tab labels share one size, which shrinks one step at a time')
+check('maxLines = 1, softWrap = false' in label and 'layout.hasVisualOverflow' in label and 'drawWithContent { if (!overflowing) drawContent() }' in label,
+      'a tab label is measured on one line and shown only once it fits')
+check('private const val NAV_LABEL_MIN = 0.7f' in ui, 'labels shrink no further than 70 %')
 
 # The grid and «Додати річ».
 check('contentPadding = PaddingValues(top = 8.dp, bottom = 96.dp)' in catalog, 'the last row is not hidden under the add button')
@@ -55,6 +76,10 @@ card = catalog[catalog.index('private fun GarmentCard('):catalog.index('private 
 check('role = Role.Checkbox' in card and 'R.string.favorite' in card and 'R.string.wear_count' in card, 'a card keeps its selection role, favourite and wear count')
 check('if (wornToday) PhotoBadge(R.string.wear)' in card, 'worn today is a badge on the photo')
 check('aspectRatio(photoRatio)' in card, 'the photo is taller than wide as in the design')
+# BUG-58-02: the card clips to its shape; with the photo's 22 dp bottom corners the last text line lost its first letter.
+check('private val CardShape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp, bottomStart = 12.dp, bottomEnd = 12.dp)' in catalog
+      and 'shape = CardShape)' in card and 'clip(PhotoShape)' in card, 'the photo keeps its round corners, the card text is not cut by them')
+check('padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 4.dp)' in card, 'the card text ends above the bottom corners')
 
 # Strings in four locales with the same placeholders.
 res = root / 'app/src/main/res'

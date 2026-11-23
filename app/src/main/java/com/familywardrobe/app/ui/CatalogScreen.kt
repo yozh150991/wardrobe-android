@@ -236,7 +236,7 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
             }
             items(found, key = { it.id }) { g ->
                 val picked = selecting && g.id in selectedIds
-                Box(Modifier.border(if (picked) 3.dp else 0.dp, if (picked) MaterialTheme.colorScheme.primary else Color.Transparent, PhotoShape)) {
+                Box(Modifier.border(if (picked) 3.dp else 0.dp, if (picked) MaterialTheme.colorScheme.primary else Color.Transparent, CardShape)) {
                     GarmentCard(g, vm, wearCounts[g.id] ?: 0, s.wears.any { it.garmentId == g.id && it.date == today }, largeText,
                         photoRatio = if (largeText || columns == 2) 0.9f else 0.8f, categoryTitle = s.customCategory(g)?.name,
                         selection = if (selecting) g.id in selectedIds else null, enabled = !selecting || !busy) {
@@ -304,6 +304,9 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
 }
 
 private val PhotoShape = RoundedCornerShape(22.dp)
+// BUG-58-02: the card clips to its shape, and the photo's 22 dp bottom corners cut the first letter of the last text line.
+// The photo keeps PhotoShape; the card (its press ripple) has small bottom corners and the text ends above them.
+private val CardShape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp, bottomStart = 12.dp, bottomEnd = 12.dp)
 
 @Composable
 private fun ToolButton(icon: ImageVector, description: String, enabled: Boolean, selected: Boolean = false, onClick: () -> Unit) {
@@ -372,7 +375,7 @@ private fun GarmentCard(g: Garment, vm: WardrobeViewModel, wears: Int, wornToday
     // UI-03: the photo is the card: a rounded tile with the name and one line under it, no frame around them.
     Card(onClick = open, enabled = enabled, colors = CardDefaults.cardColors(containerColor = Color.Transparent,
             disabledContainerColor = Color.Transparent),
-        modifier = Modifier.semantics { if (selection != null) { role = Role.Checkbox; toggleableState = if (selection) ToggleableState.On else ToggleableState.Off } }, shape = PhotoShape) {
+        modifier = Modifier.semantics { if (selection != null) { role = Role.Checkbox; toggleableState = if (selection) ToggleableState.On else ToggleableState.Off } }, shape = CardShape) {
         Box(Modifier.fillMaxWidth().clip(PhotoShape)) {
             ZoomableItemPhoto(g.photoId, vm, Modifier.fillMaxWidth().aspectRatio(photoRatio), title = g.name, enabled = enabled && selection == null, garmentColour = g.color)
             FlowRow(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -381,7 +384,7 @@ private fun GarmentCard(g: Garment, vm: WardrobeViewModel, wears: Int, wornToday
                 if (wornToday) PhotoBadge(R.string.wear)
             }
         }
-        Column(Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(g.name, maxLines = if (largeText) Int.MAX_VALUE else 2, overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))

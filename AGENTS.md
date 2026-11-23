@@ -1,3 +1,16 @@
+## Current handoff — BUG-58 category button, card text, tab labels, 22 November 2026
+
+0.14.58-ui-fixes/code 88, Room 11 and backup formats unchanged. Read docs/releases/UI-FIXES-0.14.58.md. The first
+device-found bug after the redesign: the category row scrolls sideways (unbounded width), so nothing inside it may use
+`Modifier.weight` — CategoryChoice's compact label wrapped one letter per line. The garment card clips to its shape:
+its bottom corners (CardShape, 12 dp) must stay smaller than the photo's (PhotoShape, 22 dp), and the text keeps 4 dp
+bottom padding. Tab labels (Ui.kt NavLabel) are one line; all share navScale, which shrinks in 5 % steps to
+NAV_LABEL_MIN (70 %) until the longest fits — never `maxLines = 2` again (it lifted the icon). tools/check_catalog_design.py
+guards all three. The bug-fix phase has started: fix what the user finds on the phone, one small PR each.
+**CI lesson:** the push run checks the version against the branch's previous push (VERSION_BASE_SHA = `before`). Once a
+branch is pushed, never rename versionName with the same code (0.14.58-catalog-fix → -ui-fixes failed) and never change
+the code alone; pick the final name before the first push, or bump both.
+
 ## Current handoff — TREND-01 seasonal trends, 20 November 2026
 
 0.14.57-trends/code 87, Room 11 and backup formats unchanged. Read docs/releases/TRENDS-0.14.57.md. Branched from main
