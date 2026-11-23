@@ -25,6 +25,11 @@ UPDATED = {
                          'Your session has ended. Sign in to the same account to continue.', None),
     # Found by the extended TXT-03 guard: «Ти вийшов» is gendered.
     'family_member_left': ('Спільний гардероб залишено.', None, None),
+    'wish_product_hint': ('Обери категорію. Назва, ціна та інші деталі необов’язкові.',
+                          'Choose a category. The name, price and other details are optional.',
+                          'Wybierz kategorię. Nazwa, cena oraz inne szczegóły są opcjonalne.'),
+    # QA-61-27: the tab's name, quoted like every other label in running text.
+    'source_mixed': ('Гардероб і «Хочу купити»', 'Wardrobe and “Want to buy”', 'Garderoba i „Chcę kupić”'),
     # QA-61-04: the form still needs a photo, so the entry says what it is.
     'shop_manual': ('Заповнити вручну', 'Fill in manually', 'Wypełnij ręcznie'),
     # QA-61-05: invitations exist since 0.14.6 and sending changes is automatic since 0.14.23.
@@ -52,6 +57,24 @@ ADDED = {
     'worn_today_badge': ('Вдягнено сьогодні', 'Worn today', 'Noszone dziś'),
     # QA-61-04: the photo is required like the category.
     'item_photo_required': ('Фото *', 'Photo *', 'Zdjęcie *'),
+    # QA-61-25: profile sections; backups and family sharing have their own screens.
+    'settings_wardrobes': ('Гардероби', 'Wardrobes', 'Garderoby'),
+    'settings_backups': ('Резервні копії', 'Backups', 'Kopie zapasowe'),
+    'settings_backups_hint': ('Створити копію або відновити з неї дані', 'Make a copy or restore your data from one',
+                              'Utwórz kopię lub przywróć z niej dane'),
+    'settings_family': ('Сімейний доступ', 'Family sharing', 'Udostępnianie rodzinie'),
+    'settings_family_hint': ('Спільні гардероби й запрошення', 'Shared wardrobes and invitations', 'Wspólne garderoby i zaproszenia'),
+    # The old «Версія 0.11.0 · Повні сценарії» was never updated; the real version comes from the package.
+    'app_version': ('Версія %1$s', 'Version %1$s', 'Wersja %1$s'),
+    # QA-61-25: «Сьогодні» offers the forecast when no city is chosen (in November it showed «Будь-яка погода»).
+    'weather_hint_title': ('Підбір за погодою', 'Outfits for the weather', 'Zestawy na pogodę'),
+    'weather_hint_text': ('Обери своє місто, і образи підбиратимуться за прогнозом: холод, тепло, дощ. Місто одне для всіх гардеробів.',
+                          'Choose your city and outfits will follow the forecast: cold, warmth, rain. One city for all your wardrobes.',
+                          'Wybierz swoje miasto, a zestawy będą dobierane według prognozy: zimno, ciepło, deszcz. Jedno miasto dla wszystkich garderób.'),
+    'not_now': ('Не зараз', 'Not now', 'Nie teraz'),
+    # QA-61-27: the wish name is optional like the item name, and the auto name is announced the same way.
+    'wish_name_auto': ('Без назви бажання називатиметься «%1$s».', 'Without a name the wish is called “%1$s”.',
+                       'Bez nazwy życzenie będzie się nazywać „%1$s”.'),
     # QA-61-06: two wardrobes with one name cannot be told apart in the switcher.
     'wardrobe_name_taken': ('Гардероб із такою назвою вже є.', 'A wardrobe with this name already exists.',
                             'Garderoba o tej nazwie już istnieje.'),

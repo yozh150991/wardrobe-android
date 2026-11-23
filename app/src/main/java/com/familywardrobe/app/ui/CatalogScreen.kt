@@ -183,7 +183,8 @@ fun Catalog(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: String,
                             }
                             if (!selecting) ToolButton(Icons.Outlined.Add, stringResource(R.string.add_item), !busy, selected = true,
                                 modifier = Modifier.testTag("catalog-add"), onClick = onAddMethods)
-                            ToolButton(if (selecting) Icons.Outlined.Done else Icons.Outlined.Checklist,
+                            // QA-61-28: leaving the selection is a close (✕), not a confirming tick.
+                            ToolButton(if (selecting) Icons.Outlined.Close else Icons.Outlined.Checklist,
                                 stringResource(if (selecting) R.string.bulk_finish else R.string.bulk_select), !busy, selected = selecting) {
                                 selecting = !selecting; selectedIds = emptyList() }
                             ToolButton(Icons.Outlined.BarChart, stringResource(R.string.statistics_title), !busy, onClick = onStatistics)

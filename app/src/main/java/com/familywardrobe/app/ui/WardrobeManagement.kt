@@ -24,7 +24,7 @@ import com.familywardrobe.app.rules.WardrobeNameRules
 fun Wardrobe.displayName(): String = if (usesDefaultName) stringResource(R.string.my_wardrobe) else name
 
 @Composable
-fun ManageWardrobes(snapshot: Snapshot, activeId: String, vm: WardrobeViewModel, open: (String) -> Unit) {
+fun ManageWardrobes(snapshot: Snapshot, activeId: String, vm: WardrobeViewModel, onNew: () -> Unit, open: (String) -> Unit) {
     val busy by vm.busy.collectAsStateWithLifecycle()
     var renameId by rememberSaveable { mutableStateOf("") }
     var editedName by rememberSaveable { mutableStateOf("") }
@@ -37,6 +37,10 @@ fun ManageWardrobes(snapshot: Snapshot, activeId: String, vm: WardrobeViewModel,
             Text(stringResource(R.string.wardrobe_total, snapshot.wardrobes.size), style = MaterialTheme.typography.titleMedium)
             Text(stringResource(R.string.manage_wardrobes_hint))
             if (!canDelete) Text(stringResource(R.string.keep_one_wardrobe))
+            // QA-61-25: «Новий гардероб» moved here from the profile list (it is also in the wardrobe menu).
+            Button(onClick = onNew, enabled = !busy, modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 48.dp)) {
+                Text(stringResource(R.string.new_wardrobe))
+            }
         }
         items(snapshot.wardrobes, key = { it.id }) { w ->
             val title = w.displayName()

@@ -312,7 +312,7 @@
     <string name="wish_requirements">Requirements (optional)</string>
     <string name="wish_budget">Budget (optional)</string>
     <string name="found_candidate_hint">Add the product you found. The original need, requirements and budget will be kept.</string>
-    <string name="wish_product_hint">Save a name and category. Price and other details are optional.</string>
+    <string name="wish_product_hint">Choose a category. The name, price and other details are optional.</string>
     <string name="wish_need_hint">Describe what is missing. Add a product to this need when you find one.</string>
     <string name="wish_photo_optional">Add / replace photo (optional)</string>
     <string name="remove_photo">Remove photo</string>
@@ -333,7 +333,7 @@
     <string name="look_weather_hint">Choose manually — no location access needed.</string>
     <string name="look_source">Where should the items come from?</string>
     <string name="source_owned">Only my wardrobe</string>
-    <string name="source_mixed">Wardrobe + want to buy</string>
+    <string name="source_mixed">Wardrobe and “Want to buy”</string>
     <string name="source_inspiration">General inspiration</string>
     <string name="look_owned_hint">Only your currently available clothes.</string>
     <string name="look_mixed_hint">Owned clothes and saved wishes with ownership labels.</string>
@@ -1530,4 +1530,14 @@ Your current wardrobe is unchanged.</string>
     <string name="worn_today_badge">Worn today</string>
     <string name="item_photo_required">Photo *</string>
     <string name="wardrobe_name_taken">A wardrobe with this name already exists.</string>
+    <string name="settings_wardrobes">Wardrobes</string>
+    <string name="settings_backups">Backups</string>
+    <string name="settings_backups_hint">Make a copy or restore your data from one</string>
+    <string name="settings_family">Family sharing</string>
+    <string name="settings_family_hint">Shared wardrobes and invitations</string>
+    <string name="app_version">Version %1$s</string>
+    <string name="weather_hint_title">Outfits for the weather</string>
+    <string name="weather_hint_text">Choose your city and outfits will follow the forecast: cold, warmth, rain. One city for all your wardrobes.</string>
+    <string name="not_now">Not now</string>
+    <string name="wish_name_auto">Without a name the wish is called “%1$s”.</string>
 </resources>

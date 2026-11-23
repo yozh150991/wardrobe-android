@@ -1,3 +1,16 @@
+## Current handoff — QA-62 fixes from the exploratory test, 23 November 2026
+
+0.14.62-qa-fixes/code 92, Room 11 and backup formats unchanged. Read docs/releases/QA-FIXES-0.14.62.md and
+QA-EXPLORATORY-0.14.61.md. Branch fix/qa-0.14.62 from main after PR #62; PR #63. **Open: QA-61-30** — every gallery
+photo ends in «Обробка не завершилася; точна причина невідома». The user's logcat showed ML Kit loading and running, so
+the failure is after segmentation; PhotoAnalyzer now logs the stage (tag WardrobePhoto) and PhotoCutoutRules.describe
+the refused mask. Ask for `adb logcat -d -s WardrobePhoto` from this build before changing the mask rules. The camera
+shot is written to the editor draft before the camera opens (startCapture) and imported after a restore
+(PhotoStore.captureReady). Wardrobe names are unique (WardrobeNameRules, also in the repository). The profile is a list
+of SettingsRow; backups and family sharing are routes "backups" and "family". The weather city was already per account
+(prefs "weather" in the account context). Strings: tools/qa_fixes_strings.py (idempotent). Guards:
+tools/check_qa_fixes.py (49 host suites). Computer use on the phone was not available at the end of this session.
+
 ## Current handoff — BUG-61 item page, TXT-01–08 texts, LOOK-07–10 controls, DEV-05 tour, 23 November 2026
 
 0.14.61-consistency/code 91, Room 11 and backup formats unchanged. Read docs/releases/CONSISTENCY-0.14.61.md. Stacked on

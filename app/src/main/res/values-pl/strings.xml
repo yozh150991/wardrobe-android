@@ -312,7 +312,7 @@
     <string name="wish_requirements">Wymagania (opcjonalnie)</string>
     <string name="wish_budget">Budżet (opcjonalnie)</string>
     <string name="found_candidate_hint">Dodaj znaleziony produkt. Pierwotna potrzeba, wymagania i budżet zostaną zachowane.</string>
-    <string name="wish_product_hint">Zapisz nazwę i kategorię. Cena oraz dodatkowe szczegóły są opcjonalne.</string>
+    <string name="wish_product_hint">Wybierz kategorię. Nazwa, cena oraz inne szczegóły są opcjonalne.</string>
     <string name="wish_need_hint">Opisz, czego brakuje. Gdy znajdziesz produkt, dodasz go do tej potrzeby.</string>
     <string name="wish_photo_optional">Dodaj / zmień zdjęcie (opcjonalnie)</string>
     <string name="remove_photo">Usuń zdjęcie</string>
@@ -333,7 +333,7 @@
     <string name="look_weather_hint">Wybierz ręcznie — dostęp do lokalizacji nie jest potrzebny.</string>
     <string name="look_source">Skąd wybieramy rzeczy?</string>
     <string name="source_owned">Tylko moja garderoba</string>
-    <string name="source_mixed">Garderoba + chcę kupić</string>
+    <string name="source_mixed">Garderoba i „Chcę kupić”</string>
     <string name="source_inspiration">Ogólna inspiracja</string>
     <string name="look_owned_hint">Tylko Twoje dostępne ubrania.</string>
     <string name="look_mixed_hint">Twoje ubrania i zapisane życzenia z oznaczeniem własności.</string>
@@ -1530,4 +1530,14 @@ Obecna garderoba pozostała bez zmian.</string>
     <string name="worn_today_badge">Noszone dziś</string>
     <string name="item_photo_required">Zdjęcie *</string>
     <string name="wardrobe_name_taken">Garderoba o tej nazwie już istnieje.</string>
+    <string name="settings_wardrobes">Garderoby</string>
+    <string name="settings_backups">Kopie zapasowe</string>
+    <string name="settings_backups_hint">Utwórz kopię lub przywróć z niej dane</string>
+    <string name="settings_family">Udostępnianie rodzinie</string>
+    <string name="settings_family_hint">Wspólne garderoby i zaproszenia</string>
+    <string name="app_version">Wersja %1$s</string>
+    <string name="weather_hint_title">Zestawy na pogodę</string>
+    <string name="weather_hint_text">Wybierz swoje miasto, a zestawy będą dobierane według prognozy: zimno, ciepło, deszcz. Jedno miasto dla wszystkich garderób.</string>
+    <string name="not_now">Nie teraz</string>
+    <string name="wish_name_auto">Bez nazwy życzenie będzie się nazywać „%1$s”.</string>
 </resources>

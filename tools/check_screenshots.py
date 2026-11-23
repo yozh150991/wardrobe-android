@@ -36,7 +36,7 @@ check('performScrollToIndex(6); shot(config, "2b-wardrobe-scrolled")' in tour an
       'the tour also captures the scrolled catalog with the round «+» (LOOK-05)')
 # DEV-05: the rest of the screens, each one skippable but logged, and the app edge-to-edge like MainActivity.
 extras = ['6b-item-actions', '2c-statistics', '3b-wish', '4b-outfit', '4c-calendar', '4d-capsules', '5b-profile-scrolled',
-          '5c-preferences', '5d-appearance', '7-new-item']
+          '5c-preferences', '5d-appearance', '5e-wardrobes', '5f-backups', '5g-family', '7-new-item']
 extra_positions = [tour.find(f'extra(config, "{name}")') for name in extras]
 check(all(p > 0 for p in extra_positions) and extra_positions == sorted(extra_positions) and extra_positions[0] > positions[5],
       'the tour goes on to the nested screens after the item page')
@@ -98,4 +98,4 @@ if failures:
     for message in failures:
         print(f'FAIL: {message}')
     sys.exit(1)
-print('Screenshot tour: four configurations, seven main screens + ten more, edge-to-edge, tags, debug-only activity, CI collection, decoder — pass')
+print('Screenshot tour: four configurations, seven main screens + 13 more, edge-to-edge, tags, debug-only activity, CI collection, decoder — pass')

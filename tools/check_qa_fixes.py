@@ -128,6 +128,44 @@ check(locales['values-uk'].get('style_mixed') == 'Стилі змішані: %1$
 for key in ('draft_restored', 'auth_reauth_hint', 'family_member_left'):
     check('зупинився' not in locales['values-uk'][key] and 'вийшов' not in locales['values-uk'][key], f'QA-61-19: {key} is gender-neutral')
 
+# QA-61-25: the profile is a list of sections; backups and family sharing have their own screens; signing out is last.
+settings = ui.split('\nfun Settings(', 1)[1].split('\nprivate fun SettingsRow(', 1)[0]
+for title in ('R.string.appearance', 'R.string.language', 'R.string.prefs_open', 'R.string.settings_weather', 'R.string.settings_wardrobes',
+              'R.string.settings_backups', 'R.string.settings_family'):
+    check(f'SettingsRow(Icons.Outlined.' in settings and title + ',' in settings, f'QA-61-25: the profile has a {title} row')
+for moved in ('BackupHealthPanel(', 'FamilyTransferControl(', 'FamilyAccessControl(', 'R.string.import_backup', 'onNewWardrobe'):
+    check(moved not in settings, f'QA-61-25: {moved} is no longer in the profile list')
+check(settings.index('R.string.settings_family') < settings.index('R.string.auth_sign_out') < settings.index('AccountDeletionControl('),
+      'QA-61-25: «Вийти з акаунта» comes after the sections')
+check('"backups" -> BackupSettings(vm)' in ui and '"family" -> FamilySettings(vm)' in ui, 'QA-61-25: the two new screens are routed')
+check('"manage", "appearance", "backups", "family" -> "settings"' in ui, 'QA-61-25: the profile tab stays selected on them')
+backups = ui.split('fun BackupSettings(', 1)[1][:1500]
+check('BackupHealthPanel(' in backups and 'SingleWardrobeBackupControl(vm)' in backups and 'R.string.import_backup' in backups,
+      'QA-61-25: backups, one-wardrobe copy and restore are on the backup screen')
+family_screen = ui.split('fun FamilySettings(', 1)[1][:600]
+check('FamilyAccessControl(vm)' in family_screen and 'FamilyTransferControl(vm)' in family_screen, 'QA-61-25: family sharing has its screen')
+check('Button(onClick = onNew' in management, 'QA-61-25: «Новий гардероб» is on the wardrobes screen')
+check('R.string.app_version, version' in settings and 'getPackageInfo(context.packageName, 0).versionName' in settings,
+      'the profile shows the real app version (the old text said 0.11.0)')
+
+# QA-61-25: one weather city per account, and «Сьогодні» offers it when none is chosen.
+weather, daily = read('outfits/Weather.kt'), read('ui/DailyScreen.kt')
+check('WeatherController(accountContext, viewModelScope)' in vmodel and 'getSharedPreferences("weather", 0)' in weather,
+      'QA-61-25: the city is kept for the account, not per wardrobe')
+check('if (weatherCity == null && !cityHintClosed) OutlinedCard(' in daily and 'onClick = vm.weather::closeHint' in daily
+      and 'if (choosingCity) CityDialog(vm.weather)' in daily, 'QA-61-25: a card on «Сьогодні» offers a city, once')
+check('prefs.edit().putBoolean("hint_closed", true)' in weather, 'QA-61-25: «Не зараз» is remembered')
+
+# QA-61-27: the wish name is optional; the add-wish dialog has three equal answers and «Скасувати».
+check('val effectiveName = ItemNameRules.effective(name, autoName)' in wishes and 'copy(name = effectiveName' in wishes
+      and 'R.string.item_name_optional' in wishes and 'R.string.name_required' not in wishes, 'QA-61-27: the wish name is optional')
+dialog = wishes.split('if (choosing) AlertDialog(', 1)[1][:1400]
+check(dialog.count('OutlinedButton(') == 3 and 'R.string.cancel' in dialog, 'QA-61-27: three answers in one style and «Скасувати»')
+check(locales['values-uk'].get('source_mixed') == 'Гардероб і «Хочу купити»', 'QA-61-27: the tab name is quoted')
+
+# QA-61-28: leaving the selection is a close.
+check('if (selecting) Icons.Outlined.Close else Icons.Outlined.Checklist' in catalog, 'QA-61-28: selection closes with ✕')
+
 java = shutil.which('java')
 if not java:
     failures.append('Java 17 with jdk.compiler required')
@@ -144,5 +182,5 @@ else:
 
 if failures:
     raise SystemExit('FAIL qa-fixes guards:\n  - ' + '\n  - '.join(failures))
-print('PASS qa-fixes guards (QA-61-01…11, 17–19, 30): camera shot kept, card photo opens the item, form errors in place, '
+print('PASS qa-fixes guards (QA-61-01…11, 17–19, 25, 27, 28, 30): profile sections, city card, optional wish name, camera shot kept, card photo opens the item, form errors in place, '
       'unique wardrobe names, state badge, copy and shop defaults, leaving a form, photo diagnostics in logcat')

@@ -312,7 +312,7 @@
     <string name="wish_requirements">Вимоги (необов’язково)</string>
     <string name="wish_budget">Бюджет (необов’язково)</string>
     <string name="found_candidate_hint">Додай знайдений товар. Початкова потреба, вимоги й бюджет збережуться.</string>
-    <string name="wish_product_hint">Збережи назву й категорію. Ціна та додаткові деталі необов’язкові.</string>
+    <string name="wish_product_hint">Обери категорію. Назва, ціна та інші деталі необов’язкові.</string>
     <string name="wish_need_hint">Опиши те, чого бракує. Коли знайдеш товар, додаси його до цієї потреби.</string>
     <string name="wish_photo_optional">Додати / замінити фото (необов’язково)</string>
     <string name="remove_photo">Прибрати фото</string>
@@ -333,7 +333,7 @@
     <string name="look_weather_hint">Обери вручну — доступ до геолокації не потрібен.</string>
     <string name="look_source">Звідки беремо речі?</string>
     <string name="source_owned">Лише мій гардероб</string>
-    <string name="source_mixed">Гардероб + хочу купити</string>
+    <string name="source_mixed">Гардероб і «Хочу купити»</string>
     <string name="source_inspiration">Загальне натхнення</string>
     <string name="look_owned_hint">Лише власні речі, доступні зараз.</string>
     <string name="look_mixed_hint">Власні речі та збережені бажання з позначками власності.</string>
@@ -1530,4 +1530,14 @@
     <string name="worn_today_badge">Вдягнено сьогодні</string>
     <string name="item_photo_required">Фото *</string>
     <string name="wardrobe_name_taken">Гардероб із такою назвою вже є.</string>
+    <string name="settings_wardrobes">Гардероби</string>
+    <string name="settings_backups">Резервні копії</string>
+    <string name="settings_backups_hint">Створити копію або відновити з неї дані</string>
+    <string name="settings_family">Сімейний доступ</string>
+    <string name="settings_family_hint">Спільні гардероби й запрошення</string>
+    <string name="app_version">Версія %1$s</string>
+    <string name="weather_hint_title">Підбір за погодою</string>
+    <string name="weather_hint_text">Обери своє місто, і образи підбиратимуться за прогнозом: холод, тепло, дощ. Місто одне для всіх гардеробів.</string>
+    <string name="not_now">Не зараз</string>
+    <string name="wish_name_auto">Без назви бажання називатиметься «%1$s».</string>
 </resources>

@@ -40,6 +40,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
@@ -231,7 +232,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
             if (route == "daily" && returnStack.isEmpty() && snapshot.garments.none { it.wardrobeId == current.id }) { route = "catalog"; entryKey = "catalog" }
         }
     }
-    val nested = route in setOf("detail", "edit", "look", "saved", "manage", "appearance", "wishdetail", "wishedit", "batch", "importedit", "calendar", "statistics", "capsules", "capsule", "capsuledaily", "compatibility", "shop", "reprocess")
+    val nested = route in setOf("detail", "edit", "look", "saved", "manage", "appearance", "wishdetail", "wishedit", "batch", "importedit", "calendar", "statistics", "capsules", "capsule", "capsuledaily", "compatibility", "shop", "reprocess", "backups", "family")
     // UX-04 (0.14.43): «Сьогодні» is a tab of its own and the app opens on it.
     val roots = setOf("daily", "catalog", "shopping", "outfits", "settings")
     fun frame(): String = JSONObject().put("route", route).put("key", entryKey)
@@ -323,7 +324,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
         "look" -> if (lookSetup) R.string.look_setup else R.string.outfit_builder;
         "wishdetail" -> R.string.wish_details; "wishedit" -> if (convertingWish) R.string.found_candidate else R.string.add_wish; "saved", "outfits" -> R.string.outfits
         "shopping" -> R.string.shopping; "settings" -> R.string.settings; "manage" -> R.string.manage_wardrobes
-        "appearance" -> R.string.appearance; else -> R.string.my_wardrobe
+        "appearance" -> R.string.appearance; "backups" -> R.string.settings_backups; "family" -> R.string.settings_family; else -> R.string.my_wardrobe
     }
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
@@ -370,7 +371,7 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                     windowInsets = WindowInsets(0, 0, 0, 0)) {
                   row.forEach { (screen, icon) ->
                     val name = navName(screen)
-                    NavigationBarItem(selected = route == screen || (nested && screen == when (route) { "look", "saved", "capsuledaily", "calendar", "capsules", "capsule" -> "outfits"; "wishdetail", "wishedit", "compatibility" -> "shopping"; "detail" -> if (detailReturn == "saved") "outfits" else "catalog"; "manage", "appearance" -> "settings"; else -> "catalog" }),
+                    NavigationBarItem(selected = route == screen || (nested && screen == when (route) { "look", "saved", "capsuledaily", "calendar", "capsules", "capsule" -> "outfits"; "wishdetail", "wishedit", "compatibility" -> "shopping"; "detail" -> if (detailReturn == "saved") "outfits" else "catalog"; "manage", "appearance", "backups", "family" -> "settings"; else -> "catalog" }),
                         // The tab is the plain «Сьогодні»: an item chosen earlier in the statistics is not kept.
                         onClick = { if (screen == "daily") rotationAnchor = ""; navigate(screen) }, enabled = canNavigate, icon = { Icon(icon, null) },
                         modifier = Modifier.testTag("nav-$screen"),
@@ -504,10 +505,13 @@ fun WardrobeApp(vm: WardrobeViewModel, appearance: AppearanceViewModel, accountE
                     if (wish.ownedId.isBlank()) { wishId = wish.id; navigate("wishdetail") }
                     else { selected = wish.ownedId; navigate("detail") }
                 })
-                "settings" -> Settings(vm, appearance, accountEmail, onSignOut, onNewWardrobe = { newWardrobe = true }, onManageWardrobes = { go("manage") }, onAppearance = { go("appearance") },
+                "settings" -> Settings(vm, appearance, accountEmail, onSignOut, onManageWardrobes = { go("manage") }, onAppearance = { go("appearance") },
+                    onBackups = { go("backups") }, onFamily = { go("family") },
                     onAccountDeleted = onAccountDeleted, snapshot = snapshot, wardrobe = current.id, today = today)
                 "appearance" -> AppearanceScreen(appearance, onBrowse = { go("catalog") })
-                "manage" -> ManageWardrobes(snapshot, current.id, vm) { id ->
+                "backups" -> BackupSettings(vm)
+                "family" -> FamilySettings(vm)
+                "manage" -> ManageWardrobes(snapshot, current.id, vm, onNew = { newWardrobe = true }) { id ->
                     vm.select(id); go("catalog"); requestedCategory = ""
                 }
             } }
@@ -971,76 +975,53 @@ fun SavedOutfit(outfit: Outfit, s: Snapshot, vm: WardrobeViewModel, today: Strin
 }
 
 @Composable
-fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEmail: String, onSignOut: () -> Unit, onNewWardrobe: () -> Unit, onManageWardrobes: () -> Unit, onAppearance: () -> Unit,
+fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEmail: String, onSignOut: () -> Unit, onManageWardrobes: () -> Unit, onAppearance: () -> Unit,
+    onBackups: () -> Unit, onFamily: () -> Unit,
     onAccountDeleted: () -> Unit = {}, snapshot: Snapshot? = null, wardrobe: String = "", today: String = LocalDate.now().toString()) {
     val busy by vm.busy.collectAsStateWithLifecycle()
     val appearance by appearanceVm.appearance.collectAsStateWithLifecycle()
+    val city by vm.weather.city.collectAsStateWithLifecycle()
     var signOutDialog by remember { mutableStateOf(false) }
     // UX-14: the preferences and the weather's city were reachable only through the weather chip on «Сьогодні».
     var preferencesOpen by rememberSaveable { mutableStateOf(false) }
     var weatherOpen by rememberSaveable { mutableStateOf(false) }
     var languageMenu by remember { mutableStateOf(false) }
-    val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri -> if (uri != null) vm.export(uri) }
-    val restore = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.previewRestore(uri) }
     val selectedLanguage = AppCompatDelegate.getApplicationLocales().toLanguageTags()
     val languageNames = mapOf("" to stringResource(R.string.system_language), "uk" to "Українська", "en" to "English", "pl" to "Polski")
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    val context = LocalContext.current
+    val version = remember { runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull().orEmpty() }
+    // QA-61-25: a short list of sections. Backups and family sharing have their own screens; signing out is at the end.
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(stringResource(R.string.auth_account), style = MaterialTheme.typography.titleMedium)
         Text(accountEmail)
         CloudSyncPanel(vm)
-        OutlinedButton(onClick = { signOutDialog = true }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.auth_sign_out))
-        }
         HorizontalDivider()
-        Card(onClick = onAppearance, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Icon(Icons.Outlined.Palette, null, tint = MaterialTheme.colorScheme.primary)
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.appearance), style = MaterialTheme.typography.titleMedium)
-                    Text("${stringResource((appearance ?: AppearanceSettings()).palette.title)} · ${stringResource((appearance ?: AppearanceSettings()).mode.title)}",
-                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Icon(Icons.Outlined.ChevronRight, null)
-            }
-        }
+        SettingsRow(Icons.Outlined.Palette, R.string.appearance,
+            "${stringResource((appearance ?: AppearanceSettings()).palette.title)} · ${stringResource((appearance ?: AppearanceSettings()).mode.title)}", onAppearance)
         Box {
-            OutlinedButton(onClick = { languageMenu = true }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-                Text("${stringResource(R.string.language)}: ${languageNames[selectedLanguage] ?: selectedLanguage}")
-            }
+            SettingsRow(Icons.Outlined.Language, R.string.language, languageNames[selectedLanguage] ?: selectedLanguage, { languageMenu = true }, enabled = !busy)
             DropdownMenu(languageMenu, onDismissRequest = { languageMenu = false }) {
                 languageNames.forEach { (code, name) -> DropdownMenuItem(text = { Text(name) }, onClick = {
                     languageMenu = false; AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(code))
                 }) }
             }
         }
-        if (snapshot != null && wardrobe.isNotEmpty()) {
-            HorizontalDivider()
-            Text(stringResource(R.string.settings_suggestions), style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(R.string.settings_suggestions_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            OutlinedButton(onClick = { preferencesOpen = true }, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.prefs_open)) }
-            OutlinedButton(onClick = { weatherOpen = true }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.settings_weather)) }
-            HorizontalDivider()
+        if (snapshot != null && wardrobe.isNotEmpty())
+            SettingsRow(Icons.Outlined.Tune, R.string.prefs_open, stringResource(R.string.settings_suggestions_hint), { preferencesOpen = true }, enabled = !busy)
+        // One city for the whole account (the weather is not kept per wardrobe).
+        SettingsRow(Icons.Outlined.WbSunny, R.string.settings_weather, city?.name ?: stringResource(R.string.weather_no_city), { weatherOpen = true },
+            tag = "settings-weather")
+        SettingsRow(Icons.Outlined.Checkroom, R.string.settings_wardrobes,
+            stringResource(R.string.wardrobe_total, snapshot?.wardrobes?.size ?: 0), onManageWardrobes, enabled = !busy, tag = "settings-wardrobes")
+        SettingsRow(Icons.Outlined.Backup, R.string.settings_backups, stringResource(R.string.settings_backups_hint), onBackups, tag = "settings-backups")
+        SettingsRow(Icons.Outlined.Groups, R.string.settings_family, stringResource(R.string.settings_family_hint), onFamily, tag = "settings-family")
+        HorizontalDivider()
+        OutlinedButton(onClick = { signOutDialog = true }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            Text(stringResource(R.string.auth_sign_out))
         }
-        OutlinedButton(onClick = onNewWardrobe, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.new_wardrobe)) }
-        OutlinedButton(onClick = onManageWardrobes, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.manage_wardrobes)) }
-        HorizontalDivider()
-        Text(stringResource(R.string.backup), style = MaterialTheme.typography.titleLarge)
-        BackupHealthPanel(vm, createNow = { export.launch("wardrobe-${LocalDate.now()}.zip") })
-        SingleWardrobeBackupControl(vm)
-        HorizontalDivider()
-        FamilyTransferControl(vm)
-        FamilyAccessControl(vm)
-        HorizontalDivider()
-        OutlinedButton(onClick = { restore.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.import_backup))
-        }
-        HorizontalDivider()
-        Text(stringResource(R.string.local_version), style = MaterialTheme.typography.titleMedium)
-        Text(stringResource(R.string.local_notice), style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
-        HorizontalDivider()
         AccountDeletionControl(vm, accountEmail, onAccountDeleted)
+        if (version.isNotEmpty()) Text(stringResource(R.string.app_version, version), style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     if (preferencesOpen && snapshot != null) PreferencesDialog(snapshot, wardrobe, vm, today) { preferencesOpen = false }
     if (weatherOpen) AlertDialog(onDismissRequest = { weatherOpen = false }, title = { Text(stringResource(R.string.settings_weather)) },
@@ -1051,7 +1032,51 @@ fun Settings(vm: WardrobeViewModel, appearanceVm: AppearanceViewModel, accountEm
         text = { Text(stringResource(R.string.auth_logout_hint)) },
         confirmButton = { TextButton(onClick = { signOutDialog = false; onSignOut() }, enabled = !busy) { Text(stringResource(R.string.auth_sign_out)) } },
         dismissButton = { TextButton(onClick = { signOutDialog = false }) { Text(stringResource(R.string.cancel)) } })
+}
 
+/** One section of the profile: an icon, a title, what is set now, and an arrow to its screen or dialog. */
+@Composable
+private fun SettingsRow(icon: ImageVector, title: Int, subtitle: String, onClick: () -> Unit, enabled: Boolean = true, tag: String? = null) {
+    Card(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().then(if (tag != null) Modifier.testTag(tag) else Modifier),
+        shape = MaterialTheme.shapes.medium, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface,
+            disabledContainerColor = MaterialTheme.colorScheme.surface)) {
+        Row(Modifier.heightIn(min = 56.dp).padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
+                if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Icon(Icons.Outlined.ChevronRight, null)
+        }
+    }
+}
+
+/** QA-61-25: backups and restoring, moved out of the profile list. */
+@Composable
+fun BackupSettings(vm: WardrobeViewModel) {
+    val busy by vm.busy.collectAsStateWithLifecycle()
+    val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri -> if (uri != null) vm.export(uri) }
+    val restore = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.previewRestore(uri) }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        BackupHealthPanel(vm, createNow = { export.launch("wardrobe-${LocalDate.now()}.zip") })
+        SingleWardrobeBackupControl(vm)
+        HorizontalDivider()
+        OutlinedButton(onClick = { restore.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")) }, enabled = !busy,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            Text(stringResource(R.string.import_backup))
+        }
+        Text(stringResource(R.string.local_notice), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** QA-61-25: the family transfer and shared wardrobes, moved out of the profile list. */
+@Composable
+fun FamilySettings(vm: WardrobeViewModel) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        FamilyAccessControl(vm)
+        HorizontalDivider()
+        FamilyTransferControl(vm)
+    }
 }
 
 // Shared editors supply their isolated photo store to all reused canvas/picker/detail components.

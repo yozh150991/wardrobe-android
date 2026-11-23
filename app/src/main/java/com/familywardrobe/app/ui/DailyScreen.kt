@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -89,6 +90,9 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
     val refresh by vm.recommendationRefresh.collectAsStateWithLifecycle()
     val weatherEnabled by vm.weather.enabled.collectAsStateWithLifecycle()
     val forecast by vm.weather.forecast.collectAsStateWithLifecycle()
+    val weatherCity by vm.weather.city.collectAsStateWithLifecycle()
+    val cityHintClosed by vm.weather.hintClosed.collectAsStateWithLifecycle()
+    var choosingCity by rememberSaveable { mutableStateOf(false) }
     // PERS-02: the person's choices for this wardrobe; the forecast is shifted to how they feel it (never a manual choice).
     val choiceRevision by vm.personalChoices.revision.collectAsStateWithLifecycle()
     val choices = remember(wardrobe, choiceRevision) { vm.personalChoices.read(wardrobe) }
@@ -302,6 +306,17 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
                     stringResource(label(forecastWeather)), stringResource(label(weather))), style = MaterialTheme.typography.bodySmall)
                 if (WeatherRules.outerwear(weather, temperature) && s.garments.none { it.wardrobeId == wardrobe && it.category == "outerwear" && WardrobeRules.ready(it.rulePiece()) })
                     Text(stringResource(R.string.daily_no_outerwear), style = MaterialTheme.typography.bodySmall)
+                // QA-61-25: without a city the outfits ignore the season's weather; say so once, with the way to fix it.
+                if (weatherCity == null && !cityHintClosed) OutlinedCard(Modifier.fillMaxWidth().testTag("daily-city-hint")) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(stringResource(R.string.weather_hint_title), style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.weather_hint_text), style = MaterialTheme.typography.bodySmall)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Button(onClick = { choosingCity = true }, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.weather_choose_city)) }
+                            TextButton(onClick = vm.weather::closeHint, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.not_now)) }
+                        }
+                    }
+                }
             }
         }
         if (wornToday.isNotEmpty()) item(key = "worn-today") {
@@ -500,6 +515,7 @@ fun DailyScreen(s: Snapshot, wardrobe: String, vm: WardrobeViewModel, today: Str
         }
         if (anchor.isEmpty()) rotationBlock()
     }
+    if (choosingCity) CityDialog(vm.weather) { choosingCity = false }
     if (configuring) ModalBottomSheet(onDismissRequest = { configuring = false }) {
         Column(Modifier.fillMaxWidth().heightIn(max = 640.dp).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.configure_conditions), style = MaterialTheme.typography.titleLarge)
