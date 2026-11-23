@@ -99,7 +99,14 @@ class ScreenshotTourTest {
             })[WardrobeViewModel::class.java]
             val appearance = AppearanceViewModel(app)
             // BUG-61-01: like MainActivity, the app draws under the system bars (the CI tour did not, and missed it).
-            compose.runOnUiThread { compose.activity.enableEdgeToEdge() }
+            compose.runOnUiThread {
+                compose.activity.enableEdgeToEdge()
+                // A dialog is a window of its own and reads the activity's resources, not the Localized() wrapper; on a
+                // phone the per-app language does this. Without it «Мої вподобання» came out in the emulator's English.
+                val resources = compose.activity.resources
+                val configuration = Configuration(resources.configuration).apply { setLocale(Locale.forLanguageTag(language)); this.fontScale = fontScale }
+                @Suppress("DEPRECATION") resources.updateConfiguration(configuration, resources.displayMetrics)
+            }
             compose.setContent {
                 Localized(language, fontScale) {
                     WardrobeTheme(AppearanceSettings()) {

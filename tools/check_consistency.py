@@ -92,9 +92,10 @@ for pattern, why in ((r'\b[Cc]olor', 'colour'), (r'\b[Ff]avorite', 'favourite'),
 check(not where(uk, "'"), 'Ukrainian apostrophe is ’')
 check(not where(pl, r'e-mail'), 'Polish: email without a hyphen')
 # TXT-03/04: the same wear words on the item page, outfit, widget and calendar.
-check(uk['wear'] == uk['wear_outfit'] == uk['widget_wear'] == 'Вдягнуто сьогодні'
-      and en['wear'] == en['wear_outfit'] == en['widget_wear'] == 'Worn today'
-      and pl['wear'] == pl['wear_outfit'] == pl['widget_wear'] == 'Założone dziś', 'one label for «worn today»')
+for d in (uk, en, pl):
+    check(d['wear'] == d['wear_outfit'] == d['widget_wear'] == d['wear_look_today'], f'one label for wearing today: {d["wear"]}')
+WORN = r'[Вв]дягнут(о|ий|а|е|і|ого|ому|им|ою|у|их|ими)(?![А-Яа-яЇїІіЄєҐґ’])'  # «вдягнути» (to put on) is fine
+check(not where(uk, WORN), f'a recorded wear is «вдягнено»: {where(uk, WORN)}')
 
 # LOOK-07…10: one look for the same control on every screen.
 SRC = ROOT / 'app/src/main/java/com/familywardrobe/app'

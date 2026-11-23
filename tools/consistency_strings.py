@@ -4,8 +4,8 @@ Run once after an edit to strings.xml files; it is idempotent. The rules are che
 
 TXT-01  the default locale (values) is Ukrainian, like values-uk; 24 photo-editor strings were left in English there.
 TXT-02  Ukrainian speaks to the user as «ти» everywhere (the app mostly did; ~90 strings used «Ви»).
-TXT-03  no gendered verbs for the user: «Вдягнув сьогодні», «Знайшов товар» → «Вдягнуто сьогодні», «Знайдено товар»;
-        one verb for wearing (вдягати, not одягати).
+TXT-03  no gendered verbs for the user: «Вдягнув сьогодні», «Знайшов товар» → «Вдягаю сьогодні», «Знайдено товар»;
+        one verb for wearing (вдягати, not одягати), one label for wearing today, «вдягнено» for a recorded wear.
 TXT-04  one name per thing: «образ» (not «комплект»), «outfit» (not «look»), «item» for a garment (not «piece»),
         «zestaw» (not «stylizacja»), «garderoba» (not «szafa»), and the tab «Хочу купити» / “Want to buy” /
         „Chcę kupić” instead of a wish list, shopping list or lista zakupów.
@@ -24,18 +24,20 @@ LOCALES = [('values-uk', 0), ('values-en', 1), ('values-pl', 2)]
 
 # Full new values; None keeps the language as it is (after the rules below).
 UPDATED = {
-# TXT-03: gender-neutral wear labels, one verb; the same words on the item page, outfit, widget and calendar.
-'wear': ('Вдягнуто сьогодні', 'Worn today', 'Założone dziś'),
-'wear_outfit': ('Вдягнуто сьогодні', 'Worn today', 'Założone dziś'),
+# TXT-03: gender-neutral wear labels. The action is the one «Сьогодні» already had («Вдягаю сьогодні»), the same on
+# the item page, the outfit and the widget; a recorded wear is «вдягнено» / “worn” / „noszone”.
+'wear': ('Вдягаю сьогодні', 'Wearing it today', 'Zakładam dziś'),
+'wear_outfit': ('Вдягаю сьогодні', 'Wearing it today', 'Zakładam dziś'),
 'undo_outfit': ('Скасувати відмітку образу', 'Undo today’s wear', 'Cofnij dzisiejsze noszenie'),
-'widget_wear': ('Вдягнуто сьогодні', 'Worn today', 'Założone dziś'),
-'widget_description': ('Запланований на сьогодні образ активного гардероба з кнопкою «Вдягнуто сьогодні».',
-    'Today’s planned outfit from the active wardrobe, with a “Worn today” button.',
-    'Zaplanowany na dziś zestaw z aktywnej garderoby z przyciskiem „Założone dziś”.'),
-'calendar_confirm_wear': ('Вдягнуто', 'Worn', 'Założone'),
-'calendar_planned': ('Заплановано · ще не вдягнуто', None, None),
-'calendar_hint': ('Плануй тиждень наперед. Лічильник носіння змінюється лише після підтвердження «Вдягнуто».',
-    'Plan the week ahead. Wear counts change only after confirming “Worn”.', None),
+'widget_wear': ('Вдягаю сьогодні', 'Wearing it today', 'Zakładam dziś'),
+'widget_description': ('Запланований на сьогодні образ активного гардероба з кнопкою «Вдягаю сьогодні».',
+    'Today’s planned outfit from the active wardrobe, with a “Wearing it today” button.',
+    'Zaplanowany na dziś zestaw z aktywnej garderoby z przyciskiem „Zakładam dziś”.'),
+'calendar_confirm_wear': ('Вдягнено', 'Worn', 'Noszone'),
+'calendar_planned': ('Заплановано · ще не вдягнено', None, 'Zaplanowane · jeszcze nie noszone'),
+'calendar_hint': ('Плануй тиждень наперед. Лічильник носіння змінюється лише після підтвердження «Вдягнено».',
+    'Plan the week ahead. Wear counts change only after confirming “Worn”.',
+    'Zaplanuj tydzień. Licznik użyć zmienia się dopiero po potwierdzeniu „Noszone”.'),
 'found_candidate': ('Знайдено товар', 'Found a product', None),
 'wish_kind_hint': ('Конкретний товар уже знайдено чи ще шукаєш потрібну річ?', None, None),
 'i_bought_it': ('Уже куплено', None, None),
@@ -45,7 +47,7 @@ UPDATED = {
 'style_mixed': ('Стилі змішані: %1$s — речей: %2$d із %3$d', 'Mixed styles: %1$s — items: %2$d of %3$d',
     'Style mieszane: %1$s — rzeczy: %2$d z %3$d'),
 'cloud_changed': ('Дані змінилися під час вибору дії. Онови синхронізацію й переглянь актуальні версії.', None, None),
-'compatibility_owned_hint': ('Товар залишається в «Хочу купити». Його можна буде відмітити як вдягнутий після покупки.',
+'compatibility_owned_hint': ('Товар залишається в «Хочу купити». Його можна буде відмітити як вдягнений після покупки.',
     'The product stays in “Want to buy”. It can be marked as worn after purchase.',
     'Produkt pozostaje w „Chcę kupić”. Użycie oznaczysz po zakupie.'),
 # TXT-04: «образ», not «комплект».

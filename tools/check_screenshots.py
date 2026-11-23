@@ -42,8 +42,8 @@ check(all(p > 0 for p in extra_positions) and extra_positions == sorted(extra_po
       'the tour goes on to the nested screens after the item page')
 check('shotDialog(config, "5c-preferences")' in tour and 'compose.onNode(isDialog())' in tour, 'a full-screen dialog is captured as its own window')
 check('Log.w(TAG, "WSHOT-SKIP|$config-$screen|' in tour, 'a screen the tour cannot reach is logged, not silently missing')
-check('compose.runOnUiThread { compose.activity.enableEdgeToEdge() }' in tour and 'markSystemBars(' in tour,
-      'the tour draws under the system bars like MainActivity and shades them (BUG-61-01)')
+check('compose.activity.enableEdgeToEdge()' in tour and 'markSystemBars(' in tour and 'resources.updateConfiguration(configuration' in tour,
+      'the tour draws under the system bars like MainActivity, shades them (BUG-61-01) and localizes dialog windows')
 check("SKIP = 'WSHOT-SKIP|'" in (root / 'tools/ci_screenshots.py').read_text(encoding='utf-8'), 'CI reports the skipped screens')
 check('WardrobeApp(vm, appearance, identity.email, {}, {})' in tour and 'WardrobeViewModel(app, session)' in tour,
       'the tour drives the production WardrobeApp and view model')

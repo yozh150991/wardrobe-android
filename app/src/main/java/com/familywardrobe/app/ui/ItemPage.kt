@@ -180,14 +180,15 @@ fun Detail(g: Garment, s: Snapshot, vm: WardrobeViewModel, today: String, onBack
             Column {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 val wearButton: @Composable (Modifier) -> Unit = { modifier ->
+                    // DEV-05 review: 12 dp side padding, so «Вдягаю сьогодні» fits on one line beside «Підібрати образ».
                     OutlinedButton(onClick = { vm.wear(g) }, enabled = !busy, modifier = modifier.heightIn(min = 54.dp),
-                        shape = RoundedCornerShape(18.dp)) {
+                        shape = RoundedCornerShape(18.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
                         Text(stringResource(if (today in dates) R.string.undo_wear else R.string.wear), fontWeight = FontWeight.Bold)
                     }
                 }
                 val matchButton: @Composable (Modifier) -> Unit = { modifier ->
                     Button(onClick = onMatch, enabled = !busy && !g.archived && g.availability == "available", modifier = modifier.heightIn(min = 54.dp),
-                        shape = RoundedCornerShape(18.dp)) {
+                        shape = RoundedCornerShape(18.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
                         Icon(Icons.Outlined.AutoAwesome, null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.match), fontWeight = FontWeight.Bold)
                     }
                 }

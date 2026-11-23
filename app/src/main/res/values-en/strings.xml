@@ -210,7 +210,7 @@
     <string name="archive_title">Archive this item?</string>
     <string name="archive_hint">Photos and history stay saved. This item will be excluded from new suggestions.</string>
     <string name="archived">Archived</string>
-    <string name="wear">Worn today</string>
+    <string name="wear">Wearing it today</string>
     <string name="undo_wear">Undo today’s wear</string>
     <string name="last_worn">Last worn</string>
     <string name="never_worn">No wear history yet</string>
@@ -225,7 +225,7 @@
     <string name="save_outfit">Save outfit</string>
     <string name="outfit_name">Outfit name</string>
     <string name="outfit">Outfit</string>
-    <string name="wear_outfit">Worn today</string>
+    <string name="wear_outfit">Wearing it today</string>
     <string name="undo_outfit">Undo today’s wear</string>
     <string name="outfit_hint">Records wear for every item in the outfit.</string>
     <string name="empty_outfits">No outfits yet. Open an item and tap “Build an outfit”.</string>
@@ -1307,13 +1307,13 @@ Your current wardrobe is unchanged.</string>
     <string name="prefs_reset_all">Reset all preferences</string>
     <string name="prefs_hidden_shown">Every variant for these conditions was hidden by your feedback earlier, so the best of them are shown. Restore or reset them in “My preferences”.</string>
     <string name="widget_title">Today’s outfit</string>
-    <string name="widget_description">Today’s planned outfit from the active wardrobe, with a “Worn today” button.</string>
+    <string name="widget_description">Today’s planned outfit from the active wardrobe, with a “Wearing it today” button.</string>
     <string name="widget_signed_out">Sign in to the app to see today’s outfit.</string>
     <string name="widget_open_app">Open the app</string>
     <string name="widget_no_plan">No outfit is planned for today.</string>
     <string name="widget_pick">Pick an outfit</string>
     <string name="widget_open">Open outfit</string>
-    <string name="widget_wear">Worn today</string>
+    <string name="widget_wear">Wearing it today</string>
     <string name="widget_picture">Items of the outfit “%1$s”</string>
     <string name="widget_worn">Wear confirmed</string>
     <string name="widget_unavailable">Unavailable now: %1$s</string>
