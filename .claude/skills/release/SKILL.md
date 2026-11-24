@@ -14,7 +14,7 @@ Docs-only and harness-only changes skip steps 1 and 5–6 and keep the version.
 2. **Proof for every fix.** A Java case in `app/src/test/java/com/familywardrobe/app/rules/*Cases.java` for rule
    changes, or a check in `tools/check_*.py` for UI and wiring. Prove a new check can fail: break the code once and
    see it fail. A new suite is added to the list in `tools/run_host_checks.py`.
-3. **Texts.** If any string changed, follow the `texts` skill.
+3. **Texts.** If any string changed, follow the `texts` skill. While editing, `python3 tools/verify.py` gives a fast answer.
 4. **Host checks.** Delete `release-evidence/host-runs/<version>-*.json` (and `git rm --cached` it if tracked), then
    `python3 tools/run_host_checks.py --allow-missing-client-config`. Every suite passes; only the auth-config suite
    may be skipped. Fix failures by fixing the code, or the guard together with a stated reason.

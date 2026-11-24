@@ -32,6 +32,8 @@ Replace this section at every release; the previous text goes to the top of docs
   suite must pass; the auth-config suite is skipped without the owner's Firebase file. The run writes
   `release-evidence/host-runs/<version>-<time>.json`, which is committed: delete the earlier file of the same version
   (and `git rm --cached` it) before a new run.
+- While working: `python3 tools/verify.py` runs only the suites that read the files you changed (seconds).
+  It is a shortcut, not the proof: the full host checks run before every push.
 - One suite: `python3 tools/check_<name>.py`.
 - Android build, unit tests and lint run in CI only (no SDK in cloud sessions). Locally the owner runs
   `.\build-apk.ps1` on Windows.
