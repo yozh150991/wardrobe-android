@@ -1,0 +1,81 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git branch *)",
+      "Bash(git merge-base *)",
+      "Bash(git rev-parse *)",
+      "Bash(git ls-files *)",
+      "Bash(git fetch *)",
+      "Bash(git checkout *)",
+      "Bash(git switch *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git rm --cached *)",
+      "Bash(python3 tools/*)",
+      "Bash(python tools/*)",
+      "Bash(gh api repos/yozh150991/wardrobe-android/commits/*)",
+      "Bash(gh api repos/yozh150991/wardrobe-android/actions/jobs/*/logs)"
+    ],
+    "deny": [
+      "Read(/app/google-services.json)",
+      "Read(**/google-services.json)",
+      "Read(**/*.jks)",
+      "Read(**/*.keystore)",
+      "Read(**/*.p12)",
+      "Read(**/*.pfx)",
+      "Read(**/keystore.properties)",
+      "Read(**/key.properties)",
+      "Read(**/signing.properties)",
+      "Read(**/secrets.properties)",
+      "Read(**/*firebase-adminsdk*.json)",
+      "Read(**/*service-account*.json)",
+      "Read(**/*service_account*.json)",
+      "Read(**/.env)",
+      "Edit(/.githooks/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PROJECT_DIR}/.claude/hooks/run.sh\" guard",
+            "timeout": 20,
+            "statusMessage": "Wardrobe harness: checking the command"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PROJECT_DIR}/.claude/hooks/run.sh\" after_edit",
+            "timeout": 300,
+            "statusMessage": "Wardrobe harness: related host checks"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PROJECT_DIR}/.claude/hooks/run.sh\" stop_gate",
+            "timeout": 600,
+            "statusMessage": "Wardrobe harness: fast checks before finishing"
+          }
+        ]
+      }
+    ]
+  }
+}

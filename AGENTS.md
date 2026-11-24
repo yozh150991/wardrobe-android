@@ -71,3 +71,5 @@ Replace this section at every release; the previous text goes to the top of docs
 
 Area rules load on their own when you open matching files: see `.claude/rules/` (strings, ui, photo, data, cloud).
 Procedures are skills in `.claude/skills/`: `release`, `texts`, `ci-review`, `device-check`.
+Hooks in `.claude/settings.json` enforce the list above: a blocked command is blocked for a reason — do the
+right thing instead of rephrasing the command. A turn does not end while `tools/verify.py` fails.

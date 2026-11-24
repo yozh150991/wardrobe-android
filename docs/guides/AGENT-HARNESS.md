@@ -12,7 +12,7 @@ so hook scripts are Python, not bash.
 | Area rules | `.claude/rules/*.md` with `paths` | when a matching file is read | the same guard checks the paths still exist |
 | Procedures | `.claude/skills/`: `release`, `texts`, `ci-review`, `device-check` | on demand, or by the owner as `/name` | `tools/check_harness.py` checks their paths |
 | Fast verification | `tools/verify.py`: the suites that name the changed files | after edits, by hand until the hooks exist | hooks (planned) |
-| Hooks and permissions | `.claude/settings.json` — planned | always, by Claude Code itself | cannot be skipped by the agent |
+| Hooks and permissions | `.claude/settings.json`, `.claude/hooks/` | always, by Claude Code itself | cannot be skipped by the agent; `tools/check_harness.py` tests the guard |
 | Roles | `.claude/agents/` — planned | when delegated | — |
 | Final gate | CI and the owner's merge | every PR | GitHub |
 
@@ -33,7 +33,18 @@ so hook scripts are Python, not bash.
 2. Skills: `release`, `texts`, `ci-review` (with `tools/ci_review.py`), `device-check` — done.
 3. `tools/verify.py`: the suites related to the changed files, in seconds — done. The relation is a heuristic (a suite's
    script names the file), so the full run before a push stays.
-4. Hooks and permissions.
+4. Hooks and permissions — done:
+   - `guard` (before every shell command) blocks: `--no-verify` and `commit -n`, force pushes and history rewriting,
+     `firebase deploy`, `deploy-rules.ps1`, merging a PR, reading or copying keys and Firebase config, `git add -f`,
+     changing the hooks path, and a push that renames the version with the same code (or the reverse) on a pushed branch.
+   - `after_edit` (after Edit / Write) runs `tools/verify.py` for the edited file and shows failures to the agent.
+   - `stop_gate` (before a turn ends) runs `tools/verify.py` on everything changed; failing checks keep the agent
+     working, up to three times in a row, then the turn ends with a warning to the owner.
+   - Permissions: reading, local Git work, `tools/*.py` and CI status run without a prompt; pushing, opening a PR,
+     Gradle, adb and anything else prompt on the owner's machine; secrets cannot be read.
+   - Hooks are Python started through `.claude/hooks/run.sh` (the Python of Git Safety, else `python3`, else
+     `python`); on Windows Claude Code runs it through Git Bash. After pulling, check a clone with
+     `python tools/check_harness.py`; personal additions go to `.claude/settings.local.json`.
 5. Subagents with the models above.
 
 Each mistake an agent makes becomes a rule, a guard or a hook here, so it is not repeated.

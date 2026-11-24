@@ -61,6 +61,52 @@ check("split('names = [', 1)" in verify and 'ALWAYS = [\'check_harness.py\']' in
 for folder_suite in re.findall(r"'(check_\w+\.py)':", verify):
     check((ROOT / 'tools' / folder_suite).is_file(), f'tools/verify.py maps a missing suite {folder_suite}')
 
+# Hooks and permissions (step 4): prohibitions block, edits are checked, a turn does not end on failing fast checks.
+import importlib.util
+import json
+settings = json.loads((ROOT / '.claude/settings.json').read_text(encoding='utf-8'))
+hooks = settings.get('hooks', {})
+for event, script in (('PreToolUse', 'guard'), ('PostToolUse', 'after_edit'), ('Stop', 'stop_gate')):
+    commands = [h.get('command', '') for group in hooks.get(event, []) for h in group.get('hooks', [])]
+    check(any(c.endswith(f'run.sh" {script}') for c in commands), f'settings.json runs the {script} hook on {event}')
+    check((ROOT / '.claude/hooks' / f'{script}.py').is_file(), f'.claude/hooks/{script}.py exists')
+check((ROOT / '.claude/hooks/run.sh').is_file(), 'the hook launcher exists')
+allowed, denied = ' '.join(settings['permissions']['allow']), ' '.join(settings['permissions']['deny'])
+for word in ('push', 'git merge *', 'pr merge', 'deploy', 'gradlew', 'adb', 'Bash(rm', 'reset', 'rebase', '-X', 'Bash(git *)', 'Bash(gh *)', 'Bash(*)'):
+    check(word not in allowed, f'the allow list does not pre-approve "{word}"')
+for secret in ('google-services.json', '*.jks', '*.keystore', 'firebase-adminsdk', '.env'):
+    check(secret in denied, f'reading {secret} is denied')
+spec = importlib.util.spec_from_file_location('guard', ROOT / '.claude/hooks/guard.py')
+guard = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(guard)
+guard.pushed_version_problem = lambda: None
+BLOCKED = ['git commit --no-verify -m x', 'git -c user.name=Claude commit -n -m x', 'git push --force origin main',
+           'git -c push.negotiate=true push -f', 'git push origin +main', 'cd cloud && npx firebase deploy --only functions',
+           'pwsh cloud/deploy-rules.ps1 -Deploy', 'gh pr merge 66 --squash',
+           'gh api repos/yozh150991/wardrobe-android/pulls/66/merge -X PUT', 'cat app/google-services.json',
+           'cp ~/keys/release.jks /tmp/x', 'git config core.hooksPath /dev/null', 'git add -f app/google-services.json',
+           'git filter-branch --tree-filter x HEAD']
+ALLOWED = ['git -c push.negotiate=true push -q -u origin harness/hooks',
+           'git -c user.name="Claude" -c user.email="noreply@anthropic.com" commit -q -F /tmp/m.txt',
+           'git commit --amend --no-edit', 'grep -n "google-services.json" app/build.gradle.kts',
+           "cat > docs/x.md <<'EOF'\nnpx firebase deploy --only firestore:rules\nnever --no-verify\nEOF",
+           'python3 tools/run_host_checks.py --allow-missing-client-config',
+           'gh api repos/yozh150991/wardrobe-android/pulls -X POST -f title=x -f head=y -f base=main -F body=@/tmp/pr.md',
+           'git add -A && git status --short', 'ls app/ | head']
+for command in BLOCKED:
+    check(guard.verdict(command) is not None, f'the guard blocks: {command}')
+for command in ALLOWED:
+    check(guard.verdict(command) is None, f'the guard allows: {command[:60]}')
+versions = {}
+real = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(real)
+real.version = lambda ref: versions.get(ref)
+for before, now, bad in (((92, '0.14.62-a'), (92, '0.14.62-b'), True), ((92, '0.14.62-a'), (93, '0.14.62-a'), True),
+                         ((92, '0.14.62-a'), (91, '0.14.61-a'), True), ((92, '0.14.62-a'), (93, '0.14.63-b'), False),
+                         ((92, '0.14.62-a'), (92, '0.14.62-a'), False), (None, (92, '0.14.62-a'), False)):
+    versions = {'@{upstream}': before, 'HEAD': now}
+    check((real.pushed_version_problem() is not None) == bad, f'pushed-version rule: {before} -> {now}')
+
 ignore = (ROOT / '.gitignore').read_text(encoding='utf-8')
 check('CLAUDE.local.md' in ignore and '.claude/settings.local.json' in ignore, 'personal Claude Code files are ignored by Git')
 if failures:
