@@ -41,8 +41,23 @@ for rule in rules:
     for path in re.findall(r'`((?:app|tools|docs|cloud)/[^`*<>… ]+)`', text):
         check((ROOT / path).exists(), f'{rule.name} mentions {path}, which does not exist')
 
+skills = sorted((ROOT / '.claude/skills').glob('*/SKILL.md'))
+check(len(skills) >= 4, 'project skills exist in .claude/skills/')
+for skill in skills:
+    text = skill.read_text(encoding='utf-8')
+    front = re.match(r'---\n(.*?)\n---\n', text, re.S)
+    check(front is not None, f'{skill.parent.name}: SKILL.md starts with frontmatter')
+    fields = dict(re.findall(r'(?m)^([a-z-]+):\s*(.+)$', front.group(1))) if front else {}
+    check(fields.get('name') == skill.parent.name, f'{skill.parent.name}: name equals the folder name')
+    check(40 <= len(fields.get('description', '')) <= 1024, f'{skill.parent.name}: a description says what it does and when to use it')
+    check(len(text.splitlines()) <= 120, f'{skill.parent.name}: at most 120 lines')
+    for path in re.findall(r'`((?:app|tools|docs|cloud)/[^`*<>… ]+)`', text):
+        check((ROOT / path).exists(), f'{skill.parent.name} mentions {path}, which does not exist')
+    for other in re.findall(r'`([a-z-]+)` skill', text):
+        check((ROOT / '.claude/skills' / other / 'SKILL.md').is_file(), f'{skill.parent.name} refers to a missing skill {other}')
+
 ignore = (ROOT / '.gitignore').read_text(encoding='utf-8')
 check('CLAUDE.local.md' in ignore and '.claude/settings.local.json' in ignore, 'personal Claude Code files are ignored by Git')
 if failures:
     raise SystemExit('FAIL harness guards:\n  - ' + '\n  - '.join(failures))
-print(f'PASS harness guards: AGENTS.md {len(agents.splitlines())} lines for {name}, CLAUDE.md imports it, {len(rules)} area rules with live paths')
+print(f'PASS harness guards: AGENTS.md {len(agents.splitlines())} lines for {name}, CLAUDE.md imports it, {len(rules)} area rules and {len(skills)} skills with live paths')
