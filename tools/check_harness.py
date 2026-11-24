@@ -56,6 +56,11 @@ for skill in skills:
     for other in re.findall(r'`([a-z-]+)` skill', text):
         check((ROOT / '.claude/skills' / other / 'SKILL.md').is_file(), f'{skill.parent.name} refers to a missing skill {other}')
 
+verify = (ROOT / 'tools/verify.py').read_text(encoding='utf-8')
+check("split('names = [', 1)" in verify and 'ALWAYS = [\'check_harness.py\']' in verify, 'tools/verify.py takes its suites from run_host_checks.py')
+for folder_suite in re.findall(r"'(check_\w+\.py)':", verify):
+    check((ROOT / 'tools' / folder_suite).is_file(), f'tools/verify.py maps a missing suite {folder_suite}')
+
 ignore = (ROOT / '.gitignore').read_text(encoding='utf-8')
 check('CLAUDE.local.md' in ignore and '.claude/settings.local.json' in ignore, 'personal Claude Code files are ignored by Git')
 if failures:
