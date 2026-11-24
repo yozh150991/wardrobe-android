@@ -10,7 +10,7 @@ so hook scripts are Python, not bash.
 | --- | --- | --- | --- |
 | Map and rules | `AGENTS.md`, `CLAUDE.md` (imports it) | every session | the agent reading it; `tools/check_harness.py` keeps it short and current |
 | Area rules | `.claude/rules/*.md` with `paths` | when a matching file is read | the same guard checks the paths still exist |
-| Procedures | `.claude/skills/` — planned | on demand, or by the owner as a command | — |
+| Procedures | `.claude/skills/`: `release`, `texts`, `ci-review`, `device-check` | on demand, or by the owner as `/name` | `tools/check_harness.py` checks their paths |
 | Fast verification | `tools/verify.py` — planned | after edits | hooks |
 | Hooks and permissions | `.claude/settings.json` — planned | always, by Claude Code itself | cannot be skipped by the agent |
 | Roles | `.claude/agents/` — planned | when delegated | — |
@@ -30,7 +30,7 @@ so hook scripts are Python, not bash.
 ## Steps
 
 1. Map: short `AGENTS.md`, `CLAUDE.md`, area rules, history moved — done (this PR).
-2. Skills: release, texts in three languages, CI and screenshot review, device check.
+2. Skills: `release`, `texts`, `ci-review` (with `tools/ci_review.py`), `device-check` — done.
 3. `tools/verify.py`: the suites related to the changed files, in seconds.
 4. Hooks and permissions.
 5. Subagents with the models above.

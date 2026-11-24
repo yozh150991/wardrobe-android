@@ -29,7 +29,7 @@ Replace this section at every release; the previous text goes to the top of docs
 ## Commands
 
 - Host checks (no Android SDK needed): `python3 tools/run_host_checks.py --allow-missing-client-config` — every
-  suite must pass (51 now); the auth-config suite is skipped without the owner's Firebase file. The run writes
+  suite must pass; the auth-config suite is skipped without the owner's Firebase file. The run writes
   `release-evidence/host-runs/<version>-<time>.json`, which is committed: delete the earlier file of the same version
   (and `git rm --cached` it) before a new run.
 - One suite: `python3 tools/check_<name>.py`.
@@ -37,7 +37,7 @@ Replace this section at every release; the previous text goes to the top of docs
   `.\build-apk.ps1` on Windows.
 - Push: `git -c push.negotiate=true push`. Open a PR with
   `gh api repos/yozh150991/wardrobe-android/pulls -X POST -f title=… -f head=… -f base=main -F body=@file`.
-- CI status: `gh api repos/yozh150991/wardrobe-android/commits/<sha>/check-runs`.
+- CI status and screenshots: `python3 tools/ci_review.py <sha | branch | PR number> [--shots DIR]`.
 
 ## Never
 
@@ -68,3 +68,4 @@ Replace this section at every release; the previous text goes to the top of docs
 6. Report in Ukrainian: what changed, what was verified and how, what is still open.
 
 Area rules load on their own when you open matching files: see `.claude/rules/` (strings, ui, photo, data, cloud).
+Procedures are skills in `.claude/skills/`: `release`, `texts`, `ci-review`, `device-check`.
